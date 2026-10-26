@@ -8,6 +8,7 @@ import '../../data/models.dart';
 import '../../state/app_state.dart';
 import '../customer/messages_screen.dart';
 import '../customer/receipts_screen.dart';
+import '../widgets/realtime_refresh.dart';
 import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
 import 'admin_posts.dart';
@@ -22,8 +23,11 @@ class AdminMore extends StatefulWidget {
   State<AdminMore> createState() => _AdminMoreState();
 }
 
-class _AdminMoreState extends State<AdminMore> {
+class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
   Future<AppStats>? _stats;
+
+  @override
+  void onRealtimeChange() => _load();
 
   @override
   void initState() {
@@ -222,26 +226,38 @@ class _AdminMoreState extends State<AdminMore> {
                           style: TextStyle(fontSize: 10.5)),
                     ),
                     const Divider(height: 1),
-                    _Tile(
-                      icon: Icons.restart_alt_rounded,
-                      title: 'إعادة ضبط البيانات التجريبية',
-                      subtitle: 'حذف كل التعديلات والعودة لبيانات البداية',
-                      danger: true,
-                      onTap: () async {
-                        final ok = await confirmAction(
+                    if (!state.isCloud)
+                      _Tile(
+                        icon: Icons.restart_alt_rounded,
+                        title: 'إعادة ضبط البيانات التجريبية',
+                        subtitle: 'حذف كل التعديلات والعودة لبيانات البداية',
+                        danger: true,
+                        onTap: () async {
+                          final ok = await confirmAction(
+                            context,
+                            title: 'إعادة الضبط؟',
+                            message:
+                                'سيتم حذف كل الحجوزات والمنشورات والزبائن الذين أنشأتهم، والعودة للبيانات التجريبية الأصلية.',
+                            confirmLabel: 'إعادة الضبط',
+                            danger: true,
+                          );
+                          if (!ok) return;
+                          await context.read<AppState>().repo.resetDemoData();
+                          if (!mounted) return;
+                          await context.read<AppState>().logout();
+                        },
+                      )
+                    else
+                      _Tile(
+                        icon: Icons.cloud_done_rounded,
+                        title: 'البيانات مشتركة عبر السحابة',
+                        subtitle:
+                            'المنشورات والحجوزات محفوظة في قاعدة البيانات المشتركة وتظهر لكل المستخدمين',
+                        onTap: () => AppSnack.show(
                           context,
-                          title: 'إعادة الضبط؟',
-                          message:
-                              'سيتم حذف كل الحجوزات والمنشورات والزبائن الذين أنشأتهم، والعودة للبيانات التجريبية الأصلية.',
-                          confirmLabel: 'إعادة الضبط',
-                          danger: true,
-                        );
-                        if (!ok) return;
-                        await context.read<AppState>().repo.resetDemoData();
-                        if (!mounted) return;
-                        await context.read<AppState>().logout();
-                      },
-                    ),
+                          'لا يمكن إعادة ضبط البيانات المشتركة من التطبيق',
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -390,10 +406,14 @@ class AdminCustomersScreen extends StatefulWidget {
   State<AdminCustomersScreen> createState() => _AdminCustomersScreenState();
 }
 
-class _AdminCustomersScreenState extends State<AdminCustomersScreen> {
+class _AdminCustomersScreenState extends State<AdminCustomersScreen>
+    with RealtimeRefresh<AdminCustomersScreen> {
   final _search = TextEditingController();
   String _query = '';
   late Future<List<AppUser>> _future;
+
+  @override
+  void onRealtimeChange() => _load();
 
   @override
   void initState() {

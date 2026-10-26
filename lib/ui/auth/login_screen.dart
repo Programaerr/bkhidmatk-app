@@ -54,6 +54,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isCloud = context.watch<AppState>().isCloud;
     return Scaffold(
       appBar: AppBar(title: const Text('تسجيل الدخول')),
       body: SafeArea(
@@ -68,6 +69,32 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 4),
               Text('سجّل دخولك لمتابعة حجوزاتك وخدماتك.',
                   style: theme.textTheme.bodySmall?.copyWith(fontSize: 13)),
+              if (!isCloud) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: AppColors.gold.withValues(alpha: .12),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.gold.withValues(alpha: .4)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.smartphone_rounded, size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'وضع تجريبي محلي: البيانات محفوظة على هذا الجهاز فقط. اربط التطبيق بالسحابة لمشاركة المنشورات والحجوزات مع الجميع.',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            fontSize: 11.5,
+                            height: 1.6,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 24),
               Form(
                 key: _formKey,

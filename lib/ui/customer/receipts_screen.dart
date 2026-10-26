@@ -6,6 +6,7 @@ import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
 import '../common/receipt_document.dart';
+import '../widgets/realtime_refresh.dart';
 import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
 
@@ -18,8 +19,12 @@ class ReceiptsScreen extends StatefulWidget {
   State<ReceiptsScreen> createState() => _ReceiptsScreenState();
 }
 
-class _ReceiptsScreenState extends State<ReceiptsScreen> {
+class _ReceiptsScreenState extends State<ReceiptsScreen>
+    with RealtimeRefresh<ReceiptsScreen> {
   late Future<List<Receipt>> _future;
+
+  @override
+  void onRealtimeChange() => _load();
 
   @override
   void initState() {

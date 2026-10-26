@@ -6,6 +6,7 @@ import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
+import '../widgets/realtime_refresh.dart';
 import '../widgets/ui.dart';
 
 class MessagesScreen extends StatefulWidget {
@@ -20,7 +21,8 @@ class MessagesScreen extends StatefulWidget {
   State<MessagesScreen> createState() => _MessagesScreenState();
 }
 
-class _MessagesScreenState extends State<MessagesScreen> {
+class _MessagesScreenState extends State<MessagesScreen>
+    with RealtimeRefresh<MessagesScreen> {
   final _input = TextEditingController();
   final _scroll = ScrollController();
   List<ChatMessage> _messages = const [];
@@ -29,6 +31,9 @@ class _MessagesScreenState extends State<MessagesScreen> {
   late int _threadId;
   late bool _asAdmin;
   String _adminPhone = '07700000000';
+
+  @override
+  void onRealtimeChange() => _load();
 
   @override
   void initState() {

@@ -5,6 +5,7 @@ import '../../core/theme.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
 import '../widgets/post_card.dart';
+import '../widgets/realtime_refresh.dart';
 import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
 import 'post_detail_screen.dart';
@@ -19,10 +20,13 @@ class FeedTab extends StatefulWidget {
   State<FeedTab> createState() => _FeedTabState();
 }
 
-class _FeedTabState extends State<FeedTab> {
+class _FeedTabState extends State<FeedTab> with RealtimeRefresh<FeedTab> {
   late Future<List<Post>> _future;
   int? _categoryId;
   List<Category> _categories = const [];
+
+  @override
+  void onRealtimeChange() => _load();
 
   @override
   void initState() {

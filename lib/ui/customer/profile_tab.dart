@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../state/app_state.dart';
+import '../widgets/realtime_refresh.dart';
 import '../widgets/ui.dart';
 import 'messages_screen.dart';
 import 'receipts_screen.dart';
@@ -18,8 +19,11 @@ class ProfileTab extends StatefulWidget {
   State<ProfileTab> createState() => _ProfileTabState();
 }
 
-class _ProfileTabState extends State<ProfileTab> {
+class _ProfileTabState extends State<ProfileTab> with RealtimeRefresh<ProfileTab> {
   Future<List<int>>? _stats;
+
+  @override
+  void onRealtimeChange() => _load();
 
   @override
   void initState() {

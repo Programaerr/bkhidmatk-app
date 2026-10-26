@@ -6,6 +6,7 @@ import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
+import '../widgets/realtime_refresh.dart';
 import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
 import 'admin_shell.dart';
@@ -19,11 +20,15 @@ class AdminServices extends StatefulWidget {
   State<AdminServices> createState() => _AdminServicesState();
 }
 
-class _AdminServicesState extends State<AdminServices> {
+class _AdminServicesState extends State<AdminServices>
+    with RealtimeRefresh<AdminServices> {
   int _tab = 0;
   late Future<List<Service>> _services;
   late Future<List<Worker>> _workers;
   late Future<List<Category>> _categories;
+
+  @override
+  void onRealtimeChange() => _load();
 
   @override
   void initState() {

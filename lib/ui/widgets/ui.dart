@@ -350,6 +350,26 @@ class AvatarCircle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasImage = fileExists(imagePath);
+    final isNetwork = imagePath != null &&
+        (imagePath!.startsWith('http://') || imagePath!.startsWith('https://'));
+    Widget image = _initials(context);
+    if (isNetwork) {
+      image = Image.network(
+        imagePath!,
+        fit: BoxFit.cover,
+        width: size,
+        height: size,
+        errorBuilder: (_, __, ___) => _initials(context),
+      );
+    } else if (hasImage) {
+      image = Image.file(
+        File(imagePath!),
+        fit: BoxFit.cover,
+        width: size,
+        height: size,
+        errorBuilder: (_, __, ___) => _initials(context),
+      );
+    }
     return Container(
       width: size,
       height: size,
@@ -360,15 +380,7 @@ class AvatarCircle extends StatelessWidget {
       ),
       clipBehavior: Clip.antiAlias,
       alignment: Alignment.center,
-      child: hasImage
-          ? Image.file(
-              File(imagePath!),
-              fit: BoxFit.cover,
-              width: size,
-              height: size,
-              errorBuilder: (_, __, ___) => _initials(context),
-            )
-          : _initials(context),
+      child: image,
     );
   }
 

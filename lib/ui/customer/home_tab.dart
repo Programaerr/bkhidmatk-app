@@ -7,6 +7,7 @@ import '../../data/models.dart';
 import '../../data/repository.dart';
 import '../../state/app_state.dart';
 import '../widgets/post_card.dart';
+import '../widgets/realtime_refresh.dart';
 import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
 import 'booking_detail_screen.dart';
@@ -31,8 +32,11 @@ class HomeTab extends StatefulWidget {
   State<HomeTab> createState() => _HomeTabState();
 }
 
-class _HomeTabState extends State<HomeTab> {
+class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
   Future<_HomeData>? _future;
+
+  @override
+  void onRealtimeChange() => _load();
 
   @override
   void initState() {

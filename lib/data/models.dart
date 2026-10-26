@@ -1,3 +1,9 @@
+/// يقرأ التاريخ من الخادم (UTC) ويحوّله إلى توقيت الجهاز.
+DateTime? _date(Object? value) {
+  if (value is! String || value.isEmpty) return null;
+  return DateTime.tryParse(value)?.toLocal();
+}
+
 class AppUser {
   final int? id;
   final String name;
@@ -48,7 +54,7 @@ class AppUser {
         city: m['city'] as String?,
         address: m['address'] as String?,
         avatarPath: m['avatar'] as String?,
-        createdAt: DateTime.tryParse(m['created_at'] as String? ?? '') ?? DateTime.now(),
+        createdAt: _date(m['created_at']) ?? DateTime.now(),
       );
 
   AppUser copyWith({
@@ -217,7 +223,7 @@ class Service {
         durationMinutes: m['duration'] as int? ?? 60,
         rating: (m['rating'] as num?)?.toDouble() ?? 0,
         active: (m['active'] as int? ?? 1) == 1,
-        createdAt: DateTime.tryParse(m['created_at'] as String? ?? '') ?? DateTime.now(),
+        createdAt: _date(m['created_at']) ?? DateTime.now(),
         categoryName: m['category_name'] as String?,
         workerName: m['worker_name'] as String?,
         workerPhone: m['worker_phone'] as String?,
@@ -304,14 +310,14 @@ class Booking {
         customerId: m['customer_id'] as int? ?? 0,
         serviceId: m['service_id'] as int? ?? 0,
         workerId: m['worker_id'] as int?,
-        scheduledAt: DateTime.tryParse(m['scheduled_at'] as String? ?? '') ?? DateTime.now(),
+        scheduledAt: _date(m['scheduled_at']) ?? DateTime.now(),
         slot: m['slot'] as String? ?? '09:00',
         address: m['address'] as String? ?? '',
         notes: m['notes'] as String?,
         status: m['status'] as String? ?? 'pending',
         paymentMethod: m['payment_method'] as String? ?? 'cash',
         total: (m['total'] as num?)?.toDouble() ?? 0,
-        createdAt: DateTime.tryParse(m['created_at'] as String? ?? '') ?? DateTime.now(),
+        createdAt: _date(m['created_at']) ?? DateTime.now(),
         serviceTitle: m['service_title'] as String?,
         workerName: m['worker_name'] as String?,
         workerPhone: m['worker_phone'] as String?,
@@ -424,7 +430,7 @@ class Post {
         location: m['location'] as String?,
         approved: (m['approved'] as int? ?? 1) == 1,
         likes: m['likes'] as int? ?? 0,
-        createdAt: DateTime.tryParse(m['created_at'] as String? ?? '') ?? DateTime.now(),
+        createdAt: _date(m['created_at']) ?? DateTime.now(),
         customerName: m['customer_name'] as String?,
         customerPhone: m['customer_phone'] as String?,
         categoryName: m['category_name'] as String?,
@@ -466,7 +472,7 @@ class PostComment {
         userId: m['user_id'] as int? ?? 0,
         userName: m['user_name'] as String? ?? '',
         body: m['body'] as String? ?? '',
-        createdAt: DateTime.tryParse(m['created_at'] as String? ?? '') ?? DateTime.now(),
+        createdAt: _date(m['created_at']) ?? DateTime.now(),
         avatarPath: m['avatar'] as String?,
       );
 }
@@ -508,7 +514,7 @@ class ChatMessage {
         senderId: m['sender_id'] as int? ?? 0,
         senderRole: m['sender_role'] as String? ?? 'customer',
         body: m['body'] as String? ?? '',
-        createdAt: DateTime.tryParse(m['created_at'] as String? ?? '') ?? DateTime.now(),
+        createdAt: _date(m['created_at']) ?? DateTime.now(),
         read: (m['read'] as int? ?? 0) == 1,
       );
 }
@@ -616,7 +622,7 @@ class Receipt {
         cardBrand: m['card_brand'] as String?,
         last4: m['last4'] as String?,
         paid: (m['paid'] as int? ?? 0) == 1,
-        createdAt: DateTime.tryParse(m['created_at'] as String? ?? '') ?? DateTime.now(),
+        createdAt: _date(m['created_at']) ?? DateTime.now(),
         customerName: m['customer_name'] as String?,
         customerPhone: m['customer_phone'] as String?,
       );

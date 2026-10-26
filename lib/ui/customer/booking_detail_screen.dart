@@ -7,6 +7,7 @@ import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
 import '../common/receipt_document.dart';
+import '../widgets/realtime_refresh.dart';
 import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
 
@@ -19,10 +20,14 @@ class BookingDetailScreen extends StatefulWidget {
   State<BookingDetailScreen> createState() => _BookingDetailScreenState();
 }
 
-class _BookingDetailScreenState extends State<BookingDetailScreen> {
+class _BookingDetailScreenState extends State<BookingDetailScreen>
+    with RealtimeRefresh<BookingDetailScreen> {
   Booking? _booking;
   Receipt? _receipt;
   bool _loading = true;
+
+  @override
+  void onRealtimeChange() => _load();
 
   @override
   void initState() {

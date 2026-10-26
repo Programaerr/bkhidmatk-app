@@ -7,6 +7,9 @@ import '../../core/theme.dart';
 
 bool isAssetMedia(String? path) => path != null && path.startsWith('asset:');
 
+bool isNetworkMedia(String? path) =>
+    path != null && (path.startsWith('http://') || path.startsWith('https://'));
+
 String _stripAsset(String path) => path.replaceFirst('asset:', '');
 
 class MediaThumb extends StatelessWidget {
@@ -33,11 +36,41 @@ class MediaThumb extends StatelessWidget {
     Widget content;
 
     if (type == 'image' && path != null && path!.isNotEmpty) {
-      content = isAssetMedia(path)
-          ? Image.asset(_stripAsset(path!), fit: BoxFit.cover, width: double.infinity, height: height,
-              errorBuilder: (_, __, ___) => _fallback(theme))
-          : Image.file(File(path!), fit: BoxFit.cover, width: double.infinity, height: height,
-              errorBuilder: (_, __, ___) => _fallback(theme));
+      if (isAssetMedia(path)) {
+        content = Image.asset(_stripAsset(path!),
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: height,
+            errorBuilder: (_, __, ___) => _fallback(theme));
+      } else if (isNetworkMedia(path)) {
+        content = Image.network(
+          path!,
+          fit: BoxFit.cover,
+          width: double.infinity,
+          height: height,
+          errorBuilder: (_, __, ___) => _fallback(theme),
+          loadingBuilder: (_, child, progress) => progress == null
+              ? child
+              : Container(
+                  height: height,
+                  width: double.infinity,
+                  color: theme.colorScheme.surfaceContainerHighest,
+                  alignment: Alignment.center,
+                  child: const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: AppColors.gold),
+                  ),
+                ),
+        );
+      } else {
+        content = Image.file(File(path!),
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: height,
+            errorBuilder: (_, __, ___) => _fallback(theme));
+      }
     } else if (type == 'video' && path != null && path!.isNotEmpty) {
       content = Container(
         height: height,
@@ -164,7 +197,9 @@ class _InlineVideoPlayerState extends State<InlineVideoPlayer> {
     try {
       final controller = isAssetMedia(widget.path)
           ? VideoPlayerController.asset(_stripAsset(widget.path))
-          : VideoPlayerController.file(File(widget.path));
+          : isNetworkMedia(widget.path)
+              ? VideoPlayerController.networkUrl(Uri.parse(widget.path))
+              : VideoPlayerController.file(File(widget.path));
       await controller.initialize();
       await controller.setLooping(true);
       if (!mounted) {

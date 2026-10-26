@@ -7,6 +7,7 @@ import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
 import '../widgets/media_view.dart';
+import '../widgets/realtime_refresh.dart';
 import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
 
@@ -19,13 +20,17 @@ class PostDetailScreen extends StatefulWidget {
   State<PostDetailScreen> createState() => _PostDetailScreenState();
 }
 
-class _PostDetailScreenState extends State<PostDetailScreen> {
+class _PostDetailScreenState extends State<PostDetailScreen>
+    with RealtimeRefresh<PostDetailScreen> {
   Post? _post;
   List<PostComment> _comments = const [];
   final _comment = TextEditingController();
   bool _loading = true;
   bool _sending = false;
   bool _liked = false;
+
+  @override
+  void onRealtimeChange() => _load();
 
   @override
   void initState() {

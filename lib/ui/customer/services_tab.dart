@@ -5,6 +5,7 @@ import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
+import '../widgets/realtime_refresh.dart';
 import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
 import 'service_detail_screen.dart';
@@ -50,10 +51,14 @@ class ServicesTab extends StatefulWidget {
   State<ServicesTab> createState() => _ServicesTabState();
 }
 
-class _ServicesTabState extends State<ServicesTab> {
+class _ServicesTabState extends State<ServicesTab>
+    with RealtimeRefresh<ServicesTab> {
   late final TextEditingController _search = TextEditingController(text: widget.initialQuery);
   int? _categoryId;
   Future<List<Service>>? _future;
+
+  @override
+  void onRealtimeChange() => _load();
 
   @override
   void initState() {

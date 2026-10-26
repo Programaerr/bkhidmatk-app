@@ -49,7 +49,19 @@ jobs:
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
       - name: Build APK
-        run: flutter build apk --release
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          DEFINES=()
+          if [ -n "$SUPABASE_URL" ] && [ -n "$SUPABASE_ANON_KEY" ]; then
+            DEFINES+=("--dart-define=SUPABASE_URL=$SUPABASE_URL")
+            DEFINES+=("--dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY")
+            echo "Building with shared Supabase backend."
+          else
+            echo "No Supabase secrets found: building local demo mode."
+          fi
+          flutter build apk --release "${DEFINES[@]}"
 
       - name: Rename APK
         run: |

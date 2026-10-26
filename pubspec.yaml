@@ -25,6 +25,7 @@ dependencies:
   printing: ^5.13.4
   qr_flutter: ^4.1.0
   screenshot: ^3.0.0
+  supabase_flutter: ^2.8.0
 
 dev_dependencies:
   flutter_test:

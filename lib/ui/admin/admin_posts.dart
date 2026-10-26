@@ -8,6 +8,7 @@ import '../../state/app_state.dart';
 import '../customer/messages_screen.dart';
 import '../customer/post_detail_screen.dart';
 import '../widgets/post_card.dart';
+import '../widgets/realtime_refresh.dart';
 import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
 import 'admin_shell.dart';
@@ -21,11 +22,15 @@ class AdminPosts extends StatefulWidget {
   State<AdminPosts> createState() => _AdminPostsState();
 }
 
-class _AdminPostsState extends State<AdminPosts> {
+class _AdminPostsState extends State<AdminPosts>
+    with RealtimeRefresh<AdminPosts> {
   int _filter = 0; // 0 all, 1 pending, 2 approved
   final _search = TextEditingController();
   String _query = '';
   late Future<List<Post>> _future;
+
+  @override
+  void onRealtimeChange() => _load();
 
   @override
   void initState() {
@@ -218,8 +223,12 @@ class AdminThreadsScreen extends StatefulWidget {
   State<AdminThreadsScreen> createState() => _AdminThreadsScreenState();
 }
 
-class _AdminThreadsScreenState extends State<AdminThreadsScreen> {
+class _AdminThreadsScreenState extends State<AdminThreadsScreen>
+    with RealtimeRefresh<AdminThreadsScreen> {
   late Future<List<ChatThread>> _future;
+
+  @override
+  void onRealtimeChange() => _load();
 
   @override
   void initState() {

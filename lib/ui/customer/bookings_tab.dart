@@ -5,6 +5,7 @@ import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
+import '../widgets/realtime_refresh.dart';
 import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
 import 'booking_detail_screen.dart';
@@ -18,11 +19,15 @@ class BookingsTab extends StatefulWidget {
   State<BookingsTab> createState() => _BookingsTabState();
 }
 
-class _BookingsTabState extends State<BookingsTab> {
+class _BookingsTabState extends State<BookingsTab>
+    with RealtimeRefresh<BookingsTab> {
   int _filter = 0;
   late Future<List<Booking>> _future;
 
   static const _filters = ['الكل', 'القادمة', 'المكتملة', 'الملغاة'];
+
+  @override
+  void onRealtimeChange() => _load();
 
   @override
   void initState() {

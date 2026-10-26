@@ -8,6 +8,7 @@ import '../../data/models.dart';
 import '../../data/repository.dart';
 import '../../state/app_state.dart';
 import '../common/receipt_document.dart';
+import '../widgets/realtime_refresh.dart';
 import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
 import 'admin_shell.dart';
@@ -22,11 +23,15 @@ class AdminBookings extends StatefulWidget {
   State<AdminBookings> createState() => _AdminBookingsState();
 }
 
-class _AdminBookingsState extends State<AdminBookings> {
+class _AdminBookingsState extends State<AdminBookings>
+    with RealtimeRefresh<AdminBookings> {
   String? _status;
   String _query = '';
   final _search = TextEditingController();
   late Future<List<Booking>> _future;
+
+  @override
+  void onRealtimeChange() => _load();
 
   @override
   void initState() {
