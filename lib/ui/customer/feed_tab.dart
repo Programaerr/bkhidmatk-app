@@ -7,7 +7,6 @@ import '../../state/app_state.dart';
 import '../widgets/post_card.dart';
 import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
-import 'create_post_screen.dart';
 import 'post_detail_screen.dart';
 
 class FeedTab extends StatefulWidget {

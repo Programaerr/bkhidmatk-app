@@ -188,7 +188,7 @@ class _HomeTabState extends State<HomeTab> {
                       context,
                       MaterialPageRoute(
                         builder: (_) =>
-                            BookingDetailScreen(bookingId: data!.upcoming!.id!),
+                            BookingDetailScreen(bookingId: data.upcoming!.id!),
                       ),
                     ).then((_) => _load()),
                     child: Row(

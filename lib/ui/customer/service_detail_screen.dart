@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
-import '../../state/app_state.dart';
 import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
 import 'booking_screen.dart';

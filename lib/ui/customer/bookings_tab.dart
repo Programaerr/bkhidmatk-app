@@ -5,7 +5,6 @@ import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
-import '../common/receipt_document.dart';
 import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
 import 'booking_detail_screen.dart';

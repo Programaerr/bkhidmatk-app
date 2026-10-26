@@ -3,13 +3,10 @@ import 'package:provider/provider.dart';
 
 import '../../core/theme.dart';
 import '../../core/utils.dart';
-import '../../data/models.dart';
 import '../../state/app_state.dart';
-import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
 import 'messages_screen.dart';
 import 'receipts_screen.dart';
-import 'services_tab.dart';
 
 class ProfileTab extends StatefulWidget {
   const ProfileTab({super.key, required this.onOpenBookings, required this.onOpenFeed});
@@ -71,7 +68,7 @@ class _ProfileTabState extends State<ProfileTab> {
                 onTap: () async {
                   final picked = await showAppSheet<String>(
                     context,
-                    builder: (c) => SizedBox(
+                    builder: (ctx) => SizedBox(
                       height: 440,
                       child: Column(
                         children: [
@@ -86,7 +83,7 @@ class _ProfileTabState extends State<ProfileTab> {
                                 for (final c in iraqCities)
                                   ListTile(
                                     title: Text(c),
-                                    onTap: () => Navigator.pop(c, c),
+                                    onTap: () => Navigator.pop(ctx, c),
                                   ),
                               ],
                             ),

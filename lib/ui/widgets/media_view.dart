@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../core/theme.dart';
-import 'ui.dart';
 
 bool isAssetMedia(String? path) => path != null && path.startsWith('asset:');
 

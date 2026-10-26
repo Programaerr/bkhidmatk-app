@@ -6,7 +6,6 @@ import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
-import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
 
 class MessagesScreen extends StatefulWidget {
