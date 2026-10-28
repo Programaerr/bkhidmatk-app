@@ -55,10 +55,11 @@ class _ProfileTabState extends State<ProfileTab> with RealtimeRefresh<ProfileTab
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSheetState) => Padding(
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SheetHeader(title: 'تعديل الملف الشخصي'),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SheetHeader(title: 'تعديل الملف الشخصي'),
               const SizedBox(height: 16),
               TextField(
                 controller: name,
@@ -72,8 +73,8 @@ class _ProfileTabState extends State<ProfileTab> with RealtimeRefresh<ProfileTab
                 onTap: () async {
                   final picked = await showAppSheet<String>(
                     context,
-                    builder: (ctx) => SizedBox(
-                      height: 440,
+                    builder: (ctx) => ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 440),
                       child: Column(
                         children: [
                           const Padding(
@@ -120,7 +121,8 @@ class _ProfileTabState extends State<ProfileTab> with RealtimeRefresh<ProfileTab
                 label: 'حفظ التغييرات',
                 onPressed: () => Navigator.pop(ctx, true),
               ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -253,6 +255,54 @@ class _ProfileTabState extends State<ProfileTab> with RealtimeRefresh<ProfileTab
                       ],
                     );
                   },
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          // ------------------------------------------------ بطاقة النقاط
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              gradient: const LinearGradient(
+                begin: Alignment.topRight,
+                end: Alignment.bottomLeft,
+                colors: [AppColors.gold, AppColors.goldDeep],
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: AppColors.ink.withValues(alpha: .12),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                  child: const Icon(Icons.emoji_events_rounded,
+                      color: AppColors.ink, size: 28),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('${user.points} نقطة',
+                          style: const TextStyle(
+                              color: AppColors.ink,
+                              fontSize: 22,
+                              fontWeight: FontWeight.w900,
+                              height: 1.1)),
+                      const SizedBox(height: 2),
+                      Text(
+                        'رصيد مكافآتك — اجمعها بتقييم الفنيين',
+                        style: TextStyle(
+                            color: AppColors.ink.withValues(alpha: .7),
+                            fontSize: 10.5),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),

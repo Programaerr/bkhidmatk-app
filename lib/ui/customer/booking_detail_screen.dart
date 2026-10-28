@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
+import '../../data/repository.dart' show pointsPerStar;
 import '../../state/app_state.dart';
 import '../common/receipt_document.dart';
 import '../widgets/realtime_refresh.dart';
@@ -25,6 +26,17 @@ class _BookingDetailScreenState extends State<BookingDetailScreen>
   Booking? _booking;
   Receipt? _receipt;
   bool _loading = true;
+
+  // نموذج التقييم
+  int _rating = 0;
+  final _review = TextEditingController();
+  bool _ratingBusy = false;
+
+  @override
+  void dispose() {
+    _review.dispose();
+    super.dispose();
+  }
 
   @override
   void onRealtimeChange() => _load();
@@ -66,6 +78,113 @@ class _BookingDetailScreenState extends State<BookingDetailScreen>
     if (!await launchUrl(Uri.parse('tel:${phoneForCall(phone)}'))) {
       if (mounted) AppSnack.show(context, 'تعذر فتح تطبيق الاتصال', error: true);
     }
+  }
+
+  Future<void> _submitRating() async {
+    if (_rating < 1) {
+      AppSnack.show(context, 'اختر عدد النجوم أولاً', error: true);
+      return;
+    }
+    setState(() => _ratingBusy = true);
+    final repo = context.read<AppState>().repo;
+    final points = await repo.rateBooking(
+      bookingId: _booking!.id!,
+      rating: _rating,
+      review: _review.text.trim().isEmpty ? null : _review.text.trim(),
+    );
+    if (!mounted) return;
+    setState(() => _ratingBusy = false);
+    if (points > 0) {
+      await context.read<AppState>().refreshUser();
+      if (!mounted) return;
+      AppSnack.show(context, 'شكراً لتقييمك! أضفنا $points نقطة إلى رصيدك 🎉');
+      _load();
+    } else {
+      AppSnack.show(context, 'لم يتم إضافة نقاط — تحقق من حالة الحجز', error: true);
+    }
+  }
+
+  /// بطاقة تقييم الفني — تظهر للحجز المكتمل وتمنح نقاطاً مقابل التقييم.
+  Widget _ratingCard(ThemeData theme, Booking b) {
+    final alreadyRated = b.rating != null;
+    return SoftCard(
+      borderColor: AppColors.gold.withValues(alpha: .55),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: AppColors.gold.withValues(alpha: .18),
+                  borderRadius: BorderRadius.circular(11),
+                ),
+                child: const Icon(Icons.emoji_events_rounded,
+                    size: 19, color: AppColors.goldDeep),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  alreadyRated ? 'تقييمك لهذا الحجز' : 'قيّم الفني واربح نقاطاً',
+                  style: theme.textTheme.titleSmall?.copyWith(fontSize: 13.5),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          if (alreadyRated) ...[
+            RatingStars(rating: b.rating!.toDouble(), size: 18),
+            if (b.review != null && b.review!.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(b.review!, style: theme.textTheme.bodySmall),
+            ],
+          ] else ...[
+            Text(
+              'كل نجمة = $pointsPerStar نقطة تُضاف إلى رصيدك مباشرة.',
+              style: theme.textTheme.bodySmall?.copyWith(fontSize: 11),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(5, (i) {
+                final star = i + 1;
+                final active = star <= _rating;
+                return IconButton(
+                  onPressed: _ratingBusy
+                      ? null
+                      : () => setState(() => _rating = star),
+                  icon: Icon(
+                    active ? Icons.star_rounded : Icons.star_outline_rounded,
+                    size: 34,
+                    color: active ? const Color(0xFFF5A623) : theme.colorScheme.outline,
+                  ),
+                );
+              }),
+            ),
+            const SizedBox(height: 4),
+            TextFormField(
+              controller: _review,
+              maxLines: 2,
+              maxLength: 200,
+              decoration: const InputDecoration(
+                labelText: 'ملاحظتك عن العمل (اختياري)',
+                hintText: 'اكتب رأيك في جودة الخدمة...',
+              ),
+            ),
+            const SizedBox(height: 12),
+            PrimaryButton(
+              label: 'إرسال التقييم',
+              icon: Icons.how_to_reg_rounded,
+              height: 48,
+              loading: _ratingBusy,
+              onPressed: _ratingBusy ? null : _submitRating,
+            ),
+          ],
+        ],
+      ),
+    );
   }
 
   @override
@@ -225,6 +344,10 @@ class _BookingDetailScreenState extends State<BookingDetailScreen>
                   ],
                 ),
               ),
+            ],
+            if (b.status == BookingStatus.completed) ...[
+              const SizedBox(height: 12),
+              _ratingCard(theme, b),
             ],
             if (canCancel) ...[
               const SizedBox(height: 18),

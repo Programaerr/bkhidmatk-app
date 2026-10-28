@@ -432,6 +432,21 @@ class CloudRepository implements Repository {
   }
 
   @override
+  Future<int> rateBooking({
+    required int bookingId,
+    required int rating,
+    String? review,
+  }) async {
+    // دالة آمنة في القاعدة تتحقق من الملكية وتضيف النقاط داخل معاملة واحدة.
+    final result = await _client.rpc('rate_booking', params: {
+      'p_booking_id': bookingId,
+      'p_rating': rating.clamp(1, 5),
+      'p_review': review,
+    });
+    return (result as num?)?.toInt() ?? 0;
+  }
+
+  @override
   Future<int> bookingsTodayCount() async {
     final now = DateTime.now();
     final start = DateTime(now.year, now.month, now.day);

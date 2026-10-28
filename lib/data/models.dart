@@ -16,6 +16,9 @@ class AppUser {
   final String? avatarPath;
   final DateTime createdAt;
 
+  /// رصيد النقاط المكتسبة من التقييمات والمكافآت.
+  final int points;
+
   const AppUser({
     this.id,
     required this.name,
@@ -27,6 +30,7 @@ class AppUser {
     this.address,
     this.avatarPath,
     required this.createdAt,
+    this.points = 0,
   });
 
   bool get isAdmin => role == 'admin';
@@ -41,6 +45,7 @@ class AppUser {
         'city': city,
         'address': address,
         'avatar': avatarPath,
+        'points': points,
         'created_at': createdAt.toIso8601String(),
       };
 
@@ -55,6 +60,7 @@ class AppUser {
         address: m['address'] as String?,
         avatarPath: m['avatar'] as String?,
         createdAt: _date(m['created_at']) ?? DateTime.now(),
+        points: (m['points'] as num?)?.toInt() ?? 0,
       );
 
   AppUser copyWith({
@@ -64,6 +70,7 @@ class AppUser {
     String? city,
     String? address,
     String? avatarPath,
+    int? points,
   }) =>
       AppUser(
         id: id,
@@ -76,6 +83,7 @@ class AppUser {
         address: address ?? this.address,
         avatarPath: avatarPath ?? this.avatarPath,
         createdAt: createdAt,
+        points: points ?? this.points,
       );
 }
 
@@ -264,6 +272,10 @@ class Booking {
   final double total;
   final DateTime createdAt;
 
+  /// تقييم العامل من العميل بعد اكتمال الحجز (1..5)، وnull إذا لم يقيّم بعد.
+  final int? rating;
+  final String? review;
+
   final String? serviceTitle;
   final String? workerName;
   final String? workerPhone;
@@ -283,6 +295,8 @@ class Booking {
     this.paymentMethod = 'cash',
     required this.total,
     required this.createdAt,
+    this.rating,
+    this.review,
     this.serviceTitle,
     this.workerName,
     this.workerPhone,
@@ -302,6 +316,8 @@ class Booking {
         'status': status,
         'payment_method': paymentMethod,
         'total': total,
+        'rating': rating,
+        'review': review,
         'created_at': createdAt.toIso8601String(),
       };
 
@@ -318,6 +334,8 @@ class Booking {
         paymentMethod: m['payment_method'] as String? ?? 'cash',
         total: (m['total'] as num?)?.toDouble() ?? 0,
         createdAt: _date(m['created_at']) ?? DateTime.now(),
+        rating: (m['rating'] as num?)?.toInt(),
+        review: m['review'] as String?,
         serviceTitle: m['service_title'] as String?,
         workerName: m['worker_name'] as String?,
         workerPhone: m['worker_phone'] as String?,
@@ -325,7 +343,14 @@ class Booking {
         customerPhone: m['customer_phone'] as String?,
       );
 
-  Booking copyWith({String? status, int? workerId, String? workerName}) => Booking(
+  Booking copyWith({
+    String? status,
+    int? workerId,
+    String? workerName,
+    int? rating,
+    String? review,
+  }) =>
+      Booking(
         id: id,
         customerId: customerId,
         serviceId: serviceId,
@@ -338,6 +363,8 @@ class Booking {
         paymentMethod: paymentMethod,
         total: total,
         createdAt: createdAt,
+        rating: rating ?? this.rating,
+        review: review ?? this.review,
         serviceTitle: serviceTitle,
         workerName: workerName ?? this.workerName,
         workerPhone: workerPhone,

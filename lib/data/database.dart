@@ -14,7 +14,7 @@ class AppDatabase {
 
   Database? _db;
   static const _fileName = 'bkhidmatk.db';
-  static const _version = 1;
+  static const _version = 2;
 
   Future<Database> get database async {
     if (_db != null && _db!.isOpen) return _db!;
@@ -30,8 +30,19 @@ class AppDatabase {
         await _createSchema(db);
         await _seed(db);
       },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) await _migrateToV2(db);
+      },
     );
     return _db!;
+  }
+
+  /// v2: نظام النقاط — أعمدة `points` للمستخدم و`rating`/`review` للحجز.
+  Future<void> _migrateToV2(Database db) async {
+    await db.execute(
+        "ALTER TABLE users ADD COLUMN points INTEGER NOT NULL DEFAULT 0");
+    await db.execute('ALTER TABLE bookings ADD COLUMN rating INTEGER');
+    await db.execute('ALTER TABLE bookings ADD COLUMN review TEXT');
   }
 
   Future<void> reset() async {
@@ -59,6 +70,7 @@ class AppDatabase {
         city TEXT,
         address TEXT,
         avatar TEXT,
+        points INTEGER NOT NULL DEFAULT 0,
         created_at TEXT NOT NULL
       )
     ''');
@@ -112,6 +124,8 @@ class AppDatabase {
         status TEXT NOT NULL DEFAULT 'pending',
         payment_method TEXT NOT NULL DEFAULT 'cash',
         total REAL NOT NULL,
+        rating INTEGER,
+        review TEXT,
         created_at TEXT NOT NULL
       )
     ''');

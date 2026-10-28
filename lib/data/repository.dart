@@ -1,5 +1,10 @@
 import 'models.dart';
 
+/// نقاط المكافأة الممنوحة لكل نجمة تقييم: تقييم 5 نجوم = 50 نقطة.
+const int pointsPerStar = 10;
+
+int pointsForRating(int rating) => rating.clamp(1, 5) * pointsPerStar;
+
 /// واجهة البيانات الموحّدة للتطبيق.
 ///
 /// يوجد تنفيذان:
@@ -81,6 +86,17 @@ abstract class Repository {
   Future<void> updateBookingStatus(int id, String status);
 
   Future<void> assignWorker(int bookingId, int? workerId);
+
+  /// تقييم العامل بعد اكتمال الحجز.
+  ///
+  /// يحفظ تقييم العميل (1..5) وملاحظته، ويضيف نقاط مكافأة لرصيد العميل
+  /// ([pointsForRating] نقطة)، ويحدّث متوسط تقييم العامل.
+  /// يعيد عدد النقاط المضافة، أو 0 إذا كان الحجز مقيَّماً مسبقاً.
+  Future<int> rateBooking({
+    required int bookingId,
+    required int rating,
+    String? review,
+  });
 
   Future<int> bookingsTodayCount();
 

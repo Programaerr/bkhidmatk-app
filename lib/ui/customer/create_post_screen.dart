@@ -109,8 +109,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   Future<void> _pickCategory() async {
     final picked = await showAppSheet<Category>(
       context,
-      builder: (ctx) => SizedBox(
-        height: 460,
+      builder: (ctx) => ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: 460),
         child: Column(
           children: [
             const Padding(
@@ -265,7 +265,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 ),
               ] else
                 Container(
-                  height: 170,
+                  constraints: const BoxConstraints(minHeight: 170),
+                  padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
                   decoration: BoxDecoration(
                     color: theme.colorScheme.surface,
                     borderRadius: BorderRadius.circular(AppRadius.md),
@@ -301,21 +302,22 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                             Text('MP4 · JPG · PNG',
                                 style: theme.textTheme.bodySmall?.copyWith(fontSize: 9.5)),
                             const SizedBox(height: 12),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
+                            // Wrap يمنع تداخل الأزرار على الشاشات الضيقة.
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              alignment: WrapAlignment.center,
                               children: [
                                 _PickButton(
                                   icon: Icons.videocam_rounded,
                                   label: 'فيديو',
                                   onTap: () => _pick(ImageSource.gallery, video: true),
                                 ),
-                                const SizedBox(width: 8),
                                 _PickButton(
                                   icon: Icons.photo_library_outlined,
                                   label: 'صورة',
                                   onTap: () => _pick(ImageSource.gallery, video: false),
                                 ),
-                                const SizedBox(width: 8),
                                 _PickButton(
                                   icon: Icons.camera_alt_rounded,
                                   label: 'كاميرا',

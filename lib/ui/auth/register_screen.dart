@@ -39,8 +39,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<void> _pickCity() async {
     final selected = await showAppSheet<String>(
       context,
-      builder: (ctx) => SizedBox(
-        height: 480,
+      builder: (ctx) => ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: 480),
         child: Column(
           children: [
             const Padding(

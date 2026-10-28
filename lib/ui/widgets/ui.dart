@@ -532,8 +532,15 @@ Future<T?> showAppSheet<T>(
     context: context,
     isScrollControlled: isScrollControlled,
     builder: (ctx) => Padding(
+      // رفع المحتوى فوق لوحة المفاتيح حتى لا تتداخل مع الحقول أو الأزرار.
       padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-      child: builder(ctx),
+      child: ConstrainedBox(
+        // تحديد أقصى ارتفاع حسب المساحة المتاحة حتى لا يفيض المحتوى.
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(ctx).height - MediaQuery.viewInsetsOf(ctx).bottom - 24,
+        ),
+        child: builder(ctx),
+      ),
     ),
   );
 }

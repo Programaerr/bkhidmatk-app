@@ -2,7 +2,6 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -112,15 +111,21 @@ class ReceiptDocument extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      _Meta(label: 'التاريخ', value: fmtDate(receipt.createdAt)),
-                      _Meta(label: 'الوقت', value: fmtTimeOfDay(receipt.createdAt)),
+                      _Meta(
+                          label: 'التاريخ', value: fmtDate(receipt.createdAt)),
+                      _Meta(
+                          label: 'الوقت',
+                          value: fmtTimeOfDay(receipt.createdAt)),
                     ],
                   ),
                   const SizedBox(height: 10),
                   Row(
                     children: [
-                      _Meta(label: 'الزبون', value: receipt.customerName ?? 'زبون'),
-                      _Meta(label: 'الهاتف', value: receipt.customerPhone ?? '—'),
+                      _Meta(
+                          label: 'الزبون',
+                          value: receipt.customerName ?? 'زبون'),
+                      _Meta(
+                          label: 'الهاتف', value: receipt.customerPhone ?? '—'),
                     ],
                   ),
                   const SizedBox(height: 14),
@@ -132,10 +137,12 @@ class ReceiptDocument extends StatelessWidget {
                     child: Column(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
                           decoration: const BoxDecoration(
                             color: Color(0xFFF7F7F1),
-                            borderRadius: BorderRadius.vertical(top: Radius.circular(11)),
+                            borderRadius:
+                                BorderRadius.vertical(top: Radius.circular(11)),
                           ),
                           child: const Row(
                             children: [
@@ -156,7 +163,8 @@ class ReceiptDocument extends StatelessWidget {
                           ),
                         ),
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 10),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -166,28 +174,34 @@ class ReceiptDocument extends StatelessWidget {
                                   Expanded(
                                     flex: 3,
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           receipt.serviceTitle ?? receipt.title,
                                           style: const TextStyle(
-                                              fontSize: 12, fontWeight: FontWeight.w800),
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w800),
                                         ),
                                         if (receipt.workerName != null)
                                           Text('الفني: ${receipt.workerName}',
                                               style: const TextStyle(
-                                                  fontSize: 9.5, color: Color(0xFF5F5F66))),
+                                                  fontSize: 9.5,
+                                                  color: Color(0xFF5F5F66))),
                                         if (receipt.bookingId != null)
-                                          Text('رقم الحجز: #${receipt.bookingId}',
+                                          Text(
+                                              'رقم الحجز: #${receipt.bookingId}',
                                               style: const TextStyle(
-                                                  fontSize: 9.5, color: Color(0xFF5F5F66))),
+                                                  fontSize: 9.5,
+                                                  color: Color(0xFF5F5F66))),
                                       ],
                                     ),
                                   ),
                                   Text(
                                     fmtMoney(receipt.amount),
                                     style: const TextStyle(
-                                        fontSize: 12, fontWeight: FontWeight.w800),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w800),
                                   ),
                                 ],
                               ),
@@ -199,7 +213,8 @@ class ReceiptDocument extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 11),
                     decoration: BoxDecoration(
                       color: AppColors.ink,
                       borderRadius: BorderRadius.circular(12),
@@ -227,7 +242,9 @@ class ReceiptDocument extends StatelessWidget {
                   Row(
                     children: [
                       Icon(
-                        isCard ? Icons.credit_card_rounded : Icons.payments_outlined,
+                        isCard
+                            ? Icons.credit_card_rounded
+                            : Icons.payments_outlined,
                         size: 15,
                         color: const Color(0xFF5F5F66),
                       ),
@@ -236,17 +253,23 @@ class ReceiptDocument extends StatelessWidget {
                         isCard
                             ? '${receipt.cardBrand ?? 'Card'} •••• ${receipt.last4 ?? ''}'
                             : 'الدفع نقداً عند الوصول',
-                        style: const TextStyle(fontSize: 10, color: Color(0xFF5F5F66)),
+                        style: const TextStyle(
+                            fontSize: 10, color: Color(0xFF5F5F66)),
                       ),
                       const Spacer(),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 9, vertical: 3),
                         decoration: BoxDecoration(
-                          color: (receipt.paid ? AppColors.success : AppColors.danger)
+                          color: (receipt.paid
+                                  ? AppColors.success
+                                  : AppColors.danger)
                               .withValues(alpha: .1),
                           borderRadius: BorderRadius.circular(100),
                           border: Border.all(
-                            color: (receipt.paid ? AppColors.success : AppColors.danger)
+                            color: (receipt.paid
+                                    ? AppColors.success
+                                    : AppColors.danger)
                                 .withValues(alpha: .3),
                           ),
                         ),
@@ -255,7 +278,9 @@ class ReceiptDocument extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 9,
                             fontWeight: FontWeight.w800,
-                            color: receipt.paid ? AppColors.success : AppColors.danger,
+                            color: receipt.paid
+                                ? AppColors.success
+                                : AppColors.danger,
                           ),
                         ),
                       ),
@@ -283,7 +308,10 @@ class ReceiptDocument extends StatelessWidget {
                       const Expanded(
                         child: Text(
                           'امسح الرمز للتحقق من صحة الوصل.\nهذا الوصل صادر إلكترونياً من تطبيق بخدمتك.',
-                          style: TextStyle(fontSize: 8.5, height: 1.7, color: Color(0xFF5F5F66)),
+                          style: TextStyle(
+                              fontSize: 8.5,
+                              height: 1.7,
+                              color: Color(0xFF5F5F66)),
                         ),
                       ),
                     ],
@@ -294,10 +322,12 @@ class ReceiptDocument extends StatelessWidget {
                   const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.support_agent_rounded, size: 12, color: Color(0xFF5F5F66)),
+                      Icon(Icons.support_agent_rounded,
+                          size: 12, color: Color(0xFF5F5F66)),
                       SizedBox(width: 4),
                       Text('الدعم: 0770 000 0000 · بخدمتك تسعد بخدمتك',
-                          style: TextStyle(fontSize: 8.5, color: Color(0xFF5F5F66))),
+                          style: TextStyle(
+                              fontSize: 8.5, color: Color(0xFF5F5F66))),
                     ],
                   ),
                   const SizedBox(height: 14),
@@ -325,12 +355,15 @@ class _Meta extends StatelessWidget {
         children: [
           Text(label,
               style: const TextStyle(
-                  fontSize: 8.5, color: Color(0xFF8A8A92), fontWeight: FontWeight.w600)),
+                  fontSize: 8.5,
+                  color: Color(0xFF8A8A92),
+                  fontWeight: FontWeight.w600)),
           const SizedBox(height: 1),
           Text(value,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700)),
+              style:
+                  const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700)),
         ],
       ),
     );

@@ -278,8 +278,8 @@ class _BookingSheetState extends State<_BookingSheet> {
   Future<void> _assign() async {
     final picked = await showAppSheet<int>(
       context,
-      builder: (ctx) => SizedBox(
-        height: 430,
+      builder: (ctx) => ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: 430),
         child: Column(
           children: [
             const Padding(

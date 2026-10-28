@@ -293,6 +293,58 @@ class LocalRepository implements Repository {
   }
 
   @override
+  Future<int> rateBooking({
+    required int bookingId,
+    required int rating,
+    String? review,
+  }) async {
+    final db = await _db;
+    final stars = rating.clamp(1, 5);
+    return db.transaction<int>((tx) async {
+      final rows = await tx.query('bookings',
+          columns: ['id', 'customer_id', 'worker_id', 'status', 'rating'],
+          where: 'id = ?',
+          whereArgs: [bookingId],
+          limit: 1);
+      if (rows.isEmpty) return 0;
+      final b = rows.first;
+      if (b['status'] != BookingStatus.completed) return 0;
+      if (b['rating'] != null) return 0; // تقييم مسبق
+
+      await tx.update(
+        'bookings',
+        {'rating': stars, 'review': review},
+        where: 'id = ?',
+        whereArgs: [bookingId],
+      );
+
+      // تحديث متوسط تقييم العامل من كل تقييماته.
+      final workerId = b['worker_id'] as int?;
+      if (workerId != null) {
+        final agg = await tx.rawQuery(
+          'SELECT AVG(rating) a, COUNT(*) c FROM bookings '
+          'WHERE worker_id = ? AND rating IS NOT NULL',
+          [workerId],
+        );
+        await tx.update(
+          'workers',
+          {'rating': ((agg.first['a'] as num?) ?? 0).toDouble()},
+          where: 'id = ?',
+          whereArgs: [workerId],
+        );
+      }
+
+      // إضافة نقاط المكافأة إلى رصيد العميل.
+      final points = pointsForRating(stars);
+      await tx.rawUpdate(
+        'UPDATE users SET points = COALESCE(points,0) + ? WHERE id = ?',
+        [points, b['customer_id'] as int?],
+      );
+      return points;
+    });
+  }
+
+  @override
   Future<int> bookingsTodayCount() async {
     final db = await _db;
     final r = await db.rawQuery(

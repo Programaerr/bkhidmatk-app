@@ -14,8 +14,12 @@ create table if not exists public.profiles (
   city        text,
   address     text,
   avatar      text,
+  points      integer not null default 0,
   created_at  timestamptz not null default now()
 );
+
+-- عمود النقاط (للقواعد التي أُنشئت قبل نظام المكافآت)
+alter table public.profiles add column if not exists points integer not null default 0;
 
 create index if not exists profiles_auth_idx on public.profiles (auth_id);
 create index if not exists profiles_phone_idx on public.profiles (phone);
@@ -71,8 +75,14 @@ create table if not exists public.bookings (
                     check (status in ('pending', 'confirmed', 'in_progress', 'completed', 'cancelled')),
   payment_method  text not null default 'cash' check (payment_method in ('cash', 'card')),
   total           double precision not null default 0,
+  rating          integer check (rating between 1 and 5),
+  review          text,
   created_at      timestamptz not null default now()
 );
+
+-- أعمدة التقييم (للقواعد التي أُنشئت قبل نظام المكافآت)
+alter table public.bookings add column if not exists rating integer check (rating between 1 and 5);
+alter table public.bookings add column if not exists review text;
 
 create index if not exists bookings_customer_idx on public.bookings (customer_id);
 create index if not exists bookings_status_idx on public.bookings (status);
@@ -231,6 +241,63 @@ begin
 end;
 $$;
 
+-- تقييم العامل من صاحب الحجز + إضافة نقاط المكافأة (10 نقاط لكل نجمة)
+create or replace function public.rate_booking(
+  p_booking_id bigint,
+  p_rating integer,
+  p_review text default null
+)
+returns integer
+language plpgsql security definer
+set search_path = public
+as $$
+declare
+  v_owner bigint;
+  v_worker bigint;
+  v_points integer;
+  v_avg double precision;
+begin
+  if p_rating < 1 or p_rating > 5 then
+    raise exception 'التقييم يجب أن يكون بين 1 و 5';
+  end if;
+
+  select customer_id, worker_id into v_owner, v_worker
+    from public.bookings where id = p_booking_id;
+
+  if v_owner is null then
+    raise exception 'الحجز غير موجود';
+  end if;
+  if v_owner <> public.current_profile_id() and not public.is_admin() then
+    raise exception 'لا تملك صلاحية تقييم هذا الحجز';
+  end if;
+
+  update public.bookings
+     set rating = p_rating, review = p_review
+   where id = p_booking_id
+     and status = 'completed'
+     and rating is null;
+  if not found then
+    raise exception 'لا يمكن تقييم هذا الحجز';
+  end if;
+
+  -- تحديث متوسط تقييم الفني
+  if v_worker is not null then
+    select avg(rating) into v_avg
+      from public.bookings
+     where worker_id = v_worker and rating is not null;
+    update public.workers set rating = coalesce(v_avg, 4.8) where id = v_worker;
+  end if;
+
+  -- إضافة نقاط المكافأة إلى رصيد صاحب الحجز
+  v_points := p_rating * 10;
+  update public.profiles
+     set points = coalesce(points, 0) + v_points
+   where id = v_owner;
+
+  return v_points;
+end;
+$$;
+
 -- زيادة عدّاد أعمال الفني عند إكمال الحجز
 create or replace function public.on_booking_status_change()
 returns trigger
@@ -271,7 +338,8 @@ with (security_invoker = true) as
 select
   p.id, p.auth_id, p.name, p.phone,
   ''::text as password,
-  p.role, p.email, p.city, p.address, p.avatar, p.created_at
+  p.role, p.email, p.city, p.address, p.avatar, p.created_at,
+  coalesce(p.points, 0) as points
 from public.profiles p;
 
 create or replace view public.services_view
@@ -293,6 +361,7 @@ with (security_invoker = true) as
 select
   b.id, b.customer_id, b.service_id, b.worker_id, b.scheduled_at, b.slot,
   b.address, b.notes, b.status, b.payment_method, b.total, b.created_at,
+  b.rating, b.review,
   s.title as service_title,
   w.name as worker_name,
   w.phone as worker_phone,
@@ -617,6 +686,7 @@ grant execute on function public.phone_exists(text) to anon, authenticated;
 grant execute on function public.cancel_booking(bigint) to authenticated;
 grant execute on function public.toggle_post_like(bigint, boolean) to authenticated;
 grant execute on function public.increment_worker_jobs(bigint) to authenticated;
+grant execute on function public.rate_booking(bigint, integer, text) to authenticated;
 
 revoke all on public.public_profiles from anon;
 grant select on public.public_profiles to authenticated;

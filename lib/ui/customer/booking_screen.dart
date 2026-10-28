@@ -1,5 +1,4 @@
 ﻿import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/theme.dart';
@@ -54,18 +53,16 @@ class _BookingScreenState extends State<BookingScreen> {
   }
 
   Future<void> _loadWorkers() async {
-    final list = await context
-        .read<AppState>()
-        .repo
-        .listWorkers(categoryId: widget.service.categoryId, onlyAvailable: true);
+    final list = await context.read<AppState>().repo.listWorkers(
+        categoryId: widget.service.categoryId, onlyAvailable: true);
     if (mounted) setState(() => _workers = list);
   }
 
   Future<void> _pickWorker() async {
     final picked = await showAppSheet<int>(
       context,
-      builder: (ctx) => SizedBox(
-        height: 460,
+      builder: (ctx) => ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: 460),
         child: Column(
           children: [
             const Padding(
@@ -94,9 +91,14 @@ class _BookingScreenState extends State<BookingScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(w.name, style: const TextStyle(fontWeight: FontWeight.w800)),
+                                  Text(w.name,
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.w800)),
                                   Text('${w.specialty} · ${w.jobsDone} عمل',
-                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10.5)),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(fontSize: 10.5)),
                                 ],
                               ),
                             ),
@@ -131,7 +133,8 @@ class _BookingScreenState extends State<BookingScreen> {
     if (_method == 'card' && _card == null) {
       final result = await Navigator.push<CardResult>(
         context,
-        MaterialPageRoute(builder: (_) => PaymentScreen(amount: widget.service.price)),
+        MaterialPageRoute(
+            builder: (_) => PaymentScreen(amount: widget.service.price)),
       );
       if (result == null) return;
       setState(() => _card = result);
@@ -169,7 +172,8 @@ class _BookingScreenState extends State<BookingScreen> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => BookingSuccessScreen(booking: booking!, receipt: receipt),
+          builder: (_) =>
+              BookingSuccessScreen(booking: booking!, receipt: receipt),
         ),
       );
     } catch (e) {
@@ -210,7 +214,8 @@ class _BookingScreenState extends State<BookingScreen> {
                       color: AppColors.gold.withValues(alpha: .18),
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: const Icon(Icons.home_repair_service_rounded, size: 22),
+                    child:
+                        const Icon(Icons.home_repair_service_rounded, size: 22),
                   ),
                   const SizedBox(width: 11),
                   Expanded(
@@ -220,20 +225,26 @@ class _BookingScreenState extends State<BookingScreen> {
                         Text(widget.service.title,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.titleSmall?.copyWith(fontSize: 14)),
+                            style: theme.textTheme.titleSmall
+                                ?.copyWith(fontSize: 14)),
                         const SizedBox(height: 2),
-                        Text('${widget.service.categoryName ?? ''} · ${fmtDuration(widget.service.durationMinutes)}',
-                            style: theme.textTheme.bodySmall?.copyWith(fontSize: 10.5)),
+                        Text(
+                            '${widget.service.categoryName ?? ''} · ${fmtDuration(widget.service.durationMinutes)}',
+                            style: theme.textTheme.bodySmall
+                                ?.copyWith(fontSize: 10.5)),
                       ],
                     ),
                   ),
                   Text(fmtMoney(widget.service.price),
-                      style: theme.textTheme.titleSmall?.copyWith(fontSize: 13)),
+                      style:
+                          theme.textTheme.titleSmall?.copyWith(fontSize: 13)),
                 ],
               ),
             ),
             const SizedBox(height: 20),
-            const SectionHeader(title: 'الفني', subtitle: 'يمكنك ترك الاختيار لنا وسنرسل الأنسب'),
+            const SectionHeader(
+                title: 'الفني',
+                subtitle: 'يمكنك ترك الاختيار لنا وسنرسل الأنسب'),
             SoftCard(
               onTap: _pickWorker,
               child: Row(
@@ -245,9 +256,11 @@ class _BookingScreenState extends State<BookingScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(worker?.name ?? 'اختيار تلقائي',
-                            style: theme.textTheme.titleSmall?.copyWith(fontSize: 13.5)),
+                            style: theme.textTheme.titleSmall
+                                ?.copyWith(fontSize: 13.5)),
                         Text(worker?.specialty ?? 'سنختار أفضل فني متاح',
-                            style: theme.textTheme.bodySmall?.copyWith(fontSize: 10.5)),
+                            style: theme.textTheme.bodySmall
+                                ?.copyWith(fontSize: 10.5)),
                       ],
                     ),
                   ),
@@ -272,10 +285,14 @@ class _BookingScreenState extends State<BookingScreen> {
                       duration: const Duration(milliseconds: 160),
                       width: 62,
                       decoration: BoxDecoration(
-                        color: selected ? AppColors.ink : theme.colorScheme.surface,
+                        color: selected
+                            ? AppColors.ink
+                            : theme.colorScheme.surface,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                            color: selected ? AppColors.ink : theme.colorScheme.outline),
+                            color: selected
+                                ? AppColors.ink
+                                : theme.colorScheme.outline),
                       ),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -285,7 +302,10 @@ class _BookingScreenState extends State<BookingScreen> {
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
-                              color: selected ? Colors.white60 : theme.colorScheme.onSurface.withValues(alpha: .6),
+                              color: selected
+                                  ? Colors.white60
+                                  : theme.colorScheme.onSurface
+                                      .withValues(alpha: .6),
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -294,14 +314,19 @@ class _BookingScreenState extends State<BookingScreen> {
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.w900,
-                              color: selected ? AppColors.gold : theme.colorScheme.onSurface,
+                              color: selected
+                                  ? AppColors.gold
+                                  : theme.colorScheme.onSurface,
                             ),
                           ),
                           Text(
                             _monthShort(day.month),
                             style: TextStyle(
                               fontSize: 9,
-                              color: selected ? Colors.white54 : theme.colorScheme.onSurface.withValues(alpha: .5),
+                              color: selected
+                                  ? Colors.white54
+                                  : theme.colorScheme.onSurface
+                                      .withValues(alpha: .5),
                             ),
                           ),
                         ],
@@ -330,7 +355,9 @@ class _BookingScreenState extends State<BookingScreen> {
                             : theme.colorScheme.surface,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: _slot == slot ? AppColors.gold : theme.colorScheme.outline,
+                          color: _slot == slot
+                              ? AppColors.gold
+                              : theme.colorScheme.outline,
                           width: _slot == slot ? 1.6 : 1,
                         ),
                       ),
@@ -384,7 +411,8 @@ class _BookingScreenState extends State<BookingScreen> {
                     selected: _method == 'card',
                     icon: Icons.credit_card_rounded,
                     title: 'ماستركارد',
-                    subtitle: _card == null ? 'دفع آمن' : '•••• ${_card!.last4}',
+                    subtitle:
+                        _card == null ? 'دفع آمن' : '•••• ${_card!.last4}',
                     onTap: () => setState(() => _method = 'card'),
                   ),
                 ),
@@ -412,7 +440,8 @@ class _BookingScreenState extends State<BookingScreen> {
                           final result = await Navigator.push<CardResult>(
                             context,
                             MaterialPageRoute(
-                                builder: (_) => PaymentScreen(amount: widget.service.price)),
+                                builder: (_) => PaymentScreen(
+                                    amount: widget.service.price)),
                           );
                           if (result != null) setState(() => _card = result);
                         },
@@ -426,10 +455,14 @@ class _BookingScreenState extends State<BookingScreen> {
             SoftCard(
               child: Column(
                 children: [
-                  _SummaryRow(label: 'سعر الخدمة', value: fmtMoney(widget.service.price)),
+                  _SummaryRow(
+                      label: 'سعر الخدمة',
+                      value: fmtMoney(widget.service.price)),
                   const SizedBox(height: 8),
                   _SummaryRow(label: 'رسوم التطبيق', value: fmtMoney(0)),
-                  const Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Divider()),
+                  const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 10),
+                      child: Divider()),
                   _SummaryRow(
                     label: 'الإجمالي',
                     value: fmtMoney(widget.service.price),
@@ -449,8 +482,12 @@ class _BookingScreenState extends State<BookingScreen> {
             border: Border(top: BorderSide(color: theme.colorScheme.outline)),
           ),
           child: PrimaryButton(
-            label: _method == 'card' && _card == null ? 'متابعة الدفع' : 'تأكيد الحجز',
-            icon: _method == 'card' ? Icons.lock_outline_rounded : Icons.check_circle_outline_rounded,
+            label: _method == 'card' && _card == null
+                ? 'متابعة الدفع'
+                : 'تأكيد الحجز',
+            icon: _method == 'card'
+                ? Icons.lock_outline_rounded
+                : Icons.check_circle_outline_rounded,
             loading: _loading,
             onPressed: _confirm,
           ),
@@ -459,8 +496,20 @@ class _BookingScreenState extends State<BookingScreen> {
     );
   }
 
-  String _monthShort(int m) =>
-      const ['كانون2', 'شباط', 'آذار', 'نيسان', 'أيار', 'حزيران', 'تموز', 'آب', 'أيلول', 'تشرين1', 'تشرين2', 'كانون1'][m - 1];
+  String _monthShort(int m) => const [
+        'كانون2',
+        'شباط',
+        'آذار',
+        'نيسان',
+        'أيار',
+        'حزيران',
+        'تموز',
+        'آب',
+        'أيلول',
+        'تشرين1',
+        'تشرين2',
+        'كانون1'
+      ][m - 1];
 
   static const _slots = [
     '09:00',
@@ -502,7 +551,9 @@ class _PayOption extends StatelessWidget {
         duration: const Duration(milliseconds: 160),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: selected ? AppColors.gold.withValues(alpha: .16) : theme.colorScheme.surface,
+          color: selected
+              ? AppColors.gold.withValues(alpha: .16)
+              : theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
               color: selected ? AppColors.gold : theme.colorScheme.outline,
@@ -516,15 +567,22 @@ class _PayOption extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800)),
-                  Text(subtitle, style: theme.textTheme.bodySmall?.copyWith(fontSize: 10)),
+                  Text(title,
+                      style: const TextStyle(
+                          fontSize: 12.5, fontWeight: FontWeight.w800)),
+                  Text(subtitle,
+                      style: theme.textTheme.bodySmall?.copyWith(fontSize: 10)),
                 ],
               ),
             ),
             Icon(
-              selected ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded,
+              selected
+                  ? Icons.radio_button_checked_rounded
+                  : Icons.radio_button_off_rounded,
               size: 18,
-              color: selected ? AppColors.gold : theme.colorScheme.onSurface.withValues(alpha: .3),
+              color: selected
+                  ? AppColors.gold
+                  : theme.colorScheme.onSurface.withValues(alpha: .3),
             ),
           ],
         ),
@@ -534,7 +592,8 @@ class _PayOption extends StatelessWidget {
 }
 
 class _SummaryRow extends StatelessWidget {
-  const _SummaryRow({required this.label, required this.value, this.bold = false});
+  const _SummaryRow(
+      {required this.label, required this.value, this.bold = false});
 
   final String label;
   final String value;
@@ -561,5 +620,3 @@ class _SummaryRow extends StatelessWidget {
     );
   }
 }
-
-
