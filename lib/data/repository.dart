@@ -5,26 +5,16 @@ const int pointsPerStar = 10;
 
 int pointsForRating(int rating) => rating.clamp(1, 5) * pointsPerStar;
 
-/// واجهة البيانات الموحّدة للتطبيق.
-///
-/// يوجد تنفيذان:
-/// * [LocalRepository] — SQLite على الجهاز (وضع تجريبي بدون إنترنت).
-/// * `CloudRepository` — Supabase (قاعدة بيانات مشتركة بين كل المستخدمين).
-///
-/// كل شاشات التطبيق تتعامل مع هذه الواجهة فقط، لذلك يمكن تبديل مصدر البيانات
-/// دون تغيير أي شاشة.
+/// واجهة البيانات الموحّدة للتطبيق — تنفيذها الحالي [LocalRepository]
+/// (SQLite على الجهاز، كل شيء محلي).
 abstract class Repository {
-  /// بثّ يُطلق إشارة قصيرة عند تغيّر البيانات على الخادم (Realtime).
-  /// في الوضع المحلي لا يصدر أي إشارة (البيانات محلية أصلاً).
+  /// بثّ يُطلق إشارة قصيرة عند تغيّر البيانات. محلياً لا تصدر أي إشارة.
   Stream<void> get changes;
 
   // ---------------------------------------------------------------- users
   Future<AppUser?> findUserByPhone(String phone);
 
   Future<AppUser?> userById(int id);
-
-  /// جلب الملف الشخصي المرتبط بمعرّف مصادقة Supabase.
-  Future<AppUser?> userByAuthId(String authId);
 
   Future<int> createUser(AppUser user);
 

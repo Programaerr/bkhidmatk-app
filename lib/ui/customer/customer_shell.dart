@@ -7,7 +7,6 @@ import 'feed_tab.dart';
 import 'home_tab.dart';
 import 'profile_tab.dart';
 import 'services_tab.dart';
-
 class CustomerShell extends StatefulWidget {
   const CustomerShell({super.key});
 
@@ -48,7 +47,18 @@ class _CustomerShellState extends State<CustomerShell> {
         onOpenFeed: () => setState(() => _index = 3),
         onOpenBookings: () => setState(() => _index = 2),
       ),
-      const ServicesTab(),
+      SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            CustomerHeader(
+              title: 'كل الخدمات',
+              subtitle: 'اختر الخدمة المناسبة واحجز خلال دقيقة',
+            ),
+            const Expanded(child: ServicesTab()),
+          ],
+        ),
+      ),
       BookingsTab(onBrowse: () => setState(() => _index = 1)),
       FeedTab(refreshTick: _feedTick, onCreate: _createPost),
       ProfileTab(

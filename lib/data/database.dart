@@ -334,6 +334,7 @@ class AppDatabase {
       'role': 'customer',
       'city': 'بغداد',
       'address': 'بغداد - حي الجامعة، شارع 20',
+      'points': 100,
       'created_at': today.subtract(const Duration(days: 60)).toIso8601String(),
     });
 

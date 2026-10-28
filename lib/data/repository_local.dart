@@ -7,8 +7,7 @@ import 'database.dart';
 import 'models.dart';
 import 'repository.dart';
 
-/// تنفيذ قاعدة البيانات المحلية (SQLite) — يُستخدم عندما لا تكون
-/// إعدادات Supabase مُمرَّرة وقت البناء.
+/// تنفيذ قاعدة البيانات المحلية (SQLite) — التخزين الوحيد للتطبيق.
 class LocalRepository implements Repository {
   LocalRepository();
   final AppDatabase _appDb = AppDatabase.instance;
@@ -16,9 +15,6 @@ class LocalRepository implements Repository {
 
   @override
   Stream<void> get changes => const Stream<void>.empty();
-
-  @override
-  Future<AppUser?> userByAuthId(String authId) async => null;
 
   // ---------------------------------------------------------------- users
   @override

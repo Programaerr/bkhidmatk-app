@@ -5,8 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../state/app_state.dart';
 
-/// يعيد تحميل بيانات الشاشة تلقائياً عند أي تغيير على قاعدة البيانات
-/// المشتركة (Supabase Realtime). في الوضع المحلي لا تصل أي أحداث.
+/// يعيد تحميل بيانات الشاشة تلقائياً عند أي تغيير في البيانات.
 mixin RealtimeRefresh<T extends StatefulWidget> on State<T> {
   StreamSubscription<void>? _realtimeSub;
 

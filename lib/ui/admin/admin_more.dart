@@ -226,38 +226,26 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
                           style: TextStyle(fontSize: 10.5)),
                     ),
                     const Divider(height: 1),
-                    if (!state.isCloud)
-                      _Tile(
-                        icon: Icons.restart_alt_rounded,
-                        title: 'إعادة ضبط البيانات التجريبية',
-                        subtitle: 'حذف كل التعديلات والعودة لبيانات البداية',
-                        danger: true,
-                        onTap: () async {
-                          final ok = await confirmAction(
-                            context,
-                            title: 'إعادة الضبط؟',
-                            message:
-                                'سيتم حذف كل الحجوزات والمنشورات والزبائن الذين أنشأتهم، والعودة للبيانات التجريبية الأصلية.',
-                            confirmLabel: 'إعادة الضبط',
-                            danger: true,
-                          );
-                          if (!ok) return;
-                          await context.read<AppState>().repo.resetDemoData();
-                          if (!mounted) return;
-                          await context.read<AppState>().logout();
-                        },
-                      )
-                    else
-                      _Tile(
-                        icon: Icons.cloud_done_rounded,
-                        title: 'البيانات مشتركة عبر السحابة',
-                        subtitle:
-                            'المنشورات والحجوزات محفوظة في قاعدة البيانات المشتركة وتظهر لكل المستخدمين',
-                        onTap: () => AppSnack.show(
+                    _Tile(
+                      icon: Icons.restart_alt_rounded,
+                      title: 'إعادة ضبط البيانات التجريبية',
+                      subtitle: 'حذف كل التعديلات والعودة لبيانات البداية',
+                      danger: true,
+                      onTap: () async {
+                        final ok = await confirmAction(
                           context,
-                          'لا يمكن إعادة ضبط البيانات المشتركة من التطبيق',
-                        ),
-                      ),
+                          title: 'إعادة الضبط؟',
+                          message:
+                              'سيتم حذف كل الحجوزات والمنشورات والزبائن الذين أنشأتهم، والعودة للبيانات التجريبية الأصلية.',
+                          confirmLabel: 'إعادة الضبط',
+                          danger: true,
+                        );
+                        if (!ok) return;
+                        await context.read<AppState>().repo.resetDemoData();
+                        if (!mounted) return;
+                        await context.read<AppState>().logout();
+                      },
+                    ),
                   ],
                 ),
               ),

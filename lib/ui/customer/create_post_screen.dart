@@ -169,12 +169,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _busy = false);
-      final cloud = context.read<AppState>().isCloud;
       AppSnack.show(
         context,
-        cloud
-            ? 'تعذر رفع العمل. تحقق من الإنترنت، أو اختر صورة/فيديو أصغر (الحد 50 ميجابايت)'
-            : 'تعذر نشر العمل، حاول مرة أخرى',
+        'تعذر نشر العمل، حاول مرة أخرى',
         error: true,
       );
     }

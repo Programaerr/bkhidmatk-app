@@ -5,8 +5,7 @@
 وللمدير لوحة تحكم كاملة.
 
 - **Flutter** + Provider + Cairo + Material 3 (فاتح/داكن)
-- **الوضع المحلي**: SQLite على الجهاز (بيانات تجريبية جاهزة)
-- **الوضع المشترك**: Supabase (Postgres + Auth + Storage + Realtime)
+- **كل شيء محلي**: SQLite على الجهاز — بدون إنترنت وبدون أي خدمات سحابية (لا Supabase)
 
 ## تشغيل سريع
 
@@ -15,25 +14,22 @@ flutter pub get
 flutter run
 ```
 
-بدون إعدادات إضافية يعمل التطبيق محلياً:
+بدون أي إعدادات إضافية — البيانات كلها محفوظة على الجهاز:
 
 | الحساب | الهاتف | كلمة المرور |
 |---|---|---|
 | مدير | `07700000000` | `admin123` |
 | زبون | `07701234567` | `123456` |
 
-## تشغيل البيانات المشتركة بين كل المستخدمين
+## نظام النقاط
 
-اتبع الخطوات في [`supabase/SETUP.md`](supabase/SETUP.md) (إنشاء مشروع
-Supabase، تنفيذ `supabase/schema.sql` ثم `supabase/seed.sql`، وإضافة
-`SUPABASE_URL` و`SUPABASE_ANON_KEY` كـ GitHub Secrets أو كـ `--dart-define`).
+كل نجمة تقييم على حجز مكتمل = 10 نقاط تُضاف مباشرة إلى رصيد الزبون
+وتظهر في «حسابي».
 
 ## بناء APK
 
 ```bash
-flutter build apk --release \
-  --dart-define=SUPABASE_URL=https://YOUR-PROJECT.supabase.co \
-  --dart-define=SUPABASE_ANON_KEY=YOUR-ANON-KEY
+flutter build apk --release
 ```
 
 أو اترك البناء للـ GitHub Actions: ملف `.github/workflows/build-apk.yml`
@@ -47,16 +43,12 @@ flutter build apk --release \
 ```
 lib/
   core/            الألوان، الثيم، أدوات مساعدة
-  data/            النماذج + Repository (محلي SQLite وسحابي Supabase)
-  state/           AppState: الجلسة، الثيم، اختيار قاعدة البيانات
+  data/            النماذج + قاعدة بيانات SQLite المحلية
+  state/           AppState: الجلسة والثيم
   ui/
     auth/          الدخول والتسجيل
     customer/      الرئيسية، الخدمات، الحجز، الدفع، الوصولات، الرسائل
     admin/         لوحة التحكم والإدارة
     common/        مستند الوصل (A5 PDF)
-    widgets/       مكوّنات مشتركة + تحديث فوري Realtime
-supabase/
-  schema.sql       الجداول + RLS + Views + RPCs + Storage + Realtime
-  seed.sql         بيانات تجريبية مرتبطة بحسابات الدخول
-  SETUP.md         دليل الإعداد خطوة بخطوة
+    widgets/       مكوّنات مشتركة
 ```
