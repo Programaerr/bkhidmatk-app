@@ -15,8 +15,9 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.bkhidmatk.bkhidmatk"
+        // Unique Application ID — changed from com.bkhidmatk.bkhidmatk to avoid
+        // conflicts with a previously installed build signed with another key.
+        applicationId = "com.bkhidmatk.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = maxOf(23, flutter.minSdkVersion)
