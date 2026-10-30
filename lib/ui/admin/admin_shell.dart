@@ -97,7 +97,12 @@ class AdminHeader extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Text(title, style: theme.textTheme.titleLarge?.copyWith(fontSize: 19)),
+                      Flexible(
+                        child: Text(title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.titleLarge?.copyWith(fontSize: 19)),
+                      ),
                       if (!showBack) ...[
                         const SizedBox(width: 6),
                         Container(

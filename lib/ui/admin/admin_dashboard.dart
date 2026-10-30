@@ -103,8 +103,12 @@ class _AdminDashboardState extends State<AdminDashboard>
                         children: [
                           Row(
                             children: [
-                              const Text('إيرادات آخر 7 أيام',
-                                  style: TextStyle(color: Colors.white60, fontSize: 10.5)),
+                              Flexible(
+                                child: Text('إيرادات آخر 7 أيام',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(color: Colors.white60, fontSize: 10.5)),
+                              ),
                               const Spacer(),
                               Container(
                                 padding:

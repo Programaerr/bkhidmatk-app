@@ -97,6 +97,7 @@ colors = """<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="launch_bg">#FFD400</color>
     <color name="launch_bg_dark">#0B0B0D</color>
+    <color name="ic_launcher_background">#FDD305</color>
 </resources>
 """
 write(os.path.join(MAIN, "res", "values", "colors.xml"), colors)

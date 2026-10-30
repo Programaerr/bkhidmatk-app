@@ -138,8 +138,12 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
                         Icon(Icons.search_rounded,
                             size: 22, color: theme.colorScheme.onSurface.withValues(alpha: .5)),
                         const SizedBox(width: 8),
-                        Text('ابحث عن كهربائي، صباغ، تصليح غسالات...',
-                            style: theme.textTheme.bodySmall?.copyWith(fontSize: 11.5)),
+                        Expanded(
+                          child: Text('ابحث عن كهربائي، صباغ، تصليح غسالات...',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodySmall?.copyWith(fontSize: 11.5)),
+                        ),
                       ],
                     ),
                   ),
@@ -380,28 +384,34 @@ class _HeroBanner extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(100),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(100),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text('احجز الآن',
+                                  style: TextStyle(
+                                      fontSize: 10, fontWeight: FontWeight.w800, color: AppColors.ink)),
+                              SizedBox(width: 2),
+                              Icon(Icons.chevron_left_rounded, size: 14, color: AppColors.ink),
+                            ],
+                          ),
                         ),
-                        child: const Row(
-                          children: [
-                            Text('احجز الآن',
-                                style: TextStyle(
-                                    fontSize: 10, fontWeight: FontWeight.w800, color: AppColors.ink)),
-                            SizedBox(width: 2),
-                            Icon(Icons.chevron_left_rounded, size: 14, color: AppColors.ink),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Text('لفترة محدودة',
-                          style: TextStyle(color: Colors.white54, fontSize: 8.5)),
-                    ],
+                        const SizedBox(width: 8),
+                        const Text('لفترة محدودة',
+                            style: TextStyle(color: Colors.white54, fontSize: 8.5)),
+                      ],
+                    ),
                   ),
                 ],
               ),

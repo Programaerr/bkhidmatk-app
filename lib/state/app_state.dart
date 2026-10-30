@@ -8,7 +8,7 @@ import '../data/repository_local.dart';
 
 /// حالة التطبيق — تعمل بالكامل محلياً على الجهاز (SQLite).
 class AppState extends ChangeNotifier {
-  AppState() : repo = LocalRepository();
+  AppState({Repository? repository}) : repo = repository ?? LocalRepository();
 
   final Repository repo;
 

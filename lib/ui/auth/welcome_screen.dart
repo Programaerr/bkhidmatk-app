@@ -63,16 +63,23 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             ),
           ),
           SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
+            child: LayoutBuilder(
+              builder: (context, constraints) => SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: IntrinsicHeight(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
                 Padding(
                   padding: const EdgeInsets.fromLTRB(22, 16, 22, 0),
                   child: Row(
                     children: [
                       const BrandLogo(size: 46, radius: 14),
                       const SizedBox(width: 10),
-                      const BrandTitle(fontSize: 22, color: Colors.white),
+                      const Flexible(
+                        child: BrandTitle(fontSize: 22, color: Colors.white),
+                      ),
                       const Spacer(),
                       TextButton(
                         onPressed: () => Navigator.push(
@@ -175,11 +182,15 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                         Row(
                           children: [
                             const Expanded(child: Divider()),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 10),
-                              child: Text(
-                                'تجربة سريعة بدون تسجيل',
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11),
+                            Flexible(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 10),
+                                child: Text(
+                                  'تجربة سريعة بدون تسجيل',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11),
+                                ),
                               ),
                             ),
                             const Expanded(child: Divider()),
@@ -214,6 +225,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               ],
             ),
           ),
+        ),
+      ),
+    ),
+  ),
         ],
       ),
     );
@@ -289,7 +304,14 @@ class _DemoButton extends StatelessWidget {
           children: [
             Icon(icon, size: 18),
             const SizedBox(width: 6),
-            Text(label, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800)),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800),
+              ),
+            ),
           ],
         ),
       ),

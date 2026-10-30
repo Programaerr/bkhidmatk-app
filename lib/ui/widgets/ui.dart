@@ -277,7 +277,12 @@ class PrimaryButton extends StatelessWidget {
           Icon(icon, size: 20),
           const SizedBox(width: 8),
         ],
-        Text(label),
+        Flexible(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(label, maxLines: 1),
+          ),
+        ),
       ],
     );
     return SizedBox(
@@ -587,13 +592,17 @@ class FieldLabel extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 7, top: 2),
       child: Row(
         children: [
-          Text(
-            text,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w700,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
+          Flexible(
+            child: Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+            ),
           ),
           if (required_)
             const Text(' *', style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.w800)),
@@ -669,34 +678,49 @@ class StatTile extends StatelessWidget {
     final theme = Theme.of(context);
     return SoftCard(
       onTap: onTap,
-      padding: const EdgeInsets.all(14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: .16),
-                  borderRadius: BorderRadius.circular(10),
+      padding: const EdgeInsets.all(11),
+      // يتكيف مع ارتفاع الخلية فلا يخرج المحتوى أبداً (حتى مع تكبير الخط).
+      child: LayoutBuilder(
+        builder: (context, constraints) => ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: constraints.maxHeight),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: AlignmentDirectional.topStart,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: color.withValues(alpha: .16),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(icon, size: 17, color: color == AppColors.gold ? null : color),
+                    ),
+                    const SizedBox(width: 6),
+                    Icon(Icons.arrow_outward_rounded,
+                        size: 14, color: theme.colorScheme.onSurface.withValues(alpha: .35)),
+                  ],
                 ),
-                child: Icon(icon, size: 18, color: color == AppColors.gold ? null : color),
-              ),
-              const Spacer(),
-              Icon(Icons.arrow_outward_rounded,
-                  size: 14, color: theme.colorScheme.onSurface.withValues(alpha: .35)),
-            ],
+                const SizedBox(height: 8),
+                Text(value,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900)),
+                const SizedBox(height: 2),
+                Text(label,
+                    style: theme.textTheme.bodySmall,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis),
+              ],
+            ),
           ),
-          const SizedBox(height: 10),
-          Text(value,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900)),
-          const SizedBox(height: 2),
-          Text(label, style: theme.textTheme.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
-        ],
+        ),
       ),
     );
   }

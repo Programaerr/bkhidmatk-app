@@ -190,9 +190,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       children: [
                         const Icon(Icons.science_outlined, size: 16),
                         const SizedBox(width: 6),
-                        Text('دخول تجريبي سريع',
+                        Flexible(
+                          child: Text(
+                            'دخول تجريبي سريع',
+                            overflow: TextOverflow.ellipsis,
                             style: theme.textTheme.bodySmall
-                                ?.copyWith(fontWeight: FontWeight.w800, color: theme.colorScheme.onSurface)),
+                                ?.copyWith(fontWeight: FontWeight.w800, color: theme.colorScheme.onSurface),
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 10),
