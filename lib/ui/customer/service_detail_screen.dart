@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme.dart';
 import '../../core/utils.dart';
@@ -13,13 +12,6 @@ class ServiceDetailScreen extends StatelessWidget {
   const ServiceDetailScreen({super.key, required this.service});
 
   final Service service;
-
-  Future<void> _call(BuildContext context, String phone) async {
-    final uri = Uri.parse('tel:${phoneForCall(phone)}');
-    if (!await launchUrl(uri)) {
-      if (context.mounted) AppSnack.show(context, 'تعذر فتح تطبيق الاتصال', error: true);
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -191,22 +183,15 @@ class ServiceDetailScreen extends StatelessWidget {
                             ],
                           ),
                         ),
-                        if (service.workerPhone != null) ...[
-                          AppIconButton(
-                            icon: Icons.call_outlined,
-                            tooltip: 'اتصال',
-                            onTap: () => _call(context, service.workerPhone!),
+                        // التواصل يتم عبر بخدمتك فقط: لا اتصال مباشر بالفني.
+                        AppIconButton(
+                          icon: Icons.chat_bubble_outline_rounded,
+                          tooltip: 'مراسلة بخدمتك',
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const MessagesScreen()),
                           ),
-                          const SizedBox(width: 6),
-                          AppIconButton(
-                            icon: Icons.chat_bubble_outline_rounded,
-                            tooltip: 'مراسلة',
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (_) => const MessagesScreen()),
-                            ),
-                          ),
-                        ],
+                        ),
                       ],
                     ),
                   ),

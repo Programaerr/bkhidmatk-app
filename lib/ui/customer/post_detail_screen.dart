@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme.dart';
 import '../../core/utils.dart';
@@ -71,13 +70,6 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     _comment.clear();
     await _load();
     if (mounted) setState(() => _sending = false);
-  }
-
-  Future<void> _call(String? phone) async {
-    if (phone == null) return;
-    if (!await launchUrl(Uri.parse('tel:${phoneForCall(phone)}'))) {
-      if (mounted) AppSnack.show(context, 'تعذر فتح تطبيق الاتصال', error: true);
-    }
   }
 
   @override
@@ -159,11 +151,6 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                           ],
                         ),
                       ),
-                      if (post.customerPhone != null)
-                        AppIconButton(
-                          icon: Icons.call_outlined,
-                          onTap: () => _call(post.customerPhone),
-                        ),
                     ],
                   ),
                   const SizedBox(height: 14),

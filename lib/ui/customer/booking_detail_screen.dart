@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme.dart';
 import '../../core/utils.dart';
@@ -72,12 +71,6 @@ class _BookingDetailScreenState extends State<BookingDetailScreen>
     if (!mounted) return;
     AppSnack.show(context, 'تم إلغاء الحجز');
     _load();
-  }
-
-  Future<void> _call(String phone) async {
-    if (!await launchUrl(Uri.parse('tel:${phoneForCall(phone)}'))) {
-      if (mounted) AppSnack.show(context, 'تعذر فتح تطبيق الاتصال', error: true);
-    }
   }
 
   Future<void> _submitRating() async {
@@ -272,11 +265,6 @@ class _BookingDetailScreenState extends State<BookingDetailScreen>
                       ],
                     ),
                   ),
-                  if (b.workerPhone != null)
-                    AppIconButton(
-                      icon: Icons.call_outlined,
-                      onTap: () => _call(b.workerPhone!),
-                    ),
                 ],
               ),
             ),
