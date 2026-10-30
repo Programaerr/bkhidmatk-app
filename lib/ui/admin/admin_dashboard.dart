@@ -8,20 +8,20 @@ import '../../state/app_state.dart';
 import '../widgets/realtime_refresh.dart';
 import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
-import 'admin_posts.dart';
 import 'admin_shell.dart';
+import 'admin_threads.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({
     super.key,
     required this.onOpenBookings,
     required this.onOpenMessages,
-    required this.onOpenPosts,
+    required this.onOpenWorks,
   });
 
   final VoidCallback onOpenBookings;
   final VoidCallback onOpenMessages;
-  final VoidCallback onOpenPosts;
+  final VoidCallback onOpenWorks;
 
   @override
   State<AdminDashboard> createState() => _AdminDashboardState();
@@ -46,8 +46,8 @@ class _AdminDashboardState extends State<AdminDashboard>
       _future = () async {
         final stats = await repo.stats();
         final bookings = await repo.allBookings();
-        final pendingPosts = await repo.pendingPostsCount();
-        return (stats, bookings.take(4).toList(), pendingPosts);
+        final works = await repo.workCount();
+        return (stats, bookings.take(4).toList(), works);
       }();
     });
   }
@@ -82,7 +82,7 @@ class _AdminDashboardState extends State<AdminDashboard>
               final stats = snapshot.data?.$1 ??
                   const AppStats(weekly: <RevenuePoint>[]);
               final bookings = snapshot.data?.$2 ?? const <Booking>[];
-              final pendingPosts = snapshot.data?.$3 ?? 0;
+              final works = snapshot.data?.$3 ?? 0;
               return RefreshIndicator(
                 onRefresh: () async => _load(),
                 child: ListView(
@@ -174,11 +174,11 @@ class _AdminDashboardState extends State<AdminDashboard>
                           color: AppColors.info,
                         ),
                         StatTile(
-                          label: 'أعمال بانتظار الاعتماد',
-                          value: '$pendingPosts',
-                          icon: Icons.video_settings_rounded,
+                          label: 'أعمالنا',
+                          value: '$works',
+                          icon: Icons.video_library_rounded,
                           color: AppColors.violet,
-                          onTap: widget.onOpenPosts,
+                          onTap: widget.onOpenWorks,
                         ),
                       ],
                     ),
@@ -255,7 +255,7 @@ class _AdminDashboardState extends State<AdminDashboard>
                           child: _QuickAction(
                             icon: Icons.video_library_rounded,
                             label: 'الأعمال',
-                            onTap: widget.onOpenPosts,
+                            onTap: widget.onOpenWorks,
                           ),
                         ),
                         const SizedBox(width: 10),

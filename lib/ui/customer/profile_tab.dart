@@ -10,10 +10,16 @@ import 'messages_screen.dart';
 import 'receipts_screen.dart';
 
 class ProfileTab extends StatefulWidget {
-  const ProfileTab({super.key, required this.onOpenBookings, required this.onOpenFeed});
+  const ProfileTab({
+    super.key,
+    required this.onOpenBookings,
+    this.workerMode = false,
+  });
 
   final VoidCallback onOpenBookings;
-  final VoidCallback onOpenFeed;
+
+  /// وضع الموظف بالتوضيف: يُخفى كل ما لا يخصه (حجوزات، وصولات، نقاط).
+  final bool workerMode;
 
   @override
   State<ProfileTab> createState() => _ProfileTabState();
@@ -37,7 +43,6 @@ class _ProfileTabState extends State<ProfileTab> with RealtimeRefresh<ProfileTab
     setState(() {
       _stats = Future.wait([
         state.repo.bookingsForCustomer(id).then((v) => v.length),
-        state.repo.listPosts(customerId: id, onlyApproved: false).then((v) => v.length),
         state.repo.receiptsForUser(id).then((v) => v.length),
       ]);
     });
@@ -241,104 +246,104 @@ class _ProfileTabState extends State<ProfileTab> with RealtimeRefresh<ProfileTab
                   ],
                 ),
                 const SizedBox(height: 16),
-                FutureBuilder<List<int>>(
-                  future: _stats,
-                  builder: (context, snapshot) {
-                    final s = snapshot.data ?? const [0, 0, 0];
-                    return Row(
-                      children: [
-                        _Stat(label: 'حجز', value: '${s[0]}'),
-                        Container(width: 1, height: 30, color: Colors.white.withValues(alpha: .1)),
-                        _Stat(label: 'منشور', value: '${s[1]}'),
-                        Container(width: 1, height: 30, color: Colors.white.withValues(alpha: .1)),
-                        _Stat(label: 'وصل', value: '${s[2]}'),
-                      ],
-                    );
-                  },
-                ),
+                // وضع الموظف: بدون إحصائيات حجوزات أو وصولات.
+                if (!widget.workerMode)
+                  FutureBuilder<List<int>>(
+                    future: _stats,
+                    builder: (context, snapshot) {
+                      final s = snapshot.data ?? const [0, 0];
+                      return Row(
+                        children: [
+                          _Stat(label: 'حجز', value: '${s[0]}'),
+                          Container(
+                              width: 1,
+                              height: 30,
+                              color: Colors.white.withValues(alpha: .1)),
+                          _Stat(label: 'وصل', value: '${s[1]}'),
+                        ],
+                      );
+                    },
+                  ),
               ],
             ),
           ),
-          const SizedBox(height: 16),
-          // ------------------------------------------------ بطاقة النقاط
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-              gradient: const LinearGradient(
-                begin: Alignment.topRight,
-                end: Alignment.bottomLeft,
-                colors: [AppColors.gold, AppColors.goldDeep],
+          if (!widget.workerMode) ...[
+            const SizedBox(height: 16),
+            // ------------------------------------------------ بطاقة النقاط
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                gradient: const LinearGradient(
+                  begin: Alignment.topRight,
+                  end: Alignment.bottomLeft,
+                  colors: [AppColors.gold, AppColors.goldDeep],
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: AppColors.ink.withValues(alpha: .12),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
+                    child: const Icon(Icons.emoji_events_rounded,
+                        color: AppColors.ink, size: 28),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('${user.points} نقطة',
+                            style: const TextStyle(
+                                color: AppColors.ink,
+                                fontSize: 22,
+                                fontWeight: FontWeight.w900,
+                                height: 1.1)),
+                        const SizedBox(height: 2),
+                        Text(
+                          'رصيد مكافآتك — اجمعها بتقييم الفنيين',
+                          style: TextStyle(
+                              color: AppColors.ink.withValues(alpha: .7),
+                              fontSize: 10.5),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-            child: Row(
-              children: [
-                Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(
-                    color: AppColors.ink.withValues(alpha: .12),
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                  ),
-                  child: const Icon(Icons.emoji_events_rounded,
-                      color: AppColors.ink, size: 28),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('${user.points} نقطة',
-                          style: const TextStyle(
-                              color: AppColors.ink,
-                              fontSize: 22,
-                              fontWeight: FontWeight.w900,
-                              height: 1.1)),
-                      const SizedBox(height: 2),
-                      Text(
-                        'رصيد مكافآتك — اجمعها بتقييم الفنيين',
-                        style: TextStyle(
-                            color: AppColors.ink.withValues(alpha: .7),
-                            fontSize: 10.5),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
+          ],
           const SizedBox(height: 16),
           SoftCard(
             padding: EdgeInsets.zero,
             child: Column(
               children: [
-                _MenuTile(
-                  icon: Icons.event_note_rounded,
-                  title: 'حجوزاتي',
-                  subtitle: 'كل حجوزاتك وحالتها',
-                  onTap: widget.onOpenBookings,
-                ),
-                const Divider(height: 1),
-                _MenuTile(
-                  icon: Icons.receipt_long_rounded,
-                  title: 'وصولات الدفع',
-                  subtitle: 'معاينة وطباعة الوصولات',
-                  onTap: () async {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const ReceiptsScreen()),
-                    );
-                    _load();
-                  },
-                ),
-                const Divider(height: 1),
-                _MenuTile(
-                  icon: Icons.video_library_rounded,
-                  title: 'أعمالي المنشورة',
-                  subtitle: 'وثّق شغلك بالفيديو',
-                  onTap: widget.onOpenFeed,
-                ),
-                const Divider(height: 1),
+                if (!widget.workerMode) ...[
+                  _MenuTile(
+                    icon: Icons.event_note_rounded,
+                    title: 'حجوزاتي',
+                    subtitle: 'كل حجوزاتك وحالتها',
+                    onTap: widget.onOpenBookings,
+                  ),
+                  const Divider(height: 1),
+                  _MenuTile(
+                    icon: Icons.receipt_long_rounded,
+                    title: 'وصولات الدفع',
+                    subtitle: 'معاينة وطباعة الوصولات',
+                    onTap: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const ReceiptsScreen()),
+                      );
+                      _load();
+                    },
+                  ),
+                  const Divider(height: 1),
+                ],
                 _MenuTile(
                   icon: Icons.support_agent_rounded,
                   title: 'الرسائل والدعم',

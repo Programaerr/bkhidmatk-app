@@ -9,7 +9,7 @@ class AppUser {
   final String name;
   final String phone;
   final String passwordHash;
-  final String role; // customer | admin
+  final String role; // customer | admin | worker (موظف بالتوضيف)
   final String? email;
   final String? city;
   final String? address;
@@ -34,6 +34,9 @@ class AppUser {
   });
 
   bool get isAdmin => role == 'admin';
+
+  /// موظف بالتوضيف (سجّل برقم أضافته الإدارة): يرى فقط ما تسمح به الإدارة.
+  bool get isWorker => role == 'worker';
 
   Map<String, Object?> toMap() => {
         if (id != null) 'id': id,
@@ -504,6 +507,162 @@ class PostComment {
       );
 }
 
+/// عمل منشور في قسم «أعمالنا» — يضيفه المدير من لوحة التحكم برابط فيديو.
+class OurWork {
+  final int? id;
+  final String title;
+  final String? description;
+  final String videoUrl;
+  final bool active;
+  final int views;
+  final int likes;
+  final DateTime createdAt;
+
+  /// حقول محسوبة من قاعدة البيانات.
+  final int commentCount;
+  final bool likedByMe;
+
+  const OurWork({
+    this.id,
+    required this.title,
+    this.description,
+    required this.videoUrl,
+    this.active = true,
+    this.views = 0,
+    this.likes = 0,
+    required this.createdAt,
+    this.commentCount = 0,
+    this.likedByMe = false,
+  });
+
+  Map<String, Object?> toMap() => {
+        if (id != null) 'id': id,
+        'title': title,
+        'description': description,
+        'video_url': videoUrl,
+        'active': active ? 1 : 0,
+        'views': views,
+        'likes': likes,
+        'created_at': createdAt.toIso8601String(),
+      };
+
+  factory OurWork.fromMap(Map<String, Object?> m) => OurWork(
+        id: m['id'] as int?,
+        title: m['title'] as String? ?? '',
+        description: m['description'] as String?,
+        videoUrl: m['video_url'] as String? ?? '',
+        active: (m['active'] as int? ?? 1) == 1,
+        views: m['views'] as int? ?? 0,
+        likes: m['likes'] as int? ?? 0,
+        createdAt: _date(m['created_at']) ?? DateTime.now(),
+        commentCount: m['comment_count'] as int? ?? 0,
+        likedByMe: (m['liked_by_me'] as int? ?? 0) == 1,
+      );
+
+  OurWork copyWith({
+    int? id,
+    String? title,
+    String? description,
+    String? videoUrl,
+    bool? active,
+    int? views,
+    int? likes,
+    DateTime? createdAt,
+    int? commentCount,
+    bool? likedByMe,
+  }) =>
+      OurWork(
+        id: id ?? this.id,
+        title: title ?? this.title,
+        description: description ?? this.description,
+        videoUrl: videoUrl ?? this.videoUrl,
+        active: active ?? this.active,
+        views: views ?? this.views,
+        likes: likes ?? this.likes,
+        createdAt: createdAt ?? this.createdAt,
+        commentCount: commentCount ?? this.commentCount,
+        likedByMe: likedByMe ?? this.likedByMe,
+      );
+}
+
+/// تعليق على عمل من قسم «أعمالنا».
+class WorkComment {
+  final int? id;
+  final int workId;
+  final int userId;
+  final String userName;
+  final String body;
+  final DateTime createdAt;
+  final String? avatarPath;
+
+  const WorkComment({
+    this.id,
+    required this.workId,
+    required this.userId,
+    required this.userName,
+    required this.body,
+    required this.createdAt,
+    this.avatarPath,
+  });
+
+  Map<String, Object?> toMap() => {
+        if (id != null) 'id': id,
+        'work_id': workId,
+        'user_id': userId,
+        'user_name': userName,
+        'body': body,
+        'created_at': createdAt.toIso8601String(),
+      };
+
+  factory WorkComment.fromMap(Map<String, Object?> m) => WorkComment(
+        id: m['id'] as int?,
+        workId: m['work_id'] as int? ?? 0,
+        userId: m['user_id'] as int? ?? 0,
+        userName: m['user_name'] as String? ?? '',
+        body: m['body'] as String? ?? '',
+        createdAt: _date(m['created_at']) ?? DateTime.now(),
+        avatarPath: m['avatar'] as String?,
+      );
+}
+
+/// رقم مُضاف من الإدارة للتوظيف: صاحبه يسجّل في التطبيق كـ (حرفي)
+/// ويرى فقط ما تسمح به الإدارة.
+class Hire {
+  final int? id;
+  final String phone;
+  final String? note;
+  final DateTime createdAt;
+
+  /// معلومات محسوبة: الحساب المسجّل بهذا الرقم إن وُجد.
+  final String? userName;
+  final bool registered;
+
+  const Hire({
+    this.id,
+    required this.phone,
+    this.note,
+    required this.createdAt,
+    this.userName,
+    this.registered = false,
+  });
+
+  Map<String, Object?> toMap() => {
+        if (id != null) 'id': id,
+        'phone': phone,
+        'note': note,
+        'created_at': createdAt.toIso8601String(),
+      };
+
+  factory Hire.fromMap(Map<String, Object?> m) => Hire(
+        id: m['id'] as int?,
+        phone: m['phone'] as String? ?? '',
+        note: m['note'] as String?,
+        createdAt: _date(m['created_at']) ?? DateTime.now(),
+        userName: m['user_name'] as String?,
+        registered: m['user_id'] != null,
+      );
+}
+
 class ChatMessage {
   final int? id;
   final int threadId; // customer id
@@ -680,6 +839,7 @@ class AppStats {
   final int pending;
   final int services;
   final int posts;
+  final int works;
   final int unreadMessages;
   final List<RevenuePoint> weekly;
 
@@ -690,6 +850,7 @@ class AppStats {
     this.pending = 0,
     this.services = 0,
     this.posts = 0,
+    this.works = 0,
     this.unreadMessages = 0,
     this.weekly = const [],
   });

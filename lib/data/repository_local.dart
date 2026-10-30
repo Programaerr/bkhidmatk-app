@@ -488,6 +488,175 @@ class LocalRepository implements Repository {
     return (r.first['c'] as int?) ?? 0;
   }
 
+  // ----------------------------------------------------------- أعمالنا (فيديو)
+  static const _workSelect = '''
+    SELECT w.*,
+      (SELECT COUNT(*) FROM work_comments wc WHERE wc.work_id = w.id) AS comment_count,
+      (SELECT COUNT(*) FROM work_likes wl WHERE wl.work_id = w.id AND wl.user_id = ?) AS liked_by_me
+    FROM our_works w
+  ''';
+
+  @override
+  Future<List<OurWork>> listWorks({
+    bool onlyActive = true,
+    String query = '',
+    int? limit,
+    int? viewerId,
+  }) async {
+    final db = await _db;
+    final where = <String>[];
+    final args = <Object?>[viewerId ?? -1];
+    if (onlyActive) where.add('w.active = 1');
+    if (query.trim().isNotEmpty) {
+      where.add('(w.title LIKE ? OR w.description LIKE ?)');
+      final q = '%${query.trim()}%';
+      args.addAll([q, q]);
+    }
+    final rows = await db.rawQuery(
+      '$_workSelect ${where.isEmpty ? '' : 'WHERE ${where.join(' AND ')}'} '
+      'ORDER BY w.created_at DESC ${limit != null ? 'LIMIT $limit' : ''}',
+      args,
+    );
+    return rows.map(OurWork.fromMap).toList();
+  }
+
+  @override
+  Future<OurWork?> workById(int id, {int? viewerId}) async {
+    final db = await _db;
+    final rows = await db.rawQuery('$_workSelect WHERE w.id = ?', [viewerId ?? -1, id]);
+    return rows.isEmpty ? null : OurWork.fromMap(rows.first);
+  }
+
+  @override
+  Future<int> createWork(OurWork work) async {
+    final db = await _db;
+    return db.insert('our_works', work.toMap());
+  }
+
+  @override
+  Future<void> updateWork(OurWork work) async {
+    final db = await _db;
+    if (work.id == null) return;
+    await db.update(
+      'our_works',
+      {
+        'title': work.title,
+        'description': work.description,
+        'video_url': work.videoUrl,
+      },
+      where: 'id = ?',
+      whereArgs: [work.id],
+    );
+  }
+
+  @override
+  Future<void> setWorkActive(int id, bool active) async {
+    final db = await _db;
+    await db.update('our_works', {'active': active ? 1 : 0},
+        where: 'id = ?', whereArgs: [id]);
+  }
+
+  @override
+  Future<void> deleteWork(int id) async {
+    final db = await _db;
+    await db.delete('work_comments', where: 'work_id = ?', whereArgs: [id]);
+    await db.delete('work_likes', where: 'work_id = ?', whereArgs: [id]);
+    await db.delete('our_works', where: 'id = ?', whereArgs: [id]);
+  }
+
+  @override
+  Future<void> incrementWorkViews(int id) async {
+    final db = await _db;
+    await db.rawUpdate('UPDATE our_works SET views = views + 1 WHERE id = ?', [id]);
+  }
+
+  @override
+  Future<void> setWorkLike(int id, {required int userId, required bool liked}) async {
+    final db = await _db;
+    if (liked) {
+      await db.insert('work_likes', {'work_id': id, 'user_id': userId},
+          conflictAlgorithm: ConflictAlgorithm.ignore);
+    } else {
+      await db.delete('work_likes', where: 'work_id = ? AND user_id = ?',
+          whereArgs: [id, userId]);
+    }
+    await db.rawUpdate(
+      'UPDATE our_works SET likes = (SELECT COUNT(*) FROM work_likes WHERE work_id = ?) '
+      'WHERE id = ?',
+      [id, id],
+    );
+  }
+
+  @override
+  Future<List<WorkComment>> workComments(int workId) async {
+    final db = await _db;
+    final rows = await db.rawQuery('''
+      SELECT wc.*, u.avatar AS avatar FROM work_comments wc
+      LEFT JOIN users u ON u.id = wc.user_id
+      WHERE wc.work_id = ? ORDER BY wc.created_at ASC
+    ''', [workId]);
+    return rows.map(WorkComment.fromMap).toList();
+  }
+
+  @override
+  Future<int> addWorkComment(WorkComment c) async {
+    final db = await _db;
+    return db.insert('work_comments', c.toMap());
+  }
+
+  @override
+  Future<int> workCount() async {
+    final db = await _db;
+    final r = await db.rawQuery('SELECT COUNT(*) c FROM our_works');
+    return (r.first['c'] as int?) ?? 0;
+  }
+
+  // ------------------------------------------------------------- التوظيف
+  @override
+  Future<int> createHire(Hire h) async {
+    final db = await _db;
+    await db.delete('hires', where: 'phone = ?', whereArgs: [h.phone]);
+    final id = await db.insert('hires', h.toMap());
+    // أي حساب موجود بهذا الرقم (زبون) يُرقّى فوراً إلى (حرفي).
+    await db.update('users', {'role': 'worker'},
+        where: "phone = ? AND role = 'customer'", whereArgs: [h.phone]);
+    return id;
+  }
+
+  @override
+  Future<List<Hire>> listHires() async {
+    final db = await _db;
+    final rows = await db.rawQuery('''
+      SELECT h.*, u.id AS user_id, u.name AS user_name
+      FROM hires h
+      LEFT JOIN users u ON u.phone = h.phone
+      ORDER BY h.created_at DESC
+    ''');
+    return rows.map(Hire.fromMap).toList();
+  }
+
+  @override
+  Future<bool> isHiredPhone(String phone) async {
+    final db = await _db;
+    final r = await db.rawQuery('SELECT COUNT(*) c FROM hires WHERE phone = ?', [phone]);
+    return ((r.first['c'] as int?) ?? 0) > 0;
+  }
+
+  @override
+  Future<void> deleteHire(int id) async {
+    final db = await _db;
+    final rows = await db.query('hires', columns: ['phone'], where: 'id = ?',
+        whereArgs: [id], limit: 1);
+    if (rows.isNotEmpty) {
+      final phone = rows.first['phone'] as String?;
+      if (phone != null) {
+        await db.update('users', {'role': 'customer'},
+            where: "phone = ? AND role = 'worker'", whereArgs: [phone]);
+      }
+    }
+    await db.delete('hires', where: 'id = ?', whereArgs: [id]);
+  }
+
   // ------------------------------------------------------------- messages
   @override
   Future<List<ChatMessage>> threadMessages(int customerId) async {
@@ -699,6 +868,7 @@ class LocalRepository implements Repository {
       pending: pending,
       services: services,
       posts: posts,
+      works: await workCount(),
       unreadMessages: unread,
       weekly: days,
     );

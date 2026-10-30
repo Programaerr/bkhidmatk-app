@@ -6,13 +6,13 @@ import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../../data/repository.dart';
 import '../../state/app_state.dart';
-import '../widgets/post_card.dart';
 import '../widgets/realtime_refresh.dart';
 import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
+import '../widgets/work_card.dart';
 import 'booking_detail_screen.dart';
 import 'messages_screen.dart';
-import 'post_detail_screen.dart';
+import 'our_work_detail_screen.dart';
 import 'service_detail_screen.dart';
 import 'services_tab.dart';
 
@@ -20,12 +20,12 @@ class HomeTab extends StatefulWidget {
   const HomeTab({
     super.key,
     required this.onBrowseServices,
-    required this.onOpenFeed,
+    required this.onOpenWorks,
     required this.onOpenBookings,
   });
 
   final VoidCallback onBrowseServices;
-  final VoidCallback onOpenFeed;
+  final VoidCallback onOpenWorks;
   final VoidCallback onOpenBookings;
 
   @override
@@ -56,9 +56,11 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
     final results = await Future.wait([
       repo.listCategories(),
       repo.listServices(limit: 6),
-      repo.listPosts(limit: 2),
+      repo.listWorks(onlyActive: true, limit: 3, viewerId: userId),
       repo.bookingsForCustomer(userId),
       repo.unreadForCustomer(userId),
+      // البانر الرئيسي أصبح خياراً يتحكم به المدير من لوحة التحكم.
+      repo.getSetting('show_hero_banner', fallback: '0'),
     ]);
     final bookings = results[3] as List<Booking>;
     final upcoming = bookings
@@ -71,9 +73,10 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
     return _HomeData(
       categories: results[0] as List<Category>,
       services: results[1] as List<Service>,
-      posts: results[2] as List<Post>,
+      works: results[2] as List<OurWork>,
       upcoming: upcoming.isEmpty ? null : upcoming.first,
       unread: results[4] as int,
+      showHero: results[5] == '1',
     );
   }
 
@@ -148,8 +151,10 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
-                _HeroBanner(onTap: widget.onBrowseServices),
+                if (data?.showHero ?? false) ...[
+                  const SizedBox(height: 16),
+                  _HeroBanner(onTap: widget.onBrowseServices),
+                ],
                 const SizedBox(height: 20),
                 SectionHeader(
                   title: 'الأقسام',
@@ -253,33 +258,35 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
                   ),
                 const SizedBox(height: 22),
                 SectionHeader(
-                  title: 'أحدث أعمال الزبائن',
-                  subtitle: 'شغل موثّق بالفيديو والصور',
+                  title: 'أحدث أعمالنا',
+                  subtitle: 'فيديوهات موثّقة من فريق بخدمتك',
                   actionLabel: 'عرض الكل',
-                  onAction: widget.onOpenFeed,
+                  onAction: widget.onOpenWorks,
                 ),
                 if (data == null)
                   const SizedBox(height: 100)
-                else if (data.posts.isEmpty)
+                else if (data.works.isEmpty)
                   SoftCard(
                     child: Column(
                       children: [
                         const Icon(Icons.video_library_outlined, size: 26),
                         const SizedBox(height: 6),
-                        Text('لا توجد منشورات بعد',
+                        Text('لا توجد أعمال منشورة بعد',
                             style: theme.textTheme.bodySmall?.copyWith(fontSize: 11)),
                       ],
                     ),
                   )
                 else
-                  for (final post in data.posts)
+                  for (final work in data.works)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 12),
-                      child: PostCard(
-                        post: post,
+                      child: WorkCard(
+                        work: work,
                         onOpen: () => Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => PostDetailScreen(postId: post.id!)),
+                          MaterialPageRoute(
+                            builder: (_) => OurWorkDetailScreen(workId: work.id!),
+                          ),
                         ).then((_) => _load()),
                       ),
                     ),
@@ -296,16 +303,20 @@ class _HomeData {
   const _HomeData({
     required this.categories,
     required this.services,
-    required this.posts,
+    required this.works,
     required this.upcoming,
     required this.unread,
+    required this.showHero,
   });
 
   final List<Category> categories;
   final List<Service> services;
-  final List<Post> posts;
+  final List<OurWork> works;
   final Booking? upcoming;
   final int unread;
+
+  /// هل البانر الرئيسي مفعّل من لوحة التحكم؟
+  final bool showHero;
 }
 
 class _HeroBanner extends StatelessWidget {

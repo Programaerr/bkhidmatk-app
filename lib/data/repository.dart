@@ -124,6 +124,46 @@ abstract class Repository {
 
   Future<int> commentCountForUser(int userId);
 
+  // ----------------------------------------------------------- أعمالنا (فيديو)
+  /// قائمة أعمال «أعمالنا» — الأحدث أولاً، مع إعجابات المشاهد وعدد التعليقات.
+  Future<List<OurWork>> listWorks({
+    bool onlyActive = true,
+    String query = '',
+    int? limit,
+    int? viewerId,
+  });
+
+  Future<OurWork?> workById(int id, {int? viewerId});
+
+  Future<int> createWork(OurWork work);
+
+  Future<void> updateWork(OurWork work);
+
+  Future<void> setWorkActive(int id, bool active);
+
+  Future<void> deleteWork(int id);
+
+  Future<void> incrementWorkViews(int id);
+
+  Future<void> setWorkLike(int id, {required int userId, required bool liked});
+
+  Future<List<WorkComment>> workComments(int workId);
+
+  Future<int> addWorkComment(WorkComment comment);
+
+  Future<int> workCount();
+
+  // ------------------------------------------------------------- التوظيف
+  /// يضيف رقماً للتوظيف، ويرقّي أي حساب موجود بهذا الرقم إلى (حرفي).
+  Future<int> createHire(Hire hire);
+
+  Future<List<Hire>> listHires();
+
+  Future<bool> isHiredPhone(String phone);
+
+  /// يحذف الرقم ويُرجع صاحبه (إن كان حرفاً) إلى زبون عادي.
+  Future<void> deleteHire(int id);
+
   // ------------------------------------------------------------- messages
   Future<List<ChatMessage>> threadMessages(int customerId);
 

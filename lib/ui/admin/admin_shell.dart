@@ -6,8 +6,8 @@ import '../widgets/ui.dart';
 import 'admin_bookings.dart';
 import 'admin_dashboard.dart';
 import 'admin_more.dart';
-import 'admin_posts.dart';
 import 'admin_services.dart';
+import 'admin_works.dart';
 
 class AdminShell extends StatefulWidget {
   const AdminShell({super.key});
@@ -41,11 +41,11 @@ class _AdminShellState extends State<AdminShell> {
       AdminDashboard(
         onOpenBookings: () => _go(1),
         onOpenMessages: () => _go(4),
-        onOpenPosts: () => _go(3),
+        onOpenWorks: () => _go(3),
       ),
       AdminBookings(initialFilter: null, refreshTick: _tick),
       AdminServices(refreshTick: _tick),
-      AdminPosts(refreshTick: _tick),
+      AdminWorks(refreshTick: _tick),
       AdminMore(onNavigate: _go),
     ];
 

@@ -19,6 +19,9 @@ class AppState extends ChangeNotifier {
   bool get isLoggedIn => user != null;
   bool get isAdmin => user?.isAdmin ?? false;
 
+  /// موظف بالتوضيف: يظهر له فقط ما تسمح به الإدارة (أعمالنا + حسابه).
+  bool get isWorker => user?.isWorker ?? false;
+
   Future<void> boot() async {
     final prefs = await SharedPreferences.getInstance();
     final savedTheme = prefs.getString('theme');
@@ -54,11 +57,14 @@ class AppState extends ChangeNotifier {
     String? address,
   }) async {
     if (await repo.phoneExists(phone)) return 'رقم الهاتف مستخدم مسبقاً';
+    // الرقم المُضاف من الإدارة للتوظيف → الحساب يُسجّل كـ (حرفي).
+    final hired = await repo.isHiredPhone(phone);
+    final role = hired ? 'worker' : 'customer';
     final newUser = AppUser(
       name: name.trim(),
       phone: phone,
       passwordHash: hashPassword(password),
-      role: 'customer',
+      role: role,
       city: city,
       address: address,
       createdAt: DateTime.now(),
@@ -69,7 +75,7 @@ class AppState extends ChangeNotifier {
       name: newUser.name,
       phone: newUser.phone,
       passwordHash: newUser.passwordHash,
-      role: 'customer',
+      role: role,
       city: city,
       address: address,
       createdAt: newUser.createdAt,

@@ -11,8 +11,9 @@ import '../customer/receipts_screen.dart';
 import '../widgets/realtime_refresh.dart';
 import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
-import 'admin_posts.dart';
+import 'admin_hires.dart';
 import 'admin_shell.dart';
+import 'admin_threads.dart';
 
 class AdminMore extends StatefulWidget {
   const AdminMore({super.key, required this.onNavigate});
@@ -26,6 +27,9 @@ class AdminMore extends StatefulWidget {
 class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
   Future<AppStats>? _stats;
 
+  /// حالة البانر الرئيسي في الصفحة الرئيسية للزبائن.
+  bool? _showBanner;
+
   @override
   void onRealtimeChange() => _load();
 
@@ -36,12 +40,30 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
   }
 
   void _load() {
-    final future = context.read<AppState>().repo.stats();
+    final repo = context.read<AppState>().repo;
+    final future = repo.stats();
+    final banner = repo.getSetting('show_hero_banner', fallback: '0');
     if (mounted) {
       setState(() {
         _stats = future;
       });
+      banner.then((value) {
+        if (mounted) setState(() => _showBanner = value == '1');
+      });
     }
+  }
+
+  Future<void> _toggleBanner(bool value) async {
+    setState(() => _showBanner = value);
+    await context.read<AppState>().repo.setSetting(
+          'show_hero_banner',
+          value ? '1' : '0',
+        );
+    if (!mounted) return;
+    AppSnack.show(
+      context,
+      value ? 'تم تفعيل البانر الرئيسي' : 'تم إخفاء البانر الرئيسي',
+    );
   }
 
   Future<void> _logout() async {
@@ -199,6 +221,16 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
                       subtitle: 'إضافة وتعديل الخدمات والأقسام',
                       onTap: () => widget.onNavigate(2),
                     ),
+                    const Divider(height: 1),
+                    _Tile(
+                      icon: Icons.person_add_alt_1_rounded,
+                      title: 'التوظيف',
+                      subtitle: 'إضافة أرقام موظفين ومتابعة التسجيل',
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const AdminHiresScreen()),
+                      ).then((_) => _load()),
+                    ),
                   ],
                 ),
               ),
@@ -213,6 +245,22 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
                       title: 'بيانات الدعم',
                       subtitle: 'رقم الدعم الظاهر للزبائن في الوصولات',
                       onTap: () => _editSupportPhone(context),
+                    ),
+                    const Divider(height: 1),
+                    SwitchListTile.adaptive(
+                      value: _showBanner ?? false,
+                      onChanged: _toggleBanner,
+                      secondary: Icon(
+                        (_showBanner ?? false)
+                            ? Icons.web_asset_rounded
+                            : Icons.web_asset_off_rounded,
+                        size: 20,
+                      ),
+                      title: const Text('البانر الرئيسي',
+                          style:
+                              TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                      subtitle: const Text('إظهار البانر في أعلى الصفحة الرئيسية',
+                          style: TextStyle(fontSize: 10.5)),
                     ),
                     const Divider(height: 1),
                     SwitchListTile.adaptive(
@@ -241,7 +289,7 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
                           context,
                           title: 'إعادة الضبط؟',
                           message:
-                              'سيتم حذف كل الحجوزات والمنشورات والزبائن الذين أنشأتهم، والعودة للبيانات التجريبية الأصلية.',
+                              'سيتم حذف كل الحجوزات والأعمال والزبائن الذين أنشأتهم، والعودة للبيانات التجريبية الأصلية.',
                           confirmLabel: 'إعادة الضبط',
                           danger: true,
                         );

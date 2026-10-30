@@ -7,6 +7,7 @@ import 'state/app_state.dart';
 import 'ui/admin/admin_shell.dart';
 import 'ui/auth/welcome_screen.dart';
 import 'ui/customer/customer_shell.dart';
+import 'ui/worker/worker_shell.dart';
 
 class BkhidmatkApp extends StatelessWidget {
   const BkhidmatkApp({super.key});
@@ -46,7 +47,10 @@ class _RootGate extends StatelessWidget {
     final state = context.watch<AppState>();
     if (state.booting) return const SplashScreen();
     if (state.user == null) return const WelcomeScreen();
-    return state.isAdmin ? const AdminShell() : const CustomerShell();
+    if (state.isAdmin) return const AdminShell();
+    // الموظف بالتوضيف يرى فقط ما تسمح به الإدارة.
+    if (state.isWorker) return const WorkerShell();
+    return const CustomerShell();
   }
 }
 

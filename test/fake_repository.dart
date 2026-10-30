@@ -164,6 +164,59 @@ class FakeRepo implements Repository {
   @override
   Future<int> commentCountForUser(int userId) async => 0;
 
+  // أعمالنا
+  @override
+  Future<List<OurWork>> listWorks({
+    bool onlyActive = true,
+    String query = '',
+    int? limit,
+    int? viewerId,
+  }) async =>
+      const [];
+
+  @override
+  Future<OurWork?> workById(int id, {int? viewerId}) async => null;
+
+  @override
+  Future<int> createWork(OurWork work) async => 1;
+
+  @override
+  Future<void> updateWork(OurWork work) async {}
+
+  @override
+  Future<void> setWorkActive(int id, bool active) async {}
+
+  @override
+  Future<void> deleteWork(int id) async {}
+
+  @override
+  Future<void> incrementWorkViews(int id) async {}
+
+  @override
+  Future<void> setWorkLike(int id, {required int userId, required bool liked}) async {}
+
+  @override
+  Future<List<WorkComment>> workComments(int workId) async => const [];
+
+  @override
+  Future<int> addWorkComment(WorkComment comment) async => 1;
+
+  @override
+  Future<int> workCount() async => 0;
+
+  // التوظيف
+  @override
+  Future<int> createHire(Hire hire) async => 1;
+
+  @override
+  Future<List<Hire>> listHires() async => const [];
+
+  @override
+  Future<bool> isHiredPhone(String phone) async => false;
+
+  @override
+  Future<void> deleteHire(int id) async {}
+
   // messages
   @override
   Future<List<ChatMessage>> threadMessages(int customerId) async => const [];

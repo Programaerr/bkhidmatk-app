@@ -14,7 +14,7 @@ class AppDatabase {
 
   Database? _db;
   static const _fileName = 'bkhidmatk.db';
-  static const _version = 2;
+  static const _version = 3;
 
   Future<Database> get database async {
     if (_db != null && _db!.isOpen) return _db!;
@@ -32,6 +32,7 @@ class AppDatabase {
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) await _migrateToV2(db);
+        if (oldVersion < 3) await _migrateToV3(db);
       },
     );
     return _db!;
@@ -43,6 +44,14 @@ class AppDatabase {
         "ALTER TABLE users ADD COLUMN points INTEGER NOT NULL DEFAULT 0");
     await db.execute('ALTER TABLE bookings ADD COLUMN rating INTEGER');
     await db.execute('ALTER TABLE bookings ADD COLUMN review TEXT');
+  }
+
+  /// v3: قسم «أعمالنا» (فيديوهات المدير) وشاشة «التوظيف» بالرقم.
+  Future<void> _migrateToV3(Database db) async {
+    await db.execute(_worksSchema);
+    await db.execute(_workCommentsSchema);
+    await db.execute(_workLikesSchema);
+    await db.execute(_hiresSchema);
   }
 
   Future<void> reset() async {
@@ -57,6 +66,49 @@ class AppDatabase {
     }
     await database;
   }
+
+  // ---------------------------------------------------- مخطط قسم «أعمالنا»
+  // يُستخدم عند الإنشاء الجديد وعند ترقية قاعدة البيانات القديمة معاً.
+  static const _worksSchema = '''
+    CREATE TABLE IF NOT EXISTS our_works(
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      description TEXT,
+      video_url TEXT NOT NULL,
+      active INTEGER NOT NULL DEFAULT 1,
+      views INTEGER NOT NULL DEFAULT 0,
+      likes INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL
+    )
+  ''';
+
+  static const _workCommentsSchema = '''
+    CREATE TABLE IF NOT EXISTS work_comments(
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      work_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      user_name TEXT NOT NULL,
+      body TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    )
+  ''';
+
+  static const _workLikesSchema = '''
+    CREATE TABLE IF NOT EXISTS work_likes(
+      work_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      PRIMARY KEY (work_id, user_id)
+    )
+  ''';
+
+  static const _hiresSchema = '''
+    CREATE TABLE IF NOT EXISTS hires(
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      phone TEXT NOT NULL UNIQUE,
+      note TEXT,
+      created_at TEXT NOT NULL
+    )
+  ''';
 
   Future<void> _createSchema(Database db) async {
     await db.execute('''
@@ -155,6 +207,10 @@ class AppDatabase {
         created_at TEXT NOT NULL
       )
     ''');
+    await db.execute(_worksSchema);
+    await db.execute(_workCommentsSchema);
+    await db.execute(_workLikesSchema);
+    await db.execute(_hiresSchema);
     await db.execute('''
       CREATE TABLE messages(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
