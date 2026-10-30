@@ -183,6 +183,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           children: [
                             const Expanded(child: Divider()),
                             Flexible(
+                              flex: 3,
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 10),
                                 child: Text(
