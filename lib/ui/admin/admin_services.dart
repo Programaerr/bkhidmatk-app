@@ -76,24 +76,28 @@ class _AdminServicesState extends State<AdminServices>
   }
 
   Future<void> _deleteService(Service s) async {
+    final repo = context.read<AppState>().repo;
     final ok = await confirmAction(context,
         title: 'حذف الخدمة؟',
         message: 'سيتم حذف «${s.title}» من قائمة الخدمات. الحجوزات السابقة تبقى محفوظة.',
         confirmLabel: 'حذف',
         danger: true);
     if (!ok) return;
-    await context.read<AppState>().repo.deleteService(s.id!);
+    await repo.deleteService(s.id!);
+    if (!mounted) return;
     _load();
   }
 
   Future<void> _deleteWorker(Worker w) async {
+    final repo = context.read<AppState>().repo;
     final ok = await confirmAction(context,
         title: 'حذف الفني؟',
         message: 'سيتم حذف «${w.name}» وإلغاء ربطه بالخدمات.',
         confirmLabel: 'حذف',
         danger: true);
     if (!ok) return;
-    await context.read<AppState>().repo.deleteWorker(w.id!);
+    await repo.deleteWorker(w.id!);
+    if (!mounted) return;
     _load();
   }
 
@@ -113,6 +117,7 @@ class _AdminServicesState extends State<AdminServices>
         danger: true);
     if (!ok) return;
     await repo.deleteCategory(c.id!);
+    if (!mounted) return;
     _load();
   }
 

@@ -294,9 +294,8 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
                           danger: true,
                         );
                         if (!ok) return;
-                        await context.read<AppState>().repo.resetDemoData();
-                        if (!mounted) return;
-                        await context.read<AppState>().logout();
+                        await state.repo.resetDemoData();
+                        await state.logout();
                       },
                     ),
                   ],

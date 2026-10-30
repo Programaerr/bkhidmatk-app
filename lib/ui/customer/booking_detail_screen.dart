@@ -59,6 +59,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen>
   }
 
   Future<void> _cancel() async {
+    final repo = context.read<AppState>().repo;
     final ok = await confirmAction(
       context,
       title: 'إلغاء الحجز؟',
@@ -67,7 +68,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen>
       danger: true,
     );
     if (!ok) return;
-    await context.read<AppState>().repo.updateBookingStatus(_booking!.id!, BookingStatus.cancelled);
+    await repo.updateBookingStatus(_booking!.id!, BookingStatus.cancelled);
     if (!mounted) return;
     AppSnack.show(context, 'تم إلغاء الحجز');
     _load();

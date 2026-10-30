@@ -124,7 +124,9 @@ class _BookingScreenState extends State<BookingScreen> {
   }
 
   Future<void> _confirm() async {
-    final user = context.read<AppState>().user;
+    final state = context.read<AppState>();
+    final repo = state.repo;
+    final user = state.user;
     if (user?.id == null) return;
     if (_address.text.trim().length < 8) {
       AppSnack.show(context, 'أدخل عنواناً تفصيلياً للخدمة', error: true);
@@ -136,12 +138,11 @@ class _BookingScreenState extends State<BookingScreen> {
         MaterialPageRoute(
             builder: (_) => PaymentScreen(amount: widget.service.price)),
       );
-      if (result == null) return;
+      if (result == null || !mounted) return;
       setState(() => _card = result);
     }
 
     setState(() => _loading = true);
-    final repo = context.read<AppState>().repo;
     try {
       final bookingId = await repo.createBooking(Booking(
         customerId: user!.id!,
