@@ -106,18 +106,22 @@ void main() {
     expect(tester.hasRunningAnimations, isFalse);
   });
 
-  test('السائق: النافذة مغلقة في البداية ثم يرفع إبهامه ثم يعود', () {
+  test('السائق: الجامة مغلقة في البداية ثم تطلع الغيمة بعد فتحها ثم يعود', () {
     final start = DriverPose.at(0);
     expect(start.window, 0);
-    expect(start.hand, 0);
+    expect(start.bubble, 0);
 
-    final thumbsUp = DriverPose.at(4);
-    expect(thumbsUp.window, 1);
-    expect(thumbsUp.hand, 1);
+    final opening = DriverPose.at(1.7);
+    expect(opening.window, greaterThan(0));
+    expect(opening.bubble, 0);
+
+    final talking = DriverPose.at(4);
+    expect(talking.window, 1);
+    expect(talking.bubble, 1);
 
     final end = DriverPose.at(DriverPose.loop - .1);
     expect(end.window, 0);
-    expect(end.hand, 0);
+    expect(end.bubble, 0);
   });
 
   test('قارئ مسارات SVG يفهم الصيغة المختصرة والأقواس', () {

@@ -2,10 +2,9 @@
 
 Run from anywhere:  python tool/gen_truck_art.py
 
-Splits the illustration into the layers the login screen animates separately,
-recolours the truck to #FF7460 and replaces the original "FREE SHIPPING"
-lettering with branding/truck_label.svg (the Arabic label traced from the
-approved design).
+Splits the illustrations into the layers the login screen animates separately:
+the scenery and the driver come from truck_source.svg, the vehicle from
+van_source.svg. The van logo is drawn from assets/images/van_logo.png.
 """
 import math
 import os
@@ -15,7 +14,7 @@ import xml.etree.ElementTree as ET
 HERE = os.path.dirname(os.path.abspath(__file__))
 PROJ = os.path.dirname(HERE)
 SOURCE = os.path.join(PROJ, "branding", "truck_source.svg")
-LABEL = os.path.join(PROJ, "branding", "truck_label.svg")
+VAN = os.path.join(PROJ, "branding", "van_source.svg")
 TARGET = os.path.join(PROJ, "lib", "ui", "auth", "truck_art.dart")
 
 NS = "{http://www.w3.org/2000/svg}"
@@ -31,7 +30,8 @@ def style_value(element, key):
 
 
 def color_of(element, inherited_opacity):
-    fill = (style_value(element, "fill") or "#000000").lstrip("#").upper()
+    fill = style_value(element, "fill") or element.get("fill") or "#000000"
+    fill = "FFFFFF" if fill == "white" else fill.lstrip("#").upper()
     if len(fill) == 3:
         fill = "".join(ch * 2 for ch in fill)
     if fill == TRUCK_FROM:
@@ -105,33 +105,26 @@ def dart_list(name, shapes):
 
 
 def main():
-    background, _floor, plants, vehicle, character = list(ET.parse(SOURCE).getroot())
+    background, _floor, plants, _truck, character = list(ET.parse(SOURCE).getroot())
+    van = list(ET.parse(VAN).getroot())
 
     clouds, buildings = [], []
     for child in background:
         target = clouds if (child.get("d") or "").startswith(CLOUD_STARTS) else buildings
         target.extend(shapes_of(child))
 
-    label = ET.parse(LABEL).getroot()
-
     layers = {
         "artClouds": clouds,
         "artBuildings": buildings,
         "artPlants": [shape for child in plants for shape in shapes_of(child)],
-        # Chassis, cab, windscreen and window frame: behind the driver.
-        "artTruckBack": pick(vehicle, (0, 6)),
-        "artCabGlass": pick(vehicle, 7),
-        "artGlassStreaks": pick(vehicle, 48, 49),
-        # Door pillar, headlight and bumper: in front of the driver, behind the wheel.
-        "artTruckPillar": pick(vehicle, (8, 10)),
-        "artFrontWheel": pick(vehicle, (11, 15)),
-        # Mirror, cab outline, cargo box and the two label bands (no Latin lettering).
-        "artTruckBody": pick(vehicle, (16, 27), 36, 37),
-        "artTruckLabel": [("0xFFFFFFFF", child.get("d")) for child in label],
-        # White speed lines and highlights on top of the label.
-        "artTruckHighlights": pick(vehicle, (42, 47), (50, 53)),
-        "artRearWheel": pick(vehicle, (54, 58)),
-        "artRearGuard": pick(vehicle, 59, 60),
+        # Body, bumpers and glass: behind the driver.
+        "artVanBack": pick(van, (1, 6)),
+        # Window frame, pillar, handles, rail, side window and mirror: in front of the driver.
+        "artVanMiddle": pick(van, (7, 22)),
+        "artVanRearWheel": pick(van, (23, 27)),
+        "artVanFrontWheel": pick(van, (28, 32)),
+        # Outlines, headlight and lettering: over the wheels. Index 44 is the logo image.
+        "artVanTop": pick(van, (33, 43), 45, 46),
         "artDriverTorso": pick(character, 25, 26),
         "artDriverHead": pick(character, (27, 48)),
     }

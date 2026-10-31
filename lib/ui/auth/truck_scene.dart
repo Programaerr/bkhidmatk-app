@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
 
 import 'truck_art.dart';
 
@@ -26,47 +27,42 @@ const _ink = Color(0xFF263238);
 const _cabInterior = Color(0xFF2F3E46);
 const _glass = Color(0xFF455A64);
 const _glassEdge = Color(0xFF6B8290);
-const _skin = Color(0xFFFFBE9D);
-const _skinShade = Color(0xFFEB996E);
 
-// حدود الزجاج المتحرك: جزء النافذة خلف العمود كما هو في ملف SVG.
+// السيارة تقف على خط الأرض نفسه وتبدأ من مكان السيارة السابقة.
+const _vanScale = .951;
+const _vanOrigin = Offset(46 - 24.47 * _vanScale, 462.5 - 320.35 * _vanScale);
+const _vanBounds = Rect.fromLTRB(20, -2, 700, 286);
+
+const _rearWheelCenter = Offset(156.23, 270.3);
+const _frontWheelCenter = Offset(597.33, 270.3);
+const _wheelRadius = 50.45 * _vanScale;
+const _logoRect = Rect.fromLTWH(295, 145.27, 84, 84);
+
+// حدود جامة السائق كما في ملف السيارة، وطرفها الأيمن تحت العمود.
 const _doorWindow =
-    'M125.74,213.54c9.37-2.81,36.31-6.23,74.23-8.4h.36a6.16,6.16,0,0,1,6.14,6.15v46.5'
-    'a5.65,5.65,0,0,1-3.66,5.27l-66.71,8.23a18.57,18.57,0,0,0-13.25,8.24L119,282Z';
+    'M466.54,59.39C466.25,60.88,469.23,124.92,470.42,131.18'
+    'C471.61,137.44,476.67,154.42,513.02,156.18L530,157L525,66.9'
+    'C521,65.5,516,64.5,512.15,63.88C492.81,60.88,466.54,59.39,466.54,59.39Z';
 
-// اليد تخرج من خلف حافة النافذة السفلى فلا يظهر ما تحتها.
-const _aboveSill =
-    'M60,150L240,150L240,259.5L206.47,258.5L202.81,263.06L136.1,271.29'
-    'a18.57,18.57,0,0,0-13.25,8.24L111.29,297.16L60,297.16Z';
+const _driverPosition = Offset(497, 94);
+const _driverScale = 1.25;
 
-const _forearm = 'M9,-7C19,3 31,20 44,42L28,53C19,36 9,23 0,13Z';
-const _fist =
-    'M-14,-7C-14,-11 -11,-13 -7,-13L5,-13C11,-13 15,-8 15,-2L15,6C15,12 10,15 4,15'
-    'L-8,15C-12,15 -15,12 -15,8Z';
-const _thumb = 'M-6,-11C-8,-18 -8,-24 -5,-28C-3,-31 3,-31 4.5,-27C6,-22 6,-17 9,-11Z';
-const _fingerLines = <String>[
-  'M-14.5,-5.5L1,-5.5',
-  'M-15,1L1.5,1',
-  'M-14.5,7.5L1,7.5',
-  'M1,-12C3.5,-6 3.5,8 1,14.5',
-];
-const _thumbCrease = 'M-5.5,-11.5L7.5,-11.5';
-
-const _frontWheelCenter = Offset(190.35, 414.17);
-const _rearWheelCenter = Offset(544.45, 414.17);
-const _wheelRadius = 47.94;
+// غيمة الكلام فوق مقدمة السيارة، وفقاعتان صغيرتان تصلانها بالجامة.
+const _bubbleCenter = Offset(648, 46);
+const _puffNear = Offset(538, 92);
+const _puffFar = Offset(556, 79);
 
 const _groundSpeed = 150.0;
 const _buildingSpeed = 62.0;
 const _cloudSpeed = 15.0;
 const _stripPeriod = 900.0;
 
-/// حركة السائق: النافذة تنزل، اليد ترتفع بعلامة الإعجاب، ثم يعود كل شيء.
+/// حركة السائق: الجامة تنزل، تطلع غيمة «جايك بطريق»، ثم يعود كل شيء.
 class DriverPose {
-  const DriverPose({required this.window, required this.hand, required this.pulse, required this.nod});
+  const DriverPose({required this.window, required this.bubble, required this.nod});
 
   /// الوضعية الثابتة عند تعطيل الحركات من إعدادات الجهاز.
-  static const still = DriverPose(window: 1, hand: 1, pulse: 0, nod: 0);
+  static const still = DriverPose(window: 1, bubble: 1, nod: 0);
 
   static const loop = 11.0;
 
@@ -74,20 +70,16 @@ class DriverPose {
     final t = time % loop;
     final down = Curves.easeInOut.transform(_progress(t, 1.2, 2.1));
     final up = Curves.easeInOut.transform(_progress(t, 6.7, 7.6));
-    final show = Curves.easeOutBack.transform(_progress(t, 2.2, 2.8));
-    final hide = Curves.easeIn.transform(_progress(t, 5.7, 6.3));
-    final hold = _progress(t, 3.0, 5.4);
+    final talk = _progress(t, 2.4, 5.6);
     return DriverPose(
       window: down - up,
-      hand: show - hide,
-      pulse: hold > 0 && hold < 1 ? math.sin(hold * math.pi * 3).abs() : 0,
-      nod: hold > 0 && hold < 1 ? math.sin(hold * math.pi * 4) * math.sin(hold * math.pi) : 0,
+      bubble: _progress(t, 2.2, 2.9) - _progress(t, 5.7, 6.2),
+      nod: talk > 0 && talk < 1 ? math.sin(talk * math.pi * 4) * math.sin(talk * math.pi) : 0,
     );
   }
 
   final double window;
-  final double hand;
-  final double pulse;
+  final double bubble;
   final double nod;
 
   static double _progress(double t, double from, double to) =>
@@ -276,35 +268,29 @@ class TruckArt {
     clouds = RasterLayer(_record(artClouds), const Rect.fromLTRB(41, 41, 726, 182));
     buildings = RasterLayer(_record(artBuildings), const Rect.fromLTRB(32, 36, 734, 464));
     plants = RasterLayer(_record(artPlants), const Rect.fromLTRB(310, 391, 662, 464));
-    body = RasterLayer(
-      _record([...artTruckBody, ...artTruckLabel, ...artTruckHighlights]),
-      const Rect.fromLTRB(45, 96, 644, 429),
-    );
-    truckBack = _record(artTruckBack);
-    cabGlass = _record(artCabGlass);
-    pillar = _record(artTruckPillar);
-    frontWheel = _record(artFrontWheel);
-    rearWheel = _record(artRearWheel);
-    rearGuard = _record(artRearGuard);
+    vanBack = RasterLayer(_record(artVanBack), _vanBounds);
+    vanTop = RasterLayer(_record(artVanTop), _vanBounds);
+    vanMiddle = _record(artVanMiddle);
+    rearWheel = _record(artVanRearWheel);
+    frontWheel = _record(artVanFrontWheel);
     torso = _record(artDriverTorso);
     head = _record(artDriverHead);
-    streaks = _record(artGlassStreaks);
-    hand = _recordWith(_paintHand);
+    bubble = _recordWith(_paintBubble);
+    puffNear = _recordWith((canvas) => _paintPuff(canvas, 6));
+    puffFar = _recordWith((canvas) => _paintPuff(canvas, 9));
     doorWindow = parseSvgPath(_doorWindow);
-    aboveSill = parseSvgPath(_aboveSill);
   }
 
-  late final RasterLayer clouds, buildings, plants, body;
-  late final ui.Picture truckBack, cabGlass, pillar, frontWheel, rearWheel, rearGuard;
-  late final ui.Picture torso, head, streaks, hand;
-  late final Path doorWindow, aboveSill;
+  late final RasterLayer clouds, buildings, plants, vanBack, vanTop;
+  late final ui.Picture vanMiddle, rearWheel, frontWheel, torso, head, bubble, puffNear, puffFar;
+  late final Path doorWindow;
 
   void dispose() {
-    for (final layer in [clouds, buildings, plants, body]) {
+    for (final layer in [clouds, buildings, plants, vanBack, vanTop]) {
       layer.dispose();
     }
     for (final picture in [
-      truckBack, cabGlass, pillar, frontWheel, rearWheel, rearGuard, torso, head, streaks, hand,
+      vanMiddle, rearWheel, frontWheel, torso, head, bubble, puffNear, puffFar,
     ]) {
       picture.dispose();
     }
@@ -327,28 +313,62 @@ class TruckArt {
     }
   }
 
-  static void _paintHand(Canvas canvas) {
-    final skin = Paint()
-      ..color = _skin
-      ..isAntiAlias = true;
-    final crease = Paint()
-      ..color = _skinShade
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeWidth = 1.3
-      ..isAntiAlias = true;
-    canvas
-      ..drawPath(parseSvgPath(_forearm), skin)
-      ..drawPath(parseSvgPath(_thumb), skin)
-      ..drawPath(parseSvgPath(_fist), skin)
-      ..drawPath(parseSvgPath(_thumbCrease), crease);
-    for (final line in _fingerLines) {
-      canvas.drawPath(parseSvgPath(line), crease);
+  static Paint get _bubbleEdge => Paint()
+    ..color = _ink
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 2.4
+    ..isAntiAlias = true;
+
+  static void _paintBubble(Canvas canvas) {
+    const lobes = <(double, double, double)>[
+      (-58, 0, 20),
+      (58, 0, 20),
+      (-34, -14, 18),
+      (0, -18, 20),
+      (34, -14, 18),
+      (-34, 14, 16),
+      (0, 18, 18),
+      (34, 14, 16),
+    ];
+    final circles = [
+      for (final (x, y, radius) in lobes) Rect.fromCircle(center: Offset(x, y), radius: radius),
+    ];
+    // الحدود أولاً ثم التعبئة فوقها، فلا يبقى إلا الخط الخارجي للغيمة.
+    final edge = _bubbleEdge;
+    for (final circle in circles) {
+      canvas.drawOval(circle, edge);
     }
+    final fill = Paint()..color = Colors.white;
+    for (final circle in circles) {
+      canvas.drawOval(circle, fill);
+    }
+    canvas.drawRect(const Rect.fromLTRB(-60, -18, 60, 18), fill);
+
+    final text = TextPainter(
+      text: const TextSpan(
+        text: 'جايك بطريق',
+        style: TextStyle(
+          fontFamily: 'Cairo',
+          fontSize: 25,
+          fontWeight: FontWeight.w700,
+          color: _ink,
+          height: 1,
+        ),
+      ),
+      textDirection: TextDirection.rtl,
+    )..layout();
+    text.paint(canvas, Offset(-text.width / 2, -text.height / 2));
+    text.dispose();
+  }
+
+  static void _paintPuff(Canvas canvas, double radius) {
+    canvas
+      ..drawCircle(Offset.zero, radius, _bubbleEdge)
+      ..drawCircle(Offset.zero, radius, Paint()..color = Colors.white);
   }
 }
 
-/// المشهد المتحرك: الشاحنة تسير والغيوم والبنايات تمر خلفها، والسائق يحيّي بالإبهام.
+/// المشهد المتحرك: السيارة تسير والغيوم والبنايات تمر خلفها، والسائق يقول «جايك بطريق».
 class TruckScene extends StatefulWidget {
   const TruckScene({super.key, required this.scale});
 
@@ -365,6 +385,25 @@ class _TruckSceneState extends State<TruckScene> with SingleTickerProviderStateM
     _time.value = elapsed.inMicroseconds / Duration.microsecondsPerSecond;
   });
   bool _still = false;
+  ui.Image? _logo;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLogo();
+  }
+
+  Future<void> _loadLogo() async {
+    final data = await rootBundle.load('assets/images/van_logo.png');
+    final codec = await ui.instantiateImageCodec(data.buffer.asUint8List(), targetWidth: 256);
+    final frame = await codec.getNextFrame();
+    codec.dispose();
+    if (!mounted) {
+      frame.image.dispose();
+      return;
+    }
+    setState(() => _logo = frame.image);
+  }
 
   @override
   void didChangeDependencies() {
@@ -382,6 +421,7 @@ class _TruckSceneState extends State<TruckScene> with SingleTickerProviderStateM
     _ticker.dispose();
     _time.dispose();
     _art.dispose();
+    _logo?.dispose();
     super.dispose();
   }
 
@@ -389,7 +429,7 @@ class _TruckSceneState extends State<TruckScene> with SingleTickerProviderStateM
   Widget build(BuildContext context) {
     return Semantics(
       image: true,
-      label: 'شاحنة جايك تسير وسائقها يرفع إبهامه من النافذة',
+      label: 'سيارة جايك تسير وسائقها يفتح الجامة ويقول: جايك بطريق',
       child: RepaintBoundary(
         child: CustomPaint(
           size: Size.infinite,
@@ -399,6 +439,7 @@ class _TruckSceneState extends State<TruckScene> with SingleTickerProviderStateM
             scale: widget.scale,
             pixelRatio: MediaQuery.devicePixelRatioOf(context),
             still: _still,
+            logo: _logo,
           ),
         ),
       ),
@@ -413,6 +454,7 @@ class TruckScenePainter extends CustomPainter {
     required this.scale,
     required this.pixelRatio,
     this.still = false,
+    this.logo,
   }) : super(repaint: time);
 
   final TruckArt art;
@@ -420,6 +462,7 @@ class TruckScenePainter extends CustomPainter {
   final double scale;
   final double pixelRatio;
   final bool still;
+  final ui.Image? logo;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -448,8 +491,9 @@ class TruckScenePainter extends CustomPainter {
     final viewRight = 375 + size.width / 2 / unit;
     final resolution = unit * pixelRatio;
 
+    // تسير السيارة إلى اليمين، فتمر الخلفية إلى اليسار.
     void strip(RasterLayer layer, double speed) {
-      final offset = (t * speed) % _stripPeriod;
+      final offset = (-t * speed) % _stripPeriod;
       final first = ((viewLeft - layer.bounds.right - offset) / _stripPeriod).ceil();
       final last = ((viewRight - layer.bounds.left - offset) / _stripPeriod).floor();
       for (var i = first; i <= last; i++) {
@@ -469,41 +513,44 @@ class TruckScenePainter extends CustomPainter {
     );
     strip(art.plants, _groundSpeed);
 
-    _truck(canvas, t, pose, resolution);
+    _van(canvas, t, pose, resolution * _vanScale);
     canvas.restore();
   }
 
-  void _truck(Canvas canvas, double t, DriverPose pose, double resolution) {
+  void _van(Canvas canvas, double t, DriverPose pose, double resolution) {
     final sway = 5 * math.sin(2 * math.pi * t / 7);
     final bounce = .8 * math.sin(2 * math.pi * 1.7 * t) + .35 * math.sin(2 * math.pi * 3.1 * t);
-    // تسير الشاحنة إلى اليسار، فتدور العجلات عكس عقارب الساعة.
-    final spin = -t * _groundSpeed / _wheelRadius;
+    final spin = t * _groundSpeed / _wheelRadius;
 
     canvas
       ..save()
-      ..translate(sway, 0)
+      ..translate(_vanOrigin.dx + sway, _vanOrigin.dy)
+      ..scale(_vanScale)
       ..save()
-      ..translate(0, bounce)
-      ..drawPicture(art.truckBack)
-      ..drawPicture(art.cabGlass);
+      ..translate(0, bounce);
+    art.vanBack.paint(canvas, resolution);
     _cab(canvas, pose);
     canvas
-      ..drawPicture(art.pillar)
+      ..drawPicture(art.vanMiddle)
       ..restore();
 
+    _wheel(canvas, art.rearWheel, _rearWheelCenter, spin);
     _wheel(canvas, art.frontWheel, _frontWheelCenter, spin);
+
     canvas
       ..save()
       ..translate(0, bounce);
-    art.body.paint(canvas, resolution);
-    canvas.restore();
-    _wheel(canvas, art.rearWheel, _rearWheelCenter, spin);
-
-    canvas
-      ..save()
-      ..translate(0, bounce)
-      ..drawPicture(art.rearGuard);
-    _hand(canvas, pose);
+    art.vanTop.paint(canvas, resolution);
+    final image = logo;
+    if (image != null) {
+      canvas.drawImageRect(
+        image,
+        Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
+        _logoRect,
+        Paint()..filterQuality = FilterQuality.medium,
+      );
+    }
+    _bubble(canvas, pose.bubble);
     canvas
       ..restore()
       ..restore();
@@ -525,27 +572,27 @@ class TruckScenePainter extends CustomPainter {
       ..clipPath(art.doorWindow)
       ..drawPath(art.doorWindow, Paint()..color = _cabInterior);
 
-    // السائق: رأسه وكتفاه من شخصية الملف الأصلي، معكوسان ليواجه طريق الشاحنة.
+    // السائق: رأسه وكتفاه من شخصية الملف الأصلي، ووجهه نحو طريق السيارة.
     const neck = Offset(670, 283);
     canvas
       ..save()
-      ..translate(180, 236)
-      ..scale(-1.15, 1.15)
+      ..translate(_driverPosition.dx, _driverPosition.dy)
+      ..scale(_driverScale)
       ..translate(-670, -258)
       ..save()
       ..translate(neck.dx, neck.dy)
-      ..rotate(pose.nod * .07)
+      ..rotate(pose.nod * .05)
       ..translate(-neck.dx, -neck.dy)
       ..drawPicture(art.head)
       ..restore()
       ..drawPicture(art.torso)
       ..restore();
 
-    // الزجاج ينزل داخل الباب، وشفافيته تُظهر السائق خلفه قليلاً.
+    // الجامة تنزل داخل الباب، وشفافيتها تُظهر السائق خلفها قليلاً.
     if (pose.window < 1) {
       canvas
         ..save()
-        ..translate(0, pose.window * 74)
+        ..translate(0, pose.window * 104)
         ..drawPath(art.doorWindow, Paint()..color = _glass.withValues(alpha: .86));
       if (pose.window > 0) {
         canvas.drawPath(
@@ -556,25 +603,27 @@ class TruckScenePainter extends CustomPainter {
             ..strokeWidth = 1.2,
         );
       }
-      canvas
-        ..drawPicture(art.streaks)
-        ..restore();
+      canvas.restore();
     }
     canvas.restore();
   }
 
-  void _hand(Canvas canvas, DriverPose pose) {
-    if (pose.hand <= 0) return;
-    final hidden = 1 - pose.hand;
-    final pump = .9 + pose.pulse * .07;
-    canvas
-      ..save()
-      ..clipPath(art.aboveSill)
-      ..translate(141 + hidden * 26, 241 + hidden * 50)
-      ..scale(pump)
-      ..rotate(-pose.pulse * .05)
-      ..drawPicture(art.hand)
-      ..restore();
+  void _bubble(Canvas canvas, double shown) {
+    if (shown <= 0) return;
+    void pop(ui.Picture picture, Offset center, double from, double to) {
+      final progress = ((shown - from) / (to - from)).clamp(0.0, 1.0);
+      if (progress == 0) return;
+      canvas
+        ..save()
+        ..translate(center.dx, center.dy)
+        ..scale(Curves.easeOutBack.transform(progress))
+        ..drawPicture(picture)
+        ..restore();
+    }
+
+    pop(art.puffNear, _puffNear, 0, .35);
+    pop(art.puffFar, _puffFar, .15, .5);
+    pop(art.bubble, _bubbleCenter, .3, 1);
   }
 
   @override
@@ -582,5 +631,6 @@ class TruckScenePainter extends CustomPainter {
       oldDelegate.scale != scale ||
       oldDelegate.pixelRatio != pixelRatio ||
       oldDelegate.still != still ||
-      oldDelegate.art != art;
+      oldDelegate.art != art ||
+      oldDelegate.logo != logo;
 }
