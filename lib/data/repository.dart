@@ -164,6 +164,18 @@ abstract class Repository {
   /// يحذف الرقم ويُرجع صاحبه (إن كان حرفاً) إلى زبون عادي.
   Future<void> deleteHire(int id);
 
+  // ------------------------------------------------------ طلبات الحرفيين
+  Future<int> createApplication(CraftsmanApplication application);
+
+  Future<List<CraftsmanApplication>> listApplications();
+
+  Future<bool> hasPendingApplication(String phone);
+
+  /// يقبل الطلب ويضيف رقمه للتوظيف، فيصبح حسابه (حرفي) عند التسجيل.
+  Future<void> acceptApplication(CraftsmanApplication application);
+
+  Future<void> rejectApplication(int id);
+
   // ------------------------------------------------------------- messages
   Future<List<ChatMessage>> threadMessages(int customerId);
 

@@ -7,6 +7,8 @@ import 'package:jaik/core/theme.dart';
 import 'package:jaik/data/models.dart';
 import 'package:jaik/state/app_state.dart';
 import 'package:jaik/ui/admin/admin_shell.dart';
+import 'package:jaik/ui/admin/admin_applications.dart';
+import 'package:jaik/ui/auth/craftsman_screen.dart';
 import 'package:jaik/ui/auth/login_screen.dart';
 import 'package:jaik/ui/auth/register_screen.dart';
 import 'package:jaik/ui/auth/welcome_screen.dart';
@@ -125,6 +127,20 @@ void main() {
           height: h,
           textScale: scale);
       _expectNoOverflow(tester, 'التسجيل $label');
+
+      await _pumpAt(tester,
+          screen: () => const CraftsmanScreen(),
+          width: w,
+          height: h,
+          textScale: scale);
+      _expectNoOverflow(tester, 'الحرفي $label');
+
+      await _pumpAt(tester,
+          screen: () => const AdminApplicationsScreen(),
+          width: w,
+          height: h,
+          textScale: scale);
+      _expectNoOverflow(tester, 'طلبات الحرفيين $label');
     });
 
     testWidgets('تبويبات الزبون كاملة بدون فيض [$label]', (tester) async {

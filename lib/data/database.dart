@@ -14,7 +14,7 @@ class AppDatabase {
 
   Database? _db;
   static const _fileName = 'jaik.db';
-  static const _version = 3;
+  static const _version = 4;
 
   Future<Database> get database async {
     if (_db != null && _db!.isOpen) return _db!;
@@ -33,6 +33,7 @@ class AppDatabase {
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) await _migrateToV2(db);
         if (oldVersion < 3) await _migrateToV3(db);
+        if (oldVersion < 4) await db.execute(_applicationsSchema);
       },
     );
     return _db!;
@@ -106,6 +107,23 @@ class AppDatabase {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       phone TEXT NOT NULL UNIQUE,
       note TEXT,
+      created_at TEXT NOT NULL
+    )
+  ''';
+
+  /// v4: طلبات الحرفيين من الشاشة الأولى.
+  static const _applicationsSchema = '''
+    CREATE TABLE IF NOT EXISTS craftsman_applications(
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      phone TEXT NOT NULL,
+      age INTEGER NOT NULL,
+      city TEXT NOT NULL,
+      address TEXT,
+      trade TEXT NOT NULL,
+      experience_years INTEGER NOT NULL,
+      about TEXT,
+      status TEXT NOT NULL DEFAULT 'pending',
       created_at TEXT NOT NULL
     )
   ''';
@@ -211,6 +229,7 @@ class AppDatabase {
     await db.execute(_workCommentsSchema);
     await db.execute(_workLikesSchema);
     await db.execute(_hiresSchema);
+    await db.execute(_applicationsSchema);
     await db.execute('''
       CREATE TABLE messages(
         id INTEGER PRIMARY KEY AUTOINCREMENT,

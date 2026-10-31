@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:jaik/core/theme.dart';
 import 'package:jaik/state/app_state.dart';
+import 'package:jaik/ui/auth/craftsman_screen.dart';
 import 'package:jaik/ui/auth/day_night_switch.dart';
 import 'package:jaik/ui/auth/login_screen.dart';
 import 'package:jaik/ui/auth/push_key.dart';
@@ -89,6 +90,7 @@ void main() {
     expect(find.text('EN'), findsOneWidget);
     expect(find.text('AR'), findsNothing);
     expect(find.text('Log in'), findsOneWidget);
+    expect(find.text('Craftsman'), findsOneWidget);
     expect(find.text('Mobile number'), findsOneWidget);
     expect(find.text('Privacy Policy'), findsOneWidget);
     expect(find.text('Contact us'), findsOneWidget);
@@ -152,9 +154,9 @@ void main() {
     await _pump(tester);
     final login = tester.getRect(find.byType(PushKey).at(2));
     final privacy = tester.getRect(find.text('سياسة و الخصوصية'));
-    final facebook = tester.getRect(find.byType(PushKey).at(3));
-    final instagram = tester.getRect(find.byType(PushKey).at(4));
-    final tiktok = tester.getRect(find.byType(PushKey).at(5));
+    final facebook = tester.getRect(find.byType(PushKey).at(4));
+    final instagram = tester.getRect(find.byType(PushKey).at(5));
+    final tiktok = tester.getRect(find.byType(PushKey).at(6));
     final contact = tester.getRect(find.text('تواصلوا معنى'));
 
     expect(privacy.top, greaterThan(login.bottom));
@@ -186,6 +188,34 @@ void main() {
     expect(dayNight.right, lessThan(320));
     expect(dayNight.top, greaterThanOrEqualTo(24 + 20));
     expect(contact.bottom, lessThan(568));
+  });
+
+  testWidgets('زر حرفي يسار زر الدخول بنفس مقاسه، ويفتح صفحة الحرفي بالرقم المكتوب', (tester) async {
+    await _pump(tester);
+    final login = tester.getRect(find.byType(PushKey).at(2));
+    final craftsman = tester.getRect(find.byType(PushKey).at(3));
+    expect(craftsman.top, login.top);
+    expect(craftsman.width, closeTo(login.width, .5));
+    expect(craftsman.right, lessThan(login.left));
+
+    await tester.enterText(find.byType(TextField), '7701234567');
+    await tester.tap(find.text('حرفي'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.byType(CraftsmanScreen), findsOneWidget);
+    expect(
+      find.descendant(of: find.byType(CraftsmanScreen), matching: find.text('07701234567')),
+      findsOneWidget,
+    );
+
+    await tester.ensureVisible(find.text('عودة كزبون'));
+    await tester.pump();
+    await tester.tap(find.text('عودة كزبون'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump();
+    expect(find.byType(CraftsmanScreen), findsNothing);
+    expect(find.text('حرفي'), findsOneWidget);
   });
 
   testWidgets('الكرة الأرضية بجانب رمز اللغة، والضغط عليها يبدّل اللغة', (tester) async {

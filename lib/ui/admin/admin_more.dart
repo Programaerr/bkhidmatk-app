@@ -11,6 +11,7 @@ import '../customer/receipts_screen.dart';
 import '../widgets/realtime_refresh.dart';
 import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
+import 'admin_applications.dart';
 import 'admin_hires.dart';
 import 'admin_shell.dart';
 import 'admin_threads.dart';
@@ -229,6 +230,16 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(builder: (_) => const AdminHiresScreen()),
+                      ).then((_) => _load()),
+                    ),
+                    const Divider(height: 1),
+                    _Tile(
+                      icon: Icons.assignment_ind_outlined,
+                      title: 'طلبات الحرفيين',
+                      subtitle: 'قراءة معلومات المتقدمين وقبولهم أو رفضهم',
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const AdminApplicationsScreen()),
                       ).then((_) => _load()),
                     ),
                   ],

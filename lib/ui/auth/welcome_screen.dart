@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../state/app_state.dart';
+import 'craftsman_screen.dart';
 import 'day_night_switch.dart';
 import 'login_screen.dart';
 import 'push_key.dart';
@@ -54,12 +55,12 @@ abstract final class _Design {
   static const switchRight = 371.1;
   static const switchHeight = 27.25;
 
-  static const codeLeft = 66.65;
-  static const codeRight = 144.65;
-  static const dividerLeft = 149.15;
-  static const dividerRight = 150.65;
-  static const numberLeft = 155.65;
-  static const numberRight = 309.65;
+  static const codeLeft = 68.1;
+  static const codeRight = 146.1;
+  static const dividerLeft = 150.65;
+  static const dividerRight = 152.15;
+  static const numberLeft = 160.6;
+  static const numberRight = 314.6;
 
   // الصف أعلى من الصورة بقليل: عمق الأزرار لا يظهر في الرسم، وبدون هذا تلتصق بزر الدخول.
   static const rowTop = buttonTop - 6 - keyHeight;
@@ -69,26 +70,29 @@ abstract final class _Design {
   static const keyHeight = faceHeight + PushKey.depth;
   static const rowBottom = rowTop + keyHeight;
 
-  static const buttonLeft = 126.05;
-  static const buttonRight = 280.05;
+  // زرا الحرفي والدخول في صف واحد، والصف في منتصف الشاشة.
+  static const craftsmanLeft = 67.2;
+  static const craftsmanRight = 188.6;
+  static const buttonLeft = 202.4;
+  static const buttonRight = 323.8;
   static const buttonTop = 514.9;
   static const buttonBottom = buttonTop + keyHeight;
 
-  static const wideLineLeft = 99.65;
-  static const wideLineRight = 306.48;
+  static const wideLineLeft = 92.63;
+  static const wideLineRight = 299.46;
   static const wideLineTop = 566.38;
   static const wideLineHeight = 2.0;
 
   static const privacySize = 11.2;
-  static const privacyCenterX = 197.7;
+  static const privacyCenterX = 191.2;
   static const privacyCenterY = 583.9;
 
-  static const shortLineLeft = 179.8;
-  static const shortLineRight = 220.95;
+  static const shortLineLeft = 172.64;
+  static const shortLineRight = 213.79;
   static const privacyLineTop = 604.4;
 
   // من اليمين: فيسبوك ثم انستغرام ثم تيك توك، وبين قواعد الأزرار مسافة واضحة.
-  static const socialCenters = [257.0, 200.0, 143.0];
+  static const socialCenters = [250.0, 193.0, 136.0];
   static const socialFaceWidth = 34.0;
   static const socialTop = 618.4;
   static const socialFaceHeight = 35.7;
@@ -96,7 +100,7 @@ abstract final class _Design {
   static const socialMarkSize = 19.0;
 
   static const contactSize = 10.0;
-  static const contactCenterX = 198.2;
+  static const contactCenterX = 191.2;
   static const contactCenterY = 676.4;
 
   /// لا يظهر هذا الخط في الصورة، وطلبته الملاحظة: بُعده عن الكلام كبُعد خط الخصوصية.
@@ -116,6 +120,7 @@ class _Words {
     required this.iraqCode,
     required this.mobileNumber,
     required this.login,
+    required this.craftsman,
     required this.wrongNumber,
     required this.privacy,
     required this.contact,
@@ -129,6 +134,7 @@ class _Words {
   final String iraqCode;
   final String mobileNumber;
   final String login;
+  final String craftsman;
   final String wrongNumber;
   final String privacy;
   final String contact;
@@ -145,6 +151,7 @@ const _arabic = _Words(
   iraqCode: 'رمز العراق',
   mobileNumber: 'رقم الموبايل',
   login: 'تسجيل الدخول',
+  craftsman: 'حرفي',
   wrongNumber: 'أدخل رقم موبايل عراقي صحيح يبدأ بـ 07',
   privacy: 'سياسة و الخصوصية',
   contact: 'تواصلوا معنى',
@@ -159,6 +166,7 @@ const _english = _Words(
   iraqCode: 'Iraq code',
   mobileNumber: 'Mobile number',
   login: 'Log in',
+  craftsman: 'Craftsman',
   wrongNumber: 'Enter a valid Iraqi mobile number starting with 07',
   privacy: 'Privacy Policy',
   contact: 'Contact us',
@@ -280,11 +288,29 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
 
   void _onFocusChanged() => setState(() {});
 
+  String get _typedPhone {
+    final digits = _phone.text;
+    return digits.startsWith('0') ? digits : '0$digits';
+  }
+
+  void _openCraftsman() {
+    final phone = _typedPhone;
+    _focus.unfocus();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AnnotatedRegion<SystemUiOverlayStyle>(
+          value: _appSystemBars(night: _nightMode),
+          child: CraftsmanScreen(initialPhone: validIraqiPhone(phone) ? phone : null),
+        ),
+      ),
+    );
+  }
+
   /// لا يوجد تحقق برسالة SMS في التطبيق، لذلك لا يكفي الرقم وحده للدخول:
   /// الرقم المسجل يكمل بكلمة المرور، والرقم الجديد يكمل بإنشاء حساب.
   Future<void> _submit() async {
-    final digits = _phone.text;
-    final phone = digits.startsWith('0') ? digits : '0$digits';
+    final phone = _typedPhone;
     if (!validIraqiPhone(phone)) {
       setState(() => _wrongNumber = true);
       _alarm.forward(from: 0);
@@ -656,6 +682,36 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
                                               ),
                                             ),
                                           ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            _touchArea(
+                              left: x(_Design.craftsmanLeft),
+                              right: x(_Design.craftsmanRight),
+                              top: y(_Design.buttonTop),
+                              bottom: y(_Design.buttonBottom),
+                              above: touchMargin,
+                              below: touchMargin,
+                              onTap: _busy ? null : _openCraftsman,
+                              child: PushKey(
+                                unit: unit,
+                                faceHeight: faceHeight,
+                                night: _night,
+                                child: Semantics(
+                                  button: true,
+                                  enabled: !_busy,
+                                  child: Center(
+                                    child: FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: _dayNight(
+                                        (night) => Text(
+                                          words.craftsman,
+                                          style: _textStyle(unit, night ? _nightInk : _ink)
+                                              .copyWith(fontWeight: FontWeight.w800),
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),

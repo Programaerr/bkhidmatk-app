@@ -217,6 +217,22 @@ class FakeRepo implements Repository {
   @override
   Future<void> deleteHire(int id) async {}
 
+  // طلبات الحرفيين
+  @override
+  Future<int> createApplication(CraftsmanApplication application) async => 1;
+
+  @override
+  Future<List<CraftsmanApplication>> listApplications() async => const [];
+
+  @override
+  Future<bool> hasPendingApplication(String phone) async => false;
+
+  @override
+  Future<void> acceptApplication(CraftsmanApplication application) async {}
+
+  @override
+  Future<void> rejectApplication(int id) async {}
+
   // messages
   @override
   Future<List<ChatMessage>> threadMessages(int customerId) async => const [];
