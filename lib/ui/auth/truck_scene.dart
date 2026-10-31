@@ -27,6 +27,11 @@ const _cabInterior = Color(0xFF2F3E46);
 const _glass = Color(0xFF455A64);
 const _glassEdge = Color(0xFF6B8290);
 
+// في الوضع الليلي تغمق الغيوم والبنايات والنباتات، وتبقى السيارة واضحة.
+const _nightSky = Color(0xFF1C2540);
+const _nightScenery = Color(0xFF4A5472);
+const _nightRoad = Color(0xFF5A6072);
+
 // السيارة تقف على خط الأرض نفسه، ومعكوسة أفقياً لتتجه إلى اليسار.
 const _vanScale = .951;
 const _vanOrigin = Offset(46 + 695.42 * _vanScale, 462.5 - 320.35 * _vanScale);
@@ -286,14 +291,16 @@ class RasterLayer {
   ui.Image? _image;
   double _resolution = 0;
 
-  void paint(Canvas canvas, double resolution) {
+  void paint(Canvas canvas, double resolution, {Color? tint}) {
     if (resolution != _resolution) _rasterize(resolution);
     final image = _image!;
+    final paint = Paint()..filterQuality = FilterQuality.low;
+    if (tint != null) paint.colorFilter = ColorFilter.mode(tint, BlendMode.modulate);
     canvas.drawImageRect(
       image,
       Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
       Rect.fromLTWH(bounds.left, bounds.top, image.width / resolution, image.height / resolution),
-      Paint()..filterQuality = FilterQuality.low,
+      paint,
     );
   }
 
@@ -344,8 +351,18 @@ class TruckArt {
     frontWheel = _record(artVanFrontWheel);
     torso = _record(artDriverTorso);
     head = _record(artDriverHead);
-    greetingCloud = _recordWith((canvas) => _paintCloud(canvas, 'جايك بطريق', _greetingLobes, 60));
-    hurryCloud = _recordWith((canvas) => _paintCloud(canvas, 'يلا جايك بطريق', _hurryLobes, 80));
+    greetingCloud = _recordWith(
+      (canvas) => _paintCloud(canvas, 'جايك بطريق', TextDirection.rtl, _greetingLobes, 60),
+    );
+    hurryCloud = _recordWith(
+      (canvas) => _paintCloud(canvas, 'يلا جايك بطريق', TextDirection.rtl, _hurryLobes, 80),
+    );
+    greetingCloudEnglish = _recordWith(
+      (canvas) => _paintCloud(canvas, 'On my way', TextDirection.ltr, _greetingLobes, 60),
+    );
+    hurryCloudEnglish = _recordWith(
+      (canvas) => _paintCloud(canvas, 'Coming fast!', TextDirection.ltr, _hurryLobes, 80),
+    );
     puffNear = _recordWith((canvas) => _paintPuff(canvas, 6));
     puffFar = _recordWith((canvas) => _paintPuff(canvas, 9));
     doorWindow = parseSvgPath(_doorWindow);
@@ -353,7 +370,8 @@ class TruckArt {
 
   late final RasterLayer clouds, buildings, plants, vanBack, vanTop;
   late final ui.Picture vanMiddle, rearWheel, frontWheel, torso, head;
-  late final ui.Picture greetingCloud, hurryCloud, puffNear, puffFar;
+  late final ui.Picture greetingCloud, hurryCloud, greetingCloudEnglish, hurryCloudEnglish;
+  late final ui.Picture puffNear, puffFar;
   late final Path doorWindow;
 
   void dispose() {
@@ -361,7 +379,8 @@ class TruckArt {
       layer.dispose();
     }
     for (final picture in [
-      vanMiddle, rearWheel, frontWheel, torso, head, greetingCloud, hurryCloud, puffNear, puffFar,
+      vanMiddle, rearWheel, frontWheel, torso, head, greetingCloud, hurryCloud,
+      greetingCloudEnglish, hurryCloudEnglish, puffNear, puffFar,
     ]) {
       picture.dispose();
     }
@@ -417,6 +436,7 @@ class TruckArt {
   static void _paintCloud(
     Canvas canvas,
     String line,
+    TextDirection direction,
     List<(double, double, double)> lobes,
     double halfWidth,
   ) {
@@ -445,7 +465,7 @@ class TruckArt {
           height: 1,
         ),
       ),
-      textDirection: TextDirection.rtl,
+      textDirection: direction,
     )..layout();
     text.paint(canvas, Offset(-text.width / 2, -text.height / 2));
     text.dispose();
@@ -474,9 +494,15 @@ Rect _vanArea(Size size, double scale) {
 
 /// المشهد المتحرك: السيارة تسير والغيوم والبنايات تمر خلفها، وتسرع عند الضغط عليها.
 class TruckScene extends StatefulWidget {
-  const TruckScene({super.key, required this.scale});
+  const TruckScene({super.key, required this.scale, this.night = 0, this.english = false});
 
   final double scale;
+
+  /// 0 نهار، و1 ليل.
+  final double night;
+
+  /// لغة كلام السائق.
+  final bool english;
 
   @override
   State<TruckScene> createState() => _TruckSceneState();
@@ -549,7 +575,9 @@ class _TruckSceneState extends State<TruckScene> with SingleTickerProviderStateM
           Positioned.fill(
             child: Semantics(
               image: true,
-              label: 'سيارة جايك تسير وسائقها يفتح الجامة ويقول: جايك بطريق',
+              label: widget.english
+                  ? 'The Jaik van driving while its driver opens the window and says: On my way'
+                  : 'سيارة جايك تسير وسائقها يفتح الجامة ويقول: جايك بطريق',
               child: RepaintBoundary(
                 child: CustomPaint(
                   painter: TruckScenePainter(
@@ -559,6 +587,8 @@ class _TruckSceneState extends State<TruckScene> with SingleTickerProviderStateM
                     scale: widget.scale,
                     pixelRatio: MediaQuery.devicePixelRatioOf(context),
                     logo: _logo,
+                    night: widget.night,
+                    english: widget.english,
                   ),
                 ),
               ),
@@ -568,7 +598,7 @@ class _TruckSceneState extends State<TruckScene> with SingleTickerProviderStateM
             rect: _vanArea(constraints.biggest, widget.scale),
             child: Semantics(
               button: true,
-              label: 'السيارة، اضغط عليها لتسرع',
+              label: widget.english ? 'The van, tap it to speed up' : 'السيارة، اضغط عليها لتسرع',
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: _onVanTap,
@@ -589,6 +619,8 @@ class TruckScenePainter extends CustomPainter {
     required this.scale,
     required this.pixelRatio,
     this.logo,
+    this.night = 0,
+    this.english = false,
   }) : super(repaint: tick);
 
   final TruckArt art;
@@ -596,6 +628,8 @@ class TruckScenePainter extends CustomPainter {
   final double scale;
   final double pixelRatio;
   final ui.Image? logo;
+  final double night;
+  final bool english;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -609,7 +643,7 @@ class TruckScenePainter extends CustomPainter {
         width: radiusX * 2,
         height: radiusY * 2,
       ));
-    canvas.drawPath(background, Paint()..color = _background);
+    canvas.drawPath(background, Paint()..color = Color.lerp(_background, _nightSky, night)!);
 
     final unit = TruckSceneMetrics.artScale * scale;
     final centerY = size.height * TruckSceneMetrics.artCenterFraction;
@@ -620,6 +654,7 @@ class TruckScenePainter extends CustomPainter {
     final viewLeft = 375 - size.width / 2 / unit;
     final viewRight = 375 + size.width / 2 / unit;
     final resolution = unit * pixelRatio;
+    final tint = night > 0 ? Color.lerp(Colors.white, _nightScenery, night) : null;
 
     // تسير السيارة إلى اليسار، فتمر الخلفية إلى اليمين.
     void strip(RasterLayer layer, double speed) {
@@ -630,7 +665,7 @@ class TruckScenePainter extends CustomPainter {
         canvas
           ..save()
           ..translate(offset + i * _stripPeriod, 0);
-        layer.paint(canvas, resolution);
+        layer.paint(canvas, resolution, tint: tint);
         canvas.restore();
       }
     }
@@ -639,7 +674,7 @@ class TruckScenePainter extends CustomPainter {
     strip(art.buildings, _buildingSpeed);
     canvas.drawRect(
       Rect.fromLTRB(viewLeft, 462.25, viewRight, 462.77),
-      Paint()..color = _ink,
+      Paint()..color = Color.lerp(_ink, _nightRoad, night)!,
     );
     strip(art.plants, _groundSpeed);
 
@@ -797,9 +832,9 @@ class TruckScenePainter extends CustomPainter {
     pop(art.puffNear, _puffNear, 0, .35);
     pop(art.puffFar, _puffFar, .15, .5);
     if (director.line == VanLine.hurry) {
-      pop(art.hurryCloud, _hurryCenter, .3, 1);
+      pop(english ? art.hurryCloudEnglish : art.hurryCloud, _hurryCenter, .3, 1);
     } else {
-      pop(art.greetingCloud, _greetingCenter, .3, 1);
+      pop(english ? art.greetingCloudEnglish : art.greetingCloud, _greetingCenter, .3, 1);
     }
   }
 
@@ -809,5 +844,7 @@ class TruckScenePainter extends CustomPainter {
       oldDelegate.pixelRatio != pixelRatio ||
       oldDelegate.director != director ||
       oldDelegate.art != art ||
-      oldDelegate.logo != logo;
+      oldDelegate.logo != logo ||
+      oldDelegate.night != night ||
+      oldDelegate.english != english;
 }

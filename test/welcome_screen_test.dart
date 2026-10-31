@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:jaik/core/theme.dart';
 import 'package:jaik/state/app_state.dart';
+import 'package:jaik/ui/auth/day_night_switch.dart';
 import 'package:jaik/ui/auth/login_screen.dart';
 import 'package:jaik/ui/auth/push_key.dart';
 import 'package:jaik/ui/auth/register_screen.dart';
+import 'package:jaik/ui/auth/social_marks.dart';
 import 'package:jaik/ui/auth/truck_scene.dart';
 import 'package:jaik/ui/auth/welcome_screen.dart';
 
@@ -56,7 +59,159 @@ Future<void> _submit(WidgetTester tester, String phone) async {
   await tester.pump(const Duration(milliseconds: 400));
 }
 
+/// يضبط مقاس الشاشة ويرجعه بعد انتهاء الاختبار.
+void _useScreen(WidgetTester tester, Size size, {double statusBar = 0, double keyboard = 0}) {
+  tester.view
+    ..physicalSize = size
+    ..devicePixelRatio = 1
+    ..padding = FakeViewPadding(top: statusBar)
+    ..viewPadding = FakeViewPadding(top: statusBar)
+    ..viewInsets = FakeViewPadding(bottom: keyboard);
+  addTearDown(tester.view.reset);
+}
+
 void main() {
+  setUp(() => SharedPreferences.setMockInitialValues({}));
+
+  testWidgets('زر اللغة يبدّل نصوص الشاشة وكلام السائق، ثم يرجعها', (tester) async {
+    await _pump(tester);
+    TruckScenePainter scene() => tester
+        .widget<CustomPaint>(
+          find.descendant(of: find.byType(TruckScene), matching: find.byType(CustomPaint)),
+        )
+        .painter! as TruckScenePainter;
+    expect(find.text('AR'), findsOneWidget);
+    expect(scene().english, isFalse);
+
+    await tester.tap(find.text('AR'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('EN'), findsOneWidget);
+    expect(find.text('AR'), findsNothing);
+    expect(find.text('Log in'), findsOneWidget);
+    expect(find.text('Mobile number'), findsOneWidget);
+    expect(find.text('Privacy Policy'), findsOneWidget);
+    expect(find.text('Contact us'), findsOneWidget);
+    expect(find.text('تسجيل الدخول'), findsNothing);
+    expect(scene().english, isTrue);
+
+    await tester.tap(find.text('EN'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('AR'), findsOneWidget);
+    expect(find.text('تسجيل الدخول'), findsOneWidget);
+    expect(scene().english, isFalse);
+  });
+
+  testWidgets('زر الليل والنهار يغيّر ثيم التطبيق ولون الشاشة بالتدريج ثم يرجع', (tester) async {
+    await _pump(tester);
+    final state = tester.element(find.byType(WelcomeScreen)).read<AppState>();
+    double night() => tester.widget<PushKey>(find.byType(PushKey).first).night;
+    Color? ground() => tester.widget<Scaffold>(find.byType(Scaffold)).backgroundColor;
+    final dayGround = ground();
+    expect(night(), 0);
+
+    await tester.tap(find.bySemanticsLabel('الوضع الليلي'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
+    expect(state.themeMode, ThemeMode.dark);
+    expect(night(), inExclusiveRange(0, 1));
+
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(night(), 1);
+    expect(tester.widget<DayNightSwitch>(find.byType(DayNightSwitch)).night, 1);
+    expect(ground(), isNot(dayGround));
+
+    await tester.tap(find.bySemanticsLabel('الوضع الليلي'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(state.themeMode, ThemeMode.light);
+    expect(night(), 0);
+    expect(ground(), dayGround);
+  });
+
+  test('اللغة والوضع المختاران يرجعان عند فتح التطبيق من جديد', () async {
+    final first = AppState(repository: FakeRepo());
+    await first.setEnglish(true);
+    await first.setTheme(true);
+
+    final next = AppState(repository: FakeRepo());
+    expect(next.english, isFalse);
+    await next.boot();
+    expect(next.english, isTrue);
+    expect(next.themeMode, ThemeMode.dark);
+  });
+
+  testWidgets('الخصوصية والتواصل وأزرار المنصات تحت زر الدخول بترتيب التصميم', (tester) async {
+    await _pump(tester);
+    final login = tester.getRect(find.byType(PushKey).at(2));
+    final privacy = tester.getRect(find.text('سياسة و الخصوصية'));
+    final facebook = tester.getRect(find.byType(PushKey).at(3));
+    final instagram = tester.getRect(find.byType(PushKey).at(4));
+    final tiktok = tester.getRect(find.byType(PushKey).at(5));
+    final contact = tester.getRect(find.text('تواصلوا معنى'));
+
+    expect(privacy.top, greaterThan(login.bottom));
+    expect(facebook.top, greaterThan(privacy.bottom));
+    expect(contact.top, greaterThan(facebook.bottom));
+    expect(facebook.left, greaterThan(instagram.right));
+    expect(instagram.left, greaterThan(tiktok.right));
+
+    final marks = tester
+        .widgetList<CustomPaint>(find.byType(CustomPaint))
+        .map((paint) => paint.painter)
+        .whereType<SocialMarkPainter>()
+        .map((painter) => painter.mark);
+    expect(marks, SocialMark.values);
+    for (final name in ['فيسبوك', 'انستغرام', 'تيك توك']) {
+      expect(find.bySemanticsLabel(name), findsOneWidget);
+    }
+  });
+
+  testWidgets('كل العناصر داخل أصغر هاتف، وزرا الأعلى تحت شريط الحالة', (tester) async {
+    _useScreen(tester, const Size(320, 568), statusBar: 24);
+    await _pump(tester);
+    final language = tester.getRect(find.text('AR'));
+    final dayNight = tester.getRect(find.byType(DayNightSwitch));
+    final contact = tester.getRect(find.text('تواصلوا معنى'));
+
+    expect(language.left, greaterThan(0));
+    expect(language.top, greaterThan(24));
+    expect(dayNight.right, lessThan(320));
+    expect(dayNight.top, greaterThan(24));
+    expect(contact.bottom, lessThan(568));
+  });
+
+  testWidgets('الشاشة القصيرة تعرض بقية العناصر بالسحب', (tester) async {
+    _useScreen(tester, const Size(800, 360));
+    await _pump(tester);
+    final contact = find.text('تواصلوا معنى');
+    expect(tester.getRect(contact).top, greaterThan(360));
+
+    await tester.drag(find.byType(SingleChildScrollView), const Offset(0, -300));
+    await tester.pump();
+    expect(tester.getRect(contact).bottom, lessThan(360));
+  });
+
+  testWidgets('لوحة المفاتيح لا تغطي زر الدخول', (tester) async {
+    _useScreen(tester, const Size(392, 872), keyboard: 330);
+    await _pump(tester);
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(tester.getRect(find.byType(PushKey).at(2)).bottom, lessThanOrEqualTo(872 - 330));
+  });
+
+  for (final size in const [Size(360, 640), Size(392, 872)]) {
+    testWidgets('رسالة الخطأ فوق خانة الرقم ولا تغطيها في هاتف $size', (tester) async {
+      _useScreen(tester, size);
+      await _pump(tester);
+      await tester.tap(find.text('تسجيل الدخول'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      final message = tester.getRect(find.text('أدخل رقم موبايل عراقي صحيح يبدأ بـ 07'));
+      expect(message.bottom, lessThanOrEqualTo(tester.getRect(find.byType(PushKey).at(1)).top));
+    });
+  }
+
   testWidgets('الرقم غير العراقي لا ينتقل لشاشة أخرى ويعرض خطأ', (tester) async {
     final repo = await _pump(tester);
     await _submit(tester, '1234567890');

@@ -12,9 +12,23 @@ const _baseInnerShadow = Color(0x26000000);
 const _sideShadow = Color(0x38000000);
 const _sideInnerShadow = Color(0x24000000);
 const _sideShine = Color(0x40FFFFFF);
+const _sideGlow = Colors.white;
 const _alarmFaceCenter = Color(0xFFEF4444);
 const _alarmFaceEdge = Color(0xFFDC2626);
 const _alarmSide = Color(0xFF991B1B);
+
+// الألوان نفسها في الوضع الليلي.
+const _nightFaceCenter = Color(0xFF2E3446);
+const _nightFaceEdge = Color(0xFF262B3A);
+const _nightFaceOutline = Color(0x1FFFFFFF);
+const _nightSide = Color(0xFF1B1F2C);
+const _nightBaseFill = Color(0x14FFFFFF);
+const _nightBaseHighlight = Color(0x14FFFFFF);
+const _nightBaseInnerShadow = Color(0x66000000);
+const _nightSideShadow = Color(0x80000000);
+const _nightSideInnerShadow = Color(0x4D000000);
+const _nightSideShine = Color(0x14FFFFFF);
+const _nightSideGlow = Color(0x26FFFFFF);
 
 /// زر ثلاثي الأبعاد باللون الأبيض: وجهه ينخفض عند اللمس فوق جانب وقاعدة ثابتين.
 class PushKey extends StatefulWidget {
@@ -26,10 +40,14 @@ class PushKey extends StatefulWidget {
     this.borderColor,
     this.held = false,
     this.alarm = 0,
+    this.night = 0,
   });
 
   /// ارتفاع الجانب الظاهر تحت وجه الزر، بوحدات التصميم.
   static const depth = 12.0;
+
+  /// المسافة الأفقية بين حد القاعدة وحد وجه الزر، بوحدات التصميم.
+  static const faceInset = 8.0;
 
   final double unit;
   final double faceHeight;
@@ -41,6 +59,9 @@ class PushKey extends StatefulWidget {
 
   /// مقدار احمرار الزر: 0 لونه الطبيعي، و1 أحمر بالكامل.
   final double alarm;
+
+  /// 0 نهار، و1 ليل.
+  final double night;
 
   @override
   State<PushKey> createState() => _PushKeyState();
@@ -77,12 +98,13 @@ class _PushKeyState extends State<PushKey> {
                   faceHeight: widget.faceHeight,
                   borderColor: widget.borderColor,
                   alarm: widget.alarm,
+                  night: widget.night,
                 ),
               ),
             ),
             Positioned(
-              left: 8 * unit,
-              right: 8 * unit,
+              left: PushKey.faceInset * unit,
+              right: PushKey.faceInset * unit,
               top: 6 * unit * pressed,
               height: widget.faceHeight,
               child: child!,
@@ -100,6 +122,7 @@ class _KeyPainter extends CustomPainter {
     required this.unit,
     required this.faceHeight,
     required this.alarm,
+    required this.night,
     this.borderColor,
   });
 
@@ -107,9 +130,12 @@ class _KeyPainter extends CustomPainter {
   final double unit;
   final double faceHeight;
   final double alarm;
+  final double night;
   final Color? borderColor;
 
   double _mix(double up, double down) => (up + (down - up) * pressed) * unit;
+
+  Color _tone(Color day, Color dark) => Color.lerp(day, dark, night)!;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -124,11 +150,18 @@ class _KeyPainter extends CustomPainter {
       ..drawRRect(
         base.shift(Offset(0, unit)),
         Paint()
-          ..color = _baseHighlight
+          ..color = _tone(_baseHighlight, _nightBaseHighlight)
           ..maskFilter = MaskFilter.blur(BlurStyle.normal, .5 * unit),
       )
-      ..drawRRect(base, Paint()..color = _baseFill);
-    _innerShadow(canvas, base, _baseInnerShadow, Offset(0, 2 * unit), 2 * unit, 0);
+      ..drawRRect(base, Paint()..color = _tone(_baseFill, _nightBaseFill));
+    _innerShadow(
+      canvas,
+      base,
+      _tone(_baseInnerShadow, _nightBaseInnerShadow),
+      Offset(0, 2 * unit),
+      2 * unit,
+      0,
+    );
   }
 
   void _paintSide(Canvas canvas, Size size) {
@@ -148,31 +181,42 @@ class _KeyPainter extends CustomPainter {
       ..drawRRect(
         side.shift(Offset(0, 2 * unit)),
         Paint()
-          ..color = _sideShadow
+          ..color = _tone(_sideShadow, _nightSideShadow)
           ..maskFilter = MaskFilter.blur(BlurStyle.normal, 1.5 * unit),
       )
-      ..drawRRect(side, Paint()..color = Color.lerp(_side, _alarmSide, alarm)!)
+      ..drawRRect(side, Paint()..color = Color.lerp(_tone(_side, _nightSide), _alarmSide, alarm)!)
       ..save()
       ..clipRRect(side);
     final lowCorner = side.bottom - 8 * unit;
-    _glow(canvas, Offset(side.left + 4 * unit, lowCorner), 4 * unit, 8 * unit, _sideShine);
-    _glow(canvas, Offset(side.right - 4 * unit, lowCorner), 4 * unit, 8 * unit, _sideShine);
-    _glow(canvas, Offset(side.left - 4 * unit, side.top), 16 * unit, 16 * unit, Colors.white);
-    _glow(canvas, Offset(side.right + 4 * unit, side.top), 16 * unit, 16 * unit, Colors.white);
+    final shine = _tone(_sideShine, _nightSideShine);
+    final glow = _tone(_sideGlow, _nightSideGlow);
+    _glow(canvas, Offset(side.left + 4 * unit, lowCorner), 4 * unit, 8 * unit, shine);
+    _glow(canvas, Offset(side.right - 4 * unit, lowCorner), 4 * unit, 8 * unit, shine);
+    _glow(canvas, Offset(side.left - 4 * unit, side.top), 16 * unit, 16 * unit, glow);
+    _glow(canvas, Offset(side.right + 4 * unit, side.top), 16 * unit, 16 * unit, glow);
     canvas.restore();
-    _innerShadow(canvas, side, _sideInnerShadow, Offset(0, -unit), 3 * unit, 3 * unit);
+    _innerShadow(
+      canvas,
+      side,
+      _tone(_sideInnerShadow, _nightSideInnerShadow),
+      Offset(0, -unit),
+      3 * unit,
+      3 * unit,
+    );
   }
 
   void _paintFace(Canvas canvas, Size size) {
     final grow = _mix(0, 2);
     final offset = _mix(0, 6);
+    final inset = PushKey.faceInset * unit;
     final face = RRect.fromLTRBR(
-      8 * unit - grow,
+      inset - grow,
       offset,
-      size.width - 8 * unit + grow,
+      size.width - inset + grow,
       faceHeight + offset,
       Radius.circular(_mix(4, 6)),
     );
+    final outline = _tone(_faceOutline, _nightFaceOutline);
     canvas.drawRRect(
       face,
       Paint()
@@ -180,15 +224,15 @@ class _KeyPainter extends CustomPainter {
           face.center,
           face.width * .62,
           [
-            Color.lerp(_faceCenter, _alarmFaceCenter, alarm)!,
-            Color.lerp(_faceEdge, _alarmFaceEdge, alarm)!,
+            Color.lerp(_tone(_faceCenter, _nightFaceCenter), _alarmFaceCenter, alarm)!,
+            Color.lerp(_tone(_faceEdge, _nightFaceEdge), _alarmFaceEdge, alarm)!,
           ],
         ),
     );
     canvas.drawRRect(
       face.deflate(.5 * unit),
       Paint()
-        ..color = Color.lerp(borderColor ?? _faceOutline, _faceOutline, alarm)!
+        ..color = Color.lerp(borderColor ?? outline, outline, alarm)!
         ..style = PaintingStyle.stroke
         ..strokeWidth = unit,
     );
@@ -242,5 +286,6 @@ class _KeyPainter extends CustomPainter {
       oldDelegate.unit != unit ||
       oldDelegate.faceHeight != faceHeight ||
       oldDelegate.alarm != alarm ||
+      oldDelegate.night != night ||
       oldDelegate.borderColor != borderColor;
 }

@@ -16,6 +16,9 @@ class AppState extends ChangeNotifier {
   bool booting = true;
   ThemeMode themeMode = ThemeMode.light;
 
+  /// لغة الشاشة الأولى؛ بقية الشاشات عربية حالياً.
+  bool english = false;
+
   bool get isLoggedIn => user != null;
   bool get isAdmin => user?.isAdmin ?? false;
 
@@ -26,6 +29,7 @@ class AppState extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     final savedTheme = prefs.getString('theme');
     themeMode = savedTheme == 'dark' ? ThemeMode.dark : ThemeMode.light;
+    english = prefs.getBool('english') ?? false;
 
     try {
       final userId = prefs.getInt('user_id');
@@ -96,6 +100,13 @@ class AppState extends ChangeNotifier {
     themeMode = dark ? ThemeMode.dark : ThemeMode.light;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('theme', dark ? 'dark' : 'light');
+    notifyListeners();
+  }
+
+  Future<void> setEnglish(bool value) async {
+    english = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('english', value);
     notifyListeners();
   }
 
