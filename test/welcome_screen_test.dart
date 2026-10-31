@@ -146,6 +146,7 @@ void main() {
       expect(director.window, 1);
       expect(director.bubble, 1);
       expect(director.speed, greaterThan(3));
+      expect(director.effort, greaterThan(.8));
 
       final fastStart = director.travel;
       run(director, 1);
@@ -155,6 +156,7 @@ void main() {
       expect(director.window, 0);
       expect(director.bubble, 0);
       expect(director.speed, closeTo(1, .01));
+      expect(director.effort, closeTo(0, .01));
     });
 
     test('الضغط أثناء الترحيب يبدّل الكلام مباشرة دون قفز الجامة', () {

@@ -31,6 +31,7 @@ const _glassEdge = Color(0xFF6B8290);
 const _vanScale = .951;
 const _vanOrigin = Offset(46 + 695.42 * _vanScale, 462.5 - 320.35 * _vanScale);
 const _vanBounds = Rect.fromLTRB(20, -2, 700, 286);
+const _vanRear = 46 + (695.42 - 24.47) * _vanScale;
 
 const _rearWheelCenter = Offset(156.23, 270.3);
 const _frontWheelCenter = Offset(597.33, 270.3);
@@ -61,6 +62,20 @@ const _stripPeriod = 900.0;
 // عند الإسراع تتقدم السيارة قليلاً وترتفع مقدمتها.
 const _surgeDistance = 22.0;
 const _leanAngle = .02;
+
+// خطوط الهواء البيضاء خلف السيارة عند الإسراع:
+// (ارتفاع الخط، طوله، بدايته قياساً إلى مؤخرة السيارة، موقعه من دورته).
+const _windLines = <(double, double, double, double)>[
+  (118, 110, -360, .15),
+  (140, 76, -250, .62),
+  (205, 96, -40, .05),
+  (245, 132, -40, .55),
+  (290, 84, -40, .30),
+  (335, 120, -40, .80),
+  (380, 92, -40, .45),
+  (441, 100, -230, .70),
+];
+const _windTravel = 260.0;
 
 enum VanLine { greeting, hurry }
 
@@ -93,6 +108,9 @@ class VanDirector {
   double _clock = 0;
 
   double get nod => bubble * math.sin(time * 4);
+
+  /// مقدار الإسراع من 0 (السرعة العادية) إلى 1 (أقصى سرعة).
+  double get effort => (speed - 1) / (maxSpeed - 1);
 
   void tap() {
     line = VanLine.hurry;
@@ -449,7 +467,7 @@ Rect _vanArea(Size size, double scale) {
   return Rect.fromLTRB(
     x(46),
     y(_vanOrigin.dy),
-    x(46 + (695.42 - 24.47) * _vanScale),
+    x(_vanRear),
     y(462.5),
   );
 }
@@ -625,15 +643,39 @@ class TruckScenePainter extends CustomPainter {
     );
     strip(art.plants, _groundSpeed);
 
+    _wind(canvas);
     _van(canvas, resolution * _vanScale);
     canvas.restore();
   }
 
+  /// إزاحة السيارة عن مكانها: تمايل خفيف، وتقدّم عند الإسراع.
+  double get _vanShift =>
+      5 * math.sin(2 * math.pi * director.time / 7) - director.effort * _surgeDistance;
+
+  void _wind(Canvas canvas) {
+    final effort = director.effort;
+    if (effort <= .02) return;
+    final rear = _vanRear + _vanShift;
+    final paint = Paint()..isAntiAlias = true;
+    for (final (y, length, start, phase) in _windLines) {
+      final life = (director.travel * _groundSpeed / _windTravel + phase) % 1;
+      final fade = math.min(life / .15, 1.0) * math.min((1 - life) / .25, 1.0);
+      final x = rear + start + life * _windTravel;
+      paint.color = Colors.white.withValues(alpha: .9 * effort * fade);
+      canvas.drawPath(
+        Path()
+          ..moveTo(x, y - 2.4)
+          ..lineTo(x + length, y)
+          ..lineTo(x, y + 2.4)
+          ..close(),
+        paint,
+      );
+    }
+  }
+
   void _van(Canvas canvas, double resolution) {
     final t = director.time;
-    final effort = (director.speed - 1) / (VanDirector.maxSpeed - 1);
-    final sway = 5 * math.sin(2 * math.pi * t / 7) - effort * _surgeDistance;
-    final bounce = (1 + effort * .6) *
+    final bounce = (1 + director.effort * .6) *
         (.8 * math.sin(2 * math.pi * 1.7 * t) + .35 * math.sin(2 * math.pi * 3.1 * t));
     // الرسم معكوس، فهذه الزاوية الموجبة تظهر عكس عقارب الساعة على الشاشة.
     final spin = director.travel * _groundSpeed / _wheelRadius;
@@ -648,7 +690,7 @@ class TruckScenePainter extends CustomPainter {
 
     canvas
       ..save()
-      ..translate(_vanOrigin.dx + sway, _vanOrigin.dy)
+      ..translate(_vanOrigin.dx + _vanShift, _vanOrigin.dy)
       ..scale(-_vanScale, _vanScale)
       ..save();
     body();
