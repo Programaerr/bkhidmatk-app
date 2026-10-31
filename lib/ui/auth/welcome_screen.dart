@@ -46,8 +46,10 @@ abstract final class _Design {
   static const blueBottom = 414.3;
 
   static const barCenter = 34.6;
-  static const languageCenter = 35.5;
+  static const barGap = 24.0;
+  static const languageLeft = 27.3;
   static const languageSize = 13.0;
+  static const globeSize = 16.0;
   static const switchLeft = 319.0;
   static const switchRight = 371.1;
   static const switchHeight = 27.25;
@@ -204,14 +206,20 @@ class WelcomeScreen extends StatefulWidget {
   State<WelcomeScreen> createState() => _WelcomeScreenState();
 }
 
-class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProviderStateMixin {
+class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateMixin {
   final _phone = TextEditingController();
   final _focus = FocusNode();
   late final _alarm = AnimationController(vsync: this, duration: _alarmDuration)
     ..addStatusListener(_onAlarmStatus);
+  late final _nightController =
+      AnimationController(vsync: this, duration: const Duration(milliseconds: 500));
+  late final _night = CurvedAnimation(parent: _nightController, curve: Curves.easeInOut);
+  late final _alarmAndNight = Listenable.merge([_alarm, _night]);
+  late final AppState _appState;
   bool _busy = false;
   bool _wrongNumber = false;
   bool _nightMode = false;
+  bool _reduceMotion = false;
 
   static const _alarmDuration = Duration(milliseconds: 2800);
   static const _alarmHoldSeconds = .4;
@@ -230,14 +238,37 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
     if (status == AnimationStatus.completed) setState(() => _wrongNumber = false);
   }
 
+  void _onAppStateChanged() {
+    final night = _appState.themeMode == ThemeMode.dark;
+    if (night == _nightMode) return;
+    _nightMode = night;
+    if (_reduceMotion) {
+      _nightController.value = night ? 1 : 0;
+    } else if (night) {
+      _nightController.forward();
+    } else {
+      _nightController.reverse();
+    }
+  }
+
+  void _onNightStatus(AnimationStatus status) => setState(() {});
+
   @override
   void initState() {
     super.initState();
     _focus.addListener(_onFocusChanged);
+    _appState = context.read<AppState>()..addListener(_onAppStateChanged);
+    _nightMode = _appState.themeMode == ThemeMode.dark;
+    _nightController
+      ..value = _nightMode ? 1 : 0
+      ..addStatusListener(_onNightStatus);
   }
 
   @override
   void dispose() {
+    _appState.removeListener(_onAppStateChanged);
+    _night.dispose();
+    _nightController.dispose();
     _alarm.dispose();
     _focus
       ..removeListener(_onFocusChanged)
@@ -274,7 +305,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
       MaterialPageRoute(
         builder: (_) => AnnotatedRegion<SystemUiOverlayStyle>(
           value: _appSystemBars(night: _nightMode),
-          child: registered ? LoginScreen(initialPhone: phone) : RegisterScreen(initialPhone: phone),
+          child:
+              registered ? LoginScreen(initialPhone: phone) : RegisterScreen(initialPhone: phone),
         ),
       ),
     );
@@ -283,24 +315,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
-    _nightMode = state.themeMode == ThemeMode.dark;
-    return TweenAnimationBuilder<double>(
-      tween: Tween<double>(end: _nightMode ? 1 : 0),
-      duration: MediaQuery.disableAnimationsOf(context)
-          ? Duration.zero
-          : const Duration(milliseconds: 500),
-      curve: Curves.easeInOut,
-      builder: (context, night, _) => _screen(context, state, night),
-    );
-  }
-
-  Widget _screen(BuildContext context, AppState state, double night) {
+    _reduceMotion = MediaQuery.disableAnimationsOf(context);
     final words = state.english ? _english : _arabic;
-    final ground = Color.lerp(_cream, _nightGround, night)!;
-    final ink = Color.lerp(_ink, _nightInk, night)!;
-    final hint = Color.lerp(_hint, _nightHint, night)!;
-    final label = Color.lerp(_label, _nightInk, night)!;
-    final shortLine = Color.lerp(_shortLine, _nightShortLine, night)!;
 
     final size = MediaQuery.sizeOf(context);
     final keyboard = MediaQuery.viewInsetsOf(context).bottom;
@@ -324,7 +340,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
     // زرا اللغة والوضع يبقيان في زاويتي الشاشة وتحت شريط الحالة في كل الهواتف.
     final barCenter = math.max(
       size.height * _Design.barCenter / _Design.height,
-      safeArea.top + 4 + _Design.switchHeight / 2 * unit,
+      safeArea.top + _Design.barGap + _Design.switchHeight / 2 * unit,
     );
     final switchWidth = (_Design.switchRight - _Design.switchLeft) * unit;
     final switchRight = size.width - (_Design.width - _Design.switchRight) * unit;
@@ -341,14 +357,16 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
     // هامش اللمس يكمل الأزرار إلى 48 بكسل دون تغيير حجمها الظاهر.
     final touchMargin = 3 * unit;
     const minTouch = 48.0;
+    const languageMargin = 12.0;
     final faceHeight = _Design.faceHeight * unit;
 
-    Widget line(double left, double right, double top, double height, Color color) => Positioned(
+    Widget line(double left, double right, double top, double height, Color day, Color dark) =>
+        Positioned(
           left: x(left),
           width: (right - left) * unit,
           top: y(top),
           height: height * unit,
-          child: ColoredBox(color: color),
+          child: _dayNight((night) => ColoredBox(color: night ? dark : day)),
         );
 
     Widget caption(String text, double fontSize, double centerX, double centerY) => Positioned(
@@ -357,331 +375,407 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
           top: y(centerY) - 15,
           height: 30,
           child: Center(
-            child: Text(
-              text,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Cairo',
-                fontSize: fontSize * unit,
-                height: 1.2,
-                fontWeight: FontWeight.w700,
-                color: label,
+            child: _dayNight(
+              (night) => Text(
+                text,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: fontSize * unit,
+                  height: 1.2,
+                  fontWeight: FontWeight.w700,
+                  color: night ? _nightInk : _label,
+                ),
               ),
             ),
           ),
         );
 
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark,
-        statusBarBrightness: Brightness.light,
-        systemNavigationBarColor: _nightMode ? _nightGround : _cream,
-        systemNavigationBarIconBrightness: _nightMode ? Brightness.light : Brightness.dark,
+    return AnimatedBuilder(
+      animation: _night,
+      builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.dark,
+          statusBarBrightness: Brightness.light,
+          systemNavigationBarColor: Color.lerp(_cream, _nightGround, _night.value),
+          systemNavigationBarIconBrightness: _night.value < .5 ? Brightness.dark : Brightness.light,
+        ),
+        child: child!,
       ),
-      child: Directionality(
-        textDirection: words.direction,
-        child: Scaffold(
-          backgroundColor: ground,
-          resizeToAvoidBottomInset: false,
-          body: GestureDetector(
-            behavior: HitTestBehavior.translucent,
-            onTap: _focus.unfocus,
-            child: SingleChildScrollView(
-              child: SizedBox(
-                height: pageHeight,
-                child: TweenAnimationBuilder<double>(
-                  tween: Tween<double>(end: lift),
-                  duration: const Duration(milliseconds: 200),
-                  curve: Curves.easeOut,
-                  builder: (context, value, child) =>
-                      Transform.translate(offset: Offset(0, -value), child: child),
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Positioned(
-                        left: 0,
-                        right: 0,
-                        top: 0,
-                        height: blueBottom,
-                        child: TruckScene(scale: fit, english: state.english),
-                      ),
-                      Positioned(
-                        left: _Design.languageCenter * unit - minTouch / 2,
-                        width: minTouch,
-                        top: barCenter - minTouch / 2,
-                        height: minTouch,
-                        child: Semantics(
-                          button: true,
-                          label: words.changeLanguage,
-                          child: GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: () => state.setEnglish(!state.english),
-                            child: Center(
-                              child: AnimatedSwitcher(
-                                duration: const Duration(milliseconds: 200),
-                                child: Text(
-                                  words.language,
-                                  key: ValueKey(words.language),
-                                  textDirection: TextDirection.ltr,
-                                  style: TextStyle(
-                                    fontFamily: 'Cairo',
-                                    fontSize: _Design.languageSize * unit,
-                                    height: 1,
-                                    letterSpacing: .8 * unit,
-                                    fontWeight: FontWeight.w900,
-                                    color: _label,
+      child: RepaintBoundary(
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            _dayNight((night) => ColoredBox(color: night ? _nightGround : _cream)),
+            Directionality(
+              textDirection: words.direction,
+              child: Scaffold(
+                backgroundColor: Colors.transparent,
+                resizeToAvoidBottomInset: false,
+                body: GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  onTap: _focus.unfocus,
+                  child: SingleChildScrollView(
+                    child: SizedBox(
+                      height: pageHeight,
+                      child: TweenAnimationBuilder<double>(
+                        tween: Tween<double>(end: lift),
+                        duration: const Duration(milliseconds: 200),
+                        curve: Curves.easeOut,
+                        builder: (context, value, child) =>
+                            Transform.translate(offset: Offset(0, -value), child: child),
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Positioned(
+                              left: 0,
+                              right: 0,
+                              top: 0,
+                              height: blueBottom,
+                              child: TruckScene(scale: fit, english: state.english),
+                            ),
+                            Positioned(
+                              left: _Design.languageLeft * unit - languageMargin,
+                              top: barCenter - minTouch / 2,
+                              height: minTouch,
+                              child: Semantics(
+                                button: true,
+                                label: words.changeLanguage,
+                                child: GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () => state.setEnglish(!state.english),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: languageMargin),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      textDirection: TextDirection.ltr,
+                                      children: [
+                                        Icon(
+                                          Icons.public,
+                                          size: _Design.globeSize * unit,
+                                          color: _label,
+                                        ),
+                                        SizedBox(width: 4 * unit),
+                                        AnimatedSwitcher(
+                                          duration: const Duration(milliseconds: 200),
+                                          child: Text(
+                                            words.language,
+                                            key: ValueKey(words.language),
+                                            textDirection: TextDirection.ltr,
+                                            style: TextStyle(
+                                              fontFamily: 'Cairo',
+                                              fontSize: _Design.languageSize * unit,
+                                              height: 1,
+                                              letterSpacing: .8 * unit,
+                                              fontWeight: FontWeight.w900,
+                                              color: _label,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        left: switchRight - switchWidth,
-                        width: switchWidth,
-                        top: barCenter - minTouch / 2,
-                        height: minTouch,
-                        child: Semantics(
-                          button: true,
-                          toggled: _nightMode,
-                          label: words.nightMode,
-                          child: GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: () => state.setTheme(!_nightMode),
-                            child: Center(
-                              child: SizedBox(
-                                width: double.infinity,
-                                height: _Design.switchHeight * unit,
-                                child: DayNightSwitch(night: _nightMode),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      _touchArea(
-                        left: x(_Design.codeLeft),
-                        right: x(_Design.codeRight),
-                        top: y(_Design.rowTop),
-                        bottom: y(_Design.rowBottom),
-                        above: touchMargin,
-                        below: touchMargin,
-                        onTap: _focus.requestFocus,
-                        child: PushKey(
-                          unit: unit,
-                          faceHeight: faceHeight,
-                          night: night,
-                          child: Center(
-                            child: Semantics(
-                              label: words.iraqCode,
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: Text(
-                                  '🇮🇶 +964',
-                                  textDirection: TextDirection.ltr,
-                                  style: _textStyle(unit, ink),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      _touchArea(
-                        left: x(_Design.numberLeft),
-                        right: x(_Design.numberRight),
-                        top: y(_Design.rowTop),
-                        bottom: y(_Design.rowBottom),
-                        above: touchMargin,
-                        below: touchMargin,
-                        onTap: _focus.requestFocus,
-                        child: AnimatedBuilder(
-                          animation: _alarm,
-                          builder: (context, _) {
-                            final alarm = _alarmLevel;
-                            return PushKey(
-                              unit: unit,
-                              faceHeight: faceHeight,
-                              alarm: alarm,
-                              night: night,
-                              borderColor: _focus.hasFocus ? _blue : null,
-                              child: Center(
-                                child: TextField(
-                                  controller: _phone,
-                                  focusNode: _focus,
-                                  enabled: !_busy,
-                                  keyboardType: TextInputType.phone,
-                                  textInputAction: TextInputAction.done,
-                                  textDirection: TextDirection.ltr,
-                                  textAlign: TextAlign.center,
-                                  textAlignVertical: TextAlignVertical.center,
-                                  cursorColor: Color.lerp(_blue, Colors.white, alarm),
-                                  inputFormatters: const [_IraqiPhoneFormatter()],
-                                  style: _textStyle(unit, Color.lerp(ink, Colors.white, alarm)!),
-                                  onSubmitted: (_) => _submit(),
-                                  decoration: InputDecoration(
-                                    isCollapsed: true,
-                                    filled: false,
-                                    contentPadding: EdgeInsets.zero,
-                                    border: InputBorder.none,
-                                    enabledBorder: InputBorder.none,
-                                    focusedBorder: InputBorder.none,
-                                    disabledBorder: InputBorder.none,
-                                    errorBorder: InputBorder.none,
-                                    focusedErrorBorder: InputBorder.none,
-                                    hintText: alarm > 0 ? '07XX XXX XXXX' : words.mobileNumber,
-                                    hintTextDirection:
-                                        alarm > 0 ? TextDirection.ltr : words.direction,
-                                    hintStyle: _textStyle(
-                                      unit,
-                                      Color.lerp(hint, Colors.white, alarm)!,
-                                    ).copyWith(fontWeight: FontWeight.w600),
+                            Positioned(
+                              left: switchRight - switchWidth,
+                              width: switchWidth,
+                              top: barCenter - minTouch / 2,
+                              height: minTouch,
+                              child: Semantics(
+                                button: true,
+                                toggled: _nightMode,
+                                label: words.nightMode,
+                                child: GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () => state.setTheme(!_nightMode),
+                                  child: Center(
+                                    child: SizedBox(
+                                      width: double.infinity,
+                                      height: _Design.switchHeight * unit,
+                                      child: DayNightSwitch(night: _nightMode),
+                                    ),
                                   ),
                                 ),
                               ),
-                            );
-                          },
-                        ),
-                      ),
-                      line(
-                        _Design.dividerLeft,
-                        _Design.dividerRight,
-                        _Design.dividerTop,
-                        _Design.dividerBottom - _Design.dividerTop,
-                        Color.lerp(_divider, _nightDivider, night)!,
-                      ),
-                      _touchArea(
-                        left: x(_Design.buttonLeft),
-                        right: x(_Design.buttonRight),
-                        top: y(_Design.buttonTop),
-                        bottom: y(_Design.buttonBottom),
-                        above: touchMargin,
-                        below: touchMargin,
-                        onTap: _busy ? null : _submit,
-                        child: PushKey(
-                          unit: unit,
-                          faceHeight: faceHeight,
-                          held: _busy,
-                          night: night,
-                          child: Semantics(
-                            button: true,
-                            enabled: !_busy,
-                            child: Center(
-                              child: _busy
-                                  ? SizedBox(
-                                      width: 16 * unit,
-                                      height: 16 * unit,
-                                      child: const CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: _blue,
-                                      ),
-                                    )
-                                  : FittedBox(
+                            ),
+                            _touchArea(
+                              left: x(_Design.codeLeft),
+                              right: x(_Design.codeRight),
+                              top: y(_Design.rowTop),
+                              bottom: y(_Design.rowBottom),
+                              above: touchMargin,
+                              below: touchMargin,
+                              onTap: _focus.requestFocus,
+                              child: PushKey(
+                                unit: unit,
+                                faceHeight: faceHeight,
+                                night: _night,
+                                child: Center(
+                                  child: Semantics(
+                                    label: words.iraqCode,
+                                    child: FittedBox(
                                       fit: BoxFit.scaleDown,
-                                      child: Text(
-                                        words.login,
-                                        style: _textStyle(unit, ink)
-                                            .copyWith(fontWeight: FontWeight.w800),
+                                      child: _dayNight(
+                                        (night) => Text(
+                                          '🇮🇶 +964',
+                                          textDirection: TextDirection.ltr,
+                                          style: _textStyle(unit, night ? _nightInk : _ink),
+                                        ),
                                       ),
                                     ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      line(
-                        _Design.wideLineLeft,
-                        _Design.wideLineRight,
-                        _Design.wideLineTop,
-                        _Design.wideLineHeight,
-                        Color.lerp(_wideLine, _nightDivider, night)!,
-                      ),
-                      caption(
-                        words.privacy,
-                        _Design.privacySize,
-                        _Design.privacyCenterX,
-                        _Design.privacyCenterY,
-                      ),
-                      line(
-                        _Design.shortLineLeft,
-                        _Design.shortLineRight,
-                        _Design.privacyLineTop,
-                        1,
-                        shortLine,
-                      ),
-                      for (final (index, mark) in _socialMarks.indexed)
-                        _touchArea(
-                          left: x(_Design.socialCenters[index]) -
-                              (_Design.socialFaceWidth / 2 + PushKey.faceInset) * unit,
-                          right: x(_Design.socialCenters[index]) +
-                              (_Design.socialFaceWidth / 2 + PushKey.faceInset) * unit,
-                          top: y(_Design.socialTop),
-                          bottom: y(_Design.socialBottom),
-                          above: touchMargin,
-                          below: touchMargin,
-                          onTap: null,
-                          child: PushKey(
-                            unit: unit,
-                            faceHeight: _Design.socialFaceHeight * unit,
-                            night: night,
-                            child: Semantics(
-                              button: true,
-                              label: words.socials[index],
-                              child: Center(
-                                child: SizedBox.square(
-                                  dimension: _Design.socialMarkSize * unit,
-                                  child: CustomPaint(
-                                    painter: SocialMarkPainter(mark, night: night),
                                   ),
                                 ),
                               ),
                             ),
-                          ),
-                        ),
-                      caption(
-                        words.contact,
-                        _Design.contactSize,
-                        _Design.contactCenterX,
-                        _Design.contactCenterY,
-                      ),
-                      line(
-                        _Design.shortLineLeft,
-                        _Design.shortLineRight,
-                        _Design.contactLineTop,
-                        1,
-                        shortLine,
-                      ),
-                      if (_wrongNumber)
-                        Positioned(
-                          left: 16,
-                          right: 16,
-                          bottom: pageHeight - y(_Design.rowTop) + 4 * unit,
-                          child: AnimatedBuilder(
-                            animation: _alarm,
-                            builder: (context, child) => Opacity(
-                              opacity: (_alarmLevel * 2).clamp(0.0, 1.0),
-                              child: child,
-                            ),
-                            child: Text(
-                              words.wrongNumber,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontFamily: 'Cairo',
-                                fontSize: 12 * unit,
-                                fontWeight: FontWeight.w700,
-                                color: Color.lerp(AppColors.danger, _nightError, night),
+                            _touchArea(
+                              left: x(_Design.numberLeft),
+                              right: x(_Design.numberRight),
+                              top: y(_Design.rowTop),
+                              bottom: y(_Design.rowBottom),
+                              above: touchMargin,
+                              below: touchMargin,
+                              onTap: _focus.requestFocus,
+                              child: AnimatedBuilder(
+                                // لون الأرقام المكتوبة وحده يحتاج إعادة البناء مع تدرج الليل.
+                                animation: _phone.text.isEmpty ? _alarm : _alarmAndNight,
+                                builder: (context, _) {
+                                  final alarm = _alarmLevel;
+                                  final hintStyle = _textStyle(unit, Colors.white)
+                                      .copyWith(fontWeight: FontWeight.w600);
+                                  return PushKey(
+                                    unit: unit,
+                                    faceHeight: faceHeight,
+                                    alarm: alarm,
+                                    night: _night,
+                                    borderColor: _focus.hasFocus ? _blue : null,
+                                    child: Center(
+                                      child: TextField(
+                                        controller: _phone,
+                                        focusNode: _focus,
+                                        enabled: !_busy,
+                                        keyboardType: TextInputType.phone,
+                                        textInputAction: TextInputAction.done,
+                                        textDirection: TextDirection.ltr,
+                                        textAlign: TextAlign.center,
+                                        textAlignVertical: TextAlignVertical.center,
+                                        cursorColor: Color.lerp(_blue, Colors.white, alarm),
+                                        inputFormatters: const [_IraqiPhoneFormatter()],
+                                        style: _textStyle(
+                                          unit,
+                                          Color.lerp(
+                                            Color.lerp(_ink, _nightInk, _night.value),
+                                            Colors.white,
+                                            alarm,
+                                          )!,
+                                        ),
+                                        onSubmitted: (_) => _submit(),
+                                        decoration: InputDecoration(
+                                          isCollapsed: true,
+                                          filled: false,
+                                          contentPadding: EdgeInsets.zero,
+                                          border: InputBorder.none,
+                                          enabledBorder: InputBorder.none,
+                                          focusedBorder: InputBorder.none,
+                                          disabledBorder: InputBorder.none,
+                                          errorBorder: InputBorder.none,
+                                          focusedErrorBorder: InputBorder.none,
+                                          // صيغة الرقم تذوب أولاً ثم يظهر نص الخانة، فلا يتداخلان ولا يقفزان.
+                                          hint: alarm >= .5
+                                              ? Text(
+                                                  '07XX XXX XXXX',
+                                                  textAlign: TextAlign.center,
+                                                  textDirection: TextDirection.ltr,
+                                                  style: hintStyle.copyWith(
+                                                    color: Colors.white.withValues(
+                                                      alpha: (alarm - .5) * 2,
+                                                    ),
+                                                  ),
+                                                )
+                                              : _dayNight(
+                                                  (night) => Text(
+                                                    words.mobileNumber,
+                                                    textAlign: TextAlign.center,
+                                                    textDirection: words.direction,
+                                                    style: hintStyle.copyWith(
+                                                      color: (night ? _nightHint : _hint)
+                                                          .withValues(alpha: (.5 - alarm) * 2),
+                                                    ),
+                                                  ),
+                                                ),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
                               ),
                             ),
-                          ),
+                            line(
+                              _Design.dividerLeft,
+                              _Design.dividerRight,
+                              _Design.dividerTop,
+                              _Design.dividerBottom - _Design.dividerTop,
+                              _divider,
+                              _nightDivider,
+                            ),
+                            _touchArea(
+                              left: x(_Design.buttonLeft),
+                              right: x(_Design.buttonRight),
+                              top: y(_Design.buttonTop),
+                              bottom: y(_Design.buttonBottom),
+                              above: touchMargin,
+                              below: touchMargin,
+                              onTap: _busy ? null : _submit,
+                              child: PushKey(
+                                unit: unit,
+                                faceHeight: faceHeight,
+                                held: _busy,
+                                night: _night,
+                                child: Semantics(
+                                  button: true,
+                                  enabled: !_busy,
+                                  child: Center(
+                                    child: _busy
+                                        ? SizedBox(
+                                            width: 16 * unit,
+                                            height: 16 * unit,
+                                            child: const CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: _blue,
+                                            ),
+                                          )
+                                        : FittedBox(
+                                            fit: BoxFit.scaleDown,
+                                            child: _dayNight(
+                                              (night) => Text(
+                                                words.login,
+                                                style: _textStyle(unit, night ? _nightInk : _ink)
+                                                    .copyWith(fontWeight: FontWeight.w800),
+                                              ),
+                                            ),
+                                          ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            line(
+                              _Design.wideLineLeft,
+                              _Design.wideLineRight,
+                              _Design.wideLineTop,
+                              _Design.wideLineHeight,
+                              _wideLine,
+                              _nightDivider,
+                            ),
+                            caption(
+                              words.privacy,
+                              _Design.privacySize,
+                              _Design.privacyCenterX,
+                              _Design.privacyCenterY,
+                            ),
+                            line(
+                              _Design.shortLineLeft,
+                              _Design.shortLineRight,
+                              _Design.privacyLineTop,
+                              1,
+                              _shortLine,
+                              _nightShortLine,
+                            ),
+                            for (final (index, mark) in _socialMarks.indexed)
+                              _touchArea(
+                                left: x(_Design.socialCenters[index]) -
+                                    (_Design.socialFaceWidth / 2 + PushKey.faceInset) * unit,
+                                right: x(_Design.socialCenters[index]) +
+                                    (_Design.socialFaceWidth / 2 + PushKey.faceInset) * unit,
+                                top: y(_Design.socialTop),
+                                bottom: y(_Design.socialBottom),
+                                above: touchMargin,
+                                below: touchMargin,
+                                onTap: null,
+                                child: PushKey(
+                                  unit: unit,
+                                  faceHeight: _Design.socialFaceHeight * unit,
+                                  night: _night,
+                                  child: Semantics(
+                                    button: true,
+                                    label: words.socials[index],
+                                    child: Center(
+                                      child: SizedBox.square(
+                                        dimension: _Design.socialMarkSize * unit,
+                                        child: _socialMark(mark),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            caption(
+                              words.contact,
+                              _Design.contactSize,
+                              _Design.contactCenterX,
+                              _Design.contactCenterY,
+                            ),
+                            line(
+                              _Design.shortLineLeft,
+                              _Design.shortLineRight,
+                              _Design.contactLineTop,
+                              1,
+                              _shortLine,
+                              _nightShortLine,
+                            ),
+                            if (_wrongNumber)
+                              Positioned(
+                                left: 16,
+                                right: 16,
+                                bottom: pageHeight - y(_Design.rowTop) + 4 * unit,
+                                child: AnimatedBuilder(
+                                  animation: _alarmAndNight,
+                                  builder: (context, _) => Opacity(
+                                    opacity: (_alarmLevel * 2).clamp(0.0, 1.0),
+                                    child: Text(
+                                      words.wrongNumber,
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontFamily: 'Cairo',
+                                        fontSize: 12 * unit,
+                                        fontWeight: FontWeight.w700,
+                                        color:
+                                            Color.lerp(AppColors.danger, _nightError, _night.value),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
-                    ],
+                      ),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
+          ],
         ),
       ),
     );
+  }
+
+  /// جزء يتدرج بين شكليه بطبقة ليلية تذوب فوقه، فلا يُعاد بناؤه ولا رسمه مع كل إطار.
+  Widget _dayNight(Widget Function(bool night) builder) {
+    if (!_nightController.isAnimating) return builder(_nightMode);
+    return Stack(
+      alignment: Alignment.center,
+      fit: StackFit.passthrough,
+      children: [
+        builder(false),
+        FadeTransition(opacity: _night, child: builder(true)),
+      ],
+    );
+  }
+
+  Widget _socialMark(SocialMark mark) {
+    Widget paint(bool night) => CustomPaint(painter: SocialMarkPainter(mark, night: night));
+    return mark == SocialMark.tiktok ? _dayNight(paint) : paint(false);
   }
 
   TextStyle _textStyle(double unit, Color color) => TextStyle(
@@ -702,10 +796,13 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
     required VoidCallback? onTap,
     required Widget child,
   }) {
+    // بداية الزر على بكسل كامل من الشاشة، فتبقى صورته حادة الحواف.
+    final pixelRatio = MediaQuery.devicePixelRatioOf(context);
+    double onPixel(double value) => (value * pixelRatio).roundToDouble() / pixelRatio;
     return Positioned(
-      left: left,
+      left: onPixel(left),
       width: right - left,
-      top: top - above,
+      top: onPixel(top) - above,
       height: bottom - top + above + below,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,

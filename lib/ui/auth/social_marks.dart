@@ -62,7 +62,7 @@ class SocialMarkPainter extends CustomPainter {
   SocialMarkPainter(this.mark, {required this.night});
 
   final SocialMark mark;
-  final double night;
+  final bool night;
 
   static final _paths = {
     SocialMark.facebook: parseSvgPath(_facebook),
@@ -94,7 +94,7 @@ class SocialMarkPainter extends CustomPainter {
         canvas
           ..drawPath(path.shift(const Offset(-.9, -.7)), Paint()..color = _tiktokCyan)
           ..drawPath(path.shift(const Offset(.9, .7)), Paint()..color = _tiktokRed)
-          ..drawPath(path, Paint()..color = Color.lerp(Colors.black, Colors.white, night)!);
+          ..drawPath(path, Paint()..color = night ? Colors.white : Colors.black);
     }
     canvas.restore();
   }

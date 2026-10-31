@@ -12,15 +12,21 @@ import 'ui/worker/worker_shell.dart';
 class JaikApp extends StatelessWidget {
   const JaikApp({super.key});
 
+  // يُبنيان مرة واحدة حتى لا يتأخر الإطار الأول عند تبديل الوضع.
+  static final _lightTheme = AppTheme.light();
+  static final _darkTheme = AppTheme.dark();
+
   @override
   Widget build(BuildContext context) {
     return Consumer<AppState>(
       builder: (context, state, _) => MaterialApp(
         title: 'جايك',
         debugShowCheckedModeBanner: false,
-        theme: AppTheme.light(),
-        darkTheme: AppTheme.dark(),
+        theme: _lightTheme,
+        darkTheme: _darkTheme,
         themeMode: state.themeMode,
+        // الشاشة الأولى تتدرج بألوانها الخاصة، فلا حاجة إلى حركة الثيم فوقها.
+        themeAnimationDuration: state.user == null ? Duration.zero : kThemeAnimationDuration,
         locale: const Locale('ar'),
         supportedLocales: const [Locale('ar'), Locale('en')],
         localizationsDelegates: const [

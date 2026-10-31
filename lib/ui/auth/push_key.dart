@@ -40,7 +40,7 @@ class PushKey extends StatefulWidget {
     this.borderColor,
     this.held = false,
     this.alarm = 0,
-    this.night = 0,
+    this.night = kAlwaysDismissedAnimation,
   });
 
   /// ارتفاع الجانب الظاهر تحت وجه الزر، بوحدات التصميم.
@@ -60,21 +60,60 @@ class PushKey extends StatefulWidget {
   /// مقدار احمرار الزر: 0 لونه الطبيعي، و1 أحمر بالكامل.
   final double alarm;
 
-  /// 0 نهار، و1 ليل.
-  final double night;
+  /// 0 نهار، و1 ليل. الزر الساكن يتدرج بطبقتين، فلا يُعاد بناؤه ولا رسمه مع كل إطار.
+  final Animation<double> night;
 
   @override
   State<PushKey> createState() => _PushKeyState();
 }
 
 class _PushKeyState extends State<PushKey> {
+  final _resting = _RestingImages();
   bool _down = false;
 
   void _setDown(bool down) => setState(() => _down = down);
 
+  Widget _chrome(double pressed, double pixelRatio) {
+    final shape = _KeyPainter(
+      pressed: pressed,
+      unit: widget.unit,
+      faceHeight: widget.faceHeight,
+      borderColor: widget.borderColor,
+      alarm: widget.alarm,
+      night: widget.night,
+    );
+    if (pressed > 0 || widget.alarm > 0) {
+      return RepaintBoundary(child: CustomPaint(painter: shape));
+    }
+    Widget image(bool night) => CustomPaint(
+          painter: _RestingPainter(
+            images: _resting,
+            night: night,
+            pixelRatio: pixelRatio,
+            unit: widget.unit,
+            faceHeight: widget.faceHeight,
+          ),
+        );
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        FadeTransition(opacity: ReverseAnimation(widget.night), child: image(false)),
+        FadeTransition(opacity: widget.night, child: image(true)),
+        if (widget.borderColor != null) CustomPaint(painter: _FocusOutlinePainter(shape)),
+      ],
+    );
+  }
+
+  @override
+  void dispose() {
+    _resting.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final unit = widget.unit;
+    final pixelRatio = MediaQuery.devicePixelRatioOf(context);
     return Listener(
       behavior: HitTestBehavior.opaque,
       onPointerDown: (_) => _setDown(true),
@@ -90,18 +129,7 @@ class _PushKeyState extends State<PushKey> {
         builder: (context, pressed, child) => Stack(
           fit: StackFit.expand,
           children: [
-            RepaintBoundary(
-              child: CustomPaint(
-                painter: _KeyPainter(
-                  pressed: pressed,
-                  unit: unit,
-                  faceHeight: widget.faceHeight,
-                  borderColor: widget.borderColor,
-                  alarm: widget.alarm,
-                  night: widget.night,
-                ),
-              ),
-            ),
+            _chrome(pressed, pixelRatio),
             Positioned(
               left: PushKey.faceInset * unit,
               right: PushKey.faceInset * unit,
@@ -116,6 +144,134 @@ class _PushKeyState extends State<PushKey> {
   }
 }
 
+/// صورتا الزر وهو ساكن نهاراً وليلاً، حتى لا تُعاد ظلاله مع كل إطار.
+class _RestingImages {
+  ui.Image? _day;
+  ui.Image? _night;
+  Size _size = Size.zero;
+  double _pixelRatio = 0;
+  double _unit = 0;
+  double _faceHeight = 0;
+
+  void paint(
+    Canvas canvas, {
+    required Size size,
+    required double pixelRatio,
+    required double unit,
+    required double faceHeight,
+    required bool night,
+  }) {
+    if (size != _size ||
+        pixelRatio != _pixelRatio ||
+        unit != _unit ||
+        faceHeight != _faceHeight) {
+      dispose();
+      _size = size;
+      _pixelRatio = pixelRatio;
+      _unit = unit;
+      _faceHeight = faceHeight;
+      _day = _snapshot(0);
+      _night = _snapshot(1);
+    }
+    final image = night ? _night! : _day!;
+    canvas.drawImageRect(
+      image,
+      Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
+      Rect.fromLTWH(
+        -_margin,
+        -_margin,
+        image.width / _pixelRatio,
+        image.height / _pixelRatio,
+      ),
+      Paint()..filterQuality = FilterQuality.low,
+    );
+  }
+
+  // الحافة المضيئة تحت الزر تخرج قليلاً عن حدوده.
+  double get _margin => 4 * _unit;
+
+  ui.Image _snapshot(double night) {
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder)
+      ..scale(_pixelRatio)
+      ..translate(_margin, _margin);
+    _KeyPainter(
+      pressed: 0,
+      unit: _unit,
+      faceHeight: _faceHeight,
+      alarm: 0,
+      night: AlwaysStoppedAnimation(night),
+    ).paint(canvas, _size);
+    final picture = recorder.endRecording();
+    final image = picture.toImageSync(
+      ((_size.width + _margin * 2) * _pixelRatio).ceil(),
+      ((_size.height + _margin * 2) * _pixelRatio).ceil(),
+    );
+    picture.dispose();
+    return image;
+  }
+
+  void dispose() {
+    _day?.dispose();
+    _night?.dispose();
+    _day = null;
+    _night = null;
+  }
+}
+
+class _RestingPainter extends CustomPainter {
+  _RestingPainter({
+    required this.images,
+    required this.night,
+    required this.pixelRatio,
+    required this.unit,
+    required this.faceHeight,
+  });
+
+  final _RestingImages images;
+  final bool night;
+  final double pixelRatio;
+  final double unit;
+  final double faceHeight;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    images.paint(
+      canvas,
+      size: size,
+      pixelRatio: pixelRatio,
+      unit: unit,
+      faceHeight: faceHeight,
+      night: night,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_RestingPainter oldDelegate) =>
+      oldDelegate.night != night ||
+      oldDelegate.pixelRatio != pixelRatio ||
+      oldDelegate.unit != unit ||
+      oldDelegate.faceHeight != faceHeight;
+}
+
+/// إطار الخانة عند الكتابة فيها، فوق صورة الزر الساكن.
+class _FocusOutlinePainter extends CustomPainter {
+  _FocusOutlinePainter(this.shape);
+
+  final _KeyPainter shape;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    shape.paintOutline(canvas, shape.faceShape(size), shape.borderColor!);
+  }
+
+  @override
+  bool shouldRepaint(_FocusOutlinePainter oldDelegate) =>
+      oldDelegate.shape.borderColor != shape.borderColor ||
+      oldDelegate.shape.unit != shape.unit ||
+      oldDelegate.shape.faceHeight != shape.faceHeight;
+}
+
 class _KeyPainter extends CustomPainter {
   _KeyPainter({
     required this.pressed,
@@ -124,18 +280,18 @@ class _KeyPainter extends CustomPainter {
     required this.alarm,
     required this.night,
     this.borderColor,
-  });
+  }) : super(repaint: night);
 
   final double pressed;
   final double unit;
   final double faceHeight;
   final double alarm;
-  final double night;
+  final Animation<double> night;
   final Color? borderColor;
 
   double _mix(double up, double down) => (up + (down - up) * pressed) * unit;
 
-  Color _tone(Color day, Color dark) => Color.lerp(day, dark, night)!;
+  Color _tone(Color day, Color dark) => Color.lerp(day, dark, night.value)!;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -205,17 +361,31 @@ class _KeyPainter extends CustomPainter {
     );
   }
 
-  void _paintFace(Canvas canvas, Size size) {
+  RRect faceShape(Size size) {
     final grow = _mix(0, 2);
     final offset = _mix(0, 6);
     final inset = PushKey.faceInset * unit;
-    final face = RRect.fromLTRBR(
+    return RRect.fromLTRBR(
       inset - grow,
       offset,
       size.width - inset + grow,
       faceHeight + offset,
       Radius.circular(_mix(4, 6)),
     );
+  }
+
+  void paintOutline(Canvas canvas, RRect face, Color color) {
+    canvas.drawRRect(
+      face.deflate(.5 * unit),
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = unit,
+    );
+  }
+
+  void _paintFace(Canvas canvas, Size size) {
+    final face = faceShape(size);
     final outline = _tone(_faceOutline, _nightFaceOutline);
     canvas.drawRRect(
       face,
@@ -229,13 +399,7 @@ class _KeyPainter extends CustomPainter {
           ],
         ),
     );
-    canvas.drawRRect(
-      face.deflate(.5 * unit),
-      Paint()
-        ..color = Color.lerp(borderColor ?? outline, outline, alarm)!
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = unit,
-    );
+    paintOutline(canvas, face, Color.lerp(borderColor ?? outline, outline, alarm)!);
   }
 
   void _glow(Canvas canvas, Offset center, double radiusX, double radiusY, Color color) {

@@ -106,8 +106,12 @@ void main() {
   testWidgets('زر الليل والنهار يغيّر ثيم التطبيق ولون الشاشة بالتدريج ثم يرجع', (tester) async {
     await _pump(tester);
     final state = tester.element(find.byType(WelcomeScreen)).read<AppState>();
-    double night() => tester.widget<PushKey>(find.byType(PushKey).first).night;
-    Color? ground() => tester.widget<Scaffold>(find.byType(Scaffold)).backgroundColor;
+    double night() => tester.widget<PushKey>(find.byType(PushKey).first).night.value;
+    Color? ground() => tester
+        .widget<ColoredBox>(
+          find.descendant(of: find.byType(WelcomeScreen), matching: find.byType(ColoredBox)).first,
+        )
+        .color;
     final dayGround = ground();
     expect(night(), 0);
 
@@ -180,8 +184,43 @@ void main() {
     expect(language.left, greaterThan(0));
     expect(language.top, greaterThan(24));
     expect(dayNight.right, lessThan(320));
-    expect(dayNight.top, greaterThan(24));
+    expect(dayNight.top, greaterThanOrEqualTo(24 + 20));
     expect(contact.bottom, lessThan(568));
+  });
+
+  testWidgets('الكرة الأرضية بجانب رمز اللغة، والضغط عليها يبدّل اللغة', (tester) async {
+    await _pump(tester);
+    final globe = find.byIcon(Icons.public);
+    expect(globe, findsOneWidget);
+    expect(tester.getRect(globe).right, lessThanOrEqualTo(tester.getRect(find.text('AR')).left));
+
+    await tester.tap(globe);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('EN'), findsOneWidget);
+  });
+
+  testWidgets('صيغة الرقم تذوب ثم يظهر نص الخانة بالتدريج دون قفزة', (tester) async {
+    await _pump(tester);
+    double level(String text) => tester.widget<Text>(find.text(text)).style!.color!.a;
+
+    await tester.tap(find.text('تسجيل الدخول'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(level('07XX XXX XXXX'), 1);
+    expect(find.text('رقم الموبايل'), findsNothing);
+
+    await tester.pump(const Duration(milliseconds: 1300));
+    expect(level('07XX XXX XXXX'), inExclusiveRange(0, 1));
+    expect(find.text('رقم الموبايل'), findsNothing);
+
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text('07XX XXX XXXX'), findsNothing);
+    expect(level('رقم الموبايل'), inExclusiveRange(0, 1));
+
+    await tester.pump(const Duration(milliseconds: 1000));
+    await tester.pump();
+    expect(level('رقم الموبايل'), 1);
   });
 
   testWidgets('الشاشة القصيرة تعرض بقية العناصر بالسحب', (tester) async {
