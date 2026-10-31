@@ -18,8 +18,7 @@ VAN = os.path.join(PROJ, "branding", "van_source.svg")
 TARGET = os.path.join(PROJ, "lib", "ui", "auth", "truck_art.dart")
 
 NS = "{http://www.w3.org/2000/svg}"
-TRUCK_FROM = "FF725E"
-TRUCK_TO = "FF7460"
+RECOLOR = {"FF725E": "FF7460", "3FC0B9": "CFCFCF"}
 CLOUD_STARTS = ("M669.33,62", "M706.55,180", "M105.41,63.5", "M723.41,133.17", "M211.72,84.75")
 NUMBER = re.compile(r"[-+]?(?:\d*\.\d+|\d+)")
 
@@ -34,8 +33,7 @@ def color_of(element, inherited_opacity):
     fill = "FFFFFF" if fill == "white" else fill.lstrip("#").upper()
     if len(fill) == 3:
         fill = "".join(ch * 2 for ch in fill)
-    if fill == TRUCK_FROM:
-        fill = TRUCK_TO
+    fill = RECOLOR.get(fill, fill)
     alpha = round(255 * inherited_opacity)
     return f"0x{alpha:02X}{fill}"
 
