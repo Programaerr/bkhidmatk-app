@@ -18,10 +18,10 @@ const _alarmFaceEdge = Color(0xFFDC2626);
 const _alarmSide = Color(0xFF991B1B);
 
 // الألوان نفسها في الوضع الليلي.
-const _nightFaceCenter = Color(0xFF2E3446);
-const _nightFaceEdge = Color(0xFF262B3A);
+const _nightFaceCenter = Color(0xFF2C2C32);
+const _nightFaceEdge = Color(0xFF25252B);
 const _nightFaceOutline = Color(0x1FFFFFFF);
-const _nightSide = Color(0xFF1B1F2C);
+const _nightSide = Color(0xFF17171A);
 const _nightBaseFill = Color(0x14FFFFFF);
 const _nightBaseHighlight = Color(0x14FFFFFF);
 const _nightBaseInnerShadow = Color(0x66000000);

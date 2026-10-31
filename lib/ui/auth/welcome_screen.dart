@@ -23,12 +23,12 @@ const _label = Color(0xFF383838);
 const _wideLine = Color(0xFFDEDBCA);
 const _shortLine = Color(0xFFBEB9B3);
 
-// الألوان نفسها في الوضع الليلي.
-const _nightGround = Color(0xFF11141C);
+// الألوان نفسها في الوضع الليلي: جهة السيارة تبقى صفراء، والخانة تحتها سوداء.
+const _nightGround = Colors.black;
 const _nightInk = Color(0xFFF4F4EE);
 const _nightHint = Color(0xFF9B9BA3);
-const _nightDivider = Color(0xFF3A3F4E);
-const _nightShortLine = Color(0xFF5A6072);
+const _nightDivider = Color(0xFF3A3A40);
+const _nightShortLine = Color(0xFF5F5F66);
 const _nightError = Color(0xFFF87171);
 
 /// ألوان شريطي النظام في بقية شاشات التطبيق.
@@ -374,8 +374,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: _nightMode ? Brightness.light : Brightness.dark,
-        statusBarBrightness: _nightMode ? Brightness.dark : Brightness.light,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
         systemNavigationBarColor: _nightMode ? _nightGround : _cream,
         systemNavigationBarIconBrightness: _nightMode ? Brightness.light : Brightness.dark,
       ),
@@ -404,7 +404,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                         right: 0,
                         top: 0,
                         height: blueBottom,
-                        child: TruckScene(scale: fit, night: night, english: state.english),
+                        child: TruckScene(scale: fit, english: state.english),
                       ),
                       Positioned(
                         left: _Design.languageCenter * unit - minTouch / 2,
@@ -430,7 +430,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                                     height: 1,
                                     letterSpacing: .8 * unit,
                                     fontWeight: FontWeight.w900,
-                                    color: label,
+                                    color: _label,
                                   ),
                                 ),
                               ),
@@ -454,7 +454,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                               child: SizedBox(
                                 width: double.infinity,
                                 height: _Design.switchHeight * unit,
-                                child: DayNightSwitch(night: night, unit: unit),
+                                child: DayNightSwitch(night: _nightMode),
                               ),
                             ),
                           ),

@@ -119,8 +119,10 @@ void main() {
 
     await tester.pump(const Duration(milliseconds: 300));
     expect(night(), 1);
-    expect(tester.widget<DayNightSwitch>(find.byType(DayNightSwitch)).night, 1);
-    expect(ground(), isNot(dayGround));
+    expect(tester.widget<DayNightSwitch>(find.byType(DayNightSwitch)).night, isTrue);
+    expect(ground(), Colors.black);
+    // زر اللغة فوق الجهة الصفراء، فيبقى لونه داكناً في الليل أيضاً.
+    expect(tester.widget<Text>(find.text('AR')).style!.color, const Color(0xFF383838));
 
     await tester.tap(find.bySemanticsLabel('الوضع الليلي'));
     await tester.pump();

@@ -2,128 +2,180 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-const _dayTile = Colors.white;
-const _nightTile = Color(0xFF2E3446);
-const _sun = Color(0xFFF5A300);
-const _moon = Color(0xFFFFE9A8);
-const _cloud = Color(0xFFD5DCE6);
-const _tightShadow = Color(0x36000000);
-const _softShadow = Color(0x4A000000);
+// تصميم المفتاح من Uiverse.io (r7chardgh)، وكل المقاسات بوحدة em كما في أصله.
+const _frameColor = Color(0xFF373737);
+const _panelColor = Color(0xFFF3F3F3);
+const _sideColor = Color(0xFFCECECE);
+const _underColor = Color(0xFF707070);
+const _sunOnColor = Color(0xFF373737);
+const _moonOnColor = Color(0xFF487BDB);
+const _iconOffColor = Color(0xFFCECECE);
 
-// النجوم في الوضع الليلي: (الموقع الأفقي، الموقع العمودي، نصف القطر).
-const _stars = <(double, double, double)>[
-  (9, 8.5, 1),
-  (15.5, 18, .8),
-  (22, 9.5, .7),
-];
+const _trackWidth = 5.0;
+const _trackHeight = 2.5;
+const _rim = .3;
+const _corner = Radius.circular(.1);
+const _panelWidth = 2.5;
+const _panelHeight = 2.2;
+const _panelCenterY = _trackHeight - _panelHeight / 2;
 
-// الغيمة الصغيرة في الوضع النهاري: (الموقع الأفقي، الموقع العمودي، نصف القطر).
-const _cloudPuffs = <(double, double, double)>[
-  (34, 16, 2.8),
-  (38.2, 13.6, 3.6),
-  (42.6, 16, 2.8),
-];
+// تبعد اللوحة اليمنى في الأصل 1px عن طرف الإطار، وحجم خطه 17px.
+const _rightPanelHinge = _trackWidth - 1 / 17 - _panelWidth;
 
-/// زر الليل والنهار: الشمس تنزلق إلى الطرف الآخر وتتحول هلالاً وتظهر النجوم.
+const _tilt = 10 * math.pi / 180;
+const _swing = 45 * math.pi / 180;
+
+/// زر الليل والنهار: لوحتان تدوران حول مفصل في الوسط، والمفعّلة منهما مسطحة،
+/// الشمس على اليسار والقمر على اليمين.
 class DayNightSwitch extends StatelessWidget {
-  const DayNightSwitch({super.key, required this.night, required this.unit});
+  const DayNightSwitch({super.key, required this.night});
 
-  /// 0 نهار، و1 ليل.
-  final double night;
-  final double unit;
+  final bool night;
 
   @override
   Widget build(BuildContext context) {
     return RepaintBoundary(
-      child: CustomPaint(painter: _SwitchPainter(night: night, unit: unit)),
+      child: TweenAnimationBuilder<double>(
+        tween: Tween<double>(end: night ? 1 : 0),
+        duration: MediaQuery.disableAnimationsOf(context)
+            ? Duration.zero
+            : const Duration(milliseconds: 150),
+        curve: Curves.ease,
+        builder: (context, progress, _) => CustomPaint(painter: _SwitchPainter(progress)),
+      ),
     );
   }
 }
 
 class _SwitchPainter extends CustomPainter {
-  _SwitchPainter({required this.night, required this.unit});
+  _SwitchPainter(this.night);
 
+  /// 0 نهار، و1 ليل.
   final double night;
-  final double unit;
+
+  static final _moon = Path.combine(
+    PathOperation.difference,
+    Path()..addOval(Rect.fromCircle(center: Offset.zero, radius: .62)),
+    Path()..addOval(Rect.fromCircle(center: const Offset(.3, -.22), radius: .5)),
+  );
 
   @override
   void paint(Canvas canvas, Size size) {
-    final tile = RRect.fromRectAndRadius(Offset.zero & size, Radius.circular(7 * unit));
+    final em = size.width / (_trackWidth + _rim * 2);
     canvas
+      ..save()
+      ..translate(_rim * em, (size.height - (_trackHeight + _rim) * em) / 2)
+      ..scale(em)
       ..drawRRect(
-        tile.shift(Offset(0, 6 * unit)),
-        Paint()
-          ..color = _softShadow
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, 6 * unit),
+        RRect.fromLTRBR(-_rim, 0, _trackWidth + _rim, _trackHeight + _rim, _corner),
+        Paint()..color = _frameColor,
       )
-      ..drawRRect(
-        tile.shift(Offset(0, 3 * unit)),
-        Paint()
-          ..color = _tightShadow
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, 1.5 * unit),
-      )
-      ..drawRRect(tile, Paint()..color = Color.lerp(_dayTile, _nightTile, night)!);
-
-    final cloudFade = (1 - night * 2).clamp(0.0, 1.0);
-    if (cloudFade > 0) {
-      final paint = Paint()..color = _cloud.withValues(alpha: cloudFade);
-      for (final (x, y, radius) in _cloudPuffs) {
-        canvas.drawCircle(Offset(x, y) * unit, radius * unit, paint);
-      }
-    }
-
-    final starFade = ((night - .5) * 2).clamp(0.0, 1.0);
-    if (starFade > 0) {
-      final paint = Paint()..color = Colors.white.withValues(alpha: starFade);
-      for (final (x, y, radius) in _stars) {
-        canvas.drawCircle(Offset(x, y) * unit, radius * unit, paint);
-      }
-    }
-
-    final margin = 12 * unit;
-    _sunOrMoon(
+      ..clipRRect(RRect.fromLTRBR(0, 0, _trackWidth, _trackHeight, _corner));
+    _panel(
       canvas,
-      Offset(margin + (size.width - margin * 2) * night, size.height / 2),
+      hinge: _trackWidth / 2,
+      outward: -1,
+      swing: _swing * night,
+      icon: () => _paintSun(canvas, Color.lerp(_sunOnColor, _iconOffColor, night)!),
     );
+    _panel(
+      canvas,
+      hinge: _rightPanelHinge,
+      outward: 1,
+      swing: _swing * (1 - night),
+      icon: () => canvas.drawPath(
+        _moon,
+        Paint()..color = Color.lerp(_iconOffColor, _moonOnColor, night)!,
+      ),
+    );
+    canvas.restore();
   }
 
-  void _sunOrMoon(Canvas canvas, Offset center) {
-    final color = Color.lerp(_sun, _moon, night)!;
-    final radius = (4.8 + 2.4 * night) * unit;
-
-    final rayFade = (1 - night * 2).clamp(0.0, 1.0);
-    if (rayFade > 0) {
-      final ray = Paint()
-        ..color = color.withValues(alpha: rayFade)
-        ..strokeWidth = 1.3 * unit
-        ..strokeCap = StrokeCap.round;
-      for (var i = 0; i < 8; i++) {
-        final angle = i * math.pi / 4 + night * math.pi / 2;
-        final direction = Offset(math.cos(angle), math.sin(angle));
-        canvas.drawLine(
-          center + direction * (radius + 1.9 * unit),
-          center + direction * (radius + 3.3 * unit),
-          ray,
-        );
-      }
+  /// لوحة بوجه وجدارين يمتدان إلى الخلف، تدور حول مفصلها ثم تميل قليلاً،
+  /// وتُرسم بإسقاط مستقيم بلا منظور كما في الأصل.
+  void _panel(
+    Canvas canvas, {
+    required double hinge,
+    required double outward,
+    required double swing,
+    required VoidCallback icon,
+  }) {
+    final yaw = -outward * swing;
+    Offset point(double x, double y, double z) {
+      final turnedX = x * math.cos(yaw) + z * math.sin(yaw);
+      final turnedZ = -x * math.sin(yaw) + z * math.cos(yaw);
+      return Offset(
+        hinge + turnedX,
+        _panelCenterY + y * math.cos(_tilt) - turnedZ * math.sin(_tilt),
+      );
     }
 
-    // دائرة ثانية تقترب من القرص شيئاً فشيئاً فتقتطع منه الهلال.
-    final disc = Path()..addOval(Rect.fromCircle(center: center, radius: radius));
-    final bite = Path()
-      ..addOval(
-        Rect.fromCircle(
-          center: center + Offset(2.4 - 1.8 * night, -1.3 + 1 * night) * radius,
-          radius: radius * .86,
-        ),
-      );
-    canvas.drawPath(
-      night > 0 ? Path.combine(PathOperation.difference, disc, bite) : disc,
-      Paint()..color = color,
+    void face(List<Offset> corners, Color color) {
+      canvas.drawPath(Path()..addPolygon(corners, true), Paint()..color = color);
+    }
+
+    final edge = outward * _panelWidth;
+    const top = -_panelHeight / 2;
+    const bottom = _panelHeight / 2;
+    face(
+      [
+        point(edge, top, 0),
+        point(edge, bottom, 0),
+        point(edge, bottom, -_panelWidth),
+        point(edge, top, -_panelWidth),
+      ],
+      _sideColor,
     );
+    face(
+      [
+        point(0, bottom, 0),
+        point(edge, bottom, 0),
+        point(edge, bottom, -_panelHeight),
+        point(0, bottom, -_panelHeight),
+      ],
+      _underColor,
+    );
+    face(
+      [
+        point(0, top, 0),
+        point(edge, top, 0),
+        point(edge, bottom, 0),
+        point(0, bottom, 0),
+      ],
+      _panelColor,
+    );
+
+    // الأيقونة على وجه اللوحة، فتنضغط وتميل معه.
+    final center = point(edge / 2, 0, 0);
+    final xAxis = point(edge / 2 + 1, 0, 0) - center;
+    final yAxis = point(edge / 2, 1, 0) - center;
+    canvas
+      ..save()
+      ..transform(
+        Matrix4(
+          xAxis.dx, xAxis.dy, 0, 0,
+          yAxis.dx, yAxis.dy, 0, 0,
+          0, 0, 1, 0,
+          center.dx, center.dy, 0, 1,
+        ).storage,
+      );
+    icon();
+    canvas.restore();
+  }
+
+  void _paintSun(Canvas canvas, Color color) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = .13
+      ..strokeCap = StrokeCap.round;
+    canvas.drawCircle(Offset.zero, .36, paint);
+    for (var i = 0; i < 8; i++) {
+      final angle = i * math.pi / 4;
+      final direction = Offset(math.cos(angle), math.sin(angle));
+      canvas.drawLine(direction * .56, direction * .78, paint);
+    }
   }
 
   @override
-  bool shouldRepaint(_SwitchPainter oldDelegate) =>
-      oldDelegate.night != night || oldDelegate.unit != unit;
+  bool shouldRepaint(_SwitchPainter oldDelegate) => oldDelegate.night != night;
 }
