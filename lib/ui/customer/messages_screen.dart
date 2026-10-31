@@ -171,7 +171,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                           title: 'ابدأ المحادثة',
                           subtitle: _asAdmin
                               ? 'أرسل رسالة ترحيبية للزبون.'
-                              : 'فريق بخدمتك جاهز للإجابة على استفساراتك.\nلضمان حقوقك، التواصل يتم عبر التطبيق.',
+                              : 'فريق جايك جاهز للإجابة على استفساراتك.\nلضمان حقوقك، التواصل يتم عبر التطبيق.',
                         )
                       : ListView.builder(
                           controller: _scroll,

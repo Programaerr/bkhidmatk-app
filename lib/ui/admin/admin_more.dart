@@ -306,11 +306,11 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
                 padding: EdgeInsets.zero,
                 child: _Tile(
                   icon: Icons.info_outline_rounded,
-                  title: 'عن بخدمتك',
+                  title: 'عن جايك',
                   subtitle: 'الإصدار 1.0.0 · Bkhidmatk',
                   onTap: () => showAboutDialog(
                     context: context,
-                    applicationName: 'بخدمتك',
+                    applicationName: 'جايك',
                     applicationVersion: '1.0.0',
                     applicationIcon: const BrandLogo(size: 56, radius: 16),
                     children: const [
@@ -337,7 +337,7 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
               ),
               const SizedBox(height: 14),
               Center(
-                child: Text('بخدمتك · لوحة الإدارة',
+                child: Text('جايك · لوحة الإدارة',
                     style: theme.textTheme.bodySmall?.copyWith(fontSize: 10)),
               ),
             ],

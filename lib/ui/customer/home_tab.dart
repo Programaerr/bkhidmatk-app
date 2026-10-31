@@ -259,7 +259,7 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
                 const SizedBox(height: 22),
                 SectionHeader(
                   title: 'أحدث أعمالنا',
-                  subtitle: 'فيديوهات موثّقة من فريق بخدمتك',
+                  subtitle: 'فيديوهات موثّقة من فريق جايك',
                   actionLabel: 'عرض الكل',
                   onAction: widget.onOpenWorks,
                 ),

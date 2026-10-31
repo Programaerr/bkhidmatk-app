@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// «بخدمتك» brand palette, derived from the uploaded yellow/black logo.
+/// «جايك» brand palette, derived from the uploaded yellow/black logo.
 class AppColors {
   static const gold = Color(0xFFFFD400);
   static const goldDeep = Color(0xFFE8BE00);
