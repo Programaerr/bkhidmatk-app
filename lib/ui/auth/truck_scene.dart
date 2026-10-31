@@ -21,7 +21,7 @@ abstract final class TruckSceneMetrics {
   static const curveRadiusY = 36.0;
 }
 
-const _blue = Color(0xFF416F9E);
+const _background = Color(0xFFE2E255);
 const _ink = Color(0xFF263238);
 const _cabInterior = Color(0xFF2F3E46);
 const _glass = Color(0xFF455A64);
@@ -609,7 +609,7 @@ class TruckScenePainter extends CustomPainter {
         width: radiusX * 2,
         height: radiusY * 2,
       ));
-    canvas.drawPath(background, Paint()..color = _blue);
+    canvas.drawPath(background, Paint()..color = _background);
 
     final unit = TruckSceneMetrics.artScale * scale;
     final centerY = size.height * TruckSceneMetrics.artCenterFraction;
