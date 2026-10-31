@@ -198,6 +198,10 @@ void main() {
     expect(craftsman.width, closeTo(login.width, .5));
     expect(craftsman.right, lessThan(login.left));
 
+    // طرفا صف الرقم على طرفي الصف الذي تحته تماماً.
+    expect(tester.getRect(find.byType(PushKey).at(1)).right, login.right);
+    expect(tester.getRect(find.byType(PushKey).at(0)).left, craftsman.left);
+
     await tester.enterText(find.byType(TextField), '7701234567');
     await tester.tap(find.text('حرفي'));
     await tester.pump();

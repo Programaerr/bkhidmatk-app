@@ -55,12 +55,13 @@ abstract final class _Design {
   static const switchRight = 371.1;
   static const switchHeight = 27.25;
 
-  static const codeLeft = 68.1;
+  // طرفا الصف على طرفي الصف الذي تحته، فيبدوان عموداً واحداً.
+  static const codeLeft = craftsmanLeft;
   static const codeRight = 146.1;
   static const dividerLeft = 150.65;
   static const dividerRight = 152.15;
   static const numberLeft = 160.6;
-  static const numberRight = 314.6;
+  static const numberRight = buttonRight;
 
   // الصف أعلى من الصورة بقليل: عمق الأزرار لا يظهر في الرسم، وبدون هذا تلتصق بزر الدخول.
   static const rowTop = buttonTop - 6 - keyHeight;
@@ -857,7 +858,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
     double onPixel(double value) => (value * pixelRatio).roundToDouble() / pixelRatio;
     return Positioned(
       left: onPixel(left),
-      width: right - left,
+      width: onPixel(right) - onPixel(left),
       top: onPixel(top) - above,
       height: bottom - top + above + below,
       child: GestureDetector(
