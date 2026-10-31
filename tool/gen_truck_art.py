@@ -123,8 +123,10 @@ def main():
         "artVanMiddle": pick(van, (7, 22)),
         "artVanRearWheel": pick(van, (23, 27)),
         "artVanFrontWheel": pick(van, (28, 32)),
-        # Outlines, headlight and lettering: over the wheels. Index 44 is the logo image.
-        "artVanTop": pick(van, (33, 43), 45, 46),
+        # Outlines and headlight: over the wheels. Index 44 is the logo image.
+        "artVanTop": pick(van, (33, 43)),
+        # Lettering, separate so it can stay readable on the mirrored van.
+        "artVanLabel": pick(van, 45, 46),
         "artDriverTorso": pick(character, 25, 26),
         "artDriverHead": pick(character, (27, 48)),
     }

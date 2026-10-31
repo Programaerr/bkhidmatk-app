@@ -28,15 +28,16 @@ const _cabInterior = Color(0xFF2F3E46);
 const _glass = Color(0xFF455A64);
 const _glassEdge = Color(0xFF6B8290);
 
-// السيارة تقف على خط الأرض نفسه وتبدأ من مكان السيارة السابقة.
+// السيارة تقف على خط الأرض نفسه، ومعكوسة أفقياً لتتجه إلى اليسار.
 const _vanScale = .951;
-const _vanOrigin = Offset(46 - 24.47 * _vanScale, 462.5 - 320.35 * _vanScale);
+const _vanOrigin = Offset(46 + 695.42 * _vanScale, 462.5 - 320.35 * _vanScale);
 const _vanBounds = Rect.fromLTRB(20, -2, 700, 286);
 
 const _rearWheelCenter = Offset(156.23, 270.3);
 const _frontWheelCenter = Offset(597.33, 270.3);
 const _wheelRadius = 50.45 * _vanScale;
 const _logoRect = Rect.fromLTWH(295, 145.27, 84, 84);
+const _labelCenterX = 150.8;
 
 // حدود جامة السائق كما في ملف السيارة، وطرفها الأيمن تحت العمود.
 const _doorWindow =
@@ -269,7 +270,19 @@ class TruckArt {
     buildings = RasterLayer(_record(artBuildings), const Rect.fromLTRB(32, 36, 734, 464));
     plants = RasterLayer(_record(artPlants), const Rect.fromLTRB(310, 391, 662, 464));
     vanBack = RasterLayer(_record(artVanBack), _vanBounds);
-    vanTop = RasterLayer(_record(artVanTop), _vanBounds);
+    vanTop = RasterLayer(
+      _recordWith((canvas) {
+        _paintShapes(canvas, artVanTop);
+        // تُعكس الكتابة مرة ثانية حول وسطها فتبقى مقروءة على السيارة المعكوسة.
+        canvas
+          ..save()
+          ..translate(_labelCenterX * 2, 0)
+          ..scale(-1, 1);
+        _paintShapes(canvas, artVanLabel);
+        canvas.restore();
+      }),
+      _vanBounds,
+    );
     vanMiddle = _record(artVanMiddle);
     rearWheel = _record(artVanRearWheel);
     frontWheel = _record(artVanFrontWheel);
@@ -491,9 +504,9 @@ class TruckScenePainter extends CustomPainter {
     final viewRight = 375 + size.width / 2 / unit;
     final resolution = unit * pixelRatio;
 
-    // تسير السيارة إلى اليمين، فتمر الخلفية إلى اليسار.
+    // تسير السيارة إلى اليسار، فتمر الخلفية إلى اليمين.
     void strip(RasterLayer layer, double speed) {
-      final offset = (-t * speed) % _stripPeriod;
+      final offset = (t * speed) % _stripPeriod;
       final first = ((viewLeft - layer.bounds.right - offset) / _stripPeriod).ceil();
       final last = ((viewRight - layer.bounds.left - offset) / _stripPeriod).floor();
       for (var i = first; i <= last; i++) {
@@ -520,12 +533,13 @@ class TruckScenePainter extends CustomPainter {
   void _van(Canvas canvas, double t, DriverPose pose, double resolution) {
     final sway = 5 * math.sin(2 * math.pi * t / 7);
     final bounce = .8 * math.sin(2 * math.pi * 1.7 * t) + .35 * math.sin(2 * math.pi * 3.1 * t);
+    // الرسم معكوس، فهذه الزاوية الموجبة تظهر عكس عقارب الساعة على الشاشة.
     final spin = t * _groundSpeed / _wheelRadius;
 
     canvas
       ..save()
       ..translate(_vanOrigin.dx + sway, _vanOrigin.dy)
-      ..scale(_vanScale)
+      ..scale(-_vanScale, _vanScale)
       ..save()
       ..translate(0, bounce);
     art.vanBack.paint(canvas, resolution);
@@ -543,12 +557,17 @@ class TruckScenePainter extends CustomPainter {
     art.vanTop.paint(canvas, resolution);
     final image = logo;
     if (image != null) {
-      canvas.drawImageRect(
-        image,
-        Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
-        _logoRect,
-        Paint()..filterQuality = FilterQuality.medium,
-      );
+      canvas
+        ..save()
+        ..translate(_logoRect.center.dx * 2, 0)
+        ..scale(-1, 1)
+        ..drawImageRect(
+          image,
+          Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
+          _logoRect,
+          Paint()..filterQuality = FilterQuality.medium,
+        )
+        ..restore();
     }
     _bubble(canvas, pose.bubble);
     canvas
@@ -613,10 +632,11 @@ class TruckScenePainter extends CustomPainter {
     void pop(ui.Picture picture, Offset center, double from, double to) {
       final progress = ((shown - from) / (to - from)).clamp(0.0, 1.0);
       if (progress == 0) return;
+      final size = Curves.easeOutBack.transform(progress);
       canvas
         ..save()
         ..translate(center.dx, center.dy)
-        ..scale(Curves.easeOutBack.transform(progress))
+        ..scale(-size, size)
         ..drawPicture(picture)
         ..restore();
     }
