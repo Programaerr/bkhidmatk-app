@@ -3,14 +3,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:bkhidmatk/core/theme.dart';
-import 'package:bkhidmatk/data/models.dart';
-import 'package:bkhidmatk/state/app_state.dart';
-import 'package:bkhidmatk/ui/admin/admin_shell.dart';
-import 'package:bkhidmatk/ui/auth/login_screen.dart';
-import 'package:bkhidmatk/ui/auth/register_screen.dart';
-import 'package:bkhidmatk/ui/auth/welcome_screen.dart';
-import 'package:bkhidmatk/ui/customer/customer_shell.dart';
+import 'package:jaik/core/theme.dart';
+import 'package:jaik/data/models.dart';
+import 'package:jaik/state/app_state.dart';
+import 'package:jaik/ui/admin/admin_shell.dart';
+import 'package:jaik/ui/auth/login_screen.dart';
+import 'package:jaik/ui/auth/register_screen.dart';
+import 'package:jaik/ui/auth/welcome_screen.dart';
+import 'package:jaik/ui/customer/customer_shell.dart';
 
 import 'fake_repository.dart';
 

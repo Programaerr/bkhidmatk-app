@@ -9,8 +9,8 @@ import 'ui/auth/welcome_screen.dart';
 import 'ui/customer/customer_shell.dart';
 import 'ui/worker/worker_shell.dart';
 
-class BkhidmatkApp extends StatelessWidget {
-  const BkhidmatkApp({super.key});
+class JaikApp extends StatelessWidget {
+  const JaikApp({super.key});
 
   @override
   Widget build(BuildContext context) {

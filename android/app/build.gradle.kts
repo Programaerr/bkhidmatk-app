@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.bkhidmatk.bkhidmatk"
+    namespace = "com.jaik.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -15,9 +15,8 @@ android {
     }
 
     defaultConfig {
-        // Unique Application ID — changed from com.bkhidmatk.bkhidmatk to avoid
-        // conflicts with a previously installed build signed with another key.
-        applicationId = "com.bkhidmatk.app"
+        // Unique Application ID — renamed to com.jaik.app («جايك»).
+        applicationId = "com.jaik.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = maxOf(23, flutter.minSdkVersion)

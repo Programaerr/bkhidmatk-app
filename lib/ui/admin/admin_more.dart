@@ -307,7 +307,7 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
                 child: _Tile(
                   icon: Icons.info_outline_rounded,
                   title: 'عن جايك',
-                  subtitle: 'الإصدار 1.0.0 · Bkhidmatk',
+                  subtitle: 'الإصدار 1.0.0 · Jaik',
                   onTap: () => showAboutDialog(
                     context: context,
                     applicationName: 'جايك',

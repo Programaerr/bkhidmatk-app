@@ -1,0 +1,777 @@
+===== EXTENSIONS =====
+anthropic.claude-code@2.1.314
+bradlc.vscode-tailwindcss@0.16.0
+christian-kohler.npm-intellisense@1.4.5
+dart-code.dart-code@3.146.0
+dart-code.flutter@3.146.0
+davidanson.vscode-markdownlint@0.62.1
+dbaeumer.vscode-eslint@3.0.34
+esbenp.prettier-vscode@12.4.0
+github.github-vscode-theme@6.3.5
+jzmstrjp.color-the-tag-name@0.24.0
+mechatroner.rainbow-csv@3.24.1
+ms-dotnettools.csdevkit@3.40.215
+ms-dotnettools.csharp@2.160.4
+ms-dotnettools.vscode-dotnet-runtime@3.2.0
+ms-python.debugpy@2026.6.0
+ms-python.python@2026.10.0
+ms-python.vscode-pylance@2026.4.1
+ms-python.vscode-python-envs@1.40.0
+ms-vscode.powershell@2025.4.0
+pkief.material-icon-theme@5.40.0
+redhat.java@1.58.0
+sst-dev.opencode@1.0.0
+supabase.vscode-supabase-extension@0.0.13
+tanishqkancharla.opencode-vscode@0.4.4
+tomoki1207.pdf@1.2.2
+visualstudiotoolsforunity.vstuc@1.3.2
+vscjava.vscode-gradle@3.18.1
+vscjava.vscode-java-debug@0.60.0
+vscjava.vscode-java-dependency@0.27.7
+vscjava.vscode-java-pack@0.31.2
+vscjava.vscode-java-test@0.47.0
+vscjava.vscode-maven@0.46.0
+vsls-contrib.gitdoc@0.2.3
+
+===== VSCODE STATUS =====
+
+Version:          Code 1.144.0 (2c33b50b16c472efe58357d1d2a8a5414bc23fbf, 2026-10-27T20:18:03Z)
+OS Version:       Windows_NT x64 10.0.26300
+CPUs:             11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz (16 x 2304)
+Memory (System):  15.77GB (3.91GB free)
+VM:               0%
+Screen Reader:    no
+Process Argv:     --crash-reporter-id 1551cf60-d929-41f5-b724-67aaf191a213
+GPU Status:       2d_canvas:                              enabled
+                  GPU0:                                   VENDOR= 0x10de, DEVICE=0x249d [NVIDIA GeForce RTX 3070 Laptop GPU], DRIVER_VENDOR=NVIDIA, DRIVER_VERSION=32.0.16.1742 *ACTIVE*
+                  GPU1:                                   VENDOR= 0x1414, DEVICE=0x008c [Microsoft Basic Render Driver], DRIVER_VERSION=10.0.26100.9711
+                  Machine model name:                     
+                  Machine model version:                  
+                  direct_rendering_display_compositor:    disabled_off_ok
+                  gpu_compositing:                        enabled
+                  multiple_raster_threads:                enabled_on
+                  opengl:                                 enabled_on
+                  rasterization:                          enabled
+                  raw_draw:                               disabled_off_ok
+                  skia_graphite:                          disabled_off
+                  trees_in_viz:                           disabled_off
+                  video_decode:                           enabled
+                  video_encode:                           enabled
+                  webgl:                                  enabled
+                  webgpu:                                 enabled
+                  webnn:                                  disabled_off
+GPU Log Messages:
+GpuProcessHost: The info collection GPU process exited normally. Everything is okay.
+
+CPU %	Mem MB	   PID	Process
+    0	    69	 27896	code
+    0	    11	  5108	   window
+    1	    71	 11516	   gpu-process
+    2	   273	 15500	extension-host [1]
+    0	     8	  3924	     "C:\Users\msi\AppData\Local\Programs\Microsoft VS Code\Code.exe" "c:\Users\msi\AppData\Local\Programs\Microsoft VS Code\2c33b50b16\resources\app\extensions\json-language-features\server\dist\node\jsonServerMain" --node-ipc --clientProcessId=15500
+    0	    16	  5320	     C:\flutter_sdk\flutter\bin\cache\dart-sdk\bin\dart.exe language-server --protocol=lsp --client-id=VS-Code --client-version=3.146.0
+    0	     0	 22876	       C:\WINDOWS\system32\conhost.exe 0x4
+    0	     2	  6252	     c:\Users\msi\.vscode\extensions\ms-python.vscode-python-envs-1.40.0-win32-x64\python-env-tools\bin\pet.exe server
+    0	     0	  2076	       C:\WINDOWS\system32\conhost.exe 0x4
+    0	     3	  7204	     C:\flutter_sdk\flutter\bin\cache\dart-sdk\bin\dart.exe tooling-daemon --machine
+    0	     0	 30356	       C:\WINDOWS\system32\conhost.exe 0x4
+    0	     0	 11660	     C:\WINDOWS\system32\cmd.exe /d /s /c ""c:\Users\msi\.vscode\extensions\vscjava.vscode-gradle-3.18.1\lib\gradle-server.bat" "--pipe=\\.\pipe\6de5f4cbe7ab2a8f903df609e6b373f8-sock" "--parentPid=15500" "--startBuildServer=true" "--languageServerPipePath=\\.\pipe\f85ab0c209f9884c47c6a387f0520567-sock" "--pipeName=\\.\pipe\9dcd7658f37dab2bb602ce91b82f24b2-sock" "--bundleDir=c:\Users\msi\.vscode\extensions\vscjava.vscode-gradle-3.18.1\server""
+    0	     2	  7336	       "c:\Users\msi\.vscode\extensions\redhat.java-1.58.0-win32-x64\jre\25.0.4.1-win32-x86_64/bin/java.exe"  "-Dfile.encoding=UTF-8"  --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.invoke=ALL-UNNAMED --add-opens=java.prefs/java.util.prefs=ALL-UNNAMED --add-opens=java.base/java.nio.charset=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED  -classpath "c:\Users\msi\.vscode\extensions\vscjava.vscode-gradle-3.18.1\lib\gradle-server.jar" com.github.badsyntax.gradle.GradleServer "--pipe=\\.\pipe\6de5f4cbe7ab2a8f903df609e6b373f8-sock" "--parentPid=15500" "--startBuildServer=true" "--languageServerPipePath=\\.\pipe\f85ab0c209f9884c47c6a387f0520567-sock" "--pipeName=\\.\pipe\9dcd7658f37dab2bb602ce91b82f24b2-sock" "--bundleDir=c:\Users\msi\.vscode\extensions\vscjava.vscode-gradle-3.18.1\server"
+    0	     0	 29628	       C:\WINDOWS\system32\conhost.exe 0x4
+    0	    15	 12916	     c:\Users\msi\.vscode\extensions\redhat.java-1.58.0-win32-x64\jre\25.0.4.1-win32-x86_64\bin\java -Djdk.xml.maxGeneralEntitySizeLimit=0 -Djdk.xml.totalEntitySizeLimit=0 --add-modules=ALL-SYSTEM --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/sun.nio.fs=ALL-UNNAMED -Declipse.application=org.eclipse.jdt.ls.core.id1 -Dosgi.bundles.defaultStartLevel=4 -Declipse.product=org.eclipse.jdt.ls.core.product -Djava.import.generatesMetadataFilesAtProjectRoot=false -Dm2e.project.cache.size=50 -DDetectVMInstallationsJob.disabled=true -Dfile.encoding=utf8 -XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xmx2G -Xms100m -Xlog:disable -javaagent:c:\Users\msi\.vscode\extensions\redhat.java-1.58.0-win32-x64\lombok\lombok-1.18.39-4050.jar -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=c:\Users\msi\AppData\Roaming\Code\User\workspaceStorage\2b0d88a413eec9223d648f2b86131184\redhat.java -Daether.dependencyCollector.impl=bf -jar c:\Users\msi\.vscode\extensions\redhat.java-1.58.0-win32-x64\server\plugins\org.eclipse.equinox.launcher_1.8.0.v20260804-1928.jar -configuration c:\Users\msi\AppData\Roaming\Code\User\globalStorage\redhat.java\1.58.0\config_win -data c:\Users\msi\AppData\Roaming\Code\User\workspaceStorage\2b0d88a413eec9223d648f2b86131184\redhat.java\jdt_ws --pipe=\\.\pipe\lsp-245856defb956adb60e6ae34be8ef46c-sock
+    0	    48	 23100	       C:\Users\msi\.vscode\extensions\redhat.java-1.58.0-win32-x64\jre\25.0.4.1-win32-x86_64\bin\java.exe --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.invoke=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.prefs/java.util.prefs=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED --add-opens=java.base/java.nio.charset=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens=java.xml/javax.xml.namespace=ALL-UNNAMED --add-opens=java.base/java.time=ALL-UNNAMED --sun-misc-unsafe-memory-access=allow --enable-native-access=ALL-UNNAMED -XX:MaxMetaspaceSize=1024m -Xmx3072m -Dfile.encoding=UTF-8 -Duser.country=US -Duser.language=en -Duser.variant -cp C:\Users\msi\.gradle\wrapper\dists\gradle-9.8.2-all\8p5ch4668kehny89lbye095xl\gradle-9.8.2\lib\gradle-daemon-main-9.8.2.jar -javaagent:C:\Users\msi\.gradle\wrapper\dists\gradle-9.8.2-all\8p5ch4668kehny89lbye095xl\gradle-9.8.2\lib\agents\gradle-instrumentation-agent-9.8.2.jar org.gradle.launcher.daemon.bootstrap.GradleDaemon 9.8.2
+    0	    80	 31192	       C:\Users\msi\.vscode\extensions\redhat.java-1.58.0-win32-x64\jre\25.0.4.1-win32-x86_64\bin\java.exe --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.invoke=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.prefs/java.util.prefs=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED --add-opens=java.base/java.nio.charset=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens=java.xml/javax.xml.namespace=ALL-UNNAMED --add-opens=java.base/java.time=ALL-UNNAMED --enable-native-access=ALL-UNNAMED -XX:MaxMetaspaceSize=1024m -Xmx3072m -Dfile.encoding=UTF-8 -Duser.country=US -Duser.language=en -Duser.variant -cp C:\Users\msi\.gradle\wrapper\dists\gradle-9.7.1-bin\1w1c7tv4s851m17nbqdsro2tv\gradle-9.7.1\lib\gradle-daemon-main-9.7.1.jar -javaagent:C:\Users\msi\.gradle\wrapper\dists\gradle-9.7.1-bin\1w1c7tv4s851m17nbqdsro2tv\gradle-9.7.1\lib\agents\gradle-instrumentation-agent-9.7.1.jar org.gradle.launcher.daemon.bootstrap.GradleDaemon 9.7.1
+    0	    28	 26448	         C:\Users\msi\.vscode\extensions\redhat.java-1.58.0-win32-x64\jre\25.0.4.1-win32-x86_64\bin\java -cp C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kotlin-build-tools-compat\2.4.0\209372718c8759fbcb47402dc130d45f00c3f81\kotlin-build-tools-compat-2.4.0.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kotlin-build-tools-impl\2.4.0\3dde5b4075cd7963afd0b0b2835627f40abc1149\kotlin-build-tools-impl-2.4.0.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kotlin-tooling-core\2.4.0\75970f5a2a9cb4d25557965bbec0a7ccd55bfbcf\kotlin-tooling-core-2.4.0.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kotlin-build-tools-cri-impl\2.4.0\7fdfe4b4de70b7e6d81c054572e862121aa1603a\kotlin-build-tools-cri-impl-2.4.0.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kotlin-compiler-runner\2.4.0\d2b2336d493d2d3a8047c826cb27606f67029da8\kotlin-compiler-runner-2.4.0.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kotlin-compiler-embeddable\2.4.0\f1a24af8bd111a83950236b1aec7a6d72a97e92c\kotlin-compiler-embeddable-2.4.0.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kotlin-build-tools-api\2.4.0\46429d5887df2d02f33fe11a0c8444c5be5fd8da\kotlin-build-tools-api-2.4.0.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kotlin-daemon-client\2.4.0\e9080614f98d07554367b7e5810529963e9f43e2\kotlin-daemon-client-2.4.0.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kotlin-stdlib\2.4.0\4e9f4b531dce5c7dee58ed2de9a8b9a763c8dc6c\kotlin-stdlib-2.4.0.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains\annotations\13.0\919f0dfe192fb4e063e7dacadee7f8bb9a2672a9\annotations-13.0.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kotlin-script-runtime\2.4.0\1de03f0ef3e208ab5f97ee6a587e9b8480447df6\kotlin-script-runtime-2.4.0.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kotlin-reflect\1.6.10\1cbe9c92c12a94eea200d23c2bbaedaf3daf5132\kotlin-reflect-1.6.10.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kotlin-daemon-embeddable\2.4.0\1ecabef3a8ba6a8e25654573d54edb7e4136e903\kotlin-daemon-embeddable-2.4.0.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlinx\kotlinx-coroutines-core-jvm\1.8.0\ac1dc37a30a93150b704022f8d895ee1bd3a36b3\kotlinx-coroutines-core-jvm-1.8.0.jar -Djava.awt.headless=true -Djava.rmi.server.hostname=127.0.0.1 -Xmx3072m -XX:MaxMetaspaceSize=1024m -XX:ReservedCodeCacheSize=320m -Dkotlin.environment.keepalive -ea -Dkotlin.daemon.custom.run.files.path.for.tests=C:\Users\msi\AppData\Local\kotlin\daemon -XX:+UseCodeCacheFlushing -XX:+UseParallelGC -Dkotlin.daemon.initiator.marker.file=C:\Users\msi\AppData\Local\Temp\kotlin-compiler-client-10278906697978266640-is-running --add-exports java.base/sun.nio.ch=ALL-UNNAMED org.jetbrains.kotlin.daemon.KotlinCompileDaemon --daemon-logsPath C:\Users\msi\AppData\Local\Temp --daemon-logsFileSizeLimit=1048576 --daemon-logsFileCountLimit=3 --daemon-runFilesPath C:\Users\msi\AppData\Local\kotlin\daemon --daemon-autoshutdownIdleSeconds=7200 --daemon-compilerClasspath C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kotlin-build-tools-compat\2.4.0\209372718c8759fbcb47402dc130d45f00c3f81\kotlin-build-tools-compat-2.4.0.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kotlin-build-tools-impl\2.4.0\3dde5b4075cd7963afd0b0b2835627f40abc1149\kotlin-build-tools-impl-2.4.0.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kotlin-tooling-core\2.4.0\75970f5a2a9cb4d25557965bbec0a7ccd55bfbcf\kotlin-tooling-core-2.4.0.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kotlin-build-tools-cri-impl\2.4.0\7fdfe4b4de70b7e6d81c054572e862121aa1603a\kotlin-build-tools-cri-impl-2.4.0.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kotlin-compiler-runner\2.4.0\d2b2336d493d2d3a8047c826cb27606f67029da8\kotlin-compiler-runner-2.4.0.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kotlin-compiler-embeddable\2.4.0\f1a24af8bd111a83950236b1aec7a6d72a97e92c\kotlin-compiler-embeddable-2.4.0.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kotlin-build-tools-api\2.4.0\46429d5887df2d02f33fe11a0c8444c5be5fd8da\kotlin-build-tools-api-2.4.0.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kotlin-daemon-client\2.4.0\e9080614f98d07554367b7e5810529963e9f43e2\kotlin-daemon-client-2.4.0.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kotlin-stdlib\2.4.0\4e9f4b531dce5c7dee58ed2de9a8b9a763c8dc6c\kotlin-stdlib-2.4.0.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains\annotations\13.0\919f0dfe192fb4e063e7dacadee7f8bb9a2672a9\annotations-13.0.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kotlin-script-runtime\2.4.0\1de03f0ef3e208ab5f97ee6a587e9b8480447df6\kotlin-script-runtime-2.4.0.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kotlin-reflect\1.6.10\1cbe9c92c12a94eea200d23c2bbaedaf3daf5132\kotlin-reflect-1.6.10.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kotlin-daemon-embeddable\2.4.0\1ecabef3a8ba6a8e25654573d54edb7e4136e903\kotlin-daemon-embeddable-2.4.0.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlinx\kotlinx-coroutines-core-jvm\1.8.0\ac1dc37a30a93150b704022f8d895ee1bd3a36b3\kotlinx-coroutines-core-jvm-1.8.0.jar
+    0	     1	 26252	           C:\WINDOWS\system32\conhost.exe 0x4
+    0	     5	 19116	     electron-nodejs (eslintServer.js)
+    0	    21	 22952	     electron-nodejs (bundle.js)
+    0	     2	 25108	     C:\flutter_sdk\flutter\bin\cache\dart-sdk\bin\dart.exe devtools --machine --allow-embedding --dtd-uri ws://127.0.0.1:52170/4IZuIcPMOcE=
+    0	     0	 27840	       C:\WINDOWS\system32\conhost.exe 0x4
+    0	     0	 26832	     C:\WINDOWS\system32\cmd.exe /d /s /c ""C:\flutter_sdk\flutter\bin\flutter.bat" "daemon""
+    0	     0	  5632	       C:\WINDOWS\system32\conhost.exe 0x4
+    0	     0	 15844	       "C:\flutter_sdk\flutter\bin\cache\dart-sdk\bin\dart.exe"  --packages="C:\flutter_sdk\flutter\packages\flutter_tools\.dart_tool\package_config.json"  "C:\flutter_sdk\flutter\bin\cache\flutter_tools.snapshot" "daemon" 
+    0	    29	  7328	         C:\flutter_sdk\flutter\bin\cache\dart-sdk\bin\dartvm.exe --resolved_executable_name=C:\flutter_sdk\flutter\bin\cache\dart-sdk\bin\dart.exe --executable_name=C:\flutter_sdk\flutter\bin\cache\dart-sdk\bin\dart.exe --packages=C:\flutter_sdk\flutter\packages\flutter_tools\.dart_tool\package_config.json C:\flutter_sdk\flutter\bin\cache\flutter_tools.snapshot daemon
+    0	    32	 21532	agent-host
+    0	     3	 20656	     "c:\Users\msi\AppData\Local\Programs\Microsoft VS Code\2c33b50b16\resources\app\node_modules.asar.unpacked\@github\copilot-sdk-win32-x64\prebuilds\win32-x64\copilot-runtime.exe" --headless --no-auto-update --log-level info --stdio --no-auto-login
+    0	     0	 13896	       C:\WINDOWS\system32\conhost.exe 0x4
+    0	     3	 22172	   crashpad-handler
+    0	    27	 22580	shared-process
+    0	     7	 23420	   window
+    0	   257	 28968	window [1] (bkhidmatk - Visual Studio Code)
+    0	    33	 29888	pty-host
+    0	    54	   164	     C:\WINDOWS\System32\WindowsPowerShell\v1.0\powershell.exe -noexit -command "try { . \"c:\Users\msi\AppData\Local\Programs\Microsoft VS Code\2c33b50b16\resources\app\out\vs\workbench\contrib\terminal\common\scripts\shellIntegration.ps1\" } catch {}"
+    0	     8	  8856	       C:\WINDOWS\system32\cmd.exe /c ""C:\Users\msi\AppData\Local\Programs\Microsoft VS Code\bin\code.cmd" --status"
+    0	    93	 11868	         electron-nodejs (cli.js)
+    2	   142	  1800	           "C:\Users\msi\AppData\Local\Programs\Microsoft VS Code\Code.exe" --status
+    1	    92	 19272	             gpu-process
+    0	    85	 22408	             utility-network-service
+    0	    77	 32192	             crashpad-handler
+    0	     0	  2368	     "c:\Users\msi\AppData\Local\Programs\Microsoft VS Code\2c33b50b16\resources\app\node_modules.asar.unpacked\node-pty\build\Release\conpty\OpenConsole.exe" --headless --inheritcursor --width 80 --height 30 --signal 0x514 --server 0x570
+    0	     5	 21396	     C:\WINDOWS\System32\WindowsPowerShell\v1.0\powershell.exe -noexit -command "try { . \"c:\Users\msi\AppData\Local\Programs\Microsoft VS Code\2c33b50b16\resources\app\out\vs\workbench\contrib\terminal\common\scripts\shellIntegration.ps1\" } catch {}"
+    0	     0	 23480	     "c:\Users\msi\AppData\Local\Programs\Microsoft VS Code\2c33b50b16\resources\app\node_modules.asar.unpacked\node-pty\build\Release\conpty\OpenConsole.exe" --headless --width 80 --height 30 --signal 0x5c4 --server 0x564
+    0	     5	 30452	     C:\WINDOWS\System32\WindowsPowerShell\v1.0\powershell.exe -noexit -command "try { . \"c:\Users\msi\AppData\Local\Programs\Microsoft VS Code\2c33b50b16\resources\app\out\vs\workbench\contrib\terminal\common\scripts\shellIntegration.ps1\" } catch {}"
+    0	     2	 30596	     "c:\Users\msi\AppData\Local\Programs\Microsoft VS Code\2c33b50b16\resources\app\node_modules.asar.unpacked\node-pty\build\Release\conpty\OpenConsole.exe" --headless --inheritcursor --width 127 --height 1 --signal 0x66c --server 0x664
+    0	    16	 31372	   utility-network-service
+    0	    25	 31392	file-watcher [1]
+
+Workspace Stats: 
+|  Window (bkhidmatk - Visual Studio Code)
+|    Folder (bkhidmatk): 10492 files
+|      File types: xml(2554) flat(2095) json(1304) class(958) png(736)
+|                  len(414) dex(345) txt(274) jar(152) tab(148)
+|                  other(1512)
+|      Conf files: cmake(2) devcontainer.json(1) github-actions(1)
+|                  settings.json(1) dockerfile(1)
+
+===== PROCESSES =====
+
+
+Name            : OpenCode.exe
+ProcessId       : 8372
+ParentProcessId : 27608
+CommandLine     : "C:\Users\msi\AppData\Local\Programs\@opencodedesktop\OpenCode.exe" 
+
+Name            : OpenCode.exe
+ProcessId       : 24724
+ParentProcessId : 8372
+CommandLine     : "C:\Users\msi\AppData\Local\Programs\@opencodedesktop\OpenCode.exe" --type=gpu-process 
+                  --user-data-dir="C:\Users\msi\AppData\Roaming\ai.opencode.desktop" --gpu-preferences=WAA
+                  AAAAAAADgAAAEAAAAAAAAAAAAAGAAQAAAAAAAAAADAAAAAAAAADgAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAA
+                  AAAAAKAAAAAAAAAAoAAAAAAAAAAgAAAAAAAAAEAAAAAIAAAABAAAAAAAAAAgAAAAAAAAACAAAAAAAAAA= 
+                  --field-trial-handle=1872,i,12388607107786570968,6179147217483719716,262144 --enable-fea
+                  tures=AllowWindowCaptureExclusionInRemoteSessions,DocumentPolicyIncludeJSCallStacksInCra
+                  shReports,PdfUseShowSaveFilePicker --disable-features=DropInputEventsWhilePaintHolding,L
+                  ocalNetworkAccessChecks,NetworkServiceSandbox,ScreenAIOCREnabled,SpareRendererForSitePer
+                  Process,TraceSiteInstanceGetProcessCreation --variations-seed-version 
+                  --pseudonymization-salt-handle=1892,i,15646730548968673735,13173704850205352293,4 
+                  --trace-process-track-uuid=3190708988185955192 --mojo-platform-channel-handle=1868 
+                  /prefetch:2
+
+Name            : OpenCode.exe
+ProcessId       : 4276
+ParentProcessId : 8372
+CommandLine     : "C:\Users\msi\AppData\Local\Programs\@opencodedesktop\OpenCode.exe" --type=utility 
+                  --utility-sub-type=network.mojom.NetworkService --lang=en-US 
+                  --service-sandbox-type=none 
+                  --user-data-dir="C:\Users\msi\AppData\Roaming\ai.opencode.desktop" 
+                  --standard-schemes=oc --secure-schemes=oc --cors-schemes=oc --fetch-schemes=oc 
+                  --streaming-schemes=oc --code-cache-schemes=oc 
+                  --field-trial-handle=1872,i,12388607107786570968,6179147217483719716,262144 --enable-fea
+                  tures=AllowWindowCaptureExclusionInRemoteSessions,DocumentPolicyIncludeJSCallStacksInCra
+                  shReports,PdfUseShowSaveFilePicker --disable-features=DropInputEventsWhilePaintHolding,L
+                  ocalNetworkAccessChecks,NetworkServiceSandbox,ScreenAIOCREnabled,SpareRendererForSitePer
+                  Process,TraceSiteInstanceGetProcessCreation --variations-seed-version 
+                  --pseudonymization-salt-handle=1892,i,15646730548968673735,13173704850205352293,4 
+                  --trace-process-track-uuid=3190708989122997041 --mojo-platform-channel-handle=1988 
+                  /prefetch:11
+
+Name            : OpenCode.exe
+ProcessId       : 17996
+ParentProcessId : 8372
+CommandLine     : "C:\Users\msi\AppData\Local\Programs\@opencodedesktop\OpenCode.exe" --type=renderer 
+                  --user-data-dir="C:\Users\msi\AppData\Roaming\ai.opencode.desktop" 
+                  --standard-schemes=oc --secure-schemes=oc --cors-schemes=oc --fetch-schemes=oc 
+                  --streaming-schemes=oc --code-cache-schemes=oc --app-user-model-id=ai.opencode.desktop 
+                  --app-path="C:\Users\msi\AppData\Local\Programs\@opencodedesktop\resources\app.asar" 
+                  --enable-sandbox --video-capture-use-gpu-memory-buffer --lang=en-US 
+                  --device-scale-factor=1.25 --num-raster-threads=4 --enable-main-frame-before-activation 
+                  --renderer-client-id=5 --launch-time-ticks=250835716879 
+                  --field-trial-handle=1872,i,12388607107786570968,6179147217483719716,262144 --enable-fea
+                  tures=AllowWindowCaptureExclusionInRemoteSessions,DocumentPolicyIncludeJSCallStacksInCra
+                  shReports,PdfUseShowSaveFilePicker --disable-features=DropInputEventsWhilePaintHolding,L
+                  ocalNetworkAccessChecks,NetworkServiceSandbox,ScreenAIOCREnabled,SpareRendererForSitePer
+                  Process,TraceSiteInstanceGetProcessCreation --variations-seed-version 
+                  --pseudonymization-salt-handle=1892,i,15646730548968673735,13173704850205352293,4 
+                  --trace-process-track-uuid=3190708990997080739 --mojo-platform-channel-handle=2960 --ope
+                  ncode-window=%7B%22id%22%3A%22c932fc62-2f3d-49e4-881b-b5c18d404e94%22%2C%22firstLaunchPe
+                  nding%22%3Afalse%2C%22packaged%22%3Atrue%7D /prefetch:1
+
+Name            : OpenCode.exe
+ProcessId       : 7612
+ParentProcessId : 8372
+CommandLine     : C:\Users\msi\AppData\Local\Programs\@opencodedesktop\OpenCode.exe 
+                  --type=crashpad-handler 
+                  --user-data-dir=C:\Users\msi\AppData\Roaming\ai.opencode.desktop /prefetch:4 
+                  --no-rate-limit --monitor-self-annotation=ptype=crashpad-handler 
+                  --database=C:\Users\msi\AppData\Roaming\ai.opencode.desktop\Crashpad 
+                  --annotation=_productName=OpenCode --annotation=_version=2.1.4 --annotation=plat=Win64 
+                  --annotation=prod=Electron --annotation=ver=44.9.1 --initial-client-data=0xb18,0xb24,0xe
+                  74,0xb58,0xe70,0x7ff7fa12ca18,0x7ff7fa12ca28,0x7ff7fa12ca38
+
+Name            : codex-windows-sandbox-service.exe
+ProcessId       : 13808
+ParentProcessId : 1436
+CommandLine     : 
+
+Name            : OpenCode.exe
+ProcessId       : 18240
+ParentProcessId : 8372
+CommandLine     : "C:\Users\msi\AppData\Local\Programs\@opencodedesktop\OpenCode.exe" --type=utility 
+                  --utility-sub-type=audio.mojom.AudioService --lang=en-US --service-sandbox-type=audio 
+                  --video-capture-use-gpu-memory-buffer 
+                  --user-data-dir="C:\Users\msi\AppData\Roaming\ai.opencode.desktop" 
+                  --standard-schemes=oc --secure-schemes=oc --cors-schemes=oc --fetch-schemes=oc 
+                  --streaming-schemes=oc --code-cache-schemes=oc 
+                  --field-trial-handle=1872,i,12388607107786570968,6179147217483719716,262144 --enable-fea
+                  tures=AllowWindowCaptureExclusionInRemoteSessions,DocumentPolicyIncludeJSCallStacksInCra
+                  shReports,PdfUseShowSaveFilePicker --disable-features=DropInputEventsWhilePaintHolding,L
+                  ocalNetworkAccessChecks,NetworkServiceSandbox,ScreenAIOCREnabled,SpareRendererForSitePer
+                  Process,TraceSiteInstanceGetProcessCreation --variations-seed-version 
+                  --pseudonymization-salt-handle=1892,i,15646730548968673735,13173704850205352293,4 
+                  --trace-process-track-uuid=3190708992871164437 --mojo-platform-channel-handle=4336 
+                  /prefetch:12
+
+Name            : Code.exe
+ProcessId       : 27896
+ParentProcessId : 27608
+CommandLine     : "C:\Users\msi\AppData\Local\Programs\Microsoft VS Code\Code.exe" 
+
+Name            : Code.exe
+ProcessId       : 22172
+ParentProcessId : 27896
+CommandLine     : "C:\Users\msi\AppData\Local\Programs\Microsoft VS Code\Code.exe" 
+                  --type=crashpad-handler --user-data-dir=C:\Users\msi\AppData\Roaming\Code /prefetch:4 
+                  --no-rate-limit --monitor-self-annotation=ptype=crashpad-handler 
+                  --database=C:\Users\msi\AppData\Roaming\Code\Crashpad --url=appcenter://code?aid=a4e3233
+                  c-699c-46ec-b4f4-9c2a77254662&uid=1551cf60-d929-41f5-b724-67aaf191a213&iid=1551cf60-d929
+                  -41f5-b724-67aaf191a213&sid=1551cf60-d929-41f5-b724-67aaf191a213 
+                  --annotation=_companyName=Microsoft --annotation=_productName=VSCode 
+                  --annotation=_version=1.144.0 --annotation=plat=Win64 --annotation=prod=Electron 
+                  --annotation=ver=43.8.3 --initial-client-data=0x52c,0x530,0x534,0x528,0x538,0x7ff71a69d9
+                  08,0x7ff71a69d918,0x7ff71a69d928
+
+Name            : Code.exe
+ProcessId       : 11516
+ParentProcessId : 27896
+CommandLine     : "C:\Users\msi\AppData\Local\Programs\Microsoft VS Code\Code.exe" --type=gpu-process 
+                  --user-data-dir="C:\Users\msi\AppData\Roaming\Code" --gpu-preferences=UAAAAAAAAADgAAAEAA
+                  AAAAAAAAAAAGAAOAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAABgAAAAAAAAAGAAAAAAAAA
+                  AIAAAAAAAAAAgAAAAAAAAACAAAAAAAAAA= 
+                  --field-trial-handle=1800,i,11979861851195187182,11422028393264202216,262144 --enable-fe
+                  atures=DocumentPolicyIncludeJSCallStacksInCrashReports,EarlyEstablishGpuChannel,Establis
+                  hGpuChannelAsync,PdfUseShowSaveFilePicker,UpdateCompositorMemoryPolicyOnScreenChange --d
+                  isable-features=CalculateNativeWinOcclusion,DropInputEventsWhilePaintHolding,LocalNetwor
+                  kAccessChecks,NetworkServiceSandbox,ScreenAIOCREnabled,SpareRendererForSitePerProcess,Tr
+                  aceSiteInstanceGetProcessCreation --variations-seed-version 
+                  --pseudonymization-salt-handle=1808,i,4342171507814919920,2984837167067319787,4 
+                  --trace-process-track-uuid=3190708988185955192 --mojo-platform-channel-handle=1788 
+                  /prefetch:2
+
+Name            : Code.exe
+ProcessId       : 31372
+ParentProcessId : 27896
+CommandLine     : "C:\Users\msi\AppData\Local\Programs\Microsoft VS Code\Code.exe" --type=utility 
+                  --utility-sub-type=network.mojom.NetworkService --lang=en-US 
+                  --service-sandbox-type=none --user-data-dir="C:\Users\msi\AppData\Roaming\Code" 
+                  --standard-schemes=vscode-webview,vscode-file --enable-sandbox --secure-schemes=vscode-w
+                  ebview,vscode-file,vscode-remote-resource,vscode-managed-remote-resource --cors-schemes=
+                  vscode-webview,vscode-file,vscode-remote-resource,vscode-managed-remote-resource --fetch
+                  -schemes=vscode-webview,vscode-file,vscode-remote-resource,vscode-managed-remote-resourc
+                  e --service-worker-schemes=vscode-webview 
+                  --code-cache-schemes=vscode-webview,vscode-file 
+                  --field-trial-handle=1800,i,11979861851195187182,11422028393264202216,262144 --enable-fe
+                  atures=DocumentPolicyIncludeJSCallStacksInCrashReports,EarlyEstablishGpuChannel,Establis
+                  hGpuChannelAsync,PdfUseShowSaveFilePicker,UpdateCompositorMemoryPolicyOnScreenChange --d
+                  isable-features=CalculateNativeWinOcclusion,DropInputEventsWhilePaintHolding,LocalNetwor
+                  kAccessChecks,NetworkServiceSandbox,ScreenAIOCREnabled,SpareRendererForSitePerProcess,Tr
+                  aceSiteInstanceGetProcessCreation --variations-seed-version 
+                  --pseudonymization-salt-handle=1808,i,4342171507814919920,2984837167067319787,4 
+                  --trace-process-track-uuid=3190708989122997041 --mojo-platform-channel-handle=1992 
+                  /prefetch:11
+
+Name            : Code.exe
+ProcessId       : 28968
+ParentProcessId : 27896
+CommandLine     : "C:\Users\msi\AppData\Local\Programs\Microsoft VS Code\Code.exe" --type=renderer 
+                  --user-data-dir="C:\Users\msi\AppData\Roaming\Code" 
+                  --standard-schemes=vscode-webview,vscode-file --enable-sandbox --secure-schemes=vscode-w
+                  ebview,vscode-file,vscode-remote-resource,vscode-managed-remote-resource --cors-schemes=
+                  vscode-webview,vscode-file,vscode-remote-resource,vscode-managed-remote-resource --fetch
+                  -schemes=vscode-webview,vscode-file,vscode-remote-resource,vscode-managed-remote-resourc
+                  e --service-worker-schemes=vscode-webview 
+                  --code-cache-schemes=vscode-webview,vscode-file 
+                  --app-user-model-id=Microsoft.VisualStudioCode 
+                  --app-path="C:\Users\msi\AppData\Local\Programs\Microsoft VS 
+                  Code\2c33b50b16\resources\app" --enable-sandbox --enable-blink-features=HighlightAPI 
+                  --max-active-webgl-contexts=32 
+                  --disable-blink-features=FontMatchingCTMigration,StandardizedBrowserZoom, 
+                  --video-capture-use-gpu-memory-buffer --lang=en-US --device-scale-factor=1.25 
+                  --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=4 
+                  --time-ticks-at-unix-epoch=-1793170581192487 --launch-time-ticks=251501653645 
+                  --field-trial-handle=1800,i,11979861851195187182,11422028393264202216,262144 --enable-fe
+                  atures=DocumentPolicyIncludeJSCallStacksInCrashReports,EarlyEstablishGpuChannel,Establis
+                  hGpuChannelAsync,PdfUseShowSaveFilePicker,UpdateCompositorMemoryPolicyOnScreenChange --d
+                  isable-features=CalculateNativeWinOcclusion,DropInputEventsWhilePaintHolding,LocalNetwor
+                  kAccessChecks,NetworkServiceSandbox,ScreenAIOCREnabled,SpareRendererForSitePerProcess,Tr
+                  aceSiteInstanceGetProcessCreation --variations-seed-version 
+                  --pseudonymization-salt-handle=1808,i,4342171507814919920,2984837167067319787,4 
+                  --trace-process-track-uuid=3190708990060038890 --mojo-platform-channel-handle=3316 
+                  --vscode-window-config=vscode:11629900-7295-489c-b270-2c675765bd20 /prefetch:1
+
+Name            : Code.exe
+ProcessId       : 21532
+ParentProcessId : 27896
+CommandLine     : "C:\Users\msi\AppData\Local\Programs\Microsoft VS Code\Code.exe" --type=utility 
+                  --utility-sub-type=node.mojom.NodeService --lang=en-US --service-sandbox-type=none 
+                  --video-capture-use-gpu-memory-buffer 
+                  --user-data-dir="C:\Users\msi\AppData\Roaming\Code" 
+                  --standard-schemes=vscode-webview,vscode-file --enable-sandbox --secure-schemes=vscode-w
+                  ebview,vscode-file,vscode-remote-resource,vscode-managed-remote-resource --cors-schemes=
+                  vscode-webview,vscode-file,vscode-remote-resource,vscode-managed-remote-resource --fetch
+                  -schemes=vscode-webview,vscode-file,vscode-remote-resource,vscode-managed-remote-resourc
+                  e --service-worker-schemes=vscode-webview 
+                  --code-cache-schemes=vscode-webview,vscode-file 
+                  --field-trial-handle=1800,i,11979861851195187182,11422028393264202216,262144 --enable-fe
+                  atures=DocumentPolicyIncludeJSCallStacksInCrashReports,EarlyEstablishGpuChannel,Establis
+                  hGpuChannelAsync,PdfUseShowSaveFilePicker,UpdateCompositorMemoryPolicyOnScreenChange --d
+                  isable-features=CalculateNativeWinOcclusion,DropInputEventsWhilePaintHolding,LocalNetwor
+                  kAccessChecks,NetworkServiceSandbox,ScreenAIOCREnabled,SpareRendererForSitePerProcess,Tr
+                  aceSiteInstanceGetProcessCreation --variations-seed-version 
+                  --pseudonymization-salt-handle=1808,i,4342171507814919920,2984837167067319787,4 
+                  --trace-process-track-uuid=3190708990997080739 --mojo-platform-channel-handle=3728 
+                  /prefetch:14
+
+Name            : Code.exe
+ProcessId       : 29888
+ParentProcessId : 27896
+CommandLine     : "C:\Users\msi\AppData\Local\Programs\Microsoft VS Code\Code.exe" --type=utility 
+                  --utility-sub-type=node.mojom.NodeService --lang=en-US --service-sandbox-type=none 
+                  --video-capture-use-gpu-memory-buffer 
+                  --user-data-dir="C:\Users\msi\AppData\Roaming\Code" 
+                  --standard-schemes=vscode-webview,vscode-file --enable-sandbox --secure-schemes=vscode-w
+                  ebview,vscode-file,vscode-remote-resource,vscode-managed-remote-resource --cors-schemes=
+                  vscode-webview,vscode-file,vscode-remote-resource,vscode-managed-remote-resource --fetch
+                  -schemes=vscode-webview,vscode-file,vscode-remote-resource,vscode-managed-remote-resourc
+                  e --service-worker-schemes=vscode-webview 
+                  --code-cache-schemes=vscode-webview,vscode-file 
+                  --field-trial-handle=1800,i,11979861851195187182,11422028393264202216,262144 --enable-fe
+                  atures=DocumentPolicyIncludeJSCallStacksInCrashReports,EarlyEstablishGpuChannel,Establis
+                  hGpuChannelAsync,PdfUseShowSaveFilePicker,UpdateCompositorMemoryPolicyOnScreenChange --d
+                  isable-features=CalculateNativeWinOcclusion,DropInputEventsWhilePaintHolding,LocalNetwor
+                  kAccessChecks,NetworkServiceSandbox,ScreenAIOCREnabled,SpareRendererForSitePerProcess,Tr
+                  aceSiteInstanceGetProcessCreation --variations-seed-version 
+                  --pseudonymization-salt-handle=1808,i,4342171507814919920,2984837167067319787,4 
+                  --trace-process-track-uuid=3190708991934122588 --mojo-platform-channel-handle=3744 
+                  /prefetch:14
+
+Name            : Code.exe
+ProcessId       : 22580
+ParentProcessId : 27896
+CommandLine     : "C:\Users\msi\AppData\Local\Programs\Microsoft VS Code\Code.exe" --type=utility 
+                  --utility-sub-type=node.mojom.NodeService --lang=en-US --service-sandbox-type=none 
+                  --video-capture-use-gpu-memory-buffer 
+                  --user-data-dir="C:\Users\msi\AppData\Roaming\Code" 
+                  --standard-schemes=vscode-webview,vscode-file --enable-sandbox --secure-schemes=vscode-w
+                  ebview,vscode-file,vscode-remote-resource,vscode-managed-remote-resource --cors-schemes=
+                  vscode-webview,vscode-file,vscode-remote-resource,vscode-managed-remote-resource --fetch
+                  -schemes=vscode-webview,vscode-file,vscode-remote-resource,vscode-managed-remote-resourc
+                  e --service-worker-schemes=vscode-webview 
+                  --code-cache-schemes=vscode-webview,vscode-file 
+                  --field-trial-handle=1800,i,11979861851195187182,11422028393264202216,262144 --enable-fe
+                  atures=DocumentPolicyIncludeJSCallStacksInCrashReports,EarlyEstablishGpuChannel,Establis
+                  hGpuChannelAsync,PdfUseShowSaveFilePicker,UpdateCompositorMemoryPolicyOnScreenChange --d
+                  isable-features=CalculateNativeWinOcclusion,DropInputEventsWhilePaintHolding,LocalNetwor
+                  kAccessChecks,NetworkServiceSandbox,ScreenAIOCREnabled,SpareRendererForSitePerProcess,Tr
+                  aceSiteInstanceGetProcessCreation --variations-seed-version 
+                  --pseudonymization-salt-handle=1808,i,4342171507814919920,2984837167067319787,4 
+                  --trace-process-track-uuid=3190708993808206286 --mojo-platform-channel-handle=3924 
+                  /prefetch:14
+
+Name            : Code.exe
+ProcessId       : 15500
+ParentProcessId : 27896
+CommandLine     : "C:\Users\msi\AppData\Local\Programs\Microsoft VS Code\Code.exe" --type=utility 
+                  --utility-sub-type=node.mojom.NodeService --lang=en-US --service-sandbox-type=none 
+                  --dns-result-order=ipv4first --experimental-network-inspection --inspect-port=0 
+                  --video-capture-use-gpu-memory-buffer 
+                  --user-data-dir="C:\Users\msi\AppData\Roaming\Code" 
+                  --standard-schemes=vscode-webview,vscode-file --enable-sandbox --secure-schemes=vscode-w
+                  ebview,vscode-file,vscode-remote-resource,vscode-managed-remote-resource --cors-schemes=
+                  vscode-webview,vscode-file,vscode-remote-resource,vscode-managed-remote-resource --fetch
+                  -schemes=vscode-webview,vscode-file,vscode-remote-resource,vscode-managed-remote-resourc
+                  e --service-worker-schemes=vscode-webview 
+                  --code-cache-schemes=vscode-webview,vscode-file 
+                  --field-trial-handle=1800,i,11979861851195187182,11422028393264202216,262144 --enable-fe
+                  atures=DocumentPolicyIncludeJSCallStacksInCrashReports,EarlyEstablishGpuChannel,Establis
+                  hGpuChannelAsync,PdfUseShowSaveFilePicker,UpdateCompositorMemoryPolicyOnScreenChange --d
+                  isable-features=CalculateNativeWinOcclusion,DropInputEventsWhilePaintHolding,LocalNetwor
+                  kAccessChecks,NetworkServiceSandbox,ScreenAIOCREnabled,SpareRendererForSitePerProcess,Tr
+                  aceSiteInstanceGetProcessCreation --variations-seed-version 
+                  --pseudonymization-salt-handle=1808,i,4342171507814919920,2984837167067319787,4 
+                  --trace-process-track-uuid=3190708996619331833 --mojo-platform-channel-handle=5480 
+                  /prefetch:14
+
+Name            : Code.exe
+ProcessId       : 31392
+ParentProcessId : 27896
+CommandLine     : "C:\Users\msi\AppData\Local\Programs\Microsoft VS Code\Code.exe" --type=utility 
+                  --utility-sub-type=node.mojom.NodeService --lang=en-US --service-sandbox-type=none 
+                  --video-capture-use-gpu-memory-buffer 
+                  --user-data-dir="C:\Users\msi\AppData\Roaming\Code" 
+                  --standard-schemes=vscode-webview,vscode-file --enable-sandbox --secure-schemes=vscode-w
+                  ebview,vscode-file,vscode-remote-resource,vscode-managed-remote-resource --cors-schemes=
+                  vscode-webview,vscode-file,vscode-remote-resource,vscode-managed-remote-resource --fetch
+                  -schemes=vscode-webview,vscode-file,vscode-remote-resource,vscode-managed-remote-resourc
+                  e --service-worker-schemes=vscode-webview 
+                  --code-cache-schemes=vscode-webview,vscode-file 
+                  --field-trial-handle=1800,i,11979861851195187182,11422028393264202216,262144 --enable-fe
+                  atures=DocumentPolicyIncludeJSCallStacksInCrashReports,EarlyEstablishGpuChannel,Establis
+                  hGpuChannelAsync,PdfUseShowSaveFilePicker,UpdateCompositorMemoryPolicyOnScreenChange --d
+                  isable-features=CalculateNativeWinOcclusion,DropInputEventsWhilePaintHolding,LocalNetwor
+                  kAccessChecks,NetworkServiceSandbox,ScreenAIOCREnabled,SpareRendererForSitePerProcess,Tr
+                  aceSiteInstanceGetProcessCreation --variations-seed-version 
+                  --pseudonymization-salt-handle=1808,i,4342171507814919920,2984837167067319787,4 
+                  --trace-process-track-uuid=3190708997556373682 --mojo-platform-channel-handle=6644 
+                  /prefetch:14
+
+Name            : java.exe
+ProcessId       : 7336
+ParentProcessId : 11660
+CommandLine     : "c:\Users\msi\.vscode\extensions\redhat.java-1.58.0-win32-x64\jre\25.0.4.1-win32-x86_64/
+                  bin/java.exe"  "-Dfile.encoding=UTF-8"  --add-opens=java.base/java.util=ALL-UNNAMED 
+                  --add-opens=java.base/java.lang=ALL-UNNAMED 
+                  --add-opens=java.base/java.lang.invoke=ALL-UNNAMED 
+                  --add-opens=java.prefs/java.util.prefs=ALL-UNNAMED 
+                  --add-opens=java.base/java.nio.charset=ALL-UNNAMED 
+                  --add-opens=java.base/java.net=ALL-UNNAMED 
+                  --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED  -classpath 
+                  "c:\Users\msi\.vscode\extensions\vscjava.vscode-gradle-3.18.1\lib\gradle-server.jar" 
+                  com.github.badsyntax.gradle.GradleServer 
+                  "--pipe=\\.\pipe\6de5f4cbe7ab2a8f903df609e6b373f8-sock" "--parentPid=15500" 
+                  "--startBuildServer=true" 
+                  "--languageServerPipePath=\\.\pipe\f85ab0c209f9884c47c6a387f0520567-sock" 
+                  "--pipeName=\\.\pipe\9dcd7658f37dab2bb602ce91b82f24b2-sock" 
+                  "--bundleDir=c:\Users\msi\.vscode\extensions\vscjava.vscode-gradle-3.18.1\server"
+
+Name            : java.exe
+ProcessId       : 12916
+ParentProcessId : 15500
+CommandLine     : c:\Users\msi\.vscode\extensions\redhat.java-1.58.0-win32-x64\jre\25.0.4.1-win32-x86_64\b
+                  in\java -Djdk.xml.maxGeneralEntitySizeLimit=0 -Djdk.xml.totalEntitySizeLimit=0 
+                  --add-modules=ALL-SYSTEM --add-opens java.base/java.util=ALL-UNNAMED --add-opens 
+                  java.base/java.lang=ALL-UNNAMED --add-opens java.base/sun.nio.fs=ALL-UNNAMED 
+                  -Declipse.application=org.eclipse.jdt.ls.core.id1 -Dosgi.bundles.defaultStartLevel=4 
+                  -Declipse.product=org.eclipse.jdt.ls.core.product 
+                  -Djava.import.generatesMetadataFilesAtProjectRoot=false -Dm2e.project.cache.size=50 
+                  -DDetectVMInstallationsJob.disabled=true -Dfile.encoding=utf8 -XX:+UseParallelGC 
+                  -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true 
+                  -Xmx2G -Xms100m -Xlog:disable -javaagent:c:\Users\msi\.vscode\extensions\redhat.java-1.5
+                  8.0-win32-x64\lombok\lombok-1.18.39-4050.jar -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDum
+                  pPath=c:\Users\msi\AppData\Roaming\Code\User\workspaceStorage\2b0d88a413eec9223d648f2b86
+                  131184\redhat.java -Daether.dependencyCollector.impl=bf -jar c:\Users\msi\.vscode\extens
+                  ions\redhat.java-1.58.0-win32-x64\server\plugins\org.eclipse.equinox.launcher_1.8.0.v202
+                  60804-1928.jar -configuration 
+                  c:\Users\msi\AppData\Roaming\Code\User\globalStorage\redhat.java\1.58.0\config_win 
+                  -data c:\Users\msi\AppData\Roaming\Code\User\workspaceStorage\2b0d88a413eec9223d648f2b86
+                  131184\redhat.java\jdt_ws --pipe=\\.\pipe\lsp-245856defb956adb60e6ae34be8ef46c-sock
+
+Name            : Code.exe
+ProcessId       : 5108
+ParentProcessId : 27896
+CommandLine     : "C:\Users\msi\AppData\Local\Programs\Microsoft VS Code\Code.exe" --type=renderer 
+                  --user-data-dir="C:\Users\msi\AppData\Roaming\Code" 
+                  --standard-schemes=vscode-webview,vscode-file --enable-sandbox --secure-schemes=vscode-w
+                  ebview,vscode-file,vscode-remote-resource,vscode-managed-remote-resource --cors-schemes=
+                  vscode-webview,vscode-file,vscode-remote-resource,vscode-managed-remote-resource --fetch
+                  -schemes=vscode-webview,vscode-file,vscode-remote-resource,vscode-managed-remote-resourc
+                  e --service-worker-schemes=vscode-webview 
+                  --code-cache-schemes=vscode-webview,vscode-file 
+                  --app-user-model-id=Microsoft.VisualStudioCode 
+                  --app-path="C:\Users\msi\AppData\Local\Programs\Microsoft VS 
+                  Code\2c33b50b16\resources\app" --enable-sandbox --enable-blink-features=HighlightAPI 
+                  --max-active-webgl-contexts=32 
+                  --disable-blink-features=FontMatchingCTMigration,StandardizedBrowserZoom, 
+                  --video-capture-use-gpu-memory-buffer --lang=en-US --device-scale-factor=1.25 
+                  --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=14 
+                  --time-ticks-at-unix-epoch=-1793170581192487 --launch-time-ticks=251536886211 
+                  --field-trial-handle=1800,i,11979861851195187182,11422028393264202216,262144 --enable-fe
+                  atures=DocumentPolicyIncludeJSCallStacksInCrashReports,EarlyEstablishGpuChannel,Establis
+                  hGpuChannelAsync,PdfUseShowSaveFilePicker,UpdateCompositorMemoryPolicyOnScreenChange --d
+                  isable-features=CalculateNativeWinOcclusion,DropInputEventsWhilePaintHolding,LocalNetwor
+                  kAccessChecks,NetworkServiceSandbox,ScreenAIOCREnabled,SpareRendererForSitePerProcess,Tr
+                  aceSiteInstanceGetProcessCreation --variations-seed-version 
+                  --pseudonymization-salt-handle=1808,i,4342171507814919920,2984837167067319787,4 
+                  --trace-process-track-uuid=3190708999430457380 --mojo-platform-channel-handle=6560 
+                  --vscode-window-config=vscode:11629900-7295-489c-b270-2c675765bd20 /prefetch:1
+
+Name            : dart.exe
+ProcessId       : 5320
+ParentProcessId : 15500
+CommandLine     : C:\flutter_sdk\flutter\bin\cache\dart-sdk\bin\dart.exe language-server --protocol=lsp 
+                  --client-id=VS-Code --client-version=3.146.0
+
+Name            : dart.exe
+ProcessId       : 7204
+ParentProcessId : 15500
+CommandLine     : C:\flutter_sdk\flutter\bin\cache\dart-sdk\bin\dart.exe tooling-daemon --machine
+
+Name            : dart.exe
+ProcessId       : 25108
+ParentProcessId : 15500
+CommandLine     : C:\flutter_sdk\flutter\bin\cache\dart-sdk\bin\dart.exe devtools --machine 
+                  --allow-embedding --dtd-uri ws://127.0.0.1:52170/4IZuIcPMOcE=
+
+Name            : dart.exe
+ProcessId       : 15844
+ParentProcessId : 26832
+CommandLine     : "C:\flutter_sdk\flutter\bin\cache\dart-sdk\bin\dart.exe"  --packages="C:\flutter_sdk\flu
+                  tter\packages\flutter_tools\.dart_tool\package_config.json"  
+                  "C:\flutter_sdk\flutter\bin\cache\flutter_tools.snapshot" "daemon" 
+
+Name            : dartvm.exe
+ProcessId       : 7328
+ParentProcessId : 15844
+CommandLine     : C:\flutter_sdk\flutter\bin\cache\dart-sdk\bin\dartvm.exe 
+                  --resolved_executable_name=C:\flutter_sdk\flutter\bin\cache\dart-sdk\bin\dart.exe 
+                  --executable_name=C:\flutter_sdk\flutter\bin\cache\dart-sdk\bin\dart.exe 
+                  --packages=C:\flutter_sdk\flutter\packages\flutter_tools\.dart_tool\package_config.json 
+                  C:\flutter_sdk\flutter\bin\cache\flutter_tools.snapshot daemon
+
+Name            : Code.exe
+ProcessId       : 22952
+ParentProcessId : 15500
+CommandLine     : "C:\Users\msi\AppData\Local\Programs\Microsoft VS Code\Code.exe" 
+                  c:\Users\msi\.vscode\extensions\ms-python.vscode-pylance-2026.4.1\dist\server.bundle.js 
+                  --cancellationReceive=file:e9f491d3c6bad55161fe64dda552ddee8231435679 --node-ipc 
+                  --clientProcessId=15500
+
+Name            : adb.exe
+ProcessId       : 22672
+ParentProcessId : 30240
+CommandLine     : adb -L tcp:5037 fork-server server --reply-fd 656
+
+Name            : opencode.exe
+ProcessId       : 30760
+ParentProcessId : 2444
+CommandLine     : C:\Users\msi\AppData\Roaming\npm\node_modules\@opencode\cli\bin\opencode.exe serve 
+                  --service
+
+Name            : Code.exe
+ProcessId       : 23420
+ParentProcessId : 27896
+CommandLine     : "C:\Users\msi\AppData\Local\Programs\Microsoft VS Code\Code.exe" --type=renderer 
+                  --user-data-dir="C:\Users\msi\AppData\Roaming\Code" 
+                  --standard-schemes=vscode-webview,vscode-file --enable-sandbox --secure-schemes=vscode-w
+                  ebview,vscode-file,vscode-remote-resource,vscode-managed-remote-resource --cors-schemes=
+                  vscode-webview,vscode-file,vscode-remote-resource,vscode-managed-remote-resource --fetch
+                  -schemes=vscode-webview,vscode-file,vscode-remote-resource,vscode-managed-remote-resourc
+                  e --service-worker-schemes=vscode-webview 
+                  --code-cache-schemes=vscode-webview,vscode-file 
+                  --app-user-model-id=Microsoft.VisualStudioCode 
+                  --app-path="C:\Users\msi\AppData\Local\Programs\Microsoft VS 
+                  Code\2c33b50b16\resources\app" --enable-sandbox --enable-blink-features=HighlightAPI 
+                  --max-active-webgl-contexts=32 
+                  --disable-blink-features=FontMatchingCTMigration,StandardizedBrowserZoom, 
+                  --video-capture-use-gpu-memory-buffer --lang=en-US --device-scale-factor=1.25 
+                  --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=16 
+                  --time-ticks-at-unix-epoch=-1793170581192487 --launch-time-ticks=252841255506 
+                  --field-trial-handle=1800,i,11979861851195187182,11422028393264202216,262144 --enable-fe
+                  atures=DocumentPolicyIncludeJSCallStacksInCrashReports,EarlyEstablishGpuChannel,Establis
+                  hGpuChannelAsync,PdfUseShowSaveFilePicker,UpdateCompositorMemoryPolicyOnScreenChange --d
+                  isable-features=CalculateNativeWinOcclusion,DropInputEventsWhilePaintHolding,LocalNetwor
+                  kAccessChecks,NetworkServiceSandbox,ScreenAIOCREnabled,SpareRendererForSitePerProcess,Tr
+                  aceSiteInstanceGetProcessCreation --variations-seed-version 
+                  --pseudonymization-salt-handle=1808,i,4342171507814919920,2984837167067319787,4 
+                  --trace-process-track-uuid=3190709001304541078 --mojo-platform-channel-handle=4968 
+                  --vscode-window-config=vscode:11629900-7295-489c-b270-2c675765bd20 /prefetch:1
+
+Name            : Code.exe
+ProcessId       : 19116
+ParentProcessId : 15500
+CommandLine     : "C:\Users\msi\AppData\Local\Programs\Microsoft VS Code\Code.exe" c:\Users\msi\.vscode\ex
+                  tensions\dbaeumer.vscode-eslint-3.0.34\server\out\eslintServer.js --node-ipc 
+                  --clientProcessId=15500
+
+Name            : Code.exe
+ProcessId       : 3924
+ParentProcessId : 15500
+CommandLine     : "C:\Users\msi\AppData\Local\Programs\Microsoft VS Code\Code.exe" 
+                  "c:\Users\msi\AppData\Local\Programs\Microsoft VS Code\2c33b50b16\resources\app\extensio
+                  ns\json-language-features\server\dist\node\jsonServerMain" --node-ipc 
+                  --clientProcessId=15500
+
+Name            : java.exe
+ProcessId       : 23100
+ParentProcessId : 12916
+CommandLine     : C:\Users\msi\.vscode\extensions\redhat.java-1.58.0-win32-x64\jre\25.0.4.1-win32-x86_64\b
+                  in\java.exe --add-opens=java.base/java.lang=ALL-UNNAMED 
+                  --add-opens=java.base/java.lang.invoke=ALL-UNNAMED 
+                  --add-opens=java.base/java.util=ALL-UNNAMED 
+                  --add-opens=java.prefs/java.util.prefs=ALL-UNNAMED 
+                  --add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED 
+                  --add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED 
+                  --add-opens=java.base/java.nio.charset=ALL-UNNAMED 
+                  --add-opens=java.base/java.net=ALL-UNNAMED 
+                  --add-opens=java.base/java.util.concurrent=ALL-UNNAMED 
+                  --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED 
+                  --add-opens=java.xml/javax.xml.namespace=ALL-UNNAMED 
+                  --add-opens=java.base/java.time=ALL-UNNAMED --sun-misc-unsafe-memory-access=allow 
+                  --enable-native-access=ALL-UNNAMED -XX:MaxMetaspaceSize=1024m -Xmx3072m 
+                  -Dfile.encoding=UTF-8 -Duser.country=US -Duser.language=en -Duser.variant -cp C:\Users\m
+                  si\.gradle\wrapper\dists\gradle-9.8.2-all\8p5ch4668kehny89lbye095xl\gradle-9.8.2\lib\gra
+                  dle-daemon-main-9.8.2.jar -javaagent:C:\Users\msi\.gradle\wrapper\dists\gradle-9.8.2-all
+                  \8p5ch4668kehny89lbye095xl\gradle-9.8.2\lib\agents\gradle-instrumentation-agent-9.8.2.ja
+                  r org.gradle.launcher.daemon.bootstrap.GradleDaemon 9.8.2
+
+Name            : java.exe
+ProcessId       : 31192
+ParentProcessId : 12916
+CommandLine     : C:\Users\msi\.vscode\extensions\redhat.java-1.58.0-win32-x64\jre\25.0.4.1-win32-x86_64\b
+                  in\java.exe --add-opens=java.base/java.lang=ALL-UNNAMED 
+                  --add-opens=java.base/java.lang.invoke=ALL-UNNAMED 
+                  --add-opens=java.base/java.util=ALL-UNNAMED 
+                  --add-opens=java.prefs/java.util.prefs=ALL-UNNAMED 
+                  --add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED 
+                  --add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED 
+                  --add-opens=java.base/java.nio.charset=ALL-UNNAMED 
+                  --add-opens=java.base/java.net=ALL-UNNAMED 
+                  --add-opens=java.base/java.util.concurrent=ALL-UNNAMED 
+                  --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED 
+                  --add-opens=java.xml/javax.xml.namespace=ALL-UNNAMED 
+                  --add-opens=java.base/java.time=ALL-UNNAMED --enable-native-access=ALL-UNNAMED 
+                  -XX:MaxMetaspaceSize=1024m -Xmx3072m -Dfile.encoding=UTF-8 -Duser.country=US 
+                  -Duser.language=en -Duser.variant -cp C:\Users\msi\.gradle\wrapper\dists\gradle-9.7.1-bi
+                  n\1w1c7tv4s851m17nbqdsro2tv\gradle-9.7.1\lib\gradle-daemon-main-9.7.1.jar -javaagent:C:\
+                  Users\msi\.gradle\wrapper\dists\gradle-9.7.1-bin\1w1c7tv4s851m17nbqdsro2tv\gradle-9.7.1\
+                  lib\agents\gradle-instrumentation-agent-9.7.1.jar 
+                  org.gradle.launcher.daemon.bootstrap.GradleDaemon 9.7.1
+
+Name            : java.exe
+ProcessId       : 26448
+ParentProcessId : 31192
+CommandLine     : C:\Users\msi\.vscode\extensions\redhat.java-1.58.0-win32-x64\jre\25.0.4.1-win32-x86_64\b
+                  in\java -cp C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kotlin-
+                  build-tools-compat\2.4.0\209372718c8759fbcb47402dc130d45f00c3f81\kotlin-build-tools-comp
+                  at-2.4.0.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kotlin
+                  -build-tools-impl\2.4.0\3dde5b4075cd7963afd0b0b2835627f40abc1149\kotlin-build-tools-impl
+                  -2.4.0.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kotlin-t
+                  ooling-core\2.4.0\75970f5a2a9cb4d25557965bbec0a7ccd55bfbcf\kotlin-tooling-core-2.4.0.jar
+                  ;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kotlin-build-tools
+                  -cri-impl\2.4.0\7fdfe4b4de70b7e6d81c054572e862121aa1603a\kotlin-build-tools-cri-impl-2.4
+                  .0.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kotlin-compi
+                  ler-runner\2.4.0\d2b2336d493d2d3a8047c826cb27606f67029da8\kotlin-compiler-runner-2.4.0.j
+                  ar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kotlin-compiler-
+                  embeddable\2.4.0\f1a24af8bd111a83950236b1aec7a6d72a97e92c\kotlin-compiler-embeddable-2.4
+                  .0.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kotlin-build
+                  -tools-api\2.4.0\46429d5887df2d02f33fe11a0c8444c5be5fd8da\kotlin-build-tools-api-2.4.0.j
+                  ar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kotlin-daemon-cl
+                  ient\2.4.0\e9080614f98d07554367b7e5810529963e9f43e2\kotlin-daemon-client-2.4.0.jar;C:\Us
+                  ers\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kotlin-stdlib\2.4.0\4e9f
+                  4b531dce5c7dee58ed2de9a8b9a763c8dc6c\kotlin-stdlib-2.4.0.jar;C:\Users\msi\.gradle\caches
+                  \modules-2\files-2.1\org.jetbrains\annotations\13.0\919f0dfe192fb4e063e7dacadee7f8bb9a26
+                  72a9\annotations-13.0.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.
+                  kotlin\kotlin-script-runtime\2.4.0\1de03f0ef3e208ab5f97ee6a587e9b8480447df6\kotlin-scrip
+                  t-runtime-2.4.0.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin
+                  \kotlin-reflect\1.6.10\1cbe9c92c12a94eea200d23c2bbaedaf3daf5132\kotlin-reflect-1.6.10.ja
+                  r;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kotlin-daemon-emb
+                  eddable\2.4.0\1ecabef3a8ba6a8e25654573d54edb7e4136e903\kotlin-daemon-embeddable-2.4.0.ja
+                  r;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlinx\kotlinx-coroutin
+                  es-core-jvm\1.8.0\ac1dc37a30a93150b704022f8d895ee1bd3a36b3\kotlinx-coroutines-core-jvm-1
+                  .8.0.jar -Djava.awt.headless=true -Djava.rmi.server.hostname=127.0.0.1 -Xmx3072m 
+                  -XX:MaxMetaspaceSize=1024m -XX:ReservedCodeCacheSize=320m 
+                  -Dkotlin.environment.keepalive -ea -Dkotlin.daemon.custom.run.files.path.for.tests=C:\Us
+                  ers\msi\AppData\Local\kotlin\daemon -XX:+UseCodeCacheFlushing -XX:+UseParallelGC -Dkotli
+                  n.daemon.initiator.marker.file=C:\Users\msi\AppData\Local\Temp\kotlin-compiler-client-10
+                  278906697978266640-is-running --add-exports java.base/sun.nio.ch=ALL-UNNAMED 
+                  org.jetbrains.kotlin.daemon.KotlinCompileDaemon --daemon-logsPath 
+                  C:\Users\msi\AppData\Local\Temp --daemon-logsFileSizeLimit=1048576 
+                  --daemon-logsFileCountLimit=3 --daemon-runFilesPath 
+                  C:\Users\msi\AppData\Local\kotlin\daemon --daemon-autoshutdownIdleSeconds=7200 
+                  --daemon-compilerClasspath C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains
+                  .kotlin\kotlin-build-tools-compat\2.4.0\209372718c8759fbcb47402dc130d45f00c3f81\kotlin-b
+                  uild-tools-compat-2.4.0.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrain
+                  s.kotlin\kotlin-build-tools-impl\2.4.0\3dde5b4075cd7963afd0b0b2835627f40abc1149\kotlin-b
+                  uild-tools-impl-2.4.0.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.
+                  kotlin\kotlin-tooling-core\2.4.0\75970f5a2a9cb4d25557965bbec0a7ccd55bfbcf\kotlin-tooling
+                  -core-2.4.0.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kot
+                  lin-build-tools-cri-impl\2.4.0\7fdfe4b4de70b7e6d81c054572e862121aa1603a\kotlin-build-too
+                  ls-cri-impl-2.4.0.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotl
+                  in\kotlin-compiler-runner\2.4.0\d2b2336d493d2d3a8047c826cb27606f67029da8\kotlin-compiler
+                  -runner-2.4.0.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\k
+                  otlin-compiler-embeddable\2.4.0\f1a24af8bd111a83950236b1aec7a6d72a97e92c\kotlin-compiler
+                  -embeddable-2.4.0.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotl
+                  in\kotlin-build-tools-api\2.4.0\46429d5887df2d02f33fe11a0c8444c5be5fd8da\kotlin-build-to
+                  ols-api-2.4.0.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\k
+                  otlin-daemon-client\2.4.0\e9080614f98d07554367b7e5810529963e9f43e2\kotlin-daemon-client-
+                  2.4.0.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kotlin-st
+                  dlib\2.4.0\4e9f4b531dce5c7dee58ed2de9a8b9a763c8dc6c\kotlin-stdlib-2.4.0.jar;C:\Users\msi
+                  \.gradle\caches\modules-2\files-2.1\org.jetbrains\annotations\13.0\919f0dfe192fb4e063e7d
+                  acadee7f8bb9a2672a9\annotations-13.0.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1
+                  \org.jetbrains.kotlin\kotlin-script-runtime\2.4.0\1de03f0ef3e208ab5f97ee6a587e9b8480447d
+                  f6\kotlin-script-runtime-2.4.0.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.j
+                  etbrains.kotlin\kotlin-reflect\1.6.10\1cbe9c92c12a94eea200d23c2bbaedaf3daf5132\kotlin-re
+                  flect-1.6.10.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\ko
+                  tlin-daemon-embeddable\2.4.0\1ecabef3a8ba6a8e25654573d54edb7e4136e903\kotlin-daemon-embe
+                  ddable-2.4.0.jar;C:\Users\msi\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlinx\k
+                  otlinx-coroutines-core-jvm\1.8.0\ac1dc37a30a93150b704022f8d895ee1bd3a36b3\kotlinx-corout
+                  ines-core-jvm-1.8.0.jar
+
+Name            : codex.exe
+ProcessId       : 31436
+ParentProcessId : 10228
+CommandLine     : C:\Users\msi\AppData\Local\OpenAI\Codex\bin\22cfb1d302613eae\codex.exe -c 
+                  features.code_mode_host=true app-server --analytics-default-enabled -c 
+                  features.prefer_mxc=true -c 
+                  plugins.codex-app-tools@openai-bundled.mcp_servers.codex_app.enabled=true
+
+Name            : codex-computer-use-swift.exe
+ProcessId       : 10220
+ParentProcessId : 10228
+CommandLine     : C:\Users\msi\AppData\Local\OpenAI\Codex\runtimes\cua_node\5c41f77a7900391c\bin\node_modu
+                  les\@oai\sky\bin\windows\swift\x64\codex-computer-use-swift.exe --parent-pid 10228
+
+Name            : node.exe
+ProcessId       : 26592
+ParentProcessId : 10228
+CommandLine     : C:\Users\msi\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe 
+                  C:\Users\msi\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\node_modules\
+                  @oai\artifact-tool\dist\artifact-session\host-daemon.mjs
+
+
+
+
+
+===== MEMORY =====
+
+ProcessName                      Id RAM_MB
+-----------                      -- ------
+adb                           22672      3
+Code                           3924    8.4
+Code                           5108   11.2
+Code                          11516   70.9
+Code                          15500  284.9
+Code                          19116    4.8
+Code                          21532   33.1
+Code                          22172    2.6
+Code                          22580   26.9
+Code                          22952   21.4
+Code                          23420    7.4
+Code                          27896   68.9
+Code                          28968  260.1
+Code                          29888     33
+Code                          31372   15.6
+Code                          31392   24.4
+codex                         31436  110.5
+codex-computer-use-swift      10220    6.2
+codex-windows-sandbox-service 13808   17.7
+dart                           5320   16.4
+dart                           7204    2.9
+dart                          15844      0
+dart                          25108    2.3
+dartvm                         7328   29.5
+java                           7336    1.8
+java                          12916     15
+java                          23100   48.2
+java                          26448   27.9
+java                          31192   80.6
+node                          26592     93
+OpenCode                       4276   16.3
+OpenCode                       7612    0.3
+OpenCode                       8372   49.7
+OpenCode                      17996  238.5
+OpenCode                      18240    9.4
+OpenCode                      24724   13.9
+opencode                      30760    313
+
+
+

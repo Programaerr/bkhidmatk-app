@@ -36,7 +36,46 @@ flutter build apk --release
 ينشر النسخة على `releases/latest`.
 
 رابط التحميل الثابت:
-<https://github.com/Programaerr/bkhidmatk-app/releases/latest/download/bkhidmatk-1.0.0.apk>
+<https://github.com/Programaerr/bkhidmatk-app/releases/latest/download/jaik-1.0.0.apk>
+
+## التشغيل داخل Docker (Dev Container)
+
+المشروع جاهز للنقل إلى أي جهاز: كل الأدوات (Flutter 3.47.8 + JDK 17 +
+Android SDK 36 + NDK) موجودة داخل صورة Docker معرّفة في ملف `Dockerfile`،
+فلا ي depend على أي شيء مثبّت على الحاسب.
+
+**خطوات الاستخدام في VS Code:**
+
+1. ثبّت [Docker Desktop](https://www.docker.com/products/docker-desktop/) وأشغّله.
+2. في VS Code ثبّت إضافة **Dev Containers** (`ms-vscode-remote.remote-containers`).
+3. افتح مجلد المشروع ثم `Ctrl+Shift+P` ← **Dev Containers: Reopen in Container**.
+4. أول مرة تُبنى الصورة (تنزيل Flutter + Android SDK ≈ 4–6 جيجا، مرة واحدة فقط).
+5. بعدها تعمل الأوامر كالمعتاد داخل التيرمنال المدمج (Ctrl+`):
+
+```bash
+flutter pub get      # يُنفَّذ تلقائياً بعد فتح الحاوية
+flutter test         # الاختبارات
+flutter build apk --release
+```
+
+الملف الناتج `build/app/outputs/flutter-apk/app-release.apk` يظهر مباشرة داخل
+`build/` على جهازك (المجلد مُربط بالحاوية).
+
+**بدون VS Code (سطر أوامر):**
+
+```bash
+docker build -t jaik-dev .
+docker run -it --rm -v "%cd%:/workspace" -w /workspace jaik-dev bash
+```
+
+ملاحظات:
+
+- الحاويتان `jaik-pub-cache` و`jaik-gradle-cache` تحفظان التنزيلات بين
+  الجلسات فلا تعيد `pub get` وبناء Gradle من الصفر.
+- على جهاز جديد: اعمل `git clone` ثم افتح المجلد في VS Code و«Reopen in
+  Container» فقط — لا شيء آخر.
+- بناء APK للاستثمار المحلي (ملف `gradle-wrapper.properties` و`mirrors.gradle`)
+  لا يُرفع إلى Git عمداً؛ الحاوية تستخدم الإعدادات الرسمية من المستودع.
 
 ## بنية المشروع
 

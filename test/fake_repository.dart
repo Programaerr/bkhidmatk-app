@@ -1,5 +1,5 @@
-import 'package:bkhidmatk/data/models.dart';
-import 'package:bkhidmatk/data/repository.dart';
+import 'package:jaik/data/models.dart';
+import 'package:jaik/data/repository.dart';
 
 /// مستودع وهمي فارغ لاختبار الواجهات بدون قاعدة بيانات حقيقية.
 class FakeRepo implements Repository {

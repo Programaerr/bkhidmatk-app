@@ -1,0 +1,15 @@
+.git
+.dart_tool
+build
+**/build
+android/build
+out
+coverage
+*.apk
+*.aab
+.idea
+.vscode
+ios/Pods
+macos/Pods
+linux/flutter/ephemeral
+windows/flutter/ephemeral
