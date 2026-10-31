@@ -1,0 +1,15 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Flutter: bkhidmatk on Infinix X6871",
+            "type": "dart",
+            "request": "launch",
+            "program": "lib/main.dart",
+            "cwd": "${workspaceFolder}",
+            "deviceId": "120702544G002700",
+            "flutterMode": "debug",
+            "toolArgs": ["--no-pub"]
+        }
+    ]
+}
