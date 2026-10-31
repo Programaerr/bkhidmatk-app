@@ -110,7 +110,7 @@ class BrandTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(
-      'بخدمتك',
+      'جايك',
       style: TextStyle(
         fontFamily: 'Cairo',
         fontWeight: FontWeight.w900,

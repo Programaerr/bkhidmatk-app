@@ -16,7 +16,7 @@ class BkhidmatkApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<AppState>(
       builder: (context, state, _) => MaterialApp(
-        title: 'بخدمتك',
+        title: 'جايك',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light(),
         darkTheme: AppTheme.dark(),
@@ -92,7 +92,7 @@ class BrandLogoBig extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         const Text(
-          'بخدمتك',
+          'جايك',
           style: TextStyle(
             fontFamily: 'Cairo',
             fontSize: 30,

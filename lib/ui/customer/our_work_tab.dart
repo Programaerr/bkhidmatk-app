@@ -71,7 +71,7 @@ class _OurWorkTabState extends State<OurWorkTab> with RealtimeRefresh<OurWorkTab
                 Text('أعمالنا', style: theme.textTheme.headlineSmall),
                 const SizedBox(height: 2),
                 Text(
-                  'أحدث فيديوهات فريق بخدمتك موثّقة بالصور',
+                  'أحدث فيديوهات فريق جايك موثّقة بالصور',
                   style: theme.textTheme.bodySmall,
                 ),
               ],
@@ -90,7 +90,7 @@ class _OurWorkTabState extends State<OurWorkTab> with RealtimeRefresh<OurWorkTab
                   return const EmptyState(
                     icon: Icons.video_library_outlined,
                     title: 'لا توجد أعمال بعد',
-                    subtitle: 'ستنشر بخدمتك أحدث أعمالها وفيديوهاتها هنا قريباً.',
+                    subtitle: 'ستنشر جايك أحدث أعمالها وفيديوهاتها هنا قريباً.',
                   );
                 }
                 return RefreshIndicator(

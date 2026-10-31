@@ -57,7 +57,7 @@ class ReceiptDocument extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'بخدمتك',
+                          'جايك',
                           style: TextStyle(
                             fontFamily: 'Cairo',
                             color: AppColors.gold,
@@ -307,7 +307,7 @@ class ReceiptDocument extends StatelessWidget {
                       const SizedBox(width: 12),
                       const Expanded(
                         child: Text(
-                          'امسح الرمز للتحقق من صحة الوصل.\nهذا الوصل صادر إلكترونياً من تطبيق بخدمتك.',
+                          'امسح الرمز للتحقق من صحة الوصل.\nهذا الوصل صادر إلكترونياً من تطبيق جايك.',
                           style: TextStyle(
                               fontSize: 8.5,
                               height: 1.7,
@@ -325,7 +325,7 @@ class ReceiptDocument extends StatelessWidget {
                       Icon(Icons.support_agent_rounded,
                           size: 12, color: Color(0xFF5F5F66)),
                       SizedBox(width: 4),
-                      Text('الدعم: 0770 000 0000 · بخدمتك تسعد بخدمتك',
+                      Text('الدعم: 0770 000 0000 · جايك في خدمتك',
                           style: TextStyle(
                               fontSize: 8.5, color: Color(0xFF5F5F66))),
                     ],
@@ -402,7 +402,7 @@ class ReceiptActions {
     if (png == null) return null;
     final doc = pw.Document(
       title: receipt.invoiceNo,
-      author: 'بخدمتك',
+      author: 'جايك',
       creator: 'Bkhidmatk',
     );
     final image = pw.MemoryImage(png);

@@ -130,7 +130,7 @@ class _OurWorkDetailScreenState extends State<OurWorkDetailScreen> {
       body = const EmptyState(
         icon: Icons.video_library_outlined,
         title: 'العمل غير متاح',
-        subtitle: 'تم حذف هذا العمل من قبل إدارة بخدمتك.',
+        subtitle: 'تم حذف هذا العمل من قبل إدارة جايك.',
       );
     } else {
       body = Column(

@@ -167,26 +167,26 @@ class ServiceDetailScreen extends StatelessWidget {
                   SoftCard(
                     child: Row(
                       children: [
-                        AvatarCircle(name: service.workerName ?? 'فريق بخدمتك', size: 52),
+                        AvatarCircle(name: service.workerName ?? 'فريق جايك', size: 52),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(service.workerName ?? 'فريق بخدمتك',
+                              Text(service.workerName ?? 'فريق جايك',
                                   style: theme.textTheme.titleSmall?.copyWith(fontSize: 14.5)),
                               const SizedBox(height: 2),
-                              Text('فني معتمد · موثّق من بخدمتك',
+                              Text('فني معتمد · موثّق من جايك',
                                   style: theme.textTheme.bodySmall?.copyWith(fontSize: 10.5)),
                               const SizedBox(height: 6),
                               RatingStars(rating: service.rating),
                             ],
                           ),
                         ),
-                        // التواصل يتم عبر بخدمتك فقط: لا اتصال مباشر بالفني.
+                        // التواصل يتم عبر جايك فقط: لا اتصال مباشر بالفني.
                         AppIconButton(
                           icon: Icons.chat_bubble_outline_rounded,
-                          tooltip: 'مراسلة بخدمتك',
+                          tooltip: 'مراسلة جايك',
                           onTap: () => Navigator.push(
                             context,
                             MaterialPageRoute(builder: (_) => const MessagesScreen()),

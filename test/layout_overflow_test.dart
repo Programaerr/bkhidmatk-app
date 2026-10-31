@@ -34,7 +34,7 @@ AppUser _customer() => AppUser(
 
 AppUser _admin() => AppUser(
       id: 2,
-      name: 'مدير بخدمتك',
+      name: 'مدير جايك',
       phone: '07700000000',
       passwordHash: 'x',
       role: 'admin',

@@ -36,7 +36,7 @@ class BookingSuccessScreen extends StatelessWidget {
               Text('تم استلام حجزك بنجاح!', style: theme.textTheme.headlineSmall),
               const SizedBox(height: 6),
               Text(
-                'سيتواصل معك فريق بخدمتك لتأكيد الموعد خلال 15 دقيقة.',
+                'سيتواصل معك فريق جايك لتأكيد الموعد خلال 15 دقيقة.',
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodySmall?.copyWith(fontSize: 12.5, height: 1.7),
               ),

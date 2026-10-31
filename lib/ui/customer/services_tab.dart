@@ -248,7 +248,7 @@ class ServiceTile extends StatelessWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        service.workerName ?? 'فريق بخدمتك',
+                        service.workerName ?? 'فريق جايك',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.bodySmall?.copyWith(fontSize: 11),

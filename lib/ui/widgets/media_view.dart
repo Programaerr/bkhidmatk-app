@@ -159,7 +159,7 @@ class MediaThumb extends StatelessWidget {
         children: [
           Icon(Icons.handyman_rounded, size: 34, color: AppColors.ink.withValues(alpha: .55)),
           const SizedBox(height: 6),
-          Text('بخدمتك',
+          Text('جايك',
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w900,

@@ -252,7 +252,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen>
             SoftCard(
               child: Row(
                 children: [
-                  AvatarCircle(name: b.workerName ?? 'فريق بخدمتك', size: 46),
+                  AvatarCircle(name: b.workerName ?? 'فريق جايك', size: 46),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(

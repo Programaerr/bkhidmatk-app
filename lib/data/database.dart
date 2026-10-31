@@ -373,7 +373,7 @@ class AppDatabase {
         daysAgo: 6);
 
     final adminId = await db.insert('users', {
-      'name': 'مدير بخدمتك',
+      'name': 'مدير جايك',
       'phone': '07700000000',
       'password': hashPassword('admin123'),
       'role': 'admin',
@@ -571,7 +571,7 @@ class AppDatabase {
     await db.insert('comments', {
       'post_id': p1,
       'user_id': adminId,
-      'user_name': 'مدير بخدمتك',
+      'user_name': 'مدير جايك',
       'body': 'تم توثيق العمل بنجاح ✅ شكراً لمشاركتك.',
       'created_at': DateTime.now().subtract(const Duration(hours: 2)).toIso8601String(),
     });

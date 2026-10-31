@@ -347,7 +347,7 @@ class _ProfileTabState extends State<ProfileTab> with RealtimeRefresh<ProfileTab
                 _MenuTile(
                   icon: Icons.support_agent_rounded,
                   title: 'الرسائل والدعم',
-                  subtitle: 'تواصل مع إدارة بخدمتك',
+                  subtitle: 'تواصل مع إدارة جايك',
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const MessagesScreen()),
@@ -378,7 +378,7 @@ class _ProfileTabState extends State<ProfileTab> with RealtimeRefresh<ProfileTab
                 const Divider(height: 1),
                 _MenuTile(
                   icon: Icons.info_outline_rounded,
-                  title: 'عن بخدمتك',
+                  title: 'عن جايك',
                   subtitle: 'الإصدار 1.0.0',
                   onTap: _about,
                 ),
@@ -400,7 +400,7 @@ class _ProfileTabState extends State<ProfileTab> with RealtimeRefresh<ProfileTab
           ),
           const SizedBox(height: 16),
           Center(
-            child: Text('بخدمتك · صُنع بحب في العراق',
+            child: Text('جايك · صُنع بحب في العراق',
                 style: theme.textTheme.bodySmall?.copyWith(fontSize: 10)),
           ),
         ],
