@@ -1,0 +1,25 @@
+{
+  "name": "جايك · Flutter + Android",
+  "build": {
+    "dockerfile": "../Dockerfile",
+    "context": ".."
+  },
+  "remoteUser": "vscode",
+  "postCreateCommand": "flutter pub get",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "Dart-Code.flutter",
+        "Dart-Code.dart-code"
+      ],
+      "settings": {
+        "dart.flutterSdkPath": "/opt/flutter",
+        "dart.lineLength": 100
+      }
+    }
+  },
+  "mounts": [
+    "source=jaik-pub-cache,target=/home/vscode/.pub-cache,type=volume",
+    "source=jaik-gradle-cache,target=/home/vscode/.gradle,type=volume"
+  ]
+}

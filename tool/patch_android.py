@@ -1,4 +1,4 @@
-"""Patch the freshly generated android/ folder for «بخدمتك».
+"""Patch the freshly generated android/ folder for «جايك».
 
 Run from anywhere:  python tool/patch_android.py
 The project root is inferred from this file's location, so it also works
@@ -14,7 +14,7 @@ PROJ = os.path.dirname(HERE)
 AND = os.path.join(PROJ, "android")
 MAIN = os.path.join(AND, "app", "src", "main")
 BRAND = os.path.join(PROJ, "branding")
-LABEL = "بخدمتك"
+LABEL = "جايك"
 
 
 def read(p):

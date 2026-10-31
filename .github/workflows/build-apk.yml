@@ -54,14 +54,14 @@ jobs:
       - name: Rename APK
         run: |
           mkdir -p out
-          cp build/app/outputs/flutter-apk/app-release.apk out/bkhidmatk-1.0.0.apk
+          cp build/app/outputs/flutter-apk/app-release.apk out/jaik-1.0.0.apk
           ls -lh out
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: bkhidmatk-apk
-          path: out/bkhidmatk-1.0.0.apk
+          name: jaik-apk
+          path: out/jaik-1.0.0.apk
           if-no-files-found: error
 
       - name: Publish release
@@ -70,7 +70,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release delete latest --yes --cleanup-tag 2>/dev/null || true
-          gh release create latest out/bkhidmatk-1.0.0.apk \
-            --title "بخدمتك — أحدث نسخة" \
+          gh release create latest out/jaik-1.0.0.apk \
+            --title "جايك — أحدث نسخة" \
             --notes "نسخة تجريبية جاهزة للتثبيت (Android 6.0+)." \
             --latest

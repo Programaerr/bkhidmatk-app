@@ -25,7 +25,7 @@ Future<void> main() async {
   runApp(
     ChangeNotifierProvider<AppState>.value(
       value: state,
-      child: const BkhidmatkApp(),
+      child: const JaikApp(),
     ),
   );
 }

@@ -5,7 +5,7 @@ import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
 
-String hashPassword(String password, {String salt = 'bkhidmatk_v1'}) =>
+String hashPassword(String password, {String salt = 'jaik_v1'}) =>
     sha256.convert(utf8.encode('$salt::$password')).toString();
 
 class AppDatabase {
@@ -13,7 +13,7 @@ class AppDatabase {
   static final AppDatabase instance = AppDatabase._();
 
   Database? _db;
-  static const _fileName = 'bkhidmatk.db';
+  static const _fileName = 'jaik.db';
   static const _version = 3;
 
   Future<Database> get database async {
@@ -377,7 +377,7 @@ class AppDatabase {
       'phone': '07700000000',
       'password': hashPassword('admin123'),
       'role': 'admin',
-      'email': 'admin@bkhidmatk.iq',
+      'email': 'admin@jaik.iq',
       'city': 'بغداد',
       'address': 'بغداد - الكرادة',
       'created_at': today.subtract(const Duration(days: 120)).toIso8601String(),

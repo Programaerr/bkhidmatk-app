@@ -298,7 +298,7 @@ class ReceiptDocument extends StatelessWidget {
                         ),
                         child: QrImageView(
                           data:
-                              '${receipt.invoiceNo}|${receipt.amount.round()}|${fmtDateShort(receipt.createdAt)}|BKHIDMATK',
+                              '${receipt.invoiceNo}|${receipt.amount.round()}|${fmtDateShort(receipt.createdAt)}|JAIK',
                           size: 56,
                           backgroundColor: Colors.white,
                           padding: EdgeInsets.zero,
@@ -403,7 +403,7 @@ class ReceiptActions {
     final doc = pw.Document(
       title: receipt.invoiceNo,
       author: 'جايك',
-      creator: 'Bkhidmatk',
+      creator: 'Jaik',
     );
     final image = pw.MemoryImage(png);
     doc.addPage(
