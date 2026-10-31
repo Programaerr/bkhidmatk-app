@@ -1,11 +1,87 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/theme.dart';
+import '../../core/utils.dart';
 import '../../state/app_state.dart';
-import '../widgets/ui.dart';
 import 'login_screen.dart';
 import 'register_screen.dart';
+import 'truck_scene.dart';
+
+const _cream = Color(0xFFFFFEE2);
+const _blue = Color(0xFF416F9E);
+const _ink = Color(0xFF263238);
+const _hint = Color(0xFF6B7378);
+const _divider = Color(0xFFD3D0C2);
+
+/// ألوان شريطي النظام في بقية شاشات التطبيق.
+const _appSystemBars = SystemUiOverlayStyle(
+  statusBarColor: Colors.transparent,
+  statusBarIconBrightness: Brightness.dark,
+  systemNavigationBarColor: Colors.black,
+  systemNavigationBarIconBrightness: Brightness.light,
+);
+
+/// مقاسات التصميم المعتمد بالبكسل (إطار 391×715)، ومنها تُشتق كل القياسات.
+abstract final class _Design {
+  static const width = 391.0;
+  static const height = 715.0;
+  static const blueBottom = 414.3;
+
+  static const codeLeft = 84.7;
+  static const codeRight = 146.0;
+  static const dividerLeft = 150.5;
+  static const dividerRight = 152.0;
+  static const dividerTop = 539.4;
+  static const numberLeft = 157.0;
+  static const numberRight = 311.0;
+  static const rowTop = 537.76;
+  static const rowBottom = 570.5;
+
+  static const buttonLeft = 127.3;
+  static const buttonRight = 281.3;
+  static const buttonTop = 580.66;
+  static const buttonBottom = 613.4;
+
+  /// لا تصغر الخانات عن هذا الحد في الهواتف الضيقة حتى تبقى مقروءة.
+  static const minControlScale = .95;
+}
+
+/// أرقام الموبايل فقط: يحوّل الأرقام العربية ويحذف +964 عند اللصق.
+class _IraqiPhoneFormatter extends TextInputFormatter {
+  const _IraqiPhoneFormatter();
+
+  static const _eastern = '٠١٢٣٤٥٦٧٨٩';
+  static const _persian = '۰۱۲۳۴۵۶۷۸۹';
+
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    final buffer = StringBuffer();
+    for (final char in newValue.text.characters) {
+      final eastern = _eastern.indexOf(char);
+      final persian = _persian.indexOf(char);
+      if (eastern >= 0) {
+        buffer.write(eastern);
+      } else if (persian >= 0) {
+        buffer.write(persian);
+      } else if (RegExp(r'\d').hasMatch(char)) {
+        buffer.write(char);
+      }
+    }
+    var digits = buffer.toString();
+    if (digits.startsWith('964')) digits = digits.substring(3);
+    final limit = digits.startsWith('0') ? 11 : 10;
+    if (digits.length > limit) digits = digits.substring(0, limit);
+    if (digits == newValue.text) return newValue;
+    return TextEditingValue(
+      text: digits,
+      selection: TextSelection.collapsed(offset: digits.length),
+    );
+  }
+}
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -15,307 +91,313 @@ class WelcomeScreen extends StatefulWidget {
 }
 
 class _WelcomeScreenState extends State<WelcomeScreen> {
+  final _phone = TextEditingController();
+  final _focus = FocusNode();
   bool _busy = false;
+  String? _error;
 
-  Future<void> _demo(String phone, String password) async {
-    setState(() => _busy = true);
-    final state = context.read<AppState>();
-    final err = await state.login(phone, password);
+  @override
+  void initState() {
+    super.initState();
+    _focus.addListener(_onFocusChanged);
+  }
+
+  @override
+  void dispose() {
+    _focus
+      ..removeListener(_onFocusChanged)
+      ..dispose();
+    _phone.dispose();
+    SystemChrome.setSystemUIOverlayStyle(_appSystemBars);
+    super.dispose();
+  }
+
+  void _onFocusChanged() => setState(() {});
+
+  /// لا يوجد تحقق برسالة SMS في التطبيق، لذلك لا يكفي الرقم وحده للدخول:
+  /// الرقم المسجل يكمل بكلمة المرور، والرقم الجديد يكمل بإنشاء حساب.
+  Future<void> _submit() async {
+    final digits = _phone.text;
+    final phone = digits.startsWith('0') ? digits : '0$digits';
+    if (!validIraqiPhone(phone)) {
+      setState(() => _error = 'أدخل رقم موبايل عراقي صحيح يبدأ بـ 07');
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    final repo = context.read<AppState>().repo;
+    final registered = await repo.phoneExists(phone);
     if (!mounted) return;
     setState(() => _busy = false);
-    if (err != null) AppSnack.show(context, err, error: true);
+    _focus.unfocus();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AnnotatedRegion<SystemUiOverlayStyle>(
+          value: _appSystemBars,
+          child: registered ? LoginScreen(initialPhone: phone) : RegisterScreen(initialPhone: phone),
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.ink,
-      body: Stack(
-        children: [
-          Positioned(
-            top: -140,
-            right: -120,
-            child: Container(
-              width: 340,
-              height: 340,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(colors: [
-                  AppColors.gold.withValues(alpha: .28),
-                  AppColors.gold.withValues(alpha: 0),
-                ]),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: 180,
-            left: -110,
-            child: Container(
-              width: 260,
-              height: 260,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(colors: [
-                  AppColors.gold.withValues(alpha: .12),
-                  AppColors.gold.withValues(alpha: 0),
-                ]),
-              ),
-            ),
-          ),
-          SafeArea(
-            child: LayoutBuilder(
-              builder: (context, constraints) => SingleChildScrollView(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                  child: IntrinsicHeight(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(22, 16, 22, 0),
-                  child: Row(
-                    children: [
-                      const BrandLogo(size: 46, radius: 14),
-                      const SizedBox(width: 10),
-                      const Flexible(
-                        child: BrandTitle(fontSize: 22, color: Colors.white),
-                      ),
-                      const Spacer(),
-                      TextButton(
-                        onPressed: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const LoginScreen()),
-                        ),
-                        style: TextButton.styleFrom(foregroundColor: Colors.white70),
-                        child: const Text('تخطي'),
-                      ),
-                    ],
-                  ),
+    final size = MediaQuery.sizeOf(context);
+    final keyboard = MediaQuery.viewInsetsOf(context).bottom;
+    final fit = math.min(size.width / _Design.width, size.height / _Design.height);
+    final unit = math.max(fit, _Design.minControlScale);
+
+    final blueBottom = size.height * _Design.blueBottom / _Design.height;
+    final rowTop = blueBottom +
+        (size.height - blueBottom) *
+            (_Design.rowTop - _Design.blueBottom) /
+            (_Design.height - _Design.blueBottom);
+    double x(double design) => size.width / 2 + (design - _Design.width / 2) * unit;
+    double y(double design) => rowTop + (design - _Design.rowTop) * unit;
+
+    final errorTop = y(_Design.buttonBottom) + 8 * unit;
+    final contentBottom = (_error == null ? y(_Design.buttonBottom) : errorTop + 22 * unit) + 12;
+    final lift = math.max(0.0, contentBottom - (size.height - keyboard));
+
+    // هامش اللمس يكمل الخانة والزر إلى 48 بكسل دون تغيير حجمهما الظاهر.
+    final rowHeight = y(_Design.rowBottom) - y(_Design.rowTop);
+    final touchAbove = math.max(0.0, (48 - rowHeight) - 5 * unit);
+    final touchBetween = 5 * unit;
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+        systemNavigationBarColor: _cream,
+        systemNavigationBarIconBrightness: Brightness.dark,
+      ),
+      child: Scaffold(
+        backgroundColor: _cream,
+        resizeToAvoidBottomInset: false,
+        body: GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: _focus.unfocus,
+          child: TweenAnimationBuilder<double>(
+            tween: Tween<double>(end: lift),
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
+            builder: (context, value, child) =>
+                Transform.translate(offset: Offset(0, -value), child: child),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: 0,
+                  height: blueBottom,
+                  child: TruckScene(scale: fit),
                 ),
-                const Spacer(),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: AppColors.gold.withValues(alpha: .14),
-                          borderRadius: BorderRadius.circular(100),
-                          border: Border.all(color: AppColors.gold.withValues(alpha: .3)),
-                        ),
-                        child: const Text(
-                          'خدمات منزلية · عمال موثوقون · أسعار واضحة',
-                          style: TextStyle(color: AppColors.gold, fontSize: 11, fontWeight: FontWeight.w700),
-                        ),
-                      ),
-                      const SizedBox(height: 18),
-                      const Text(
-                        'كل خدمة يحتاجها بيتك،\nبضغطة زر واحدة.',
-                        style: TextStyle(
-                          fontFamily: 'Cairo',
-                          fontSize: 31,
-                          height: 1.35,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
+                _touchArea(
+                  left: x(_Design.codeLeft),
+                  right: x(_Design.codeRight),
+                  top: y(_Design.rowTop),
+                  bottom: y(_Design.rowBottom),
+                  above: touchAbove,
+                  below: touchBetween,
+                  onTap: _focus.requestFocus,
+                  child: _Box(
+                    unit: unit,
+                    child: Center(
+                      child: Semantics(
+                        label: 'رمز العراق',
+                        child: Text(
+                          '+964',
+                          textDirection: TextDirection.ltr,
+                          style: _textStyle(unit),
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'احجز كهربائي، مصلح غسالات، صباغ، سباك أو أي عامل محترف.\nادفع بأمان وتابع عملك خطوة بخطوة.',
-                        style: TextStyle(
-                          fontFamily: 'Cairo',
-                          fontSize: 13,
-                          height: 1.7,
-                          color: Color(0xFFA8A8B0),
-                        ),
-                      ),
-                      const SizedBox(height: 22),
-                      Row(
-                        children: const [
-                          _Feature(icon: Icons.bolt_rounded, label: 'حجز فوري'),
-                          SizedBox(width: 10),
-                          _Feature(icon: Icons.verified_user_rounded, label: 'عمال موثوقون'),
-                          SizedBox(width: 10),
-                          _Feature(icon: Icons.credit_card_rounded, label: 'دفع آمن'),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.fromLTRB(22, 24, 22, 18),
-                  decoration: const BoxDecoration(
-                    color: AppColors.paper,
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-                  ),
-                  child: SafeArea(
-                    top: false,
-                    child: Column(
-                      children: [
-                        PrimaryButton(
-                          label: 'إنشاء حساب جديد',
-                          icon: Icons.person_add_alt_1_rounded,
-                          onPressed: _busy
-                              ? null
-                              : () => Navigator.push(context,
-                                  MaterialPageRoute(builder: (_) => const RegisterScreen())),
-                        ),
-                        const SizedBox(height: 10),
-                        SizedBox(
-                          height: 52,
-                          child: OutlinedButton(
-                            onPressed: _busy
-                                ? null
-                                : () => Navigator.push(context,
-                                    MaterialPageRoute(builder: (_) => const LoginScreen())),
-                            style: OutlinedButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              side: const BorderSide(color: AppColors.line),
-                            ),
-                            child: const Text('لدي حساب بالفعل · تسجيل الدخول'),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            const Expanded(child: Divider()),
-                            Flexible(
-                              flex: 3,
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 10),
-                                child: Text(
-                                  'تجربة سريعة بدون تسجيل',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11),
-                                ),
-                              ),
-                            ),
-                            const Expanded(child: Divider()),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _DemoButton(
-                                icon: Icons.person_rounded,
-                                label: 'زبون تجريبي',
-                                busy: _busy,
-                                onTap: () => _demo('07701234567', '123456'),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: _DemoButton(
-                                icon: Icons.admin_panel_settings_rounded,
-                                label: 'حساب المدير',
-                                busy: _busy,
-                                onTap: () => _demo('07700000000', 'admin123'),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
                     ),
                   ),
                 ),
+                Positioned(
+                  left: x(_Design.dividerLeft),
+                  width: (_Design.dividerRight - _Design.dividerLeft) * unit,
+                  top: y(_Design.dividerTop),
+                  bottom: size.height - y(_Design.rowBottom),
+                  child: const ColoredBox(color: _divider),
+                ),
+                _touchArea(
+                  left: x(_Design.numberLeft),
+                  right: x(_Design.numberRight),
+                  top: y(_Design.rowTop),
+                  bottom: y(_Design.rowBottom),
+                  above: touchAbove,
+                  below: touchBetween,
+                  onTap: _focus.requestFocus,
+                  child: _Box(
+                    unit: unit,
+                    borderColor: _error != null
+                        ? AppColors.danger
+                        : (_focus.hasFocus ? _blue : null),
+                    child: Center(
+                      child: TextField(
+                        controller: _phone,
+                        focusNode: _focus,
+                        enabled: !_busy,
+                        keyboardType: TextInputType.phone,
+                        textInputAction: TextInputAction.done,
+                        textDirection: TextDirection.ltr,
+                        textAlign: TextAlign.center,
+                        textAlignVertical: TextAlignVertical.center,
+                        cursorColor: _blue,
+                        inputFormatters: const [_IraqiPhoneFormatter()],
+                        style: _textStyle(unit),
+                        onChanged: (_) {
+                          if (_error != null) setState(() => _error = null);
+                        },
+                        onSubmitted: (_) => _submit(),
+                        decoration: InputDecoration(
+                          isCollapsed: true,
+                          filled: false,
+                          contentPadding: EdgeInsets.zero,
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          disabledBorder: InputBorder.none,
+                          errorBorder: InputBorder.none,
+                          focusedErrorBorder: InputBorder.none,
+                          hintText: 'رقم الموبايل',
+                          hintTextDirection: TextDirection.rtl,
+                          hintStyle: _textStyle(unit).copyWith(
+                            color: _hint,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                _touchArea(
+                  left: x(_Design.buttonLeft),
+                  right: x(_Design.buttonRight),
+                  top: y(_Design.buttonTop),
+                  bottom: y(_Design.buttonBottom),
+                  above: touchBetween,
+                  below: touchAbove,
+                  onTap: _busy ? null : _submit,
+                  child: _Box(
+                    unit: unit,
+                    child: Material(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8 * unit),
+                      child: InkWell(
+                        onTap: _busy ? null : _submit,
+                        borderRadius: BorderRadius.circular(8 * unit),
+                        child: Center(
+                          child: _busy
+                              ? SizedBox(
+                                  width: 16 * unit,
+                                  height: 16 * unit,
+                                  child: const CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: _blue,
+                                  ),
+                                )
+                              : FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    'تسجيل الدخول',
+                                    style: _textStyle(unit).copyWith(fontWeight: FontWeight.w800),
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                if (_error != null)
+                  Positioned(
+                    left: 16,
+                    right: 16,
+                    top: errorTop,
+                    child: Text(
+                      _error!,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: 'Cairo',
+                        fontSize: 12 * unit,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.danger,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
         ),
       ),
-    ),
-  ),
+    );
+  }
+
+  TextStyle _textStyle(double unit) => TextStyle(
+        fontFamily: 'Cairo',
+        fontSize: 13 * unit,
+        height: 1.2,
+        fontWeight: FontWeight.w700,
+        color: _ink,
+      );
+
+  Widget _touchArea({
+    required double left,
+    required double right,
+    required double top,
+    required double bottom,
+    required double above,
+    required double below,
+    required VoidCallback? onTap,
+    required Widget child,
+  }) {
+    return Positioned(
+      left: left,
+      width: right - left,
+      top: top - above,
+      height: bottom - top + above + below,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Padding(
+          padding: EdgeInsets.only(top: above, bottom: below),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+/// الخانة البيضاء بظلها كما في التصميم.
+class _Box extends StatelessWidget {
+  const _Box({required this.unit, required this.child, this.borderColor});
+
+  final double unit;
+  final Widget child;
+  final Color? borderColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8 * unit),
+        border: borderColor == null ? null : Border.all(color: borderColor!),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0x4D000000),
+            offset: Offset(0, 3 * unit),
+            blurRadius: 1.5 * unit,
+          ),
         ],
       ),
-    );
-  }
-}
-
-class _Feature extends StatelessWidget {
-  const _Feature({required this.icon, required this.label});
-
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: .06),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white.withValues(alpha: .08)),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: AppColors.gold, size: 20),
-            const SizedBox(height: 6),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontFamily: 'Cairo',
-                fontSize: 10.5,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _DemoButton extends StatelessWidget {
-  const _DemoButton({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    required this.busy,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final bool busy;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: busy ? null : onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.line),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 18),
-            const SizedBox(width: 6),
-            Flexible(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800),
-              ),
-            ),
-          ],
-        ),
-      ),
+      child: child,
     );
   }
 }

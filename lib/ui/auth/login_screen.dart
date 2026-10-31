@@ -8,7 +8,10 @@ import '../widgets/ui.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  const LoginScreen({super.key, this.initialPhone});
+
+  /// الرقم المُدخل في الشاشة الأولى حتى لا يُعاد كتابته.
+  final String? initialPhone;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -16,7 +19,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _phone = TextEditingController();
+  late final _phone = TextEditingController(text: widget.initialPhone);
   final _password = TextEditingController();
   bool _obscure = true;
   bool _loading = false;
@@ -116,6 +119,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 14),
                     TextFormField(
                       controller: _password,
+                      autofocus: widget.initialPhone != null,
                       obscureText: _obscure,
                       decoration: InputDecoration(
                         labelText: 'كلمة المرور',
