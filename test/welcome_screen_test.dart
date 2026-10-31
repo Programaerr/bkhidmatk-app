@@ -106,6 +106,24 @@ void main() {
     expect(tester.hasRunningAnimations, isFalse);
   });
 
+  testWidgets('علم العراق بجانب الرمز، والزر ينخفض عند اللمس ويعود', (tester) async {
+    await _pump(tester);
+    expect(find.text('🇮🇶 +964'), findsOneWidget);
+
+    final label = find.text('تسجيل الدخول');
+    final up = tester.getTopLeft(label).dy;
+
+    final finger = await tester.startGesture(tester.getCenter(label));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
+    expect(tester.getTopLeft(label).dy, closeTo(up + 6, .5));
+
+    await finger.up();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
+    expect(tester.getTopLeft(label).dy, closeTo(up, .5));
+  });
+
   group('مخرج المشهد', () {
     void run(VanDirector director, double seconds) {
       for (var i = 0; i < seconds * 60; i++) {

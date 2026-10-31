@@ -8,6 +8,7 @@ import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../state/app_state.dart';
 import 'login_screen.dart';
+import 'push_key.dart';
 import 'register_screen.dart';
 import 'truck_scene.dart';
 
@@ -31,20 +32,23 @@ abstract final class _Design {
   static const height = 715.0;
   static const blueBottom = 414.3;
 
-  static const codeLeft = 84.7;
+  static const codeLeft = 68.0;
   static const codeRight = 146.0;
   static const dividerLeft = 150.5;
   static const dividerRight = 152.0;
   static const dividerTop = 539.4;
+  static const dividerBottom = 570.5;
   static const numberLeft = 157.0;
   static const numberRight = 311.0;
   static const rowTop = 537.76;
-  static const rowBottom = 570.5;
+  static const faceHeight = 32.74;
+  static const keyHeight = faceHeight + PushKey.depth;
+  static const rowBottom = rowTop + keyHeight;
 
   static const buttonLeft = 127.3;
   static const buttonRight = 281.3;
-  static const buttonTop = 580.66;
-  static const buttonBottom = 613.4;
+  static const buttonTop = rowBottom + 6;
+  static const buttonBottom = buttonTop + keyHeight;
 
   /// لا تصغر الخانات عن هذا الحد في الهواتف الضيقة حتى تبقى مقروءة.
   static const minControlScale = .95;
@@ -162,10 +166,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     final contentBottom = (_error == null ? y(_Design.buttonBottom) : errorTop + 22 * unit) + 12;
     final lift = math.max(0.0, contentBottom - (size.height - keyboard));
 
-    // هامش اللمس يكمل الخانة والزر إلى 48 بكسل دون تغيير حجمهما الظاهر.
-    final rowHeight = y(_Design.rowBottom) - y(_Design.rowTop);
-    final touchAbove = math.max(0.0, (48 - rowHeight) - 5 * unit);
-    final touchBetween = 5 * unit;
+    // هامش اللمس يكمل الأزرار إلى 48 بكسل دون تغيير حجمها الظاهر.
+    final touchMargin = 3 * unit;
+    final faceHeight = _Design.faceHeight * unit;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -202,18 +205,22 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   right: x(_Design.codeRight),
                   top: y(_Design.rowTop),
                   bottom: y(_Design.rowBottom),
-                  above: touchAbove,
-                  below: touchBetween,
+                  above: touchMargin,
+                  below: touchMargin,
                   onTap: _focus.requestFocus,
-                  child: _Box(
+                  child: PushKey(
                     unit: unit,
+                    faceHeight: faceHeight,
                     child: Center(
                       child: Semantics(
                         label: 'رمز العراق',
-                        child: Text(
-                          '+964',
-                          textDirection: TextDirection.ltr,
-                          style: _textStyle(unit),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            '🇮🇶 +964',
+                            textDirection: TextDirection.ltr,
+                            style: _textStyle(unit),
+                          ),
                         ),
                       ),
                     ),
@@ -223,7 +230,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   left: x(_Design.dividerLeft),
                   width: (_Design.dividerRight - _Design.dividerLeft) * unit,
                   top: y(_Design.dividerTop),
-                  bottom: size.height - y(_Design.rowBottom),
+                  bottom: size.height - y(_Design.dividerBottom),
                   child: const ColoredBox(color: _divider),
                 ),
                 _touchArea(
@@ -231,11 +238,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   right: x(_Design.numberRight),
                   top: y(_Design.rowTop),
                   bottom: y(_Design.rowBottom),
-                  above: touchAbove,
-                  below: touchBetween,
+                  above: touchMargin,
+                  below: touchMargin,
                   onTap: _focus.requestFocus,
-                  child: _Box(
+                  child: PushKey(
                     unit: unit,
+                    faceHeight: faceHeight,
                     borderColor: _error != null
                         ? AppColors.danger
                         : (_focus.hasFocus ? _blue : null),
@@ -282,35 +290,33 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   right: x(_Design.buttonRight),
                   top: y(_Design.buttonTop),
                   bottom: y(_Design.buttonBottom),
-                  above: touchBetween,
-                  below: touchAbove,
+                  above: touchMargin,
+                  below: touchMargin,
                   onTap: _busy ? null : _submit,
-                  child: _Box(
+                  child: PushKey(
                     unit: unit,
-                    child: Material(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8 * unit),
-                      child: InkWell(
-                        onTap: _busy ? null : _submit,
-                        borderRadius: BorderRadius.circular(8 * unit),
-                        child: Center(
-                          child: _busy
-                              ? SizedBox(
-                                  width: 16 * unit,
-                                  height: 16 * unit,
-                                  child: const CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: _blue,
-                                  ),
-                                )
-                              : FittedBox(
-                                  fit: BoxFit.scaleDown,
-                                  child: Text(
-                                    'تسجيل الدخول',
-                                    style: _textStyle(unit).copyWith(fontWeight: FontWeight.w800),
-                                  ),
+                    faceHeight: faceHeight,
+                    held: _busy,
+                    child: Semantics(
+                      button: true,
+                      enabled: !_busy,
+                      child: Center(
+                        child: _busy
+                            ? SizedBox(
+                                width: 16 * unit,
+                                height: 16 * unit,
+                                child: const CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: _blue,
                                 ),
-                        ),
+                              )
+                            : FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  'تسجيل الدخول',
+                                  style: _textStyle(unit).copyWith(fontWeight: FontWeight.w800),
+                                ),
+                              ),
                       ),
                     ),
                   ),
@@ -370,34 +376,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           child: child,
         ),
       ),
-    );
-  }
-}
-
-/// الخانة البيضاء بظلها كما في التصميم.
-class _Box extends StatelessWidget {
-  const _Box({required this.unit, required this.child, this.borderColor});
-
-  final double unit;
-  final Widget child;
-  final Color? borderColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8 * unit),
-        border: borderColor == null ? null : Border.all(color: borderColor!),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0x4D000000),
-            offset: Offset(0, 3 * unit),
-            blurRadius: 1.5 * unit,
-          ),
-        ],
-      ),
-      child: child,
     );
   }
 }
