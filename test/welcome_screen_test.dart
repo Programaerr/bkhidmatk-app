@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:jaik/core/theme.dart';
 import 'package:jaik/state/app_state.dart';
 import 'package:jaik/ui/auth/login_screen.dart';
+import 'package:jaik/ui/auth/push_key.dart';
 import 'package:jaik/ui/auth/register_screen.dart';
 import 'package:jaik/ui/auth/truck_scene.dart';
 import 'package:jaik/ui/auth/welcome_screen.dart';
@@ -64,6 +65,30 @@ void main() {
     expect(repo.asked, isEmpty);
     expect(find.byType(LoginScreen), findsNothing);
     expect(find.byType(RegisterScreen), findsNothing);
+  });
+
+  testWidgets('الخطأ يجعل الخانة حمراء بالكامل ثم تعود ببطء ويختفي الأحمر والرسالة', (tester) async {
+    await _pump(tester);
+    double alarm() => tester.widget<PushKey>(find.byType(PushKey).at(1)).alarm;
+    const message = 'أدخل رقم موبايل عراقي صحيح يبدأ بـ 07';
+    expect(alarm(), 0);
+
+    await tester.tap(find.text('تسجيل الدخول'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(alarm(), 1);
+    expect(find.text(message), findsOneWidget);
+    expect(find.text('07XX XXX XXXX'), findsOneWidget);
+
+    await tester.pump(const Duration(milliseconds: 1400));
+    expect(alarm(), inExclusiveRange(0, 1));
+
+    await tester.pump(const Duration(milliseconds: 1400));
+    await tester.pump();
+    expect(alarm(), 0);
+    expect(find.text(message), findsNothing);
+    expect(find.text('07XX XXX XXXX'), findsNothing);
+    expect(find.text('رقم الموبايل'), findsOneWidget);
   });
 
   testWidgets('الرقم المسجل يكمل بكلمة المرور ولا يدخل بدونها', (tester) async {

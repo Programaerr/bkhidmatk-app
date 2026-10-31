@@ -94,11 +94,30 @@ class WelcomeScreen extends StatefulWidget {
   State<WelcomeScreen> createState() => _WelcomeScreenState();
 }
 
-class _WelcomeScreenState extends State<WelcomeScreen> {
+class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProviderStateMixin {
   final _phone = TextEditingController();
   final _focus = FocusNode();
+  late final _alarm = AnimationController(vsync: this, duration: _alarmDuration)
+    ..addStatusListener(_onAlarmStatus);
   bool _busy = false;
   String? _error;
+
+  static const _alarmDuration = Duration(milliseconds: 2800);
+  static const _alarmHoldSeconds = .4;
+
+  /// الخانة تصير حمراء بالكامل لحظة الخطأ، ثم ترجع ببطء إلى لونها الطبيعي.
+  double get _alarmLevel {
+    if (!_alarm.isAnimating) return 0;
+    final total = _alarmDuration.inMilliseconds / 1000;
+    final seconds = _alarm.value * total;
+    if (seconds < _alarmHoldSeconds) return 1;
+    final fade = (seconds - _alarmHoldSeconds) / (total - _alarmHoldSeconds);
+    return 1 - Curves.easeInOut.transform(fade);
+  }
+
+  void _onAlarmStatus(AnimationStatus status) {
+    if (status == AnimationStatus.completed) setState(() => _error = null);
+  }
 
   @override
   void initState() {
@@ -108,6 +127,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
   @override
   void dispose() {
+    _alarm.dispose();
     _focus
       ..removeListener(_onFocusChanged)
       ..dispose();
@@ -125,8 +145,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     final phone = digits.startsWith('0') ? digits : '0$digits';
     if (!validIraqiPhone(phone)) {
       setState(() => _error = 'أدخل رقم موبايل عراقي صحيح يبدأ بـ 07');
+      _alarm.forward(from: 0);
       return;
     }
+    _alarm.reset();
     setState(() {
       _busy = true;
       _error = null;
@@ -241,48 +263,53 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   above: touchMargin,
                   below: touchMargin,
                   onTap: _focus.requestFocus,
-                  child: PushKey(
-                    unit: unit,
-                    faceHeight: faceHeight,
-                    borderColor: _error != null
-                        ? AppColors.danger
-                        : (_focus.hasFocus ? _blue : null),
-                    child: Center(
-                      child: TextField(
-                        controller: _phone,
-                        focusNode: _focus,
-                        enabled: !_busy,
-                        keyboardType: TextInputType.phone,
-                        textInputAction: TextInputAction.done,
-                        textDirection: TextDirection.ltr,
-                        textAlign: TextAlign.center,
-                        textAlignVertical: TextAlignVertical.center,
-                        cursorColor: _blue,
-                        inputFormatters: const [_IraqiPhoneFormatter()],
-                        style: _textStyle(unit),
-                        onChanged: (_) {
-                          if (_error != null) setState(() => _error = null);
-                        },
-                        onSubmitted: (_) => _submit(),
-                        decoration: InputDecoration(
-                          isCollapsed: true,
-                          filled: false,
-                          contentPadding: EdgeInsets.zero,
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          disabledBorder: InputBorder.none,
-                          errorBorder: InputBorder.none,
-                          focusedErrorBorder: InputBorder.none,
-                          hintText: 'رقم الموبايل',
-                          hintTextDirection: TextDirection.rtl,
-                          hintStyle: _textStyle(unit).copyWith(
-                            color: _hint,
-                            fontWeight: FontWeight.w600,
+                  child: AnimatedBuilder(
+                    animation: _alarm,
+                    builder: (context, _) {
+                      final alarm = _alarmLevel;
+                      return PushKey(
+                        unit: unit,
+                        faceHeight: faceHeight,
+                        alarm: alarm,
+                        borderColor: _focus.hasFocus ? _blue : null,
+                        child: Center(
+                          child: TextField(
+                            controller: _phone,
+                            focusNode: _focus,
+                            enabled: !_busy,
+                            keyboardType: TextInputType.phone,
+                            textInputAction: TextInputAction.done,
+                            textDirection: TextDirection.ltr,
+                            textAlign: TextAlign.center,
+                            textAlignVertical: TextAlignVertical.center,
+                            cursorColor: Color.lerp(_blue, Colors.white, alarm),
+                            inputFormatters: const [_IraqiPhoneFormatter()],
+                            style: _textStyle(unit).copyWith(
+                              color: Color.lerp(_ink, Colors.white, alarm),
+                            ),
+                            onSubmitted: (_) => _submit(),
+                            decoration: InputDecoration(
+                              isCollapsed: true,
+                              filled: false,
+                              contentPadding: EdgeInsets.zero,
+                              border: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                              disabledBorder: InputBorder.none,
+                              errorBorder: InputBorder.none,
+                              focusedErrorBorder: InputBorder.none,
+                              hintText: alarm > 0 ? '07XX XXX XXXX' : 'رقم الموبايل',
+                              hintTextDirection:
+                                  alarm > 0 ? TextDirection.ltr : TextDirection.rtl,
+                              hintStyle: _textStyle(unit).copyWith(
+                                color: Color.lerp(_hint, Colors.white, alarm),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                    ),
+                      );
+                    },
                   ),
                 ),
                 _touchArea(
@@ -326,14 +353,21 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     left: 16,
                     right: 16,
                     top: errorTop,
-                    child: Text(
-                      _error!,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontFamily: 'Cairo',
-                        fontSize: 12 * unit,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.danger,
+                    child: AnimatedBuilder(
+                      animation: _alarm,
+                      builder: (context, child) => Opacity(
+                        opacity: (_alarmLevel * 2).clamp(0.0, 1.0),
+                        child: child,
+                      ),
+                      child: Text(
+                        _error!,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontSize: 12 * unit,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.danger,
+                        ),
                       ),
                     ),
                   ),

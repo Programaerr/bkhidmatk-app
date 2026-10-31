@@ -12,6 +12,9 @@ const _baseInnerShadow = Color(0x26000000);
 const _sideShadow = Color(0x38000000);
 const _sideInnerShadow = Color(0x24000000);
 const _sideShine = Color(0x40FFFFFF);
+const _alarmFaceCenter = Color(0xFFEF4444);
+const _alarmFaceEdge = Color(0xFFDC2626);
+const _alarmSide = Color(0xFF991B1B);
 
 /// زر ثلاثي الأبعاد باللون الأبيض: وجهه ينخفض عند اللمس فوق جانب وقاعدة ثابتين.
 class PushKey extends StatefulWidget {
@@ -22,6 +25,7 @@ class PushKey extends StatefulWidget {
     required this.child,
     this.borderColor,
     this.held = false,
+    this.alarm = 0,
   });
 
   /// ارتفاع الجانب الظاهر تحت وجه الزر، بوحدات التصميم.
@@ -34,6 +38,9 @@ class PushKey extends StatefulWidget {
 
   /// يبقي الزر منضغطاً، مثل أثناء انتظار النتيجة.
   final bool held;
+
+  /// مقدار احمرار الزر: 0 لونه الطبيعي، و1 أحمر بالكامل.
+  final double alarm;
 
   @override
   State<PushKey> createState() => _PushKeyState();
@@ -69,6 +76,7 @@ class _PushKeyState extends State<PushKey> {
                   unit: unit,
                   faceHeight: widget.faceHeight,
                   borderColor: widget.borderColor,
+                  alarm: widget.alarm,
                 ),
               ),
             ),
@@ -91,12 +99,14 @@ class _KeyPainter extends CustomPainter {
     required this.pressed,
     required this.unit,
     required this.faceHeight,
+    required this.alarm,
     this.borderColor,
   });
 
   final double pressed;
   final double unit;
   final double faceHeight;
+  final double alarm;
   final Color? borderColor;
 
   double _mix(double up, double down) => (up + (down - up) * pressed) * unit;
@@ -141,7 +151,7 @@ class _KeyPainter extends CustomPainter {
           ..color = _sideShadow
           ..maskFilter = MaskFilter.blur(BlurStyle.normal, 1.5 * unit),
       )
-      ..drawRRect(side, Paint()..color = _side)
+      ..drawRRect(side, Paint()..color = Color.lerp(_side, _alarmSide, alarm)!)
       ..save()
       ..clipRRect(side);
     final lowCorner = side.bottom - 8 * unit;
@@ -169,13 +179,16 @@ class _KeyPainter extends CustomPainter {
         ..shader = ui.Gradient.radial(
           face.center,
           face.width * .62,
-          const [_faceCenter, _faceEdge],
+          [
+            Color.lerp(_faceCenter, _alarmFaceCenter, alarm)!,
+            Color.lerp(_faceEdge, _alarmFaceEdge, alarm)!,
+          ],
         ),
     );
     canvas.drawRRect(
       face.deflate(.5 * unit),
       Paint()
-        ..color = borderColor ?? _faceOutline
+        ..color = Color.lerp(borderColor ?? _faceOutline, _faceOutline, alarm)!
         ..style = PaintingStyle.stroke
         ..strokeWidth = unit,
     );
@@ -228,5 +241,6 @@ class _KeyPainter extends CustomPainter {
       oldDelegate.pressed != pressed ||
       oldDelegate.unit != unit ||
       oldDelegate.faceHeight != faceHeight ||
+      oldDelegate.alarm != alarm ||
       oldDelegate.borderColor != borderColor;
 }
