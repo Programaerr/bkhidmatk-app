@@ -106,22 +106,92 @@ void main() {
     expect(tester.hasRunningAnimations, isFalse);
   });
 
-  test('السائق: الجامة مغلقة في البداية ثم تطلع الغيمة بعد فتحها ثم يعود', () {
-    final start = DriverPose.at(0);
-    expect(start.window, 0);
-    expect(start.bubble, 0);
+  group('مخرج المشهد', () {
+    void run(VanDirector director, double seconds) {
+      for (var i = 0; i < seconds * 60; i++) {
+        director.advance(1 / 60);
+      }
+    }
 
-    final opening = DriverPose.at(1.7);
-    expect(opening.window, greaterThan(0));
-    expect(opening.bubble, 0);
+    test('يقول جايك بطريق مرة واحدة عند الفتح ولا يكررها', () {
+      final director = VanDirector();
+      expect(director.window, 0);
+      expect(director.bubble, 0);
 
-    final talking = DriverPose.at(4);
-    expect(talking.window, 1);
-    expect(talking.bubble, 1);
+      run(director, 4);
+      expect(director.window, 1);
+      expect(director.bubble, 1);
+      expect(director.line, VanLine.greeting);
 
-    final end = DriverPose.at(DriverPose.loop - .1);
-    expect(end.window, 0);
-    expect(end.bubble, 0);
+      run(director, 4);
+      expect(director.window, 0);
+      expect(director.bubble, 0);
+
+      run(director, 30);
+      expect(director.window, 0);
+      expect(director.bubble, 0);
+      expect(director.speed, closeTo(1, .001));
+    });
+
+    test('الضغط على السيارة يقول يلا جايك بطريق ويسرع ثم يهدأ', () {
+      final director = VanDirector();
+      run(director, 10);
+      final before = director.travel;
+      run(director, 1);
+      final normalDistance = director.travel - before;
+
+      director.tap();
+      run(director, 2);
+      expect(director.line, VanLine.hurry);
+      expect(director.window, 1);
+      expect(director.bubble, 1);
+      expect(director.speed, greaterThan(3));
+
+      final fastStart = director.travel;
+      run(director, 1);
+      expect(director.travel - fastStart, greaterThan(normalDistance * 3));
+
+      run(director, 6);
+      expect(director.window, 0);
+      expect(director.bubble, 0);
+      expect(director.speed, closeTo(1, .01));
+    });
+
+    test('الضغط أثناء الترحيب يبدّل الكلام مباشرة دون قفز الجامة', () {
+      final director = VanDirector();
+      run(director, 4);
+      director.tap();
+      director.advance(1 / 60);
+
+      expect(director.line, VanLine.hurry);
+      expect(director.window, 1);
+      expect(director.bubble, 1);
+    });
+
+    test('المسافة لا تقفز إذا توقفت الإطارات ثم عادت', () {
+      final director = VanDirector();
+      director.advance(3600);
+      expect(director.travel, lessThan(.2));
+    });
+  });
+
+  testWidgets('الضغط على السيارة يسرعها، والضغط خارجها لا يغيّر شيئاً', (tester) async {
+    await _pump(tester);
+    VanDirector director() => (tester
+            .widget<CustomPaint>(
+              find.descendant(of: find.byType(TruckScene), matching: find.byType(CustomPaint)),
+            )
+            .painter! as TruckScenePainter)
+        .director;
+
+    final scene = tester.getRect(find.byType(TruckScene));
+    await tester.tapAt(scene.topLeft + const Offset(4, 4));
+    await tester.pump();
+    expect(director().line, VanLine.greeting);
+
+    await tester.tap(find.bySemanticsLabel('السيارة، اضغط عليها لتسرع'));
+    await tester.pump();
+    expect(director().line, VanLine.hurry);
   });
 
   test('قارئ مسارات SVG يفهم الصيغة المختصرة والأقواس', () {
