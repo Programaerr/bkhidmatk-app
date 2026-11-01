@@ -1,5 +1,6 @@
 import 'dart:ui' show ImageFilter;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/theme.dart';
@@ -41,7 +42,32 @@ class AppShellLayout extends StatelessWidget {
     final theme = Theme.of(context);
     final wide = MediaQuery.sizeOf(context).width >= 900;
 
-    final body = pages[index];
+    final body = AnimatedSwitcher(
+      duration: const Duration(milliseconds: 260),
+      reverseDuration: const Duration(milliseconds: 200),
+      switchInCurve: Curves.easeOutCubic,
+      switchOutCurve: Curves.easeInCubic,
+      transitionBuilder: (child, animation) {
+        final slideAnimation = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+        );
+        return FadeTransition(
+          opacity: animation,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0.035, 0),
+              end: Offset.zero,
+            ).animate(slideAnimation),
+            child: child,
+          ),
+        );
+      },
+      child: KeyedSubtree(
+        key: ValueKey(index),
+        child: pages[index],
+      ),
+    );
 
     if (!wide) {
       return Scaffold(
@@ -215,91 +241,112 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar> {
                     builder: (context, constraints) {
                       final itemWidth =
                           constraints.maxWidth / widget.items.length;
-                      return GestureDetector(
+                      return RawGestureDetector(
                         key: const ValueKey('glass-navigation-bar'),
-                        behavior: HitTestBehavior.opaque,
-                        onLongPressStart: _startLongPressDrag,
-                        onLongPressMoveUpdate: _updateLongPressDrag,
-                        onLongPressEnd: (_) => _endLongPressDrag(),
-                        onLongPressCancel: _endLongPressDrag,
-                        onHorizontalDragStart: (_) => _dragDistance = 0,
-                        onHorizontalDragUpdate: (details) {
-                          _dragDistance += details.delta.dx;
-                        },
-                        onHorizontalDragEnd: _finishSwipe,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                theme.colorScheme.surface
-                                    .withValues(alpha: isDark ? .78 : .72),
-                                theme.colorScheme.surface
-                                    .withValues(alpha: isDark ? .62 : .56),
-                              ],
+                        gestures: {
+                          LongPressGestureRecognizer:
+                              GestureRecognizerFactoryWithHandlers<
+                                  LongPressGestureRecognizer>(
+                            () => LongPressGestureRecognizer(
+                              debugOwner: this,
+                              duration: const Duration(milliseconds: 120),
                             ),
-                            borderRadius: BorderRadius.circular(40),
-                            border: Border.all(
-                              color: Colors.white
-                                  .withValues(alpha: isDark ? .16 : .48),
-                            ),
+                            (recognizer) {
+                              recognizer
+                                ..onLongPressStart = _startLongPressDrag
+                                ..onLongPressMoveUpdate = _updateLongPressDrag
+                                ..onLongPressEnd = (_) {
+                                  _endLongPressDrag();
+                                }
+                                ..onLongPressCancel = _endLongPressDrag;
+                            },
                           ),
-                          child: Stack(
-                            key: _navigationBoundsKey,
-                            children: [
-                              AnimatedPositionedDirectional(
-                                duration: const Duration(milliseconds: 480),
-                                curve: Curves.easeOutBack,
-                                start: itemWidth * widget.index + 4,
-                                top: 4,
-                                bottom: 4,
-                                width: itemWidth - 8,
-                                child: AnimatedScale(
-                                  scale: _isLongPressDragging ? 1.06 : 1,
-                                  duration: const Duration(milliseconds: 180),
-                                  curve: Curves.easeOutCubic,
-                                  child: DecoratedBox(
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(32),
-                                      gradient: LinearGradient(
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                        colors: [
-                                          widget.accent.withValues(alpha: .30),
-                                          widget.accent.withValues(alpha: .13),
+                        },
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onHorizontalDragStart: (_) => _dragDistance = 0,
+                          onHorizontalDragUpdate: (details) {
+                            _dragDistance += details.delta.dx;
+                          },
+                          onHorizontalDragEnd: _finishSwipe,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  theme.colorScheme.surface
+                                      .withValues(alpha: isDark ? .78 : .72),
+                                  theme.colorScheme.surface
+                                      .withValues(alpha: isDark ? .62 : .56),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(40),
+                              border: Border.all(
+                                color: Colors.white
+                                    .withValues(alpha: isDark ? .16 : .48),
+                              ),
+                            ),
+                            child: Stack(
+                              key: _navigationBoundsKey,
+                              children: [
+                                AnimatedPositionedDirectional(
+                                  duration: const Duration(milliseconds: 480),
+                                  curve: Curves.easeOutBack,
+                                  start: itemWidth * widget.index + 4,
+                                  top: 4,
+                                  bottom: 4,
+                                  width: itemWidth - 8,
+                                  child: AnimatedScale(
+                                    scale: _isLongPressDragging ? 1.06 : 1,
+                                    duration: const Duration(milliseconds: 180),
+                                    curve: Curves.easeOutCubic,
+                                    child: DecoratedBox(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(32),
+                                        gradient: LinearGradient(
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                          colors: [
+                                            widget.accent
+                                                .withValues(alpha: .30),
+                                            widget.accent
+                                                .withValues(alpha: .13),
+                                          ],
+                                        ),
+                                        border: Border.all(
+                                          color: widget.accent
+                                              .withValues(alpha: .28),
+                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: widget.accent
+                                                .withValues(alpha: .13),
+                                            blurRadius: 12,
+                                            spreadRadius: 1,
+                                          ),
                                         ],
                                       ),
-                                      border: Border.all(
-                                        color: widget.accent
-                                            .withValues(alpha: .28),
-                                      ),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: widget.accent
-                                              .withValues(alpha: .13),
-                                          blurRadius: 12,
-                                          spreadRadius: 1,
-                                        ),
-                                      ],
                                     ),
                                   ),
                                 ),
-                              ),
-                              Row(
-                                children: [
-                                  for (var i = 0; i < widget.items.length; i++)
-                                    Expanded(
-                                      child: _GlassNavigationDestination(
-                                        item: widget.items[i],
-                                        selected: i == widget.index,
-                                        accent: widget.accent,
-                                        onTap: () => widget.onSelect(i),
+                                Row(
+                                  children: [
+                                    for (var i = 0;
+                                        i < widget.items.length;
+                                        i++)
+                                      Expanded(
+                                        child: _GlassNavigationDestination(
+                                          item: widget.items[i],
+                                          selected: i == widget.index,
+                                          accent: widget.accent,
+                                          onTap: () => widget.onSelect(i),
+                                        ),
                                       ),
-                                    ),
-                                ],
-                              ),
-                            ],
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       );

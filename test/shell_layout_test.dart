@@ -36,6 +36,7 @@ void main() {
     );
 
     expect(find.byType(BackdropFilter), findsOneWidget);
+    expect(find.byType(AnimatedSwitcher), findsOneWidget);
     expect(find.text('page 0'), findsOneWidget);
 
     await tester.tap(find.text('الخدمات'));
@@ -54,7 +55,7 @@ void main() {
     final gesture = await tester.startGesture(
       tester.getCenter(find.text('حسابي')),
     );
-    await tester.pump(const Duration(milliseconds: 600));
+    await tester.pump(const Duration(milliseconds: 140));
     await gesture.moveTo(tester.getCenter(find.text('الخدمات')));
     await tester.pumpAndSettle();
     expect(selectedIndex, 1);
