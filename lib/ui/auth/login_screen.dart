@@ -112,6 +112,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       controller: _phone,
                       hint: '07XX XXX XXXX',
                       keyboardType: TextInputType.phone,
+                      inputFormatters: const [IraqiPhoneFormatter()],
                       textDirection: TextDirection.ltr,
                       textAlign: TextAlign.right,
                       onTyped: _clearLoginError,
