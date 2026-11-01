@@ -6,6 +6,8 @@ import '../../core/utils.dart';
 import '../../state/app_state.dart';
 import '../widgets/ui.dart';
 import 'login_screen.dart';
+import 'push_key.dart';
+import 'raised_field.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key, this.initialPhone});
@@ -26,6 +28,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _confirm = TextEditingController();
   String _city = 'بغداد';
   bool _obscure = true;
+  bool _pickingCity = false;
   bool _loading = false;
   String? _error;
 
@@ -40,6 +43,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _pickCity() async {
+    setState(() => _pickingCity = true);
     final selected = await showAppSheet<String>(
       context,
       builder: (ctx) => ConstrainedBox(
@@ -70,7 +74,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
       ),
     );
-    if (selected != null) setState(() => _city = selected);
+    if (!mounted) return;
+    setState(() {
+      _pickingCity = false;
+      if (selected != null) _city = selected;
+    });
   }
 
   Future<void> _submit() async {
@@ -114,92 +122,64 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     style: theme.textTheme.bodySmall?.copyWith(fontSize: 13)),
                 const SizedBox(height: 22),
                 const FieldLabel('الاسم الكامل', required_: true),
-                TextFormField(
+                RaisedField(
                   controller: _name,
+                  hint: 'مثال: أحمد سعد',
                   textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(
-                    hintText: 'مثال: أحمد سعد',
-                    prefixIcon: Icon(Icons.person_outline_rounded, size: 20),
-                  ),
-                  validator: (v) =>
-                      (v == null || v.trim().length < 3) ? 'أدخل الاسم الكامل' : null,
+                  validator: (v) => v.trim().length < 3 ? 'أدخل الاسم الكامل' : null,
                 ),
                 const SizedBox(height: 14),
                 const FieldLabel('رقم الهاتف', required_: true),
-                TextFormField(
+                RaisedField(
                   controller: _phone,
+                  hint: '07XX XXX XXXX',
                   keyboardType: TextInputType.phone,
                   textDirection: TextDirection.ltr,
                   textAlign: TextAlign.right,
-                  decoration: const InputDecoration(
-                    hintText: '07XX XXX XXXX',
-                    prefixIcon: Icon(Icons.phone_iphone_rounded, size: 20),
-                  ),
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'أدخل رقم الهاتف';
+                    if (v.trim().isEmpty) return 'أدخل رقم الهاتف';
                     if (!validIraqiPhone(v)) return 'رقم غير صالح (11 رقم يبدأ بـ 07)';
                     return null;
                   },
                 ),
                 const SizedBox(height: 14),
                 const FieldLabel('المحافظة'),
-                InkWell(
-                  onTap: _pickCity,
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                  child: InputDecorator(
-                    decoration: const InputDecoration(
-                      prefixIcon: Icon(Icons.location_city_rounded, size: 20),
-                      suffixIcon: Icon(Icons.expand_more_rounded, size: 20),
-                    ),
-                    child: Text(_city),
-                  ),
-                ),
+                RaisedPicker(value: _city, open: _pickingCity, onTap: _pickCity),
                 const SizedBox(height: 14),
                 const FieldLabel('العنوان التفصيلي'),
-                TextFormField(
+                RaisedField(
                   controller: _address,
-                  decoration: const InputDecoration(
-                    hintText: 'المنطقة، الشارع، أقرب نقطة دالة',
-                    prefixIcon: Icon(Icons.location_on_outlined, size: 20),
-                  ),
+                  hint: 'المنطقة، الشارع، أقرب نقطة دالة',
                 ),
                 const SizedBox(height: 14),
                 const FieldLabel('كلمة المرور', required_: true),
-                TextFormField(
+                RaisedField(
                   controller: _password,
+                  hint: '6 أحرف على الأقل',
                   obscureText: _obscure,
-                  decoration: InputDecoration(
-                    hintText: '6 أحرف على الأقل',
-                    prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
-                    suffixIcon: IconButton(
-                      onPressed: () => setState(() => _obscure = !_obscure),
-                      icon: Icon(
-                        _obscure ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                  validator: (v) =>
-                      (v == null || v.length < 6) ? 'كلمة المرور 6 أحرف على الأقل' : null,
+                  onToggleObscure: () => setState(() => _obscure = !_obscure),
+                  validator: (v) => v.length < 6 ? 'كلمة المرور 6 أحرف على الأقل' : null,
                 ),
                 const SizedBox(height: 14),
                 const FieldLabel('تأكيد كلمة المرور', required_: true),
-                TextFormField(
+                RaisedField(
                   controller: _confirm,
+                  hint: 'أعد كتابة كلمة المرور',
                   obscureText: true,
-                  decoration: const InputDecoration(
-                    hintText: 'أعد كتابة كلمة المرور',
-                    prefixIcon: Icon(Icons.lock_reset_rounded, size: 20),
-                  ),
                   validator: (v) => v != _password.text ? 'كلمتا المرور غير متطابقتين' : null,
                 ),
                 if (_error != null) ...[
                   const SizedBox(height: 12),
                   Text(_error!, style: const TextStyle(color: AppColors.danger, fontSize: 12.5)),
                 ],
-                const SizedBox(height: 22),
-                PrimaryButton(label: 'إنشاء الحساب', onPressed: _submit, loading: _loading),
-                const SizedBox(height: 10),
+                const SizedBox(height: 19),
+                PushKeyButton(
+                  label: 'إنشاء الحساب',
+                  onPressed: _submit,
+                  loading: _loading,
+                  yellow: true,
+                ),
+                const SizedBox(height: 7),
                 Center(
                   child: Wrap(
                     crossAxisAlignment: WrapCrossAlignment.center,

@@ -23,6 +23,11 @@ const _paddingX = 16.0;
 // ارتفاع الخانة في الأصل 62.7، وسطر Cairo أطول من سطر المتصفح فتقل الحشوة ليبقى الارتفاع نفسه.
 const _paddingY = 16.45;
 
+const _eyeSize = 20.0;
+
+// منطقة لمس العين بعرض يكفي الإصبع وبارتفاع الخانة كله، والعين في مكان سهم خانة الاختيار.
+const _trailingWidth = (_paddingX + _borderWidth) * 2 + _eyeSize;
+
 const _restDepth = 6.4;
 const _focusDepth = 9.6;
 const _focusLift = 3.0;
@@ -54,6 +59,9 @@ class RaisedField extends StatefulWidget {
     this.textAlign = TextAlign.start,
     this.minLines,
     this.maxLines = 1,
+    this.textCapitalization = TextCapitalization.none,
+    this.obscureText = false,
+    this.onToggleObscure,
   });
 
   final TextEditingController controller;
@@ -64,6 +72,11 @@ class RaisedField extends StatefulWidget {
   final TextAlign textAlign;
   final int? minLines;
   final int? maxLines;
+  final TextCapitalization textCapitalization;
+  final bool obscureText;
+
+  /// إذا وُجد تظهر في الخانة عين تُظهر كلمة المرور وتخفيها.
+  final VoidCallback? onToggleObscure;
 
   @override
   State<RaisedField> createState() => _RaisedFieldState();
@@ -120,6 +133,22 @@ class _RaisedFieldState extends State<RaisedField> with SingleTickerProviderStat
     return error;
   }
 
+  Widget _eye() => Semantics(
+        button: true,
+        label: widget.obscureText ? 'إظهار كلمة المرور' : 'إخفاء كلمة المرور',
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: widget.onToggleObscure,
+          child: Center(
+            child: Icon(
+              widget.obscureText ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+              size: _eyeSize,
+              color: _accent,
+            ),
+          ),
+        ),
+      );
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -138,6 +167,7 @@ class _RaisedFieldState extends State<RaisedField> with SingleTickerProviderStat
               focused: _focus.hasFocus,
               invalid: field.hasError,
               shake: _shake,
+              trailing: widget.onToggleObscure == null ? null : _eye(),
               child: TextField(
                 controller: widget.controller,
                 focusNode: _focus,
@@ -146,6 +176,8 @@ class _RaisedFieldState extends State<RaisedField> with SingleTickerProviderStat
                 textAlign: widget.textAlign,
                 minLines: widget.minLines,
                 maxLines: widget.maxLines,
+                textCapitalization: widget.textCapitalization,
+                obscureText: widget.obscureText,
                 style: style.copyWith(color: _accent),
                 cursorColor: _accent,
                 // يبقى أسفل الخانة وعمقها ظاهرين فوق لوحة المفاتيح.
@@ -264,17 +296,28 @@ class _RaisedBox extends StatelessWidget {
     required this.invalid,
     required this.shake,
     required this.child,
+    this.trailing,
   });
 
   final bool focused;
   final bool invalid;
   final Animation<double> shake;
   final Widget child;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
     final night = Theme.of(context).brightness == Brightness.dark;
     final transition = _motion(context, _transition);
+    final content = Padding(
+      padding: EdgeInsetsDirectional.fromSTEB(
+        _paddingX + _borderWidth,
+        _paddingY + _borderWidth,
+        trailing == null ? _paddingX + _borderWidth : _trailingWidth,
+        _paddingY + _borderWidth,
+      ),
+      child: child,
+    );
     return Padding(
       padding: const EdgeInsets.only(bottom: _restDepth),
       child: AnimatedBuilder(
@@ -288,13 +331,21 @@ class _RaisedBox extends StatelessWidget {
             tween: Tween<double>(end: focused ? 1 : 0),
             duration: transition,
             curve: Curves.easeInOutBack,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: _paddingX + _borderWidth,
-                vertical: _paddingY + _borderWidth,
-              ),
-              child: child,
-            ),
+            child: trailing == null
+                ? content
+                : Stack(
+                    fit: StackFit.passthrough,
+                    children: [
+                      content,
+                      PositionedDirectional(
+                        top: 0,
+                        bottom: 0,
+                        end: 0,
+                        width: _trailingWidth,
+                        child: trailing!,
+                      ),
+                    ],
+                  ),
             builder: (context, focus, content) => Transform.translate(
               offset: Offset(0, -_focusLift * focus),
               child: Transform.scale(
