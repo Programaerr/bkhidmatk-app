@@ -1,10 +1,5 @@
 import 'models.dart';
 
-/// نقاط المكافأة الممنوحة لكل نجمة تقييم: تقييم 5 نجوم = 50 نقطة.
-const int pointsPerStar = 10;
-
-int pointsForRating(int rating) => rating.clamp(1, 5) * pointsPerStar;
-
 /// واجهة البيانات الموحّدة للتطبيق — تنفيذها الحالي [LocalRepository]
 /// (SQLite على الجهاز، كل شيء محلي).
 abstract class Repository {
@@ -38,7 +33,8 @@ abstract class Repository {
   Future<void> deleteCategory(int id);
 
   // -------------------------------------------------------------- workers
-  Future<List<Worker>> listWorkers({int? categoryId, bool onlyAvailable = false});
+  Future<List<Worker>> listWorkers(
+      {int? categoryId, bool onlyAvailable = false});
 
   Future<Worker?> workerById(int id);
 
@@ -79,10 +75,9 @@ abstract class Repository {
 
   /// تقييم العامل بعد اكتمال الحجز.
   ///
-  /// يحفظ تقييم العميل (1..5) وملاحظته، ويضيف نقاط مكافأة لرصيد العميل
-  /// ([pointsForRating] نقطة)، ويحدّث متوسط تقييم العامل.
-  /// يعيد عدد النقاط المضافة، أو 0 إذا كان الحجز مقيَّماً مسبقاً.
-  Future<int> rateBooking({
+  /// يحفظ تقييم العميل وملاحظته ويحدّث متوسط تقييم العامل.
+  /// يعيد false إذا تعذّر التقييم، مثلاً إذا لم يكتمل الحجز أو سبق تقييمه.
+  Future<bool> rateBooking({
     required int bookingId,
     required int rating,
     String? review,

@@ -39,10 +39,8 @@ class AppDatabase {
     return _db!;
   }
 
-  /// v2: نظام النقاط — أعمدة `points` للمستخدم و`rating`/`review` للحجز.
+  /// v2: أعمدة التقييم والمراجعة للحجز.
   Future<void> _migrateToV2(Database db) async {
-    await db.execute(
-        "ALTER TABLE users ADD COLUMN points INTEGER NOT NULL DEFAULT 0");
     await db.execute('ALTER TABLE bookings ADD COLUMN rating INTEGER');
     await db.execute('ALTER TABLE bookings ADD COLUMN review TEXT');
   }
@@ -140,7 +138,6 @@ class AppDatabase {
         city TEXT,
         address TEXT,
         avatar TEXT,
-        points INTEGER NOT NULL DEFAULT 0,
         created_at TEXT NOT NULL
       )
     ''');
@@ -287,8 +284,10 @@ class AppDatabase {
           'sort_order': sort,
         });
 
-    final cElectric = await category('كهرباء', 'electrical_services', 0xFFFFC107, 0);
-    final cWasher = await category('تصليح غسالات', 'local_laundry_service', 0xFF03A9F4, 1);
+    final cElectric =
+        await category('كهرباء', 'electrical_services', 0xFFFFC107, 0);
+    final cWasher =
+        await category('تصليح غسالات', 'local_laundry_service', 0xFF03A9F4, 1);
     final cPaint = await category('صباغة', 'format_paint', 0xFF8BC34A, 2);
     final cDecor = await category('ديكورات', 'chair_alt', 0xFFE91E63, 3);
     final cPlumb = await category('سباكة', 'plumbing', 0xFF00BCD4, 4);
@@ -317,22 +316,28 @@ class AppDatabase {
           'available': available ? 1 : 0,
         });
 
-    final wElectric = await worker('أحمد الجبوري', '07701112233', 'كهربائي منازل', cElectric,
-        4.9, 312, 'خبرة 12 سنة في تأسيس وصيانة الكهرباء المنزلية.');
-    final wWasher = await worker('مصطفى كريم', '07802223344', 'فني غسالات', cWasher,
-        4.8, 205, 'صيانة جميع أنواع الغسالات الأوتوماتيك والنشافات.');
+    final wElectric = await worker(
+        'أحمد الجبوري',
+        '07701112233',
+        'كهربائي منازل',
+        cElectric,
+        4.9,
+        312,
+        'خبرة 12 سنة في تأسيس وصيانة الكهرباء المنزلية.');
+    final wWasher = await worker('مصطفى كريم', '07802223344', 'فني غسالات',
+        cWasher, 4.8, 205, 'صيانة جميع أنواع الغسالات الأوتوماتيك والنشافات.');
     final wPaint = await worker('علي حسين', '07903334455', 'صباغ محترف', cPaint,
         4.7, 148, 'دهانات حديثة وديكورات جدارية بأجود المواد.');
-    final wDecor = await worker('يوسف العبيدي', '07714445566', 'فني ديكور', cDecor,
-        4.9, 97, 'جبس بورد وأسقف ثانوية وتصاميم عصرية.');
+    final wDecor = await worker('يوسف العبيدي', '07714445566', 'فني ديكور',
+        cDecor, 4.9, 97, 'جبس بورد وأسقف ثانوية وتصاميم عصرية.');
     final wPlumb = await worker('حيدر الموسوي', '07825556677', 'سباك', cPlumb,
         4.6, 263, 'تسليك مجاري وإصلاح تسريبات المياه.');
     final wAc = await worker('سيف الدين عباس', '07936667788', 'فني تكييف', cAc,
         4.8, 174, 'تركيب وصيانة وشحن مكيفات سبليت ومركزي.');
-    final wClean = await worker('نور الهدى سالم', '07747778899', 'فريق تنظيف', cClean,
-        4.9, 321, 'تنظيف منازل وشركات بعمالة مدربة ومواد آمنة.');
-    final wCarp = await worker('كرار عبد الله', '07858889900', 'نجار موبيليا', cCarp,
-        4.7, 132, 'تصليح وتفصيل أبواب وخزائن ومطابخ.');
+    final wClean = await worker('نور الهدى سالم', '07747778899', 'فريق تنظيف',
+        cClean, 4.9, 321, 'تنظيف منازل وشركات بعمالة مدربة ومواد آمنة.');
+    final wCarp = await worker('كرار عبد الله', '07858889900', 'نجار موبيليا',
+        cCarp, 4.7, 132, 'تصليح وتفصيل أبواب وخزائن ومطابخ.');
 
     Future<void> service(
       int catId,
@@ -354,41 +359,104 @@ class AppDatabase {
           'duration': minutes,
           'rating': rating,
           'active': active ? 1 : 0,
-          'created_at': today.subtract(Duration(days: daysAgo)).toIso8601String(),
+          'created_at':
+              today.subtract(Duration(days: daysAgo)).toIso8601String(),
         });
 
-    await service(cElectric, wElectric, 'تصليح أعطال كهربائية منزلية',
-        'فحص كامل للتمديدات وإصلاح الأعطال والمفاتيح والمقابس مع ضمان على العمل.', 25000, 90, 4.9);
-    await service(cElectric, wElectric, 'تركيب ثريات وإضاءة LED',
-        'تركيب وتثبيت الثريات وشرائط الإضاءة مع تنظيم الأسلاك بشكل آمن.', 15000, 60, 4.8, daysAgo: 25);
-    await service(cWasher, wWasher, 'صيانة غسالة أوتوماتيك',
-        'فحص وتصليح أعطال الغسالة: تصريف، دوران، لوحة تحكم، مع قطع غيار أصلية.', 30000, 90, 4.8);
+    await service(
+        cElectric,
+        wElectric,
+        'تصليح أعطال كهربائية منزلية',
+        'فحص كامل للتمديدات وإصلاح الأعطال والمفاتيح والمقابس مع ضمان على العمل.',
+        25000,
+        90,
+        4.9);
+    await service(
+        cElectric,
+        wElectric,
+        'تركيب ثريات وإضاءة LED',
+        'تركيب وتثبيت الثريات وشرائط الإضاءة مع تنظيم الأسلاك بشكل آمن.',
+        15000,
+        60,
+        4.8,
+        daysAgo: 25);
+    await service(
+        cWasher,
+        wWasher,
+        'صيانة غسالة أوتوماتيك',
+        'فحص وتصليح أعطال الغسالة: تصريف، دوران، لوحة تحكم، مع قطع غيار أصلية.',
+        30000,
+        90,
+        4.8);
     await service(cWasher, wWasher, 'تصليح نشافة ملابس',
-        'إصلاح أعطال التسخين والدوران وتنظيف مجرى الهواء.', 25000, 75, 4.7, daysAgo: 20);
-    await service(cPaint, wPaint, 'صبغ غرفة كاملة',
-        'تحضير الجدران ومعجون ودهان وجهين مع تشطيب نظيف، السعر يشمل المواد.', 150000, 480, 4.8);
-    await service(cPaint, wPaint, 'دهان واجهة بناية',
-        'تنظيف الواجهة ودهان مقاوم للعوامل الجوية بضمان 3 سنوات.', 250000, 600, 4.7, daysAgo: 15);
-    await service(cDecor, wDecor, 'تركيب جبس بورد وأسقف ثانوية',
-        'تصميم وتنفيذ أسقف جبس مع إضاءة مخفية وتشطيب احترافي.', 120000, 300, 4.9);
+        'إصلاح أعطال التسخين والدوران وتنظيف مجرى الهواء.', 25000, 75, 4.7,
+        daysAgo: 20);
+    await service(
+        cPaint,
+        wPaint,
+        'صبغ غرفة كاملة',
+        'تحضير الجدران ومعجون ودهان وجهين مع تشطيب نظيف، السعر يشمل المواد.',
+        150000,
+        480,
+        4.8);
+    await service(
+        cPaint,
+        wPaint,
+        'دهان واجهة بناية',
+        'تنظيف الواجهة ودهان مقاوم للعوامل الجوية بضمان 3 سنوات.',
+        250000,
+        600,
+        4.7,
+        daysAgo: 15);
+    await service(
+        cDecor,
+        wDecor,
+        'تركيب جبس بورد وأسقف ثانوية',
+        'تصميم وتنفيذ أسقف جبس مع إضاءة مخفية وتشطيب احترافي.',
+        120000,
+        300,
+        4.9);
     await service(cDecor, wDecor, 'تركيب ورق جدران',
-        'توريد وتركيب ورق جدران عالي الجودة لجميع الغرف.', 60000, 180, 4.6, daysAgo: 12);
-    await service(cPlumb, wPlumb, 'تسليك مجاري',
-        'فتح الانسدادات وإزالة الترسبات بأجهزة حديثة دون تكسير.', 35000, 60, 4.7);
+        'توريد وتركيب ورق جدران عالي الجودة لجميع الغرف.', 60000, 180, 4.6,
+        daysAgo: 12);
+    await service(
+        cPlumb,
+        wPlumb,
+        'تسليك مجاري',
+        'فتح الانسدادات وإزالة الترسبات بأجهزة حديثة دون تكسير.',
+        35000,
+        60,
+        4.7);
     await service(cPlumb, wPlumb, 'إصلاح تسريب مياه',
-        'كشف التسريبات وإصلاح الأنابيب والخلاطات مع ضمان.', 20000, 45, 4.8, daysAgo: 10);
+        'كشف التسريبات وإصلاح الأنابيب والخلاطات مع ضمان.', 20000, 45, 4.8,
+        daysAgo: 10);
     await service(cAc, wAc, 'تنظيف مكيف سبليت',
         'غسيل كامل للوحدة الداخلية والخارجية وتعقيم الفلاتر.', 20000, 60, 4.9);
     await service(cAc, wAc, 'شحن غاز مكيف',
-        'فحص الضغط وشحن غاز الـ R410 مع كشف التسريبات.', 40000, 75, 4.8, daysAgo: 9);
-    await service(cClean, wClean, 'تنظيف منزل شامل',
-        'تنظيف الغرف والمطبخ والحمامات بعمالة مدربة ومواد صديقة للبيئة.', 75000, 240, 4.9);
+        'فحص الضغط وشحن غاز الـ R410 مع كشف التسريبات.', 40000, 75, 4.8,
+        daysAgo: 9);
+    await service(
+        cClean,
+        wClean,
+        'تنظيف منزل شامل',
+        'تنظيف الغرف والمطبخ والحمامات بعمالة مدربة ومواد صديقة للبيئة.',
+        75000,
+        240,
+        4.9);
     await service(cClean, wClean, 'غسيل سيارة داخل وخارج',
-        'غسيل احترافي مع تلميع داخلي وتنظيف المحرك.', 15000, 90, 4.8, daysAgo: 8);
+        'غسيل احترافي مع تلميع داخلي وتنظيف المحرك.', 15000, 90, 4.8,
+        daysAgo: 8);
     await service(cCarp, wCarp, 'تصليح أبواب وخزائن',
-        'إصلاح المفصلات والأقفال وتعديل الأبواب الخشبية.', 40000, 120, 4.7, daysAgo: 7);
-    await service(cCarp, wCarp, 'تفصيل وتركيب مطبخ',
-        'تصميم وتنفيذ مطبخ حسب المساحة مع خامات مقاومة للرطوبة.', 300000, 720, 4.6,
+        'إصلاح المفصلات والأقفال وتعديل الأبواب الخشبية.', 40000, 120, 4.7,
+        daysAgo: 7);
+    await service(
+        cCarp,
+        wCarp,
+        'تفصيل وتركيب مطبخ',
+        'تصميم وتنفيذ مطبخ حسب المساحة مع خامات مقاومة للرطوبة.',
+        300000,
+        720,
+        4.6,
         daysAgo: 6);
 
     final adminId = await db.insert('users', {
@@ -409,7 +477,6 @@ class AppDatabase {
       'role': 'customer',
       'city': 'بغداد',
       'address': 'بغداد - حي الجامعة، شارع 20',
-      'points': 100,
       'created_at': today.subtract(const Duration(days: 60)).toIso8601String(),
     });
 
@@ -448,25 +515,27 @@ class AppDatabase {
           'customer_id': userId,
           'service_id': serviceId,
           'worker_id': workerId,
-          'scheduled_at': today.add(Duration(days: daysFromNow)).toIso8601String(),
+          'scheduled_at':
+              today.add(Duration(days: daysFromNow)).toIso8601String(),
           'slot': slot,
           'address': address,
           'status': status,
           'payment_method': method,
           'total': total,
-          'created_at': today.subtract(const Duration(days: 2)).toIso8601String(),
+          'created_at':
+              today.subtract(const Duration(days: 2)).toIso8601String(),
         });
 
-    final b1 = await booking(customerId, 1, wElectric, 0, '10:00', 'completed', 'card', 25000,
-        'بغداد - حي الجامعة، شارع 20');
+    final b1 = await booking(customerId, 1, wElectric, 0, '10:00', 'completed',
+        'card', 25000, 'بغداد - حي الجامعة، شارع 20');
     await booking(customerId, 3, wWasher, 1, '12:00', 'pending', 'cash', 30000,
         'بغداد - حي الجامعة، شارع 20');
-    await booking(customerId, 5, wPaint, 4, '09:00', 'confirmed', 'cash', 150000,
-        'بغداد - حي الجامعة، شارع 20');
-    await booking(customerId, 14, wClean, -3, '16:00', 'completed', 'card', 15000,
-        'بغداد - حي الجامعة، شارع 20');
-    await booking(customer2, 11, wAc, 2, '11:00', 'confirmed', 'card',
-        20000, 'البصرة - العشار');
+    await booking(customerId, 5, wPaint, 4, '09:00', 'confirmed', 'cash',
+        150000, 'بغداد - حي الجامعة، شارع 20');
+    await booking(customerId, 14, wClean, -3, '16:00', 'completed', 'card',
+        15000, 'بغداد - حي الجامعة، شارع 20');
+    await booking(customer2, 11, wAc, 2, '11:00', 'confirmed', 'card', 20000,
+        'البصرة - العشار');
     await booking(customer2, 9, wPlumb, -1, '14:00', 'completed', 'cash', 35000,
         'البصرة - العشار');
 
@@ -585,43 +654,54 @@ class AppDatabase {
       'user_id': customer2,
       'user_name': 'زينب حسن',
       'body': 'شغل مرتب ما شاء الله، ممكن رقمك؟',
-      'created_at': DateTime.now().subtract(const Duration(hours: 3)).toIso8601String(),
+      'created_at':
+          DateTime.now().subtract(const Duration(hours: 3)).toIso8601String(),
     });
     await db.insert('comments', {
       'post_id': p1,
       'user_id': adminId,
       'user_name': 'مدير جايك',
       'body': 'تم توثيق العمل بنجاح ✅ شكراً لمشاركتك.',
-      'created_at': DateTime.now().subtract(const Duration(hours: 2)).toIso8601String(),
+      'created_at':
+          DateTime.now().subtract(const Duration(hours: 2)).toIso8601String(),
     });
     await db.insert('comments', {
       'post_id': p3,
       'user_id': customer2,
       'user_name': 'زينب حسن',
       'body': 'اللون يجنن، أي نوع صبغ استخدمت؟',
-      'created_at': DateTime.now().subtract(const Duration(days: 1)).toIso8601String(),
+      'created_at':
+          DateTime.now().subtract(const Duration(days: 1)).toIso8601String(),
     });
 
-    Future<void> msg(int thread, int sender, String role, String body, int hoursAgo,
+    Future<void> msg(
+            int thread, int sender, String role, String body, int hoursAgo,
             {bool read = true}) =>
         db.insert('messages', {
           'thread_id': thread,
           'sender_id': sender,
           'sender_role': role,
           'body': body,
-          'created_at': DateTime.now().subtract(Duration(hours: hoursAgo)).toIso8601String(),
+          'created_at': DateTime.now()
+              .subtract(Duration(hours: hoursAgo))
+              .toIso8601String(),
           'read': read ? 1 : 0,
         });
 
     await msg(customerId, customerId, 'customer',
         'مرحباً، حجزت صيانة غسالة أوتوماتيك وبغيت أتأكد من الوقت.', 26);
-    await msg(customerId, adminId, 'admin',
-        'أهلاً بك أستاذ أحمد 👋 تم استلام حجزك، الفني مصطفى سيتواصل معك قبل الموعد بنصف ساعة.', 25);
+    await msg(
+        customerId,
+        adminId,
+        'admin',
+        'أهلاً بك أستاذ أحمد 👋 تم استلام حجزك، الفني مصطفى سيتواصل معك قبل الموعد بنصف ساعة.',
+        25);
     await msg(customerId, customerId, 'customer', 'ممتاز، شكراً لكم.', 24);
     await msg(customerId, adminId, 'admin',
         'خدمتك تسعدنا دائماً. أي استفسار آخر نحن هنا.', 23);
     await msg(customer2, customer2, 'customer',
-        'هل يوجد غسيل سيارات اليوم في العصر؟', 4, read: false);
+        'هل يوجد غسيل سيارات اليوم في العصر؟', 4,
+        read: false);
 
     for (final entry in {
       'admin_phone': '07700000000',

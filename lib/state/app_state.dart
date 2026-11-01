@@ -45,7 +45,8 @@ class AppState extends ChangeNotifier {
   Future<String?> login(String phone, String password) async {
     final found = await repo.findUserByPhone(phone);
     if (found == null) return 'لا يوجد حساب مسجل بهذا الرقم';
-    if (found.passwordHash != hashPassword(password)) return 'كلمة المرور غير صحيحة';
+    if (found.passwordHash != hashPassword(password))
+      return 'كلمة المرور غير صحيحة';
     user = found;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('user_id', found.id!);
@@ -117,7 +118,7 @@ class AppState extends ChangeNotifier {
     await prefs.remove('user_id');
   }
 
-  /// إعادة تحميل بيانات المستخدم الحالي (بما فيها رصيد النقاط).
+  /// إعادة تحميل بيانات المستخدم الحالي.
   Future<void> refreshUser() async {
     if (user?.id == null) return;
     try {

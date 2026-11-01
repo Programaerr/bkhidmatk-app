@@ -18,14 +18,15 @@ class ProfileTab extends StatefulWidget {
 
   final VoidCallback onOpenBookings;
 
-  /// وضع الموظف بالتوضيف: يُخفى كل ما لا يخصه (حجوزات، وصولات، نقاط).
+  /// وضع الموظف بالتوضيف: يُخفى كل ما لا يخصه (حجوزات ووصولات).
   final bool workerMode;
 
   @override
   State<ProfileTab> createState() => _ProfileTabState();
 }
 
-class _ProfileTabState extends State<ProfileTab> with RealtimeRefresh<ProfileTab> {
+class _ProfileTabState extends State<ProfileTab>
+    with RealtimeRefresh<ProfileTab> {
   Future<List<int>>? _stats;
 
   @override
@@ -65,67 +66,68 @@ class _ProfileTabState extends State<ProfileTab> with RealtimeRefresh<ProfileTab
               mainAxisSize: MainAxisSize.min,
               children: [
                 const SheetHeader(title: 'تعديل الملف الشخصي'),
-              const SizedBox(height: 16),
-              TextField(
-                controller: name,
-                decoration: const InputDecoration(
-                  labelText: 'الاسم',
-                  prefixIcon: Icon(Icons.person_outline_rounded, size: 20),
-                ),
-              ),
-              const SizedBox(height: 12),
-              InkWell(
-                onTap: () async {
-                  final picked = await showAppSheet<String>(
-                    context,
-                    builder: (ctx) => ConstrainedBox(
-                      constraints: const BoxConstraints(maxHeight: 440),
-                      child: Column(
-                        children: [
-                          const Padding(
-                            padding: EdgeInsets.fromLTRB(20, 0, 20, 6),
-                            child: SheetHeader(title: 'المحافظة'),
-                          ),
-                          Expanded(
-                            child: ListView(
-                              padding: const EdgeInsets.symmetric(horizontal: 10),
-                              children: [
-                                for (final c in iraqCities)
-                                  ListTile(
-                                    title: Text(c),
-                                    onTap: () => Navigator.pop(ctx, c),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                  if (picked != null) setSheetState(() => city = picked);
-                },
-                child: InputDecorator(
+                const SizedBox(height: 16),
+                TextField(
+                  controller: name,
                   decoration: const InputDecoration(
-                    prefixIcon: Icon(Icons.location_city_rounded, size: 20),
-                    suffixIcon: Icon(Icons.expand_more_rounded, size: 20),
+                    labelText: 'الاسم',
+                    prefixIcon: Icon(Icons.person_outline_rounded, size: 20),
                   ),
-                  child: Text(city),
                 ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: address,
-                maxLines: 2,
-                decoration: const InputDecoration(
-                  labelText: 'العنوان',
-                  prefixIcon: Icon(Icons.location_on_outlined, size: 20),
+                const SizedBox(height: 12),
+                InkWell(
+                  onTap: () async {
+                    final picked = await showAppSheet<String>(
+                      context,
+                      builder: (ctx) => ConstrainedBox(
+                        constraints: const BoxConstraints(maxHeight: 440),
+                        child: Column(
+                          children: [
+                            const Padding(
+                              padding: EdgeInsets.fromLTRB(20, 0, 20, 6),
+                              child: SheetHeader(title: 'المحافظة'),
+                            ),
+                            Expanded(
+                              child: ListView(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 10),
+                                children: [
+                                  for (final c in iraqCities)
+                                    ListTile(
+                                      title: Text(c),
+                                      onTap: () => Navigator.pop(ctx, c),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                    if (picked != null) setSheetState(() => city = picked);
+                  },
+                  child: InputDecorator(
+                    decoration: const InputDecoration(
+                      prefixIcon: Icon(Icons.location_city_rounded, size: 20),
+                      suffixIcon: Icon(Icons.expand_more_rounded, size: 20),
+                    ),
+                    child: Text(city),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 20),
-              PrimaryButton(
-                label: 'حفظ التغييرات',
-                onPressed: () => Navigator.pop(ctx, true),
-              ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: address,
+                  maxLines: 2,
+                  decoration: const InputDecoration(
+                    labelText: 'العنوان',
+                    prefixIcon: Icon(Icons.location_on_outlined, size: 20),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                PrimaryButton(
+                  label: 'حفظ التغييرات',
+                  onPressed: () => Navigator.pop(ctx, true),
+                ),
               ],
             ),
           ),
@@ -165,7 +167,10 @@ class _ProfileTabState extends State<ProfileTab> with RealtimeRefresh<ProfileTab
             const BrandTitle(fontSize: 22),
             const SizedBox(height: 4),
             Text('الإصدار 1.0.0',
-                style: Theme.of(ctx).textTheme.bodySmall?.copyWith(fontSize: 10.5)),
+                style: Theme.of(ctx)
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(fontSize: 10.5)),
             const SizedBox(height: 12),
             const Text(
               'منصة عراقية تربط الزبائن بعمال وفنيين موثوقين: كهرباء، صباغة، سباكة، ديكور، تنظيف وأكثر.\n\nالدفع بماستركارد، وصولات إلكترونية قابلة للطباعة، ومتابعة كاملة للحجز.',
@@ -174,11 +179,13 @@ class _ProfileTabState extends State<ProfileTab> with RealtimeRefresh<ProfileTab
             ),
             const SizedBox(height: 12),
             Text('الدعم: 0770 000 0000',
-                style: Theme.of(ctx).textTheme.bodySmall?.copyWith(fontSize: 11)),
+                style:
+                    Theme.of(ctx).textTheme.bodySmall?.copyWith(fontSize: 11)),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('حسناً')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx), child: const Text('حسناً')),
         ],
       ),
     );
@@ -208,7 +215,8 @@ class _ProfileTabState extends State<ProfileTab> with RealtimeRefresh<ProfileTab
               children: [
                 Row(
                   children: [
-                    AvatarCircle(name: user.name, size: 58, imagePath: user.avatarPath),
+                    AvatarCircle(
+                        name: user.name, size: 58, imagePath: user.avatarPath),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -222,7 +230,8 @@ class _ProfileTabState extends State<ProfileTab> with RealtimeRefresh<ProfileTab
                           const SizedBox(height: 2),
                           Text(user.phone,
                               textDirection: TextDirection.ltr,
-                              style: const TextStyle(color: Colors.white54, fontSize: 11)),
+                              style: const TextStyle(
+                                  color: Colors.white54, fontSize: 11)),
                           const SizedBox(height: 4),
                           Row(
                             children: [
@@ -230,7 +239,8 @@ class _ProfileTabState extends State<ProfileTab> with RealtimeRefresh<ProfileTab
                                   size: 12, color: AppColors.gold),
                               const SizedBox(width: 3),
                               Text(user.city ?? 'العراق',
-                                  style: const TextStyle(color: Colors.white70, fontSize: 10)),
+                                  style: const TextStyle(
+                                      color: Colors.white70, fontSize: 10)),
                             ],
                           ),
                         ],
@@ -238,7 +248,8 @@ class _ProfileTabState extends State<ProfileTab> with RealtimeRefresh<ProfileTab
                     ),
                     IconButton(
                       onPressed: _editProfile,
-                      icon: const Icon(Icons.edit_outlined, color: Colors.white, size: 20),
+                      icon: const Icon(Icons.edit_outlined,
+                          color: Colors.white, size: 20),
                       style: IconButton.styleFrom(
                         backgroundColor: Colors.white.withValues(alpha: .1),
                       ),
@@ -267,56 +278,6 @@ class _ProfileTabState extends State<ProfileTab> with RealtimeRefresh<ProfileTab
               ],
             ),
           ),
-          if (!widget.workerMode) ...[
-            const SizedBox(height: 16),
-            // ------------------------------------------------ بطاقة النقاط
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(AppRadius.lg),
-                gradient: const LinearGradient(
-                  begin: Alignment.topRight,
-                  end: Alignment.bottomLeft,
-                  colors: [AppColors.gold, AppColors.goldDeep],
-                ),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 52,
-                    height: 52,
-                    decoration: BoxDecoration(
-                      color: AppColors.ink.withValues(alpha: .12),
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                    ),
-                    child: const Icon(Icons.emoji_events_rounded,
-                        color: AppColors.ink, size: 28),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('${user.points} نقطة',
-                            style: const TextStyle(
-                                color: AppColors.ink,
-                                fontSize: 22,
-                                fontWeight: FontWeight.w900,
-                                height: 1.1)),
-                        const SizedBox(height: 2),
-                        Text(
-                          'رصيد مكافآتك — اجمعها بتقييم الفنيين',
-                          style: TextStyle(
-                              color: AppColors.ink.withValues(alpha: .7),
-                              fontSize: 10.5),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
           const SizedBox(height: 16),
           SoftCard(
             padding: EdgeInsets.zero,
@@ -337,7 +298,8 @@ class _ProfileTabState extends State<ProfileTab> with RealtimeRefresh<ProfileTab
                     onTap: () async {
                       await Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const ReceiptsScreen()),
+                        MaterialPageRoute(
+                            builder: (_) => const ReceiptsScreen()),
                       );
                       _load();
                     },
@@ -371,7 +333,8 @@ class _ProfileTabState extends State<ProfileTab> with RealtimeRefresh<ProfileTab
                     size: 20,
                   ),
                   title: const Text('الوضع الليلي',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                      style:
+                          TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
                   subtitle: const Text('مريح للعين في الإضاءة المنخفضة',
                       style: TextStyle(fontSize: 10.5)),
                 ),
@@ -422,8 +385,11 @@ class _Stat extends StatelessWidget {
         children: [
           Text(value,
               style: const TextStyle(
-                  color: AppColors.gold, fontSize: 18, fontWeight: FontWeight.w900)),
-          Text(label, style: const TextStyle(color: Colors.white54, fontSize: 9.5)),
+                  color: AppColors.gold,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900)),
+          Text(label,
+              style: const TextStyle(color: Colors.white54, fontSize: 9.5)),
         ],
       ),
     );
@@ -458,8 +424,10 @@ class _MenuTile extends StatelessWidget {
         ),
         child: Icon(icon, size: 19),
       ),
-      title: Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-      subtitle: Text(subtitle, style: theme.textTheme.bodySmall?.copyWith(fontSize: 10)),
+      title: Text(title,
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+      subtitle: Text(subtitle,
+          style: theme.textTheme.bodySmall?.copyWith(fontSize: 10)),
       trailing: const Icon(Icons.chevron_left_rounded, size: 20),
     );
   }
