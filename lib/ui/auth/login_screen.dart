@@ -21,17 +21,14 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   late final _phone = TextEditingController(text: widget.initialPhone);
   final _password = TextEditingController();
-  final _otp = TextEditingController();
   bool _obscure = true;
   bool _loading = false;
-  bool _otpSent = false;
   String? _error;
 
   @override
   void dispose() {
     _phone.dispose();
     _password.dispose();
-    _otp.dispose();
     super.dispose();
   }
 
@@ -41,21 +38,12 @@ class _LoginScreenState extends State<LoginScreen> {
       _loading = true;
       _error = null;
     });
-    final state = context.read<AppState>();
-    final err = state.usesCloudAuth
-        ? _otpSent
-            ? await state.verifyPhoneOtp(phone: _phone.text, token: _otp.text)
-            : await state.requestPhoneOtp(phone: _phone.text, createUser: true)
-        : await state.login(_phone.text, _password.text);
+    final err =
+        await context.read<AppState>().login(_phone.text, _password.text);
     if (!mounted) return;
     setState(() => _loading = false);
     if (err != null) {
       setState(() => _error = err);
-      return;
-    }
-    if (state.usesCloudAuth && !_otpSent) {
-      setState(() => _otpSent = true);
-      AppSnack.show(context, 'أرسلنا رمز التحقق إلى هاتفك');
       return;
     }
     Navigator.of(context).popUntil((route) => route.isFirst);
@@ -112,6 +100,34 @@ class _LoginScreenState extends State<LoginScreen> {
                     ],
                   ),
                 ),
+              if (cloudAuth)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withValues(alpha: .10),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                        color: AppColors.success.withValues(alpha: .35)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.verified_user_outlined,
+                          size: 18, color: AppColors.success),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'دخول مباشر بدون رمز SMS: رقم الهاتف + كلمة المرور. '
+                          'الرقم المسجّل في admin_phones يفتح لوحة المدير كاملة تلقائياً.',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            fontSize: 11.5,
+                            height: 1.6,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               const SizedBox(height: 24),
               Form(
                 key: _formKey,
@@ -138,51 +154,29 @@ class _LoginScreenState extends State<LoginScreen> {
                       },
                     ),
                     const SizedBox(height: 14),
-                    if (!cloudAuth)
-                      TextFormField(
-                        controller: _password,
-                        autofocus: widget.initialPhone != null,
-                        obscureText: _obscure,
-                        decoration: InputDecoration(
-                          labelText: 'كلمة المرور',
-                          prefixIcon:
-                              const Icon(Icons.lock_outline_rounded, size: 20),
-                          suffixIcon: IconButton(
-                            onPressed: () =>
-                                setState(() => _obscure = !_obscure),
-                            icon: Icon(
-                              _obscure
-                                  ? Icons.visibility_off_rounded
-                                  : Icons.visibility_rounded,
-                              size: 20,
-                            ),
+                    TextFormField(
+                      controller: _password,
+                      autofocus: widget.initialPhone != null,
+                      obscureText: _obscure,
+                      decoration: InputDecoration(
+                        labelText: 'كلمة المرور',
+                        prefixIcon:
+                            const Icon(Icons.lock_outline_rounded, size: 20),
+                        suffixIcon: IconButton(
+                          onPressed: () => setState(() => _obscure = !_obscure),
+                          icon: Icon(
+                            _obscure
+                                ? Icons.visibility_off_rounded
+                                : Icons.visibility_rounded,
+                            size: 20,
                           ),
                         ),
-                        validator: (v) => (v == null || v.length < 6)
-                            ? 'كلمة المرور 6 أحرف على الأقل'
-                            : null,
-                        onFieldSubmitted: (_) => _submit(),
                       ),
-                    if (cloudAuth && _otpSent) ...[
-                      const SizedBox(height: 14),
-                      TextFormField(
-                        controller: _otp,
-                        keyboardType: TextInputType.number,
-                        textDirection: TextDirection.ltr,
-                        textAlign: TextAlign.center,
-                        maxLength: 6,
-                        decoration: const InputDecoration(
-                          labelText: 'رمز التحقق',
-                          prefixIcon: Icon(Icons.sms_outlined, size: 20),
-                          counterText: '',
-                        ),
-                        validator: (value) =>
-                            value == null || value.trim().length != 6
-                                ? 'أدخل رمز التحقق المكوّن من 6 أرقام'
-                                : null,
-                        onFieldSubmitted: (_) => _submit(),
-                      ),
-                    ],
+                      validator: (v) => (v == null || v.length < 6)
+                          ? 'كلمة المرور 6 أحرف على الأقل'
+                          : null,
+                      onFieldSubmitted: (_) => _submit(),
+                    ),
                   ],
                 ),
               ),
@@ -212,11 +206,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ],
               const SizedBox(height: 20),
               PrimaryButton(
-                label: cloudAuth
-                    ? _otpSent
-                        ? 'تأكيد الرمز والدخول'
-                        : 'إرسال رمز التحقق'
-                    : 'دخول',
+                label: 'دخول',
                 onPressed: _submit,
                 loading: _loading,
               ),

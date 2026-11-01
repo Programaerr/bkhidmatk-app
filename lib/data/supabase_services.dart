@@ -3,6 +3,16 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/utils.dart';
 import 'models.dart';
 
+/// خطأ مصادقة برسالة عربية جاهزة للعرض للمستخدم.
+class CloudAuthException implements Exception {
+  const CloudAuthException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
+}
+
 class AppNotification {
   const AppNotification({
     required this.id,
@@ -69,37 +79,101 @@ class SupabaseServices {
     return '+964${normalized.substring(1)}';
   }
 
-  Future<void> requestPhoneOtp(
-    String phone, {
-    bool createUser = false,
+  /// بريد داخلي مشتق من رقم الهاتف حتى يعمل الدخول بكلمة المرور
+  /// دون أي مزوّد SMS أو رمز OTP. المستخدم لا يرى هذا البريد أبداً.
+  static String emailForPhone(String phone) {
+    final normalized = normalizePhone(phone);
+    if (!validIraqiPhone(normalized)) {
+      throw const FormatException('أدخل رقم هاتف عراقي صحيح يبدأ بـ 07');
+    }
+    return '$normalized@jaik.app';
+  }
+
+  /// دخول مباشر برقم الهاتف وكلمة المرور — بدون رمز SMS/OTP.
+  Future<AppUser> signInWithPassword(String phone, String password) async {
+    try {
+      final response = await client.auth.signInWithPassword(
+        email: emailForPhone(phone),
+        password: password,
+      );
+      if (response.session == null) {
+        throw CloudAuthException(
+          'تعذر إنشاء جلسة الدخول. تحقق من إعدادات Supabase.',
+        );
+      }
+      return await currentProfile();
+    } catch (error) {
+      throw _friendly(error);
+    }
+  }
+
+  /// إنشاء حساب مباشر برقم الهاتف وكلمة المرور — بدون رمز SMS/OTP.
+  Future<AppUser> signUpWithPassword({
+    required String phone,
+    required String password,
     String? name,
     String? city,
     String? address,
   }) async {
-    await client.auth.signInWithOtp(
-      phone: phoneE164(phone),
-      shouldCreateUser: createUser,
-      data: {
-        if (name != null) 'name': name.trim(),
-        if (city != null) 'city': city,
-        if (address != null) 'address': address.trim(),
-        'app_phone': normalizePhone(phone),
-      },
-    );
+    try {
+      final response = await client.auth.signUp(
+        email: emailForPhone(phone),
+        password: password,
+        data: {
+          'app_phone': normalizePhone(phone),
+          if (name != null) 'name': name.trim(),
+          if (city != null) 'city': city,
+          if (address != null) 'address': address.trim(),
+        },
+      );
+      if (response.session == null) {
+        throw CloudAuthException(
+          'الحساب أُنشئ لكنه ينتظر تأكيد البريد الداخلي. في Supabase افتح '
+          'Authentication ← Sign In / Providers ← Email وأوقف '
+          '«Confirm email»، ثم سجّل الدخول.',
+        );
+      }
+      return await currentProfile();
+    } catch (error) {
+      throw _friendly(error);
+    }
   }
 
-  Future<AppUser> verifyPhoneOtp(String phone, String token) async {
-    await client.auth.verifyOTP(
-      phone: phoneE164(phone),
-      token: token.trim(),
-      type: OtpType.sms,
-    );
-    try {
-      return await currentProfile();
-    } catch (_) {
-      await client.auth.signOut();
-      rethrow;
+  Object _friendly(Object error) {
+    if (error is CloudAuthException) return error;
+    final raw = error is AuthException ? error.message : error.toString();
+    final text = raw.toLowerCase();
+    String? arabic;
+    if (text.contains('invalid login credentials') ||
+        text.contains('invalid credentials')) {
+      arabic = 'رقم الهاتف أو كلمة المرور غير صحيحة';
+    } else if (text.contains('already registered') ||
+        text.contains('already exists') ||
+        text.contains('user already')) {
+      arabic = 'هذا الرقم مسجل مسبقاً — استخدم «تسجيل الدخول»';
+    } else if (text.contains('password') &&
+        (text.contains('6') || text.contains('short'))) {
+      arabic = 'كلمة المرور 6 أحرف على الأقل';
+    } else if (text.contains('email not confirmed') ||
+        text.contains('confirmation') ||
+        text.contains('confirm')) {
+      arabic = 'الحساب ينتظر تأكيد البريد الداخلي. في Supabase افتح '
+          'Authentication ← Sign In / Providers ← Email وأوقف '
+          '«Confirm email»، ثم أعد المحاولة.';
+    } else if (text.contains('email provider') ||
+        text.contains('email signups are disabled')) {
+      arabic = 'فعّل مزوّد Email في Supabase ← Authentication ← '
+          'Sign In / Providers.';
+    } else if (text.contains('database error') ||
+        text.contains('saving new user')) {
+      arabic = 'تعذر إنشاء ملف الحساب. تأكد من تنفيذ supabase/setup.sql كاملاً '
+          'ومن وجود trigger «on_auth_user_created_jaik».';
+    } else if (text.contains('rate limit') || text.contains('too many')) {
+      arabic = 'محاولات كثيرة. انتظر دقيقة ثم أعد المحاولة.';
     }
+    return arabic == null
+        ? CloudAuthException(raw)
+        : CloudAuthException(arabic);
   }
 
   Future<AppUser> currentProfile() async {

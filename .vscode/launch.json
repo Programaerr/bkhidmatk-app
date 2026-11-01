@@ -2,19 +2,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Flutter: bkhidmatk",
-            "type": "dart",
-            "request": "launch",
-            "program": "lib/main.dart",
-            "cwd": "${workspaceFolder}",
-            "flutterMode": "debug",
-            "toolArgs": [
-                "--no-pub",
-                "--dart-define=DEV_ADMIN_PREVIEW=true"
-            ]
-        },
-        {
-            "name": "Flutter: Supabase (OTP)",
+            "name": "Flutter: Supabase (كلمة المرور)",
             "type": "dart",
             "request": "launch",
             "program": "lib/main.dart",
@@ -25,6 +13,18 @@
                 "--dart-define=DEV_ADMIN_PREVIEW=false",
                 "--dart-define=SUPABASE_URL=${env:SUPABASE_URL}",
                 "--dart-define=SUPABASE_PUBLISHABLE_KEY=${env:SUPABASE_PUBLISHABLE_KEY}"
+            ]
+        },
+        {
+            "name": "Flutter: Local preview (بدون قاعدة بيانات)",
+            "type": "dart",
+            "request": "launch",
+            "program": "lib/main.dart",
+            "cwd": "${workspaceFolder}",
+            "flutterMode": "debug",
+            "toolArgs": [
+                "--no-pub",
+                "--dart-define=DEV_ADMIN_PREVIEW=true"
             ]
         }
     ]

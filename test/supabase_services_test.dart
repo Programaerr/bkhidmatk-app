@@ -8,7 +8,7 @@ void main() {
       expect(SupabaseServices.phoneE164('+964 770 000 0000'), '+9647700000000');
     });
 
-    test('rejects invalid numbers before requesting an OTP', () {
+    test('rejects invalid numbers before signing in', () {
       expect(
         () => SupabaseServices.phoneE164('12345'),
         throwsFormatException,

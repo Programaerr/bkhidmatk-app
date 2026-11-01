@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../core/utils.dart';
 import '../data/database.dart';
 import '../data/models.dart';
 import '../data/repository.dart';
@@ -86,8 +87,15 @@ class AppState extends ChangeNotifier {
   }
 
   Future<String?> login(String phone, String password) async {
-    if (usesCloudAuth) {
-      return 'استخدم رمز التحقق المرسل إلى هاتفك لتسجيل الدخول';
+    final cloud = cloudServices;
+    if (cloud != null) {
+      try {
+        user = await cloud.signInWithPassword(normalizePhone(phone), password);
+        notifyListeners();
+        return null;
+      } catch (error) {
+        return error.toString();
+      }
     }
     final found = await repo.findUserByPhone(phone);
     if (found == null) return 'لا يوجد حساب مسجل بهذا الرقم';
@@ -101,50 +109,6 @@ class AppState extends ChangeNotifier {
     return null;
   }
 
-  Future<String?> requestPhoneOtp({
-    required String phone,
-    required bool createUser,
-    String? name,
-    String? city,
-    String? address,
-  }) async {
-    final cloud = cloudServices;
-    if (cloud == null) {
-      return 'تسجيل الدخول برمز الهاتف يتطلب الاتصال بـ Supabase';
-    }
-    try {
-      await cloud.requestPhoneOtp(
-        phone,
-        createUser: createUser,
-        name: name,
-        city: city,
-        address: address,
-      );
-      return null;
-    } catch (error) {
-      return error.toString();
-    }
-  }
-
-  Future<String?> verifyPhoneOtp({
-    required String phone,
-    required String token,
-  }) async {
-    final cloud = cloudServices;
-    if (cloud == null) {
-      return 'تسجيل الدخول برمز الهاتف يتطلب الاتصال بـ Supabase';
-    }
-    try {
-      user = await cloud.verifyPhoneOtp(phone, token);
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt('user_id', user!.id!);
-      notifyListeners();
-      return null;
-    } catch (error) {
-      return error.toString();
-    }
-  }
-
   Future<String?> register({
     required String name,
     required String phone,
@@ -152,8 +116,21 @@ class AppState extends ChangeNotifier {
     String? city,
     String? address,
   }) async {
-    if (usesCloudAuth) {
-      return 'أنشئ الحساب وتحقق من رقم الهاتف عبر رمز SMS';
+    final cloud = cloudServices;
+    if (cloud != null) {
+      try {
+        user = await cloud.signUpWithPassword(
+          phone: normalizePhone(phone),
+          password: password,
+          name: name,
+          city: city,
+          address: address,
+        );
+        notifyListeners();
+        return null;
+      } catch (error) {
+        return error.toString();
+      }
     }
     if (await repo.phoneExists(phone)) return 'رقم الهاتف مستخدم مسبقاً';
     // الرقم المُضاف من الإدارة للتوظيف → الحساب يُسجّل كـ (حرفي).
