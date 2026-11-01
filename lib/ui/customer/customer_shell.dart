@@ -8,9 +8,14 @@ import 'profile_tab.dart';
 import 'services_tab.dart';
 
 class CustomerShell extends StatefulWidget {
-  const CustomerShell({super.key, this.adminPreview = false});
+  const CustomerShell({
+    super.key,
+    this.adminPreview = false,
+    this.onOpenAdminDashboard,
+  });
 
   final bool adminPreview;
+  final VoidCallback? onOpenAdminDashboard;
 
   @override
   State<CustomerShell> createState() => _CustomerShellState();
@@ -53,6 +58,7 @@ class _CustomerShellState extends State<CustomerShell> {
       OurWorkTab(refreshTick: _tick),
       ProfileTab(
         onOpenBookings: () => setState(() => _index = 2),
+        onOpenAdminDashboard: widget.onOpenAdminDashboard,
       ),
     ];
 

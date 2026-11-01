@@ -14,9 +14,11 @@ class ProfileTab extends StatefulWidget {
     super.key,
     required this.onOpenBookings,
     this.workerMode = false,
+    this.onOpenAdminDashboard,
   });
 
   final VoidCallback onOpenBookings;
+  final VoidCallback? onOpenAdminDashboard;
 
   /// وضع الموظف بالتوضيف: يُخفى كل ما لا يخصه (حجوزات ووصولات).
   final bool workerMode;
@@ -291,6 +293,15 @@ class _ProfileTabState extends State<ProfileTab>
                     onTap: widget.onOpenBookings,
                   ),
                   const Divider(height: 1),
+                  if (widget.onOpenAdminDashboard != null) ...[
+                    _MenuTile(
+                      icon: Icons.space_dashboard_rounded,
+                      title: 'لوحة التحكم',
+                      subtitle: 'إدارة التطبيق والحجوزات',
+                      onTap: widget.onOpenAdminDashboard!,
+                    ),
+                    const Divider(height: 1),
+                  ],
                   _MenuTile(
                     icon: Icons.receipt_long_rounded,
                     title: 'وصولات الدفع',

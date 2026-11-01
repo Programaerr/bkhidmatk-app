@@ -53,7 +53,16 @@ class _RootGate extends StatelessWidget {
     final state = context.watch<AppState>();
     if (state.booting) return const SplashScreen();
     if (state.user == null) return const WelcomeScreen();
-    if (state.isAdmin) return const AdminShell();
+    if (state.isAdmin) {
+      return CustomerShell(
+        onOpenAdminDashboard: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const AdminShell(showBackToApp: true),
+          ),
+        ),
+      );
+    }
     // الموظف بالتوضيف يرى فقط ما تسمح به الإدارة.
     if (state.isWorker) return const WorkerShell();
     return const CustomerShell();
