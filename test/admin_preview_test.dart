@@ -76,7 +76,7 @@ void main() {
       ),
     );
     expect(find.byType(CustomerShell), findsOneWidget);
-    expect(find.text('ريلز'), findsOneWidget);
+    expect(find.text('أعمالنا'), findsOneWidget);
 
     await tester.tap(find.text('حسابي'));
     await tester.pumpAndSettle();
@@ -102,7 +102,7 @@ void main() {
     await tester.tap(find.text('واجهة الزبون'));
     await tester.pumpAndSettle();
     expect(find.byType(CustomerShell), findsOneWidget);
-    await tester.tap(find.text('ريلز'));
+    await tester.tap(find.text('أعمالنا'));
     await tester.pumpAndSettle();
     expect(find.text('فيديو جديد'), findsOneWidget);
     await tester.tap(find.byIcon(Icons.favorite_border_rounded).first);

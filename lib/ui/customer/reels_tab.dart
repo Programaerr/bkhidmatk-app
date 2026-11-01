@@ -5,15 +5,31 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
+import 'package:webview_all/webview_all.dart';
 
+import '../../core/reel_video_link.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
-import '../../core/reel_video_link.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
 import '../widgets/realtime_refresh.dart';
 import '../widgets/ui.dart';
-import 'package:webview_all/webview_all.dart';
+
+/// تثبيت سريع للصفحة بعد سحبة قصيرة، مثل تيك توك.
+class _ReelScrollPhysics extends PageScrollPhysics {
+  const _ReelScrollPhysics({super.parent});
+
+  @override
+  _ReelScrollPhysics applyTo(ScrollPhysics? ancestor) =>
+      _ReelScrollPhysics(parent: buildParent(ancestor));
+
+  @override
+  SpringDescription get spring => const SpringDescription(
+        mass: 0.4,
+        stiffness: 260,
+        damping: 22,
+      );
+}
 
 class ReelsTab extends StatefulWidget {
   const ReelsTab({super.key, this.active = true});
@@ -29,11 +45,33 @@ class _ReelsTabState extends State<ReelsTab> with RealtimeRefresh<ReelsTab> {
   List<OurWork> _works = const [];
   int _currentPage = 0;
   bool _loaded = false;
+  bool _muted = true;
+  final Set<int> _viewed = <int>{};
 
   @override
   void initState() {
     super.initState();
     _load();
+    if (widget.active) _enterReelsMode();
+  }
+
+  @override
+  void didUpdateWidget(covariant ReelsTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!oldWidget.active && widget.active) {
+      _enterReelsMode();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _recordView(_currentPage);
+      });
+    } else if (oldWidget.active && !widget.active) {
+      _leaveReelsMode();
+    }
+  }
+
+  @override
+  void dispose() {
+    _leaveReelsMode();
+    super.dispose();
   }
 
   @override
@@ -48,6 +86,50 @@ class _ReelsTabState extends State<ReelsTab> with RealtimeRefresh<ReelsTab> {
         viewerId: state.user?.id,
       );
     });
+  }
+
+  /// شاشة الريلز عمودية مثل تيك توك، ومشاهدة الفيديو العريض تتم من زر مستقل.
+  void _enterReelsMode() {
+    _applySystemBars(reels: true);
+    if (kIsWeb) return;
+    SystemChrome.setPreferredOrientations(const [
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]).catchError((error) {
+      debugPrint('Failed to lock reels orientation: $error');
+    });
+  }
+
+  void _leaveReelsMode() {
+    _applySystemBars(reels: false);
+    if (kIsWeb) return;
+    SystemChrome.setPreferredOrientations(const [
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]).catchError((error) {
+      debugPrint('Failed to restore app orientation: $error');
+    });
+  }
+
+  void _applySystemBars({required bool reels}) {
+    if (kIsWeb) return;
+    SystemChrome.setSystemUIOverlayStyle(
+      reels
+          ? const SystemUiOverlayStyle(
+              statusBarColor: Colors.transparent,
+              statusBarIconBrightness: Brightness.light,
+              systemNavigationBarColor: Colors.black,
+              systemNavigationBarIconBrightness: Brightness.light,
+            )
+          : const SystemUiOverlayStyle(
+              statusBarColor: Colors.transparent,
+              statusBarIconBrightness: Brightness.dark,
+              systemNavigationBarColor: Colors.transparent,
+              systemNavigationBarIconBrightness: Brightness.dark,
+            ),
+    );
   }
 
   Future<void> _toggleLike(int index) async {
@@ -81,14 +163,18 @@ class _ReelsTabState extends State<ReelsTab> with RealtimeRefresh<ReelsTab> {
     final work = _works[index];
     if (work.id == null) return;
     final repository = context.read<AppState>().repo;
+    final sheetTheme = AppTheme.dark();
     final count = await showModalBottomSheet<int>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: sheetTheme.colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (_) => _ReelCommentsSheet(work: work),
+      builder: (_) => Theme(
+        data: sheetTheme,
+        child: _ReelCommentsSheet(work: work),
+      ),
     );
     if (!mounted) return;
     var actualCount = count;
@@ -111,9 +197,12 @@ class _ReelsTabState extends State<ReelsTab> with RealtimeRefresh<ReelsTab> {
     if (mounted) AppSnack.show(context, 'تم نسخ رابط الفيديو');
   }
 
-  void _incrementViews(OurWork work) {
+  void _recordView(int index) {
+    if (!widget.active || index < 0 || index >= _works.length) return;
+    final work = _works[index];
     final id = work.id;
-    if (id == null) return;
+    if (id == null || !_viewed.add(id)) return;
+    setState(() => _works[index] = work.copyWith(views: work.views + 1));
     context.read<AppState>().repo.incrementWorkViews(id).catchError((error) {
       debugPrint('Failed to record reel view: $error');
     });
@@ -122,79 +211,175 @@ class _ReelsTabState extends State<ReelsTab> with RealtimeRefresh<ReelsTab> {
   @override
   Widget build(BuildContext context) {
     final english = context.watch<AppState>().english;
-    return FutureBuilder<List<OurWork>>(
-      future: _future,
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return _ReelsMessage(
-            icon: Icons.error_outline_rounded,
-            title: 'تعذر تحميل الريلز',
-            subtitle: 'تحقق من اتصال الإنترنت ثم أعد المحاولة.',
-            action: FilledButton(
-              onPressed: _load,
-              child: const Text('إعادة المحاولة'),
-            ),
-          );
-        }
-        if (!_loaded && snapshot.hasData) {
-          _works = snapshot.data!;
-          _loaded = true;
-          if (_currentPage >= _works.length) {
-            _currentPage = _works.isEmpty ? 0 : _works.length - 1;
-          }
-        }
-        if (snapshot.connectionState == ConnectionState.waiting && !_loaded) {
-          return const Center(
-            child: CircularProgressIndicator(color: AppColors.gold),
-          );
-        }
-        if (_works.isEmpty) {
-          return const _ReelsMessage(
-            icon: Icons.video_library_outlined,
-            title: 'لا توجد ريلز حالياً',
-            subtitle: 'ستظهر هنا الفيديوهات التي تنشرها الإدارة.',
-          );
-        }
-        return Stack(
-          fit: StackFit.expand,
-          children: [
-            PageView.builder(
-              key: const PageStorageKey('customer-reels'),
-              scrollDirection: Axis.vertical,
-              itemCount: _works.length,
-              onPageChanged: (index) {
-                setState(() => _currentPage = index);
-                _incrementViews(_works[index]);
-              },
-              itemBuilder: (context, index) => _ReelPage(
-                key: ValueKey(_works[index].id ?? index),
-                work: _works[index],
-                active: widget.active && index == _currentPage,
-                english: english,
-                onLike: () => _toggleLike(index),
-                onComments: () => _openComments(index),
-                onShare: () => _share(_works[index]),
+    return ColoredBox(
+      color: Colors.black,
+      child: FutureBuilder<List<OurWork>>(
+        future: _future,
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return _ReelsMessage(
+              icon: Icons.error_outline_rounded,
+              title: 'تعذر تحميل الأعمال',
+              subtitle: 'تحقق من اتصال الإنترنت ثم أعد المحاولة.',
+              action: FilledButton(
+                onPressed: _load,
+                child: const Text('إعادة المحاولة'),
               ),
-            ),
-            const PositionedDirectional(
-              top: 10,
-              end: 18,
-              child: SafeArea(
-                bottom: false,
-                child: Text(
-                  'ريلز',
-                  style: TextStyle(
+            );
+          }
+          if (!_loaded && snapshot.hasData) {
+            _works = snapshot.data!;
+            _loaded = true;
+            if (_currentPage >= _works.length) {
+              _currentPage = _works.isEmpty ? 0 : _works.length - 1;
+            }
+          }
+          if (snapshot.connectionState == ConnectionState.waiting && !_loaded) {
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.gold),
+            );
+          }
+          if (_works.isEmpty) {
+            return const _ReelsMessage(
+              icon: Icons.video_library_outlined,
+              title: 'لا توجد أعمال منشورة حالياً',
+              subtitle: 'ستظهر هنا أعمال جايك وفيديوهاتها قريباً.',
+            );
+          }
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final width =
+                  constraints.maxWidth >= 620 ? 560.0 : constraints.maxWidth;
+              return Center(
+                child: SizedBox(
+                  width: width,
+                  height: constraints.maxHeight,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      PageView.builder(
+                        key: const PageStorageKey('customer-reels'),
+                        scrollDirection: Axis.vertical,
+                        physics: const _ReelScrollPhysics(),
+                        allowImplicitScrolling: true,
+                        itemCount: _works.length,
+                        onPageChanged: (index) {
+                          setState(() => _currentPage = index);
+                          _recordView(index);
+                        },
+                        itemBuilder: (context, index) => _ReelPage(
+                          key: ValueKey(_works[index].id ?? index),
+                          work: _works[index],
+                          active: widget.active && index == _currentPage,
+                          nearby: (index - _currentPage).abs() == 1,
+                          muted: _muted,
+                          english: english,
+                          onLike: () => _toggleLike(index),
+                          onComments: () => _openComments(index),
+                          onShare: () => _share(_works[index]),
+                          onMutedChanged: (value) {
+                            if (_muted != value) setState(() => _muted = value);
+                          },
+                        ),
+                      ),
+                      _ReelsTopBar(
+                        muted: _muted,
+                        onMutedChanged: (value) {
+                          if (_muted != value) setState(() => _muted = value);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _ReelsTopBar extends StatelessWidget {
+  const _ReelsTopBar({required this.muted, required this.onMutedChanged});
+
+  final bool muted;
+  final ValueChanged<bool> onMutedChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return PositionedDirectional(
+      top: 0,
+      start: 0,
+      end: 0,
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 8, 14, 8),
+          child: Row(
+            children: [
+              Container(
+                width: 31,
+                height: 31,
+                decoration: const BoxDecoration(
+                  color: AppColors.gold,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.play_arrow_rounded,
+                  color: AppColors.ink,
+                  size: 21,
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'جايك',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                      height: 1.1,
+                      shadows: [Shadow(color: Colors.black87, blurRadius: 8)],
+                    ),
+                  ),
+                  Text(
+                    'معرض الأعمال',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w700,
+                      height: 1.2,
+                    ),
+                  ),
+                ],
+              ),
+              const Spacer(),
+              GestureDetector(
+                onTap: () => onMutedChanged(!muted),
+                behavior: HitTestBehavior.opaque,
+                child: Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.black.withValues(alpha: .32),
+                    border: Border.all(color: Colors.white24),
+                  ),
+                  child: Icon(
+                    muted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
                     color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
-                    shadows: [Shadow(color: Colors.black54, blurRadius: 8)],
+                    size: 19,
                   ),
                 ),
               ),
-            ),
-          ],
-        );
-      },
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -219,15 +404,27 @@ class _ReelsMessage extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 48, color: AppColors.gold),
+              Icon(icon, size: 46, color: AppColors.gold),
               const SizedBox(height: 12),
-              Text(title,
-                  style: Theme.of(context).textTheme.titleMedium,
-                  textAlign: TextAlign.center),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
               const SizedBox(height: 6),
-              Text(subtitle,
-                  style: Theme.of(context).textTheme.bodySmall,
-                  textAlign: TextAlign.center),
+              Text(
+                subtitle,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white60,
+                  fontSize: 12,
+                  height: 1.6,
+                ),
+              ),
               if (action != null) ...[
                 const SizedBox(height: 14),
                 action!,
@@ -243,245 +440,171 @@ class _ReelPage extends StatefulWidget {
     super.key,
     required this.work,
     required this.active,
+    required this.nearby,
+    required this.muted,
     required this.english,
     required this.onLike,
     required this.onComments,
     required this.onShare,
+    required this.onMutedChanged,
   });
 
   final OurWork work;
   final bool active;
+  final bool nearby;
+  final bool muted;
   final bool english;
   final VoidCallback onLike;
   final VoidCallback onComments;
   final VoidCallback onShare;
+  final ValueChanged<bool> onMutedChanged;
 
   @override
   State<_ReelPage> createState() => _ReelPageState();
 }
 
-class _ReelPageState extends State<_ReelPage> {
+class _ReelPageState extends State<_ReelPage>
+    with SingleTickerProviderStateMixin {
   VideoPlayerController? _controller;
+  WebViewController? _web;
+  late final AnimationController _heart;
   bool _loading = false;
   bool _failed = false;
-  bool _muted = true;
-  int _initialization = 0;
-  WebViewController? _webController;
-  bool _webLoaded = false;
-  bool _isPaused = false;
-  bool _showPlaybackControls = false;
-  bool _isLandscape = false;
-  bool _orientationBusy = false;
-  double _zoomScale = 1;
-  double _zoomStartScale = 1;
-  double _seekStartProgress = 0;
-  double _seekDelta = 0;
-  double _seekWidth = 0;
-  double? _seekPreviewProgress;
-  String? _seekFeedback;
-  Timer? _controlsTimer;
-  Timer? _seekFeedbackTimer;
-  Timer? _webPositionTimer;
-  int _webPositionSeconds = 0;
-
-  Future<void> _toggleOrientation() async {
-    if (_orientationBusy) return;
-    if (kIsWeb) {
-      AppSnack.show(
-        context,
-        widget.english
-            ? 'Screen rotation is available in the mobile app'
-            : 'تدوير الشاشة متاح عند فتح التطبيق على الهاتف',
-      );
-      return;
-    }
-
-    final landscape = !_isLandscape;
-    setState(() => _orientationBusy = true);
-    try {
-      await SystemChrome.setPreferredOrientations(
-        landscape
-            ? const [
-                DeviceOrientation.landscapeLeft,
-                DeviceOrientation.landscapeRight,
-              ]
-            : const [
-                DeviceOrientation.portraitUp,
-                DeviceOrientation.portraitDown,
-              ],
-      );
-      await SystemChrome.setEnabledSystemUIMode(
-        landscape ? SystemUiMode.immersiveSticky : SystemUiMode.edgeToEdge,
-      );
-      if (mounted) setState(() => _isLandscape = landscape);
-    } catch (error) {
-      debugPrint('Failed to change reel orientation: $error');
-      if (mounted) {
-        AppSnack.show(
-          context,
-          widget.english
-              ? 'Could not rotate the screen on this device'
-              : 'تعذر تدوير الشاشة على هذا الجهاز',
-          error: true,
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _orientationBusy = false);
-    }
-  }
-
-  void _restorePortrait() {
-    if (!_isLandscape) return;
-    _isLandscape = false;
-    SystemChrome.setPreferredOrientations(const [
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]).catchError((error) {
-      debugPrint('Failed to restore app orientation: $error');
-    });
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge).catchError(
-      (error) => debugPrint('Failed to restore system UI: $error'),
-    );
-  }
-
-  void _startSeeking() {
-    final video = _controller;
-    if (_isDirectVideo &&
-        video != null &&
-        video.value.isInitialized &&
-        video.value.duration > Duration.zero) {
-      _seekStartProgress = video.value.position.inMicroseconds /
-          video.value.duration.inMicroseconds;
-    } else {
-      _seekStartProgress = (_webPositionSeconds % 60) / 60;
-    }
-    _seekDelta = 0;
-    _seekWidth = 0;
-    _seekPreviewProgress = _seekStartProgress;
-  }
-
-  void _updateSeeking(DragUpdateDetails details, double width) {
-    if (width <= 0) return;
-    _seekWidth = width;
-    final isRtl = Directionality.of(context) == TextDirection.rtl;
-    _seekDelta += details.delta.dx * (isRtl ? -1 : 1);
-    setState(() {
-      _seekPreviewProgress =
-          (_seekStartProgress + _seekDelta / width).clamp(0.0, 1.0);
-    });
-  }
-
-  Future<void> _finishSeeking() async {
-    final video = _controller;
-    final progress = _seekPreviewProgress;
-    final delta = _seekDelta;
-    setState(() => _seekPreviewProgress = null);
-
-    if (_isDirectVideo &&
-        video != null &&
-        video.value.isInitialized &&
-        progress != null) {
-      final duration = video.value.duration;
-      await video.seekTo(Duration(
-        microseconds: (duration.inMicroseconds * progress).round(),
-      ));
-      return;
-    }
-
-    final seconds = _seekWidth <= 0 ? 0 : (delta / _seekWidth * 60).round();
-    if (seconds != 0) await _seek(Duration(seconds: seconds));
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    if (!_isDirectVideo) {
-      if (widget.active) _initializeWebView();
-    } else if (widget.active) {
-      _initialize();
-    }
-  }
-
-  @override
-  void didUpdateWidget(covariant _ReelPage oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.work.videoUrl != widget.work.videoUrl) {
-      _disposeController();
-      _webController = null;
-      _webLoaded = false;
-      _failed = false;
-      _isPaused = false;
-      _zoomScale = 1;
-      if (widget.active) {
-        if (_isDirectVideo) {
-          _initialize();
-        } else {
-          _initializeWebView();
-        }
-      }
-      return;
-    }
-    if (oldWidget.active != widget.active) {
-      if (widget.active) {
-        if (_isDirectVideo) {
-          if (_controller == null && !_failed) _initialize();
-          _controller?.play();
-          _isPaused = false;
-        } else {
-          if (_webController == null && !_failed) {
-            _initializeWebView();
-          } else {
-            _isPaused = false;
-            _controlEmbeddedVideo('playVideo');
-            _startWebPositionTimer();
-          }
-        }
-      } else {
-        _controller?.pause();
-        _controlEmbeddedVideo('pauseVideo');
-        _isPaused = true;
-        _webPositionTimer?.cancel();
-        _restorePortrait();
-      }
-    }
-  }
+  bool _paused = false;
+  bool _wasPlayingBeforeLongPress = false;
+  int _token = 0;
 
   bool get _isDirectVideo {
     final uri = Uri.tryParse(widget.work.videoUrl);
     return uri != null && ReelVideoLink.isDirectVideo(uri);
   }
 
-  Future<void> _initialize() async {
-    if (!_isDirectVideo || !widget.active || _loading) return;
-    final token = ++_initialization;
+  bool get _shouldPrepare => widget.active || (widget.nearby && _isDirectVideo);
+
+  @override
+  void initState() {
+    super.initState();
+    _heart = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    );
+    if (_shouldPrepare) _prepare();
+  }
+
+  @override
+  void didUpdateWidget(covariant _ReelPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.work.videoUrl != widget.work.videoUrl) {
+      _resetPlayback();
+      if (_shouldPrepare) _prepare();
+      return;
+    }
+    if (oldWidget.muted != widget.muted) _applyMute();
+    final becameActive = !oldWidget.active && widget.active;
+    final becameNearby = !oldWidget.nearby && widget.nearby;
+    if (becameActive) {
+      _resumePlayback();
+    } else if (oldWidget.active && !widget.active) {
+      _pausePlayback();
+    }
+    if (becameNearby && !widget.active) _prepare();
+  }
+
+  @override
+  void dispose() {
+    _token++;
+    _heart.dispose();
+    final video = _controller;
+    _controller = null;
+    if (video != null) video.dispose();
+    super.dispose();
+  }
+
+  void _prepare() {
+    if (_failed || _loading) return;
+    if (_isDirectVideo) {
+      if (_controller == null) unawaited(_initVideo());
+    } else if (widget.active && _web == null) {
+      unawaited(_initWeb());
+    }
+  }
+
+  Future<void> _resumePlayback() async {
+    if (_isDirectVideo) {
+      final video = _controller;
+      if (video == null || !video.value.isInitialized) {
+        await _initVideo();
+        return;
+      }
+      await video.setVolume(widget.muted ? 0 : 1);
+      await video.play();
+      if (mounted) setState(() => _paused = false);
+    } else {
+      if (_web == null) {
+        await _initWeb();
+        return;
+      }
+      _webAction('play');
+      if (mounted) setState(() => _paused = false);
+    }
+  }
+
+  Future<void> _pausePlayback() async {
+    final video = _controller;
+    if (video != null && video.value.isInitialized && video.value.isPlaying) {
+      await video.pause();
+    }
+    _webAction('pause');
+    if (mounted && !_paused) setState(() => _paused = true);
+  }
+
+  Future<void> _initVideo() async {
+    if (_loading) return;
     final uri = Uri.tryParse(widget.work.videoUrl);
     if (uri == null || !uri.hasScheme) {
-      setState(() => _failed = true);
+      if (mounted) setState(() => _failed = true);
       return;
     }
 
+    final token = ++_token;
     setState(() {
       _loading = true;
       _failed = false;
     });
-    final controller = VideoPlayerController.networkUrl(uri);
-    _controller = controller;
+    final video = VideoPlayerController.networkUrl(uri);
+    _controller = video;
     try {
-      await controller.initialize();
-      await controller.setLooping(true);
-      await controller.setVolume(_muted ? 0 : 1);
-      if (!mounted || token != _initialization || !widget.active) {
-        await controller.dispose();
-        if (identical(_controller, controller)) _controller = null;
+      await video.initialize().timeout(const Duration(seconds: 30));
+      await video.setLooping(true);
+      await video.setVolume(widget.muted ? 0 : 1);
+      if (!mounted || token != _token) {
+        if (identical(_controller, video)) {
+          _controller = null;
+          await video.dispose();
+        }
         return;
       }
-      await controller.play();
-      setState(() => _loading = false);
+      if (widget.active) {
+        await video.play();
+      } else {
+        await video.pause();
+      }
+      if (!mounted || token != _token) return;
+      setState(() {
+        _loading = false;
+        _paused = !widget.active;
+      });
     } catch (error) {
       debugPrint('Failed to initialize reel video: $error');
-      await controller.dispose();
-      if (!mounted || token != _initialization) return;
-      _controller = null;
+      if (identical(_controller, video)) {
+        _controller = null;
+        try {
+          await video.dispose();
+        } catch (disposeError) {
+          debugPrint('Failed to dispose broken reel video: $disposeError');
+        }
+      }
+      if (!mounted || token != _token) return;
       setState(() {
         _loading = false;
         _failed = true;
@@ -489,19 +612,18 @@ class _ReelPageState extends State<_ReelPage> {
     }
   }
 
-  Future<void> _initializeWebView() async {
-    if (_isDirectVideo || !widget.active || _webController != null) return;
+  Future<void> _initWeb() async {
+    if (_loading || _web != null) return;
     final target = ReelVideoLink.playbackUri(widget.work.videoUrl);
     if (target == null) {
-      setState(() => _failed = true);
+      if (mounted) setState(() => _failed = true);
       return;
     }
 
-    final token = ++_initialization;
+    final token = ++_token;
     setState(() {
       _loading = true;
       _failed = false;
-      _webLoaded = false;
     });
 
     try {
@@ -510,506 +632,514 @@ class _ReelPageState extends State<_ReelPage> {
       await controller.setBackgroundColor(Colors.black);
       await controller.setNavigationDelegate(
         NavigationDelegate(
-          onPageStarted: (_) {
-            if (mounted && token == _initialization) {
-              setState(() {
-                _webLoaded = false;
-                _loading = true;
-              });
-            }
-          },
           onPageFinished: (_) {
-            if (!mounted || token != _initialization) return;
+            if (!mounted || token != _token) return;
             setState(() {
-              _webLoaded = true;
               _loading = false;
-              _isPaused = false;
-              _webPositionSeconds = 0;
+              _paused = false;
             });
-            _controlEmbeddedVideo('playVideo');
-            _startWebPositionTimer();
+            _webAction('play');
           },
           onWebResourceError: (error) {
-            if (error.isForMainFrame == true &&
-                mounted &&
-                token == _initialization) {
+            if (error.isForMainFrame == true && mounted && token == _token) {
               setState(() {
                 _failed = true;
                 _loading = false;
+                _web = null;
               });
             }
           },
-          onNavigationRequest: (request) {
-            final uri = Uri.tryParse(request.url);
-            if (uri == null) return NavigationDecision.prevent;
-            if (uri.isScheme('http') ||
-                uri.isScheme('https') ||
-                uri.isScheme('about') ||
-                uri.isScheme('data') ||
-                uri.isScheme('blob')) {
-              return NavigationDecision.navigate;
-            }
-            return NavigationDecision.prevent;
-          },
+          onNavigationRequest: _allowNavigation,
         ),
       );
-      if (!mounted || token != _initialization || !widget.active) return;
-      _webController = controller;
+      if (!mounted || token != _token) return;
+      _web = controller;
       final source = Uri.tryParse(widget.work.videoUrl);
       if (source != null && target.toString() != source.toString()) {
-        await controller.loadHtmlString(_embedPage(target));
+        await controller.loadHtmlString(_reelEmbedPage(target));
       } else {
         await controller.loadRequest(target);
       }
     } catch (error) {
       debugPrint('Failed to load embedded reel: $error');
-      if (!mounted || token != _initialization) return;
+      if (!mounted || token != _token) return;
       setState(() {
         _failed = true;
         _loading = false;
+        _web = null;
       });
     }
   }
 
-  String _embedPage(Uri target) {
-    final escapedUrl = target
-        .toString()
-        .replaceAll('&', '&amp;')
-        .replaceAll('"', '&quot;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;');
-    return '<!doctype html><html><head><meta name="viewport" '
-        'content="width=device-width, initial-scale=1, maximum-scale=1">'
-        '<style>html,body{margin:0;width:100%;height:100%;overflow:hidden;'
-        'background:#000}iframe{border:0;width:100%;height:100%;'
-        'position:absolute;inset:0}</style></head><body>'
-        '<iframe id="reel-player" src="$escapedUrl" '
-        'allow="autoplay; encrypted-media; picture-in-picture; fullscreen" '
-        'allowfullscreen></iframe></body></html>';
+  static NavigationDecision _allowNavigation(NavigationRequest request) {
+    final uri = Uri.tryParse(request.url);
+    if (uri == null) return NavigationDecision.prevent;
+    const allowed = {'http', 'https', 'about', 'data', 'blob'};
+    return allowed.contains(uri.scheme)
+        ? NavigationDecision.navigate
+        : NavigationDecision.prevent;
   }
 
-  void _controlEmbeddedVideo(String action) {
-    final controller = _webController;
-    if (controller == null || !_webLoaded) return;
-    final shouldPlay = action.startsWith('play');
-    controller
-        .runJavaScript(
-      "document.querySelectorAll('video').forEach((video) => { "
-      "video.muted = $_muted; "
-      'if ($shouldPlay) video.play().catch(() => {}); '
-      "else video.pause(); "
-      '});'
-      "document.querySelectorAll('iframe').forEach((frame) => { "
-      "frame.contentWindow?.postMessage(JSON.stringify({"
-      "event:'command',func:'$action',args:[]"
-      "}), '*'); "
-      '});',
-    )
-        .catchError((error) {
-      debugPrint('Embedded video $action request failed: $error');
+  void _webAction(String action) {
+    final controller = _web;
+    if (controller == null) return;
+    final muted = widget.muted ? 'true' : 'false';
+    final String js;
+    switch (action) {
+      case 'play':
+        js = "document.querySelectorAll('video').forEach((v) => {"
+            "v.muted = $muted; v.play().catch(() => {});"
+            '});'
+            "document.querySelectorAll('iframe').forEach((f) => {"
+            "f.contentWindow?.postMessage(JSON.stringify("
+            "{event:'command',func:'playVideo',args:[]}),'*');"
+            '});';
+      case 'pause':
+        js = "document.querySelectorAll('video').forEach((v) => v.pause());"
+            "document.querySelectorAll('iframe').forEach((f) => {"
+            "f.contentWindow?.postMessage(JSON.stringify("
+            "{event:'command',func:'pauseVideo',args:[]}),'*');"
+            '});';
+      default:
+        final func = widget.muted ? 'mute' : 'unMute';
+        js = "document.querySelectorAll('video').forEach((v) => {"
+            "v.muted = $muted;"
+            '});'
+            "document.querySelectorAll('iframe').forEach((f) => {"
+            "f.contentWindow?.postMessage(JSON.stringify("
+            "{event:'command',func:'$func',args:[]}),'*');"
+            '});';
+    }
+    controller.runJavaScript(js).catchError((error) {
+      debugPrint('Embedded reel action $action failed: $error');
     });
   }
 
-  void _disposeController() {
-    _initialization++;
-    final controller = _controller;
+  void _applyMute() {
+    final video = _controller;
+    if (video != null && video.value.isInitialized) {
+      video.setVolume(widget.muted ? 0 : 1);
+    }
+    _webAction('mute');
+  }
+
+  void _resetPlayback() {
+    _token++;
+    final video = _controller;
     _controller = null;
-    if (controller != null) controller.dispose();
-    _webController = null;
-    _webLoaded = false;
+    if (video != null) video.dispose();
+    _web = null;
+    _loading = false;
+    _failed = false;
+    _paused = false;
   }
 
-  @override
-  void dispose() {
-    _controlsTimer?.cancel();
-    _seekFeedbackTimer?.cancel();
-    _webPositionTimer?.cancel();
-    if (_isLandscape) {
-      _restorePortrait();
-    }
-    _disposeController();
-    super.dispose();
-  }
-
-  Future<void> _toggleSound() async {
-    final controller = _controller;
-    final muted = !_muted;
-    if (_isDirectVideo) {
-      if (controller == null) return;
-      await controller.setVolume(muted ? 0 : 1);
-    } else {
-      final webController = _webController;
-      if (webController == null) return;
-      await webController.runJavaScript(
-        "document.querySelectorAll('video').forEach((video) { "
-        'video.muted = ${muted ? 'true' : 'false'}; '
-        '});',
-      );
-    }
-    if (mounted) setState(() => _muted = muted);
+  void _retry() {
+    if (_loading) return;
+    setState(() {
+      _failed = false;
+      _loading = false;
+      _web = null;
+    });
+    _prepare();
   }
 
   Future<void> _togglePlayback() async {
+    if (_failed) return;
     if (_isDirectVideo) {
-      final controller = _controller;
-      if (controller == null || !controller.value.isInitialized) return;
-      if (controller.value.isPlaying) {
-        await controller.pause();
+      final video = _controller;
+      if (video == null || !video.value.isInitialized) return;
+      if (video.value.isPlaying) {
+        await video.pause();
+        if (mounted) setState(() => _paused = true);
       } else {
-        await controller.play();
+        await video.play();
+        if (mounted) setState(() => _paused = false);
       }
-      if (!mounted) return;
-      setState(() => _isPaused = !controller.value.isPlaying);
     } else {
-      final nextPaused = !_isPaused;
-      _controlEmbeddedVideo(nextPaused ? 'pauseVideo' : 'playVideo');
-      if (nextPaused) {
-        _webPositionTimer?.cancel();
-      } else {
-        _startWebPositionTimer();
-      }
-      if (mounted) setState(() => _isPaused = nextPaused);
+      final next = !_paused;
+      _webAction(next ? 'pause' : 'play');
+      if (mounted) setState(() => _paused = next);
     }
-    if (mounted) _revealPlaybackControls();
   }
 
-  Future<void> _seek(Duration offset) async {
-    if (_isDirectVideo) {
-      final controller = _controller;
-      if (controller == null || !controller.value.isInitialized) return;
-      final target = controller.value.position + offset;
-      final end = controller.value.duration;
-      await controller.seekTo(
-        target < Duration.zero ? Duration.zero : (target > end ? end : target),
+  void _doubleTapLike() {
+    if (!widget.work.likedByMe) widget.onLike();
+    _heart.forward(from: 0);
+  }
+
+  void _onLongPressStart(LongPressStartDetails details) {
+    _wasPlayingBeforeLongPress =
+        _isDirectVideo ? (_controller?.value.isPlaying ?? false) : !_paused;
+    if (_wasPlayingBeforeLongPress) unawaited(_pausePlayback());
+  }
+
+  void _onLongPressEnd(LongPressEndDetails details) {
+    if (_wasPlayingBeforeLongPress) unawaited(_resumePlayback());
+    _wasPlayingBeforeLongPress = false;
+  }
+
+  Future<void> _openLandscape() async {
+    final video = _controller;
+    if (_isDirectVideo && (video == null || !video.value.isInitialized)) {
+      AppSnack.show(
+        context,
+        widget.english
+            ? 'The video is still loading, one moment'
+            : 'الفيديو قيد التحميل، انتظر لحظة',
       );
-    } else {
-      final seconds = offset.inSeconds;
-      final controller = _webController;
-      if (controller == null) return;
-      final target = (_webPositionSeconds + seconds).clamp(0, 86400);
-      _webPositionSeconds = target;
-      try {
-        await controller.runJavaScript(
-          "document.querySelectorAll('video').forEach((video) => { "
-          "video.currentTime = Math.max(0, Math.min("
-          "Number.isFinite(video.duration) ? video.duration : Infinity, "
-          "video.currentTime + ($seconds))); "
-          '});'
-          "document.querySelectorAll('iframe').forEach((frame) => { "
-          "frame.contentWindow?.postMessage(JSON.stringify({"
-          "event:'command',func:'seekTo',args:[$target,true]"
-          "}), '*'); "
-          "frame.contentWindow?.postMessage(JSON.stringify({"
-          "method:'setCurrentTime',value:$target"
-          "}), '*'); "
-          '});',
-        );
-      } catch (error) {
-        debugPrint('Embedded video seek request failed: $error');
-      }
+      return;
     }
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        fullscreenDialog: true,
+        builder: (_) => _ReelFullscreenPage(
+          work: widget.work,
+          controller: _isDirectVideo ? video : null,
+          muted: widget.muted,
+          english: widget.english,
+          onMutedChanged: widget.onMutedChanged,
+        ),
+      ),
+    );
     if (!mounted) return;
-    final seconds = offset.inSeconds.abs();
-    final sign = offset.isNegative ? '-' : '+';
-    final unit = widget.english ? 's' : 'ث';
-    setState(() {
-      _seekFeedback = '$sign$seconds$unit';
-    });
-    _seekFeedbackTimer?.cancel();
-    _seekFeedbackTimer = Timer(const Duration(milliseconds: 700), () {
-      if (mounted) setState(() => _seekFeedback = null);
-    });
-  }
-
-  void _revealPlaybackControls() {
-    _controlsTimer?.cancel();
-    setState(() => _showPlaybackControls = true);
-    _controlsTimer = Timer(const Duration(seconds: 2), () {
-      if (mounted) setState(() => _showPlaybackControls = false);
-    });
-  }
-
-  void _startWebPositionTimer() {
-    _webPositionTimer?.cancel();
-    _webPositionTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted && !_isPaused && widget.active) {
-        setState(() => _webPositionSeconds++);
-      }
-    });
-  }
-
-  void _onScaleStart(ScaleStartDetails details) {
-    _zoomStartScale = _zoomScale;
-  }
-
-  void _onScaleUpdate(ScaleUpdateDetails details) {
-    if (details.pointerCount < 2) return;
-    setState(() {
-      _zoomScale = (_zoomStartScale * details.scale).clamp(1.0, 4.0);
-    });
+    final current = _controller;
+    if (_isDirectVideo && current != null && current.value.isInitialized) {
+      setState(() => _paused = !current.value.isPlaying);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final video = _controller;
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        ColoredBox(
+    final ready = video?.value.isInitialized ?? false;
+    final ratio = ready && video!.value.size.height > 0
+        ? video.value.size.width / video.value.size.height
+        : 9 / 16;
+    final landscape = ready && ratio >= .9;
+    final showWeb = !_isDirectVideo && _web != null;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxHeight < 470;
+        final short = constraints.maxHeight < 340;
+
+        return ColoredBox(
           color: Colors.black,
-          child: !_isDirectVideo && _webController != null
-              ? GestureDetector(
-                  onScaleStart: _onScaleStart,
-                  onScaleUpdate: _onScaleUpdate,
-                  child: ClipRect(
-                    child: Transform.scale(
-                      scale: _zoomScale,
-                      child: WebViewWidget(
-                        controller: _webController!,
-                        layoutDirection: TextDirection.ltr,
-                      ),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              if (showWeb)
+                Positioned.fill(
+                  child: WebViewWidget(
+                    controller: _web!,
+                    layoutDirection: TextDirection.ltr,
+                  ),
+                )
+              else if (ready)
+                Positioned.fill(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _togglePlayback,
+                    onDoubleTap: _doubleTapLike,
+                    onLongPressStart: _onLongPressStart,
+                    onLongPressEnd: _onLongPressEnd,
+                    child: _ReelVideoSurface(
+                      controller: video!,
+                      fit: landscape ? BoxFit.contain : BoxFit.cover,
                     ),
                   ),
                 )
-              : video != null && video.value.isInitialized
-                  ? GestureDetector(
-                      onDoubleTap: widget.onLike,
-                      onTap: _togglePlayback,
-                      onScaleStart: _onScaleStart,
-                      onScaleUpdate: _onScaleUpdate,
-                      child: ClipRect(
-                        child: Transform.scale(
-                          scale: _zoomScale,
-                          child: _CoverVideo(controller: video),
+              else
+                Positioned.fill(child: _buildPlaceholder()),
+              const Positioned.fill(child: _ReelGradients()),
+              if (!short)
+                PositionedDirectional(
+                  end: 8,
+                  bottom: compact ? 76 : 88,
+                  child: _ReelRail(
+                    work: widget.work,
+                    muted: widget.muted,
+                    compact: compact,
+                    onLike: widget.onLike,
+                    onComments: widget.onComments,
+                    onShare: widget.onShare,
+                    onMutedChanged: widget.onMutedChanged,
+                  ),
+                ),
+              PositionedDirectional(
+                start: 16,
+                end: 74,
+                bottom: 16,
+                child: _ReelCaption(
+                  work: widget.work,
+                  english: widget.english,
+                  compact: compact,
+                  onLandscape: _openLandscape,
+                ),
+              ),
+              if (ready && video != null)
+                AnimatedBuilder(
+                  animation: video,
+                  builder: (context, _) {
+                    if (video.value.isPlaying) return const SizedBox.shrink();
+                    return const IgnorePointer(
+                      child: Center(
+                        child: Icon(
+                          Icons.play_arrow_rounded,
+                          size: 76,
+                          color: Colors.white70,
+                          shadows: [
+                            Shadow(color: Colors.black54, blurRadius: 18),
+                          ],
                         ),
                       ),
-                    )
-                  : Center(
-                      child: _failed
-                          ? const Padding(
-                              padding: EdgeInsets.all(28),
-                              child: Text(
-                                'تعذر عرض الفيديو من هذا الرابط. جرّب رابط المشاركة العام أو رابط فيديو مباشر.',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                    color: Colors.white70, height: 1.5),
-                              ),
-                            )
-                          : !widget.active
-                              ? const Icon(Icons.play_circle_outline_rounded,
-                                  color: Colors.white70, size: 64)
-                              : const CircularProgressIndicator(
-                                  color: AppColors.gold),
-                    ),
-        ),
-        const Positioned.fill(
-          child: IgnorePointer(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0x55000000),
-                    Colors.transparent,
-                    Color(0xCC000000),
-                  ],
-                  stops: [0, .45, 1],
+                    );
+                  },
                 ),
-              ),
-            ),
-          ),
-        ),
-        PositionedDirectional(
-          end: 12,
-          bottom: 86,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _ReelAction(
-                icon: widget.work.likedByMe
-                    ? Icons.favorite_rounded
-                    : Icons.favorite_border_rounded,
-                label: fmtNumber(widget.work.likes),
-                color: widget.work.likedByMe ? Colors.redAccent : Colors.white,
-                onTap: widget.onLike,
-              ),
-              const SizedBox(height: 18),
-              _ReelAction(
-                icon: Icons.mode_comment_outlined,
-                label: fmtNumber(widget.work.commentCount),
-                onTap: widget.onComments,
-              ),
-              const SizedBox(height: 18),
-              _ReelAction(
-                icon: Icons.share_outlined,
-                label: 'مشاركة',
-                onTap: widget.onShare,
-              ),
-              const SizedBox(height: 18),
-              _ReelAction(
-                icon: _isLandscape
-                    ? Icons.stay_current_portrait_rounded
-                    : Icons.screen_rotation_rounded,
-                label: widget.english
-                    ? (_isLandscape ? 'Portrait' : 'Landscape')
-                    : (_isLandscape ? 'عمودي' : 'عرض أفقي'),
-                onTap: _orientationBusy ? () {} : _toggleOrientation,
-              ),
-              if (!_failed) ...[
-                const SizedBox(height: 18),
-                IconButton(
-                  onPressed: _toggleSound,
-                  tooltip: widget.english
-                      ? (_muted ? 'Unmute' : 'Mute')
-                      : (_muted ? 'تشغيل الصوت' : 'كتم الصوت'),
-                  color: Colors.white,
-                  icon: Icon(
-                    _muted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
+              _HeartBurst(controller: _heart),
+              if (_loading && !_isDirectVideo)
+                const IgnorePointer(
+                  child: Center(
+                    child: SizedBox(
+                      width: 34,
+                      height: 34,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.6,
+                        color: AppColors.gold,
+                      ),
+                    ),
                   ),
                 ),
-              ],
+              if (ready && video != null)
+                PositionedDirectional(
+                  start: 0,
+                  end: 0,
+                  bottom: 0,
+                  child: IgnorePointer(
+                    child: _ReelProgress(controller: video),
+                  ),
+                ),
             ],
           ),
-        ),
-        PositionedDirectional(
-          start: 18,
-          end: 76,
-          bottom: 24,
+        );
+      },
+    );
+  }
+
+  Widget _buildPlaceholder() {
+    if (_failed) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(26),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Row(
-                children: [
-                  const CircleAvatar(
-                    radius: 16,
-                    backgroundColor: AppColors.gold,
-                    child: Icon(Icons.play_arrow_rounded,
-                        color: AppColors.ink, size: 20),
-                  ),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'جايك',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                      shadows: [Shadow(color: Colors.black87, blurRadius: 6)],
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  const Icon(Icons.verified_rounded,
-                      color: Colors.lightBlueAccent, size: 15),
-                ],
+              const Icon(
+                Icons.videocam_off_rounded,
+                size: 42,
+                color: Colors.white38,
               ),
               const SizedBox(height: 10),
               Text(
-                widget.work.title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w900,
-                  shadows: [Shadow(color: Colors.black87, blurRadius: 8)],
-                ),
+                widget.english
+                    ? 'Could not play this video. Try a direct video link or a public share link.'
+                    : 'تعذر عرض الفيديو من هذا الرابط. جرّب رابط مشاركة عام أو رابط فيديو مباشر.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white70, height: 1.6),
               ),
-              if (widget.work.description?.trim().isNotEmpty == true) ...[
-                const SizedBox(height: 5),
-                Text(
-                  widget.work.description!.trim(),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    height: 1.4,
-                    shadows: [Shadow(color: Colors.black87, blurRadius: 8)],
-                  ),
-                ),
-              ],
-              const SizedBox(height: 7),
-              Row(
-                children: [
-                  const Icon(Icons.music_note_rounded,
-                      size: 15, color: Colors.white),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      '${fmtNumber(widget.work.views)} مشاهدة · جايك',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style:
-                          const TextStyle(color: Colors.white70, fontSize: 11),
-                    ),
-                  ),
-                ],
+              const SizedBox(height: 4),
+              TextButton(
+                onPressed: _retry,
+                style: TextButton.styleFrom(foregroundColor: AppColors.gold),
+                child: Text(widget.english ? 'Retry' : 'إعادة المحاولة'),
               ),
             ],
           ),
         ),
-        if (_loading && !_webLoaded)
-          const IgnorePointer(
-            child: Center(
-              child: CircularProgressIndicator(color: AppColors.gold),
-            ),
+      );
+    }
+    if (_loading) {
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.gold),
+      );
+    }
+    if (!widget.active) {
+      return const Center(
+        child: Icon(
+          Icons.play_circle_outline_rounded,
+          size: 64,
+          color: Colors.white38,
+        ),
+      );
+    }
+    return const Center(
+      child: CircularProgressIndicator(color: AppColors.gold),
+    );
+  }
+}
+
+class _ReelGradients extends StatelessWidget {
+  const _ReelGradients();
+
+  @override
+  Widget build(BuildContext context) {
+    return const IgnorePointer(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0x99000000),
+              Colors.transparent,
+              Colors.transparent,
+              Color(0xD9000000),
+            ],
+            stops: [0, .22, .5, 1],
           ),
-        if (_seekFeedback != null)
-          Center(
-            child: IgnorePointer(
-              child: DecoratedBox(
+        ),
+      ),
+    );
+  }
+}
+
+class _ReelVideoSurface extends StatelessWidget {
+  const _ReelVideoSurface({required this.controller, required this.fit});
+
+  final VideoPlayerController controller;
+  final BoxFit fit;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = controller.value.size;
+    final width = size.width > 0 ? size.width : 9.0;
+    final height = size.height > 0 ? size.height : 16.0;
+    return SizedBox.expand(
+      child: FittedBox(
+        fit: fit,
+        alignment: Alignment.center,
+        clipBehavior: Clip.hardEdge,
+        child: SizedBox(
+          width: width,
+          height: height,
+          child: VideoPlayer(controller),
+        ),
+      ),
+    );
+  }
+}
+
+class _ReelRail extends StatelessWidget {
+  const _ReelRail({
+    required this.work,
+    required this.muted,
+    required this.compact,
+    required this.onLike,
+    required this.onComments,
+    required this.onShare,
+    required this.onMutedChanged,
+  });
+
+  final OurWork work;
+  final bool muted;
+  final bool compact;
+  final VoidCallback onLike;
+  final VoidCallback onComments;
+  final VoidCallback onShare;
+  final ValueChanged<bool> onMutedChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final gap = compact ? 9.0 : 14.0;
+    final size = compact ? 38.0 : 46.0;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: size,
+          height: size,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: size,
+                height: size,
                 decoration: BoxDecoration(
-                  color: Colors.black54,
-                  borderRadius: BorderRadius.circular(40),
+                  shape: BoxShape.circle,
+                  color: AppColors.gold,
+                  border: Border.all(color: Colors.white, width: 2),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(18),
-                  child: Text(
-                    _seekFeedback!,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                    ),
+                child: Icon(
+                  Icons.play_arrow_rounded,
+                  color: AppColors.ink,
+                  size: size * .55,
+                ),
+              ),
+              PositionedDirectional(
+                end: -2,
+                bottom: -2,
+                child: Container(
+                  width: 15,
+                  height: 15,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(0xFF4FC3F7),
+                    border: Border.all(color: Colors.black, width: 1.5),
+                  ),
+                  child: const Icon(
+                    Icons.check_rounded,
+                    size: 9,
+                    color: Colors.white,
                   ),
                 ),
               ),
-            ),
+            ],
           ),
-        if (_showPlaybackControls && !_failed)
-          Positioned.fill(
-            child: Center(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _PlaybackButton(
-                    icon: _isPaused
-                        ? Icons.play_arrow_rounded
-                        : Icons.pause_rounded,
-                    tooltip: _isPaused ? 'تشغيل' : 'إيقاف مؤقت',
-                    onTap: _togglePlayback,
-                    size: 62,
-                  ),
-                ],
-              ),
+        ),
+        SizedBox(height: gap),
+        _RailAction(
+          icon: work.likedByMe
+              ? Icons.favorite_rounded
+              : Icons.favorite_border_rounded,
+          label: fmtNumber(work.likes),
+          color: work.likedByMe ? const Color(0xFFFF4D6A) : Colors.white,
+          onTap: onLike,
+          compact: compact,
+          semanticLabel: 'إعجاب',
+        ),
+        SizedBox(height: gap),
+        _RailAction(
+          icon: Icons.mode_comment_outlined,
+          label: fmtNumber(work.commentCount),
+          onTap: onComments,
+          compact: compact,
+          semanticLabel: 'التعليقات',
+        ),
+        SizedBox(height: gap),
+        _RailAction(
+          icon: Icons.share_outlined,
+          label: 'مشاركة',
+          onTap: onShare,
+          compact: compact,
+          semanticLabel: 'مشاركة',
+        ),
+        SizedBox(height: gap + 2),
+        GestureDetector(
+          onTap: () => onMutedChanged(!muted),
+          behavior: HitTestBehavior.opaque,
+          child: Container(
+            width: compact ? 36 : 42,
+            height: compact ? 36 : 42,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withValues(alpha: .14),
+              border: Border.all(color: Colors.white24),
             ),
-          ),
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: 0,
-          height: 24,
-          child: LayoutBuilder(
-            builder: (context, constraints) => GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onHorizontalDragStart: (_) => _startSeeking(),
-              onHorizontalDragUpdate: (details) =>
-                  _updateSeeking(details, constraints.maxWidth),
-              onHorizontalDragEnd: (_) => _finishSeeking(),
-              child: _ReelSeekBar(
-                controller: _isDirectVideo ? video : null,
-                fallbackProgress: (_webPositionSeconds % 60) / 60,
-                previewProgress: _seekPreviewProgress,
-              ),
+            child: Icon(
+              muted ? Icons.volume_off_rounded : Icons.music_note_rounded,
+              color: Colors.white,
+              size: compact ? 18 : 21,
             ),
           ),
         ),
@@ -1018,108 +1148,773 @@ class _ReelPageState extends State<_ReelPage> {
   }
 }
 
-class _PlaybackButton extends StatelessWidget {
-  const _PlaybackButton({
+class _RailAction extends StatelessWidget {
+  const _RailAction({
     required this.icon,
-    required this.tooltip,
+    required this.label,
     required this.onTap,
-    this.size = 48,
+    required this.compact,
+    required this.semanticLabel,
+    this.color = Colors.white,
   });
 
   final IconData icon;
-  final String tooltip;
+  final String label;
   final VoidCallback onTap;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) => IconButton(
-        tooltip: tooltip,
-        onPressed: onTap,
-        iconSize: size * .58,
-        style: IconButton.styleFrom(
-          fixedSize: Size(size, size),
-          backgroundColor: Colors.black54,
-          foregroundColor: Colors.white,
-        ),
-        icon: Icon(icon),
-      );
-}
-
-class _ReelSeekBar extends StatelessWidget {
-  const _ReelSeekBar({
-    required this.controller,
-    required this.fallbackProgress,
-    required this.previewProgress,
-  });
-
-  final VideoPlayerController? controller;
-  final double fallbackProgress;
-  final double? previewProgress;
+  final bool compact;
+  final String semanticLabel;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
-    final video = controller;
-    if (video == null || !video.value.isInitialized) {
-      return _buildBar(context, fallbackProgress);
-    }
+    return Semantics(
+      button: true,
+      label: semanticLabel,
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: SizedBox(
+          width: compact ? 46 : 54,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                color: color,
+                size: compact ? 27 : 31,
+                shadows: const [Shadow(color: Colors.black54, blurRadius: 8)],
+              ),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: compact ? 9 : 10,
+                  fontWeight: FontWeight.w800,
+                  shadows: const [
+                    Shadow(color: Colors.black87, blurRadius: 6),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 
+class _ReelCaption extends StatelessWidget {
+  const _ReelCaption({
+    required this.work,
+    required this.english,
+    required this.compact,
+    required this.onLandscape,
+  });
+
+  final OurWork work;
+  final bool english;
+  final bool compact;
+  final VoidCallback onLandscape;
+
+  @override
+  Widget build(BuildContext context) {
+    final description = work.description?.trim();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 24,
+              height: 24,
+              decoration: const BoxDecoration(
+                color: AppColors.gold,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.play_arrow_rounded,
+                color: AppColors.ink,
+                size: 16,
+              ),
+            ),
+            const SizedBox(width: 7),
+            const Flexible(
+              child: Text(
+                '@jaik',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w900,
+                  shadows: [Shadow(color: Colors.black87, blurRadius: 7)],
+                ),
+              ),
+            ),
+            const SizedBox(width: 4),
+            const Icon(
+              Icons.verified_rounded,
+              color: Color(0xFF4FC3F7),
+              size: 14,
+            ),
+          ],
+        ),
+        const SizedBox(height: 7),
+        Text(
+          work.title,
+          maxLines: compact ? 1 : 2,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 15.5,
+            fontWeight: FontWeight.w900,
+            height: 1.35,
+            shadows: [Shadow(color: Colors.black87, blurRadius: 8)],
+          ),
+        ),
+        if (!compact && description != null && description.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text(
+            description,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              height: 1.45,
+              shadows: [Shadow(color: Colors.black87, blurRadius: 8)],
+            ),
+          ),
+        ],
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            const Icon(
+              Icons.music_note_rounded,
+              size: 14,
+              color: Colors.white70,
+            ),
+            const SizedBox(width: 4),
+            Expanded(
+              child: Text(
+                '${fmtNumber(work.views)} مشاهدة · جايك',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        _LandscapeButton(english: english, onTap: onLandscape),
+      ],
+    );
+  }
+}
+
+class _LandscapeButton extends StatelessWidget {
+  const _LandscapeButton({required this.english, required this.onTap});
+
+  final bool english;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: Material(
+        color: AppColors.gold,
+        borderRadius: BorderRadius.circular(100),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.open_in_full_rounded,
+                  size: 15,
+                  color: AppColors.ink,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  english ? 'Landscape' : 'مشاهدة بالعرض',
+                  style: const TextStyle(
+                    color: AppColors.ink,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ReelProgress extends StatelessWidget {
+  const _ReelProgress({required this.controller});
+
+  final VideoPlayerController controller;
+
+  @override
+  Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: video,
+      animation: controller,
       builder: (context, _) {
-        final duration = video.value.duration;
-        final progress = duration > Duration.zero
-            ? video.value.position.inMicroseconds / duration.inMicroseconds
-            : 0.0;
-        return _buildBar(context, progress);
+        final value = controller.value;
+        final total = value.duration.inMicroseconds;
+        final progress = total <= 0
+            ? 0.0
+            : (value.position.inMicroseconds / total).clamp(0.0, 1.0);
+        return SizedBox(
+          height: 3,
+          child: Stack(
+            children: [
+              const Positioned.fill(
+                child: ColoredBox(color: Colors.white24),
+              ),
+              Positioned.fill(
+                child: Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: FractionallySizedBox(
+                    widthFactor: progress,
+                    child: const ColoredBox(color: AppColors.gold),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
       },
     );
   }
+}
 
-  Widget _buildBar(BuildContext context, double actualProgress) {
-    final progress = (previewProgress ?? actualProgress).clamp(0.0, 1.0);
-    final isSeeking = previewProgress != null;
-    final color = isSeeking ? AppColors.gold : Colors.white;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final width = constraints.maxWidth;
-        return Stack(
-          alignment: Alignment.center,
-          clipBehavior: Clip.none,
+class _HeartBurst extends StatelessWidget {
+  const _HeartBurst({required this.controller});
+
+  final AnimationController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, _) {
+        final t = controller.value;
+        if (t <= 0 || t >= 1) return const SizedBox.shrink();
+        return IgnorePointer(
+          child: Center(
+            child: Opacity(
+              opacity: (1 - t).clamp(0.0, 1.0),
+              child: Transform.scale(
+                scale: .5 + Curves.elasticOut.transform(t) * .8,
+                child: const Icon(
+                  Icons.favorite_rounded,
+                  color: Colors.white,
+                  size: 96,
+                  shadows: [Shadow(color: Colors.black54, blurRadius: 20)],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ReelFullscreenPage extends StatefulWidget {
+  const _ReelFullscreenPage({
+    required this.work,
+    required this.controller,
+    required this.muted,
+    required this.english,
+    required this.onMutedChanged,
+  });
+
+  final OurWork work;
+  final VideoPlayerController? controller;
+  final bool muted;
+  final bool english;
+  final ValueChanged<bool> onMutedChanged;
+
+  @override
+  State<_ReelFullscreenPage> createState() => _ReelFullscreenPageState();
+}
+
+class _ReelFullscreenPageState extends State<_ReelFullscreenPage> {
+  WebViewController? _web;
+  bool _webLoading = false;
+  bool _webFailed = false;
+  late bool _muted;
+  double? _scrub;
+
+  bool get _isDirect => widget.controller != null;
+
+  @override
+  void initState() {
+    super.initState();
+    _muted = widget.muted;
+    if (_isDirect) {
+      widget.controller!.setVolume(_muted ? 0 : 1);
+    } else {
+      unawaited(_initWeb());
+    }
+    if (!kIsWeb) {
+      unawaited(_enterLandscape());
+      SystemChrome.setSystemUIOverlayStyle(
+        const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.light,
+          systemNavigationBarColor: Colors.black,
+          systemNavigationBarIconBrightness: Brightness.light,
+        ),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    if (!kIsWeb) {
+      unawaited(SystemChrome.setPreferredOrientations(const [
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+      ]));
+      unawaited(SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge));
+      SystemChrome.setSystemUIOverlayStyle(
+        const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.light,
+          systemNavigationBarColor: Colors.black,
+          systemNavigationBarIconBrightness: Brightness.light,
+        ),
+      );
+    }
+    super.dispose();
+  }
+
+  Future<void> _enterLandscape() async {
+    try {
+      await SystemChrome.setPreferredOrientations(const [
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    } catch (error) {
+      debugPrint('Failed to open landscape player: $error');
+    }
+  }
+
+  Future<void> _initWeb() async {
+    final target = ReelVideoLink.playbackUri(widget.work.videoUrl);
+    if (target == null) {
+      if (mounted) setState(() => _webFailed = true);
+      return;
+    }
+    setState(() {
+      _webLoading = true;
+      _webFailed = false;
+    });
+    try {
+      final controller = WebViewController();
+      await controller.setJavaScriptMode(JavaScriptMode.unrestricted);
+      await controller.setBackgroundColor(Colors.black);
+      await controller.setNavigationDelegate(
+        NavigationDelegate(
+          onPageFinished: (_) {
+            if (!mounted) return;
+            setState(() => _webLoading = false);
+            _webAction('play');
+          },
+          onWebResourceError: (error) {
+            if (error.isForMainFrame == true && mounted) {
+              setState(() {
+                _webFailed = true;
+                _webLoading = false;
+              });
+            }
+          },
+          onNavigationRequest: (request) {
+            final uri = Uri.tryParse(request.url);
+            if (uri == null) return NavigationDecision.prevent;
+            const allowed = {'http', 'https', 'about', 'data', 'blob'};
+            return allowed.contains(uri.scheme)
+                ? NavigationDecision.navigate
+                : NavigationDecision.prevent;
+          },
+        ),
+      );
+      if (!mounted) return;
+      _web = controller;
+      final source = Uri.tryParse(widget.work.videoUrl);
+      if (source != null && target.toString() != source.toString()) {
+        await controller.loadHtmlString(_reelEmbedPage(target));
+      } else {
+        await controller.loadRequest(target);
+      }
+    } catch (error) {
+      debugPrint('Failed to open embedded reel fullscreen: $error');
+      if (!mounted) return;
+      setState(() {
+        _webFailed = true;
+        _webLoading = false;
+      });
+    }
+  }
+
+  void _webAction(String action) {
+    final controller = _web;
+    if (controller == null) return;
+    final muted = _muted ? 'true' : 'false';
+    final String js;
+    switch (action) {
+      case 'play':
+        js = "document.querySelectorAll('video').forEach((v) => {"
+            "v.muted = $muted; v.play().catch(() => {});"
+            '});'
+            "document.querySelectorAll('iframe').forEach((f) => {"
+            "f.contentWindow?.postMessage(JSON.stringify("
+            "{event:'command',func:'playVideo',args:[]}),'*');"
+            '});';
+      case 'pause':
+        js = "document.querySelectorAll('video').forEach((v) => v.pause());"
+            "document.querySelectorAll('iframe').forEach((f) => {"
+            "f.contentWindow?.postMessage(JSON.stringify("
+            "{event:'command',func:'pauseVideo',args:[]}),'*');"
+            '});';
+      default:
+        final func = _muted ? 'mute' : 'unMute';
+        js = "document.querySelectorAll('video').forEach((v) => {"
+            "v.muted = $muted;"
+            '});'
+            "document.querySelectorAll('iframe').forEach((f) => {"
+            "f.contentWindow?.postMessage(JSON.stringify("
+            "{event:'command',func:'$func',args:[]}),'*');"
+            '});';
+    }
+    controller.runJavaScript(js).catchError((error) {
+      debugPrint('Embedded fullscreen action $action failed: $error');
+    });
+  }
+
+  Future<void> _togglePlay() async {
+    final video = widget.controller;
+    if (video == null) return;
+    try {
+      if (video.value.isPlaying) {
+        await video.pause();
+      } else {
+        await video.play();
+      }
+    } catch (error) {
+      debugPrint('Failed to toggle fullscreen playback: $error');
+    }
+  }
+
+  void _toggleMute() {
+    final next = !_muted;
+    setState(() => _muted = next);
+    widget.onMutedChanged(next);
+    final video = widget.controller;
+    if (video != null) {
+      video.setVolume(next ? 0 : 1);
+    } else {
+      _webAction('mute');
+    }
+  }
+
+  Future<void> _finishScrub(double value) async {
+    final video = widget.controller;
+    if (video != null) {
+      final duration = video.value.duration;
+      await video.seekTo(Duration(
+        microseconds: (duration.inMicroseconds * value).round(),
+      ));
+    }
+    if (mounted) setState(() => _scrub = null);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final video = widget.controller;
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        child: Stack(
+          fit: StackFit.expand,
           children: [
-            Container(
-              height: isSeeking ? 4 : 2,
-              decoration: BoxDecoration(
-                color: Colors.white38,
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-            Align(
-              alignment: Directionality.of(context) == TextDirection.rtl
-                  ? Alignment.centerRight
-                  : Alignment.centerLeft,
-              child: FractionallySizedBox(
-                widthFactor: progress,
-                child: Container(
-                  height: isSeeking ? 4 : 2,
-                  decoration: BoxDecoration(
-                    color: color,
-                    borderRadius: BorderRadius.circular(4),
+            if (video != null)
+              _FullscreenVideo(controller: video, onTap: _togglePlay)
+            else
+              _buildEmbed(),
+            PositionedDirectional(
+              top: 0,
+              start: 0,
+              end: 0,
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(8, 6, 12, 18),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Color(0xCC000000), Colors.transparent],
                   ),
+                ),
+                child: Row(
+                  children: [
+                    IconButton(
+                      tooltip: widget.english ? 'Close' : 'إغلاق',
+                      onPressed: () => Navigator.maybePop(context),
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(width: 2),
+                    Expanded(
+                      child: Text(
+                        widget.work.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: _muted
+                          ? (widget.english ? 'Unmute' : 'تشغيل الصوت')
+                          : (widget.english ? 'Mute' : 'كتم الصوت'),
+                      onPressed: _toggleMute,
+                      icon: Icon(
+                        _muted
+                            ? Icons.volume_off_rounded
+                            : Icons.volume_up_rounded,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-            if (isSeeking && width > 0)
+            if (video != null)
+              AnimatedBuilder(
+                animation: video,
+                builder: (context, _) {
+                  if (video.value.isPlaying) return const SizedBox.shrink();
+                  return IgnorePointer(
+                    child: Center(
+                      child: Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.black.withValues(alpha: .45),
+                          border: Border.all(color: Colors.white30),
+                        ),
+                        child: const Icon(
+                          Icons.play_arrow_rounded,
+                          color: Colors.white,
+                          size: 44,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            if (video != null)
               PositionedDirectional(
-                start: (progress * width - 5).clamp(0.0, width - 10),
+                start: 10,
+                end: 10,
+                bottom: 4,
                 child: Container(
-                  width: 10,
-                  height: 10,
+                  padding: const EdgeInsets.fromLTRB(4, 4, 4, 2),
                   decoration: const BoxDecoration(
-                    color: AppColors.gold,
-                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                      colors: [Color(0xCC000000), Colors.transparent],
+                    ),
+                  ),
+                  child: _FullscreenControls(
+                    controller: video,
+                    scrub: _scrub,
+                    onScrub: (value) => setState(() => _scrub = value),
+                    onScrubEnd: _finishScrub,
                   ),
                 ),
               ),
+            if (video == null && _webLoading)
+              const IgnorePointer(
+                child: Center(
+                  child: CircularProgressIndicator(color: AppColors.gold),
+                ),
+              ),
+            if (video == null && _webFailed)
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Text(
+                    widget.english
+                        ? 'Could not open this video.'
+                        : 'تعذر فتح هذا الفيديو.',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.white70),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmbed() {
+    final web = _web;
+    if (web != null) {
+      return WebViewWidget(
+        controller: web,
+        layoutDirection: TextDirection.ltr,
+      );
+    }
+    return const ColoredBox(color: Colors.black);
+  }
+}
+
+class _FullscreenVideo extends StatelessWidget {
+  const _FullscreenVideo({required this.controller, required this.onTap});
+
+  final VideoPlayerController controller;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = controller.value.size;
+    final width = size.width > 0 ? size.width : 16.0;
+    final height = size.height > 0 ? size.height : 9.0;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: SizedBox.expand(
+        child: FittedBox(
+          fit: BoxFit.contain,
+          alignment: Alignment.center,
+          child: SizedBox(
+            width: width,
+            height: height,
+            child: VideoPlayer(controller),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FullscreenControls extends StatelessWidget {
+  const _FullscreenControls({
+    required this.controller,
+    required this.scrub,
+    required this.onScrub,
+    required this.onScrubEnd,
+  });
+
+  final VideoPlayerController controller;
+  final double? scrub;
+  final ValueChanged<double> onScrub;
+  final ValueChanged<double> onScrubEnd;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, _) {
+        final value = controller.value;
+        final duration = value.duration;
+        final total = duration.inMicroseconds;
+        final progress = total <= 0
+            ? 0.0
+            : (value.position.inMicroseconds / total).clamp(0.0, 1.0);
+        final shownProgress = (scrub ?? progress).clamp(0.0, 1.0);
+        final position = scrub != null && total > 0
+            ? Duration(microseconds: (total * scrub!).round())
+            : value.position;
+        return Row(
+          children: [
+            IconButton(
+              tooltip: value.isPlaying ? 'إيقاف مؤقت' : 'تشغيل',
+              onPressed: () async {
+                try {
+                  if (value.isPlaying) {
+                    await controller.pause();
+                  } else {
+                    await controller.play();
+                  }
+                } catch (error) {
+                  debugPrint('Fullscreen play toggle failed: $error');
+                }
+              },
+              icon: Icon(
+                value.isPlaying
+                    ? Icons.pause_rounded
+                    : Icons.play_arrow_rounded,
+                color: Colors.white,
+              ),
+            ),
+            Text(
+              _clock(position),
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 10.5,
+                fontFeatures: [FontFeature.tabularFigures()],
+              ),
+            ),
+            Expanded(
+              child: SliderTheme(
+                data: SliderThemeData(
+                  trackHeight: 2.5,
+                  activeTrackColor: AppColors.gold,
+                  inactiveTrackColor: Colors.white24,
+                  thumbColor: AppColors.gold,
+                  overlayColor: AppColors.gold.withValues(alpha: .2),
+                  thumbShape: const RoundSliderThumbShape(
+                    enabledThumbRadius: 5.5,
+                  ),
+                  overlayShape: const RoundSliderOverlayShape(
+                    overlayRadius: 13,
+                  ),
+                ),
+                child: Slider(
+                  value: shownProgress,
+                  onChanged: total <= 0 ? null : onScrub,
+                  onChangeEnd: total <= 0 ? null : onScrubEnd,
+                ),
+              ),
+            ),
+            Text(
+              _clock(duration),
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 10.5,
+                fontFeatures: [FontFeature.tabularFigures()],
+              ),
+            ),
+            const SizedBox(width: 4),
           ],
         );
       },
@@ -1127,71 +1922,28 @@ class _ReelSeekBar extends StatelessWidget {
   }
 }
 
-class _CoverVideo extends StatelessWidget {
-  const _CoverVideo({required this.controller});
-
-  final VideoPlayerController controller;
-
-  @override
-  Widget build(BuildContext context) => LayoutBuilder(
-        builder: (context, constraints) {
-          final size = controller.value.size;
-          final width = size.width > 0 ? size.width : 9.0;
-          final height = size.height > 0 ? size.height : 16.0;
-          return SizedBox.expand(
-            child: FittedBox(
-              fit: BoxFit.cover,
-              child: SizedBox(
-                width: width,
-                height: height,
-                child: VideoPlayer(controller),
-              ),
-            ),
-          );
-        },
-      );
+String _clock(Duration value) {
+  final total = value.inSeconds;
+  final minutes = total ~/ 60;
+  final seconds = (total % 60).toString().padLeft(2, '0');
+  return '$minutes:$seconds';
 }
 
-class _ReelAction extends StatelessWidget {
-  const _ReelAction({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.color = Colors.white,
-  });
-
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(28),
-        child: SizedBox(
-          width: 54,
-          child: Column(
-            children: [
-              Icon(icon, color: color, size: 31, shadows: const [
-                Shadow(color: Colors.black54, blurRadius: 7),
-              ]),
-              const SizedBox(height: 3),
-              Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  shadows: [Shadow(color: Colors.black87, blurRadius: 6)],
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+String _reelEmbedPage(Uri target) {
+  final escapedUrl = target
+      .toString()
+      .replaceAll('&', '&amp;')
+      .replaceAll('"', '&quot;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;');
+  return '<!doctype html><html><head><meta name="viewport" '
+      'content="width=device-width, initial-scale=1, maximum-scale=1">'
+      '<style>html,body{margin:0;width:100%;height:100%;overflow:hidden;'
+      'background:#000}iframe{border:0;width:100%;height:100%;'
+      'position:absolute;inset:0}</style></head><body>'
+      '<iframe id="reel-player" src="$escapedUrl" '
+      'allow="autoplay; encrypted-media; picture-in-picture; fullscreen" '
+      'allowfullscreen playsinline></iframe></body></html>';
 }
 
 class _ReelCommentsSheet extends StatefulWidget {
@@ -1280,7 +2032,8 @@ class _ReelCommentsSheetState extends State<_ReelCommentsSheet> {
                   }
                   if (!snapshot.hasData) {
                     return const Center(
-                        child: CircularProgressIndicator(strokeWidth: 2));
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    );
                   }
                   final comments = snapshot.data!;
                   _count ??= comments.length;

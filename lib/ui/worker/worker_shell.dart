@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../customer/our_work_tab.dart';
 import '../customer/profile_tab.dart';
+import '../customer/reels_tab.dart';
 import '../widgets/shell_layout.dart';
 
-/// غلاف الموظف بالتوضيف: يرى فقط ما تسمح به الإدارة —
+/// غلاف الموظف بالتوظيف: يرى فقط ما تسمح به الإدارة —
 /// قسم «أعمالنا» وحسابه الشخصي، دون حجوزات أو خدمات أو منشورات.
 class WorkerShell extends StatefulWidget {
   const WorkerShell({super.key});
@@ -15,27 +15,20 @@ class WorkerShell extends StatefulWidget {
 
 class _WorkerShellState extends State<WorkerShell> {
   int _index = 0;
-  int _tick = 0;
 
   static const _items = [
-    NavItem('أعمالنا', Icons.video_library_outlined, Icons.video_library_rounded),
+    NavItem('أعمالنا', Icons.play_circle_outline_rounded,
+        Icons.play_circle_fill_rounded),
     NavItem('حسابي', Icons.person_outline_rounded, Icons.person_rounded),
   ];
-
-  void _go(int index) {
-    setState(() {
-      _index = index;
-      _tick++;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
     final pages = [
-      OurWorkTab(refreshTick: _tick),
+      ReelsTab(active: _index == 0),
       ProfileTab(
         workerMode: true,
-        onOpenBookings: () => _go(0),
+        onOpenBookings: () => setState(() => _index = 0),
       ),
     ];
 
@@ -43,7 +36,8 @@ class _WorkerShellState extends State<WorkerShell> {
       index: _index,
       items: _items,
       pages: pages,
-      onSelect: _go,
+      onSelect: (i) => setState(() => _index = i),
+      darkNavigation: _index == 0,
     );
   }
 }
