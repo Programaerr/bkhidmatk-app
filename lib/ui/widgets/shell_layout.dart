@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 
 import '../../core/theme.dart';
@@ -43,6 +45,7 @@ class AppShellLayout extends StatelessWidget {
 
     if (!wide) {
       return Scaffold(
+        extendBody: true,
         body: topBanner == null
             ? body
             : Column(
@@ -52,22 +55,11 @@ class AppShellLayout extends StatelessWidget {
                 ],
               ),
         floatingActionButton: floatingActionButton,
-        bottomNavigationBar: Container(
-          decoration: BoxDecoration(
-            border: Border(top: BorderSide(color: theme.colorScheme.outline)),
-          ),
-          child: NavigationBar(
-            selectedIndex: index,
-            onDestinationSelected: onSelect,
-            destinations: [
-              for (final item in items)
-                NavigationDestination(
-                  icon: Icon(item.icon),
-                  selectedIcon: Icon(item.activeIcon),
-                  label: item.label,
-                ),
-            ],
-          ),
+        bottomNavigationBar: _GlassNavigationBar(
+          index: index,
+          items: items,
+          accent: accent,
+          onSelect: onSelect,
         ),
       );
     }
@@ -119,6 +111,228 @@ class AppShellLayout extends StatelessWidget {
         ],
       ),
       floatingActionButton: floatingActionButton,
+    );
+  }
+}
+
+class _GlassNavigationBar extends StatefulWidget {
+  const _GlassNavigationBar({
+    required this.index,
+    required this.items,
+    required this.accent,
+    required this.onSelect,
+  });
+
+  final int index;
+  final List<NavItem> items;
+  final Color accent;
+  final ValueChanged<int> onSelect;
+
+  @override
+  State<_GlassNavigationBar> createState() => _GlassNavigationBarState();
+}
+
+class _GlassNavigationBarState extends State<_GlassNavigationBar> {
+  double _dragDistance = 0;
+
+  void _finishSwipe(DragEndDetails details) {
+    final direction = Directionality.of(context) == TextDirection.rtl ? -1 : 1;
+    var distance = _dragDistance * direction;
+    if (distance.abs() < 24) {
+      distance = (details.primaryVelocity ?? 0) * direction / 10;
+    }
+    _dragDistance = 0;
+    if (distance.abs() < 24) return;
+
+    final nextIndex = widget.index + (distance > 0 ? 1 : -1);
+    if (nextIndex >= 0 && nextIndex < widget.items.length) {
+      widget.onSelect(nextIndex);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return SafeArea(
+      top: false,
+      minimum: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 560),
+          child: SizedBox(
+            height: 66,
+            width: double.infinity,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(40),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? .25 : .12),
+                    blurRadius: 22,
+                    offset: const Offset(0, 7),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(40),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final itemWidth =
+                          constraints.maxWidth / widget.items.length;
+                      return GestureDetector(
+                        key: const ValueKey('glass-navigation-bar'),
+                        behavior: HitTestBehavior.opaque,
+                        onHorizontalDragStart: (_) => _dragDistance = 0,
+                        onHorizontalDragUpdate: (details) {
+                          _dragDistance += details.delta.dx;
+                        },
+                        onHorizontalDragEnd: _finishSwipe,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                theme.colorScheme.surface
+                                    .withValues(alpha: isDark ? .78 : .72),
+                                theme.colorScheme.surface
+                                    .withValues(alpha: isDark ? .62 : .56),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(40),
+                            border: Border.all(
+                              color: Colors.white
+                                  .withValues(alpha: isDark ? .16 : .48),
+                            ),
+                          ),
+                          child: Stack(
+                            children: [
+                              AnimatedPositionedDirectional(
+                                duration: const Duration(milliseconds: 480),
+                                curve: Curves.easeOutBack,
+                                start: itemWidth * widget.index + 4,
+                                top: 4,
+                                bottom: 4,
+                                width: itemWidth - 8,
+                                child: DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(32),
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: [
+                                        widget.accent.withValues(alpha: .30),
+                                        widget.accent.withValues(alpha: .13),
+                                      ],
+                                    ),
+                                    border: Border.all(
+                                      color:
+                                          widget.accent.withValues(alpha: .28),
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: widget.accent
+                                            .withValues(alpha: .13),
+                                        blurRadius: 12,
+                                        spreadRadius: 1,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              Row(
+                                children: [
+                                  for (var i = 0; i < widget.items.length; i++)
+                                    Expanded(
+                                      child: _GlassNavigationDestination(
+                                        item: widget.items[i],
+                                        selected: i == widget.index,
+                                        accent: widget.accent,
+                                        onTap: () => widget.onSelect(i),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GlassNavigationDestination extends StatelessWidget {
+  const _GlassNavigationDestination({
+    required this.item,
+    required this.selected,
+    required this.accent,
+    required this.onTap,
+  });
+
+  final NavItem item;
+  final bool selected;
+  final Color accent;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: item.label,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: SizedBox(
+          height: double.infinity,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedScale(
+                scale: selected ? 1.08 : 1,
+                duration: const Duration(milliseconds: 260),
+                curve: Curves.easeOutCubic,
+                child: Icon(
+                  selected ? item.activeIcon : item.icon,
+                  size: 23,
+                  color: selected ? accent : theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 2),
+              AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOut,
+                style: TextStyle(
+                  color: selected
+                      ? theme.colorScheme.onSurface
+                      : theme.colorScheme.onSurfaceVariant,
+                  fontSize: selected ? 10 : 9,
+                  fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                ),
+                child: Text(
+                  item.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
