@@ -5,10 +5,12 @@ import 'package:video_player/video_player.dart';
 
 import '../../core/theme.dart';
 import '../../core/utils.dart';
+import '../../core/reel_video_link.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
 import '../widgets/realtime_refresh.dart';
 import '../widgets/ui.dart';
+import 'package:webview_all/webview_all.dart';
 
 class ReelsTab extends StatefulWidget {
   const ReelsTab({super.key});
@@ -253,12 +255,14 @@ class _ReelPageState extends State<_ReelPage> {
   bool _failed = false;
   bool _muted = true;
   int _initialization = 0;
+  WebViewController? _webController;
+  bool _webLoaded = false;
 
   @override
   void initState() {
     super.initState();
     if (!_isDirectVideo) {
-      _failed = true;
+      if (widget.active) _initializeWebView();
     } else if (widget.active) {
       _initialize();
     }
@@ -269,27 +273,40 @@ class _ReelPageState extends State<_ReelPage> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.work.videoUrl != widget.work.videoUrl) {
       _disposeController();
-      _failed = !_isDirectVideo;
-      if (widget.active) _initialize();
+      _webController = null;
+      _webLoaded = false;
+      _failed = false;
+      if (widget.active) {
+        if (_isDirectVideo) {
+          _initialize();
+        } else {
+          _initializeWebView();
+        }
+      }
       return;
     }
     if (oldWidget.active != widget.active) {
       if (widget.active) {
-        if (_controller == null && !_failed) {
-          _initialize();
-        } else {
+        if (_isDirectVideo) {
+          if (_controller == null && !_failed) _initialize();
           _controller?.play();
+        } else {
+          if (_webController == null && !_failed) {
+            _initializeWebView();
+          } else {
+            _controlEmbeddedVideo('play');
+          }
         }
       } else {
         _controller?.pause();
+        _controlEmbeddedVideo('pause');
       }
     }
   }
 
   bool get _isDirectVideo {
-    final path =
-        widget.work.videoUrl.toLowerCase().split('?').first.split('#').first;
-    return ['.mp4', '.m3u8', '.webm', '.mov'].any(path.endsWith);
+    final uri = Uri.tryParse(widget.work.videoUrl);
+    return uri != null && ReelVideoLink.isDirectVideo(uri);
   }
 
   Future<void> _initialize() async {
@@ -330,11 +347,103 @@ class _ReelPageState extends State<_ReelPage> {
     }
   }
 
+  Future<void> _initializeWebView() async {
+    if (_isDirectVideo || !widget.active || _webController != null) return;
+    final target = ReelVideoLink.playbackUri(widget.work.videoUrl);
+    if (target == null) {
+      setState(() => _failed = true);
+      return;
+    }
+
+    final token = ++_initialization;
+    setState(() {
+      _loading = true;
+      _failed = false;
+      _webLoaded = false;
+    });
+
+    try {
+      final controller = WebViewController();
+      await controller.setJavaScriptMode(JavaScriptMode.unrestricted);
+      await controller.setBackgroundColor(Colors.black);
+      await controller.setNavigationDelegate(
+        NavigationDelegate(
+          onPageStarted: (_) {
+            if (mounted && token == _initialization) {
+              setState(() {
+                _webLoaded = false;
+                _loading = true;
+              });
+            }
+          },
+          onPageFinished: (_) {
+            if (!mounted || token != _initialization) return;
+            setState(() {
+              _webLoaded = true;
+              _loading = false;
+            });
+            _controlEmbeddedVideo('play');
+          },
+          onWebResourceError: (error) {
+            if (error.isForMainFrame == true &&
+                mounted &&
+                token == _initialization) {
+              setState(() {
+                _failed = true;
+                _loading = false;
+              });
+            }
+          },
+          onNavigationRequest: (request) {
+            final uri = Uri.tryParse(request.url);
+            if (uri == null) return NavigationDecision.prevent;
+            if (uri.isScheme('http') ||
+                uri.isScheme('https') ||
+                uri.isScheme('about') ||
+                uri.isScheme('data') ||
+                uri.isScheme('blob')) {
+              return NavigationDecision.navigate;
+            }
+            return NavigationDecision.prevent;
+          },
+        ),
+      );
+      if (!mounted || token != _initialization || !widget.active) return;
+      _webController = controller;
+      await controller.loadRequest(target);
+    } catch (error) {
+      debugPrint('Failed to load embedded reel: $error');
+      if (!mounted || token != _initialization) return;
+      setState(() {
+        _failed = true;
+        _loading = false;
+      });
+    }
+  }
+
+  void _controlEmbeddedVideo(String action) {
+    final controller = _webController;
+    if (controller == null || !_webLoaded) return;
+    controller
+        .runJavaScript(
+          "document.querySelectorAll('video').forEach((video) => { "
+          "video.muted = true; "
+          "if ('$action' === 'play') video.play().catch(() => {}); "
+          "else video.pause(); "
+          '});',
+        )
+        .catchError((error) {
+      debugPrint('Embedded video $action request failed: $error');
+    });
+  }
+
   void _disposeController() {
     _initialization++;
     final controller = _controller;
     _controller = null;
     if (controller != null) controller.dispose();
+    _webController = null;
+    _webLoaded = false;
   }
 
   @override
@@ -345,9 +454,19 @@ class _ReelPageState extends State<_ReelPage> {
 
   Future<void> _toggleSound() async {
     final controller = _controller;
-    if (controller == null) return;
     final muted = !_muted;
-    await controller.setVolume(muted ? 0 : 1);
+    if (_isDirectVideo) {
+      if (controller == null) return;
+      await controller.setVolume(muted ? 0 : 1);
+    } else {
+      final webController = _webController;
+      if (webController == null) return;
+      await webController.runJavaScript(
+        "document.querySelectorAll('video').forEach((video) { "
+        'video.muted = ${muted ? 'true' : 'false'}; '
+        '});',
+      );
+    }
     if (mounted) setState(() => _muted = muted);
   }
 
@@ -359,7 +478,12 @@ class _ReelPageState extends State<_ReelPage> {
       children: [
         ColoredBox(
           color: Colors.black,
-          child: video != null && video.value.isInitialized
+          child: !_isDirectVideo && _webController != null
+              ? WebViewWidget(
+                  controller: _webController!,
+                  layoutDirection: TextDirection.ltr,
+                )
+              : video != null && video.value.isInitialized
               ? GestureDetector(
                   onDoubleTap: widget.onLike,
                   onTap: () {
@@ -377,7 +501,7 @@ class _ReelPageState extends State<_ReelPage> {
                       ? const Padding(
                           padding: EdgeInsets.all(28),
                           child: Text(
-                            'تعذر تشغيل الفيديو. تأكد أن الرابط مباشر ويدعم MP4 أو HLS.',
+                            'تعذر عرض الفيديو من هذا الرابط. جرّب رابط المشاركة العام أو رابط فيديو مباشر.',
                             textAlign: TextAlign.center,
                             style:
                                 TextStyle(color: Colors.white70, height: 1.5),
@@ -434,7 +558,7 @@ class _ReelPageState extends State<_ReelPage> {
                 label: 'مشاركة',
                 onTap: widget.onShare,
               ),
-              if (_isDirectVideo) ...[
+              if (!_failed) ...[
                 const SizedBox(height: 18),
                 IconButton(
                   onPressed: _toggleSound,
@@ -523,7 +647,14 @@ class _ReelPageState extends State<_ReelPage> {
             ],
           ),
         ),
-        if (video != null &&
+        if (_loading && !_webLoaded)
+          const IgnorePointer(
+            child: Center(
+              child: CircularProgressIndicator(color: AppColors.gold),
+            ),
+          ),
+        if (_isDirectVideo &&
+            video != null &&
             video.value.isInitialized &&
             !video.value.isPlaying)
           const IgnorePointer(
@@ -532,7 +663,7 @@ class _ReelPageState extends State<_ReelPage> {
                   color: Colors.white70, size: 74),
             ),
           ),
-        if (video != null && video.value.isInitialized)
+        if (_isDirectVideo && video != null && video.value.isInitialized)
           Positioned(
             left: 0,
             right: 0,

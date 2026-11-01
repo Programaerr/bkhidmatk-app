@@ -336,7 +336,7 @@ class _WorkFormState extends State<_WorkForm> {
               SheetHeader(
                 title: widget.work == null ? 'إضافة عمل جديد' : 'تعديل العمل',
                 subtitle:
-                    'للتشغيل داخل الريلز استخدم رابط فيديو مباشر مثل MP4 أو HLS',
+                    'أضف رابط MP4 أو رابط مشاركة عام من YouTube أو TikTok أو Instagram أو منصة أخرى.',
               ),
               const SizedBox(height: 16),
               TextFormField(
