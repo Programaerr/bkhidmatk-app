@@ -14,7 +14,7 @@ class AppDatabase {
 
   Database? _db;
   static const _fileName = 'jaik.db';
-  static const _version = 4;
+  static const _version = 5;
 
   Future<Database> get database async {
     if (_db != null && _db!.isOpen) return _db!;
@@ -34,6 +34,7 @@ class AppDatabase {
         if (oldVersion < 2) await _migrateToV2(db);
         if (oldVersion < 3) await _migrateToV3(db);
         if (oldVersion < 4) await db.execute(_applicationsSchema);
+        if (oldVersion < 5) await _migrateToV5(db);
       },
     );
     return _db!;
@@ -43,6 +44,31 @@ class AppDatabase {
   Future<void> _migrateToV2(Database db) async {
     await db.execute('ALTER TABLE bookings ADD COLUMN rating INTEGER');
     await db.execute('ALTER TABLE bookings ADD COLUMN review TEXT');
+  }
+
+  Future<void> _migrateToV5(Database db) async {
+    await db.execute('''
+      CREATE TABLE users_without_rewards(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        phone TEXT NOT NULL UNIQUE,
+        password TEXT NOT NULL,
+        role TEXT NOT NULL DEFAULT 'customer',
+        email TEXT,
+        city TEXT,
+        address TEXT,
+        avatar TEXT,
+        created_at TEXT NOT NULL
+      )
+    ''');
+    await db.execute('''
+      INSERT INTO users_without_rewards
+        (id, name, phone, password, role, email, city, address, avatar, created_at)
+      SELECT id, name, phone, password, role, email, city, address, avatar, created_at
+      FROM users
+    ''');
+    await db.execute('DROP TABLE users');
+    await db.execute('ALTER TABLE users_without_rewards RENAME TO users');
   }
 
   /// v3: قسم «أعمالنا» (فيديوهات المدير) وشاشة «التوظيف» بالرقم.
