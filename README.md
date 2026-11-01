@@ -9,6 +9,10 @@
 
 ## تشغيل سريع
 
+ضع `SUPABASE_URL` و`SUPABASE_PUBLISHABLE_KEY` في `.env` بجذر المشروع.
+إعداد VS Code **Flutter: Supabase (كلمة المرور)** يقرأهما تلقائياً؛ لا تضع
+مفتاح `service_role` في `.env` أو داخل التطبيق.
+
 ```bash
 flutter pub get
 flutter run --dart-define=SUPABASE_URL=https://YOUR_PROJECT.supabase.co --dart-define=SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY

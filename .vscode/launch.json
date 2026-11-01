@@ -8,11 +8,11 @@
             "program": "lib/main.dart",
             "cwd": "${workspaceFolder}",
             "flutterMode": "debug",
+            "preLaunchTask": "Prepare Supabase defines from .env",
             "toolArgs": [
                 "--no-pub",
                 "--dart-define=DEV_ADMIN_PREVIEW=false",
-                "--dart-define=SUPABASE_URL=${env:SUPABASE_URL}",
-                "--dart-define=SUPABASE_PUBLISHABLE_KEY=${env:SUPABASE_PUBLISHABLE_KEY}"
+                "--dart-define-from-file=.dart-defines.json"
             ]
         },
         {
