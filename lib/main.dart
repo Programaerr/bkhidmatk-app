@@ -9,7 +9,8 @@ import 'data/supabase_services.dart';
 import 'state/app_state.dart';
 import 'ui/auth/supabase_setup_screen.dart';
 
-const _localPreviewEnabled = bool.fromEnvironment('DEV_ADMIN_PREVIEW');
+const _localPreviewEnabled =
+    bool.fromEnvironment('DEV_ADMIN_PREVIEW', defaultValue: true);
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

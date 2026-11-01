@@ -38,18 +38,19 @@ flutter run --dart-define=SUPABASE_URL=https://YOUR_PROJECT.supabase.co --dart-d
 
    ### تشغيل التطبيق محلياً دون OTP
 
-   للتطوير المحلي دون Supabase أو SMS، شغّل إعداد VS Code **Flutter: bkhidmatk**
-   (يعمل مباشرةً دون OTP)، أو نفّذ:
+   تشغيل الويب في وضع debug يفتح المعاينة المحلية مباشرةً دون Supabase أو SMS
+   أو OTP. شغّل إعداد VS Code **Flutter: bkhidmatk**، أو نفّذ:
 
    ```powershell
-   flutter run -d chrome --dart-define=DEV_ADMIN_PREVIEW=true
+   flutter run -d chrome
    ```
 
    يفتح هذا الوضع واجهة الزبون العادية مباشرةً دون شاشة دخول. للوصول إلى لوحة
    التحكم، افتح «حسابي» ثم «لوحة التحكم». روابط الريلز التي تضيفها تعمل طوال
    جلسة المعاينة فقط؛ المستودع محلي مؤقت لا يحفظ التعديلات بعد إعادة التشغيل
    ولا يتصل بقاعدة البيانات. هذا الوضع متاح في debug على الويب فقط، ولا يستخدم
-   للنشر. لاستخدام تسجيل الهاتف السحابي، اختر إعداد **Flutter: Supabase (OTP)**.
+   للنشر. معاينة debug هي الافتراضية على الويب؛ لاستخدام تسجيل الهاتف السحابي،
+   اختر إعداد **Flutter: Supabase (OTP)**.
 
 لبناء نسخة GitHub Actions مرتبطة بالمشروع، أضف `SUPABASE_URL` و`SUPABASE_PUBLISHABLE_KEY` إلى **Repository secrets**. من دونها تُبنى النسخة في الوضع المحلي فقط.
 
