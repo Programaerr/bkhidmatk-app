@@ -35,6 +35,7 @@ class SupabaseRepository implements Repository {
       'work_comments',
       'work_likes',
       'hire_phones',
+      'craftsman_applications',
       'messages',
       'cards',
       'receipts',
@@ -919,6 +920,64 @@ class SupabaseRepository implements Repository {
   @override
   Future<void> deleteHire(int id) async {
     await _client.from('hire_phones').delete().eq('id', id);
+  }
+
+  // Craftsman applications.
+  @override
+  Future<int> createApplication(CraftsmanApplication application) async {
+    final result = await _client.rpc(
+      'submit_craftsman_application',
+      params: {
+        'p_name': application.name.trim(),
+        'p_phone': normalizePhone(application.phone),
+        'p_age': application.age,
+        'p_city': application.city.trim(),
+        'p_address': application.address?.trim(),
+        'p_trade': application.trade.trim(),
+        'p_experience_years': application.experienceYears,
+        'p_about': application.about?.trim(),
+      },
+    );
+    return (result as num).toInt();
+  }
+
+  @override
+  Future<List<CraftsmanApplication>> listApplications() async {
+    final rows = await _allRows(
+      (from, to) => _client
+          .from('craftsman_applications')
+          .select()
+          .order('created_at', ascending: false)
+          .range(from, to),
+    );
+    return rows.map(CraftsmanApplication.fromMap).toList();
+  }
+
+  @override
+  Future<bool> hasPendingApplication(String phone) async {
+    final result = await _client.rpc(
+      'has_pending_craftsman_application',
+      params: {'p_phone': normalizePhone(phone)},
+    );
+    return result as bool;
+  }
+
+  @override
+  Future<void> acceptApplication(CraftsmanApplication application) async {
+    final id = application.id;
+    if (id == null) throw ArgumentError('Application must have an id');
+    await _client.rpc(
+      'accept_craftsman_application',
+      params: {'p_application_id': id},
+    );
+  }
+
+  @override
+  Future<void> rejectApplication(int id) async {
+    await _client.rpc(
+      'reject_craftsman_application',
+      params: {'p_application_id': id},
+    );
   }
 
   // Support messages.

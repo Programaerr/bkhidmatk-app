@@ -252,8 +252,9 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   }
 
   void _onAlarmStatus(AnimationStatus status) {
-    if (status == AnimationStatus.completed)
+    if (status == AnimationStatus.completed) {
       setState(() => _wrongNumber = false);
+    }
   }
 
   void _onAppStateChanged() {
