@@ -1,6 +1,5 @@
 import 'dart:ui' show ImageFilter;
 
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/theme.dart';
@@ -160,8 +159,7 @@ class _GlassNavigationBar extends StatefulWidget {
 
 class _GlassNavigationBarState extends State<_GlassNavigationBar> {
   final _navigationBoundsKey = GlobalKey();
-  double _dragDistance = 0;
-  bool _isLongPressDragging = false;
+  bool _isDragging = false;
 
   void _selectAt(Offset globalPosition) {
     final renderObject =
@@ -179,33 +177,17 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar> {
     if (nextIndex != widget.index) widget.onSelect(nextIndex);
   }
 
-  void _startLongPressDrag(LongPressStartDetails details) {
-    setState(() => _isLongPressDragging = true);
-    _selectAt(details.globalPosition);
+  void _startDrag(Offset globalPosition) {
+    setState(() => _isDragging = true);
+    _selectAt(globalPosition);
   }
 
-  void _updateLongPressDrag(LongPressMoveUpdateDetails details) {
-    _selectAt(details.globalPosition);
+  void _updateDrag(Offset globalPosition) {
+    _selectAt(globalPosition);
   }
 
-  void _endLongPressDrag() {
-    if (mounted) setState(() => _isLongPressDragging = false);
-  }
-
-  void _finishSwipe(DragEndDetails details) {
-    if (_isLongPressDragging) return;
-    final direction = Directionality.of(context) == TextDirection.rtl ? -1 : 1;
-    var distance = _dragDistance * direction;
-    if (distance.abs() < 24) {
-      distance = (details.primaryVelocity ?? 0) * direction / 10;
-    }
-    _dragDistance = 0;
-    if (distance.abs() < 24) return;
-
-    final nextIndex = widget.index + (distance > 0 ? 1 : -1);
-    if (nextIndex >= 0 && nextIndex < widget.items.length) {
-      widget.onSelect(nextIndex);
-    }
+  void _endDrag() {
+    if (mounted) setState(() => _isDragging = false);
   }
 
   @override
@@ -216,59 +198,40 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar> {
     return SafeArea(
       top: false,
       minimum: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 560),
-          child: SizedBox(
-            height: 66,
-            width: double.infinity,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(40),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: isDark ? .25 : .12),
-                    blurRadius: 22,
-                    offset: const Offset(0, 7),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(40),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final itemWidth =
-                          constraints.maxWidth / widget.items.length;
-                      return RawGestureDetector(
-                        key: const ValueKey('glass-navigation-bar'),
-                        gestures: {
-                          LongPressGestureRecognizer:
-                              GestureRecognizerFactoryWithHandlers<
-                                  LongPressGestureRecognizer>(
-                            () => LongPressGestureRecognizer(
-                              debugOwner: this,
-                              duration: const Duration(milliseconds: 120),
-                            ),
-                            (recognizer) {
-                              recognizer
-                                ..onLongPressStart = _startLongPressDrag
-                                ..onLongPressMoveUpdate = _updateLongPressDrag
-                                ..onLongPressEnd = (_) {
-                                  _endLongPressDrag();
-                                }
-                                ..onLongPressCancel = _endLongPressDrag;
-                            },
-                          ),
-                        },
-                        child: GestureDetector(
+      child: SizedBox(
+        height: 82,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 560),
+            child: SizedBox(
+              height: 66,
+              width: double.infinity,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(40),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDark ? .25 : .12),
+                      blurRadius: 22,
+                      offset: const Offset(0, 7),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(40),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final itemWidth =
+                            constraints.maxWidth / widget.items.length;
+                        return Listener(
+                          key: const ValueKey('glass-navigation-bar'),
                           behavior: HitTestBehavior.opaque,
-                          onHorizontalDragStart: (_) => _dragDistance = 0,
-                          onHorizontalDragUpdate: (details) {
-                            _dragDistance += details.delta.dx;
-                          },
-                          onHorizontalDragEnd: _finishSwipe,
+                          onPointerDown: (event) => _startDrag(event.position),
+                          onPointerMove: (event) => _updateDrag(event.position),
+                          onPointerUp: (_) => _endDrag(),
+                          onPointerCancel: (_) => _endDrag(),
                           child: DecoratedBox(
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
@@ -298,7 +261,7 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar> {
                                   bottom: 4,
                                   width: itemWidth - 8,
                                   child: AnimatedScale(
-                                    scale: _isLongPressDragging ? 1.06 : 1,
+                                    scale: _isDragging ? 1.06 : 1,
                                     duration: const Duration(milliseconds: 180),
                                     curve: Curves.easeOutCubic,
                                     child: DecoratedBox(
@@ -348,9 +311,9 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar> {
                               ],
                             ),
                           ),
-                        ),
-                      );
-                    },
+                        );
+                      },
+                    ),
                   ),
                 ),
               ),

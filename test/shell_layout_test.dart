@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:jaik/ui/widgets/shell_layout.dart';
 
 void main() {
-  testWidgets('glass navigation selects tabs by tap and RTL swipe',
+  testWidgets('glass navigation stays at bottom and selects while touching',
       (tester) async {
     var selectedIndex = 0;
     tester.view.physicalSize = const Size(390, 844);
@@ -38,6 +38,10 @@ void main() {
     expect(find.byType(BackdropFilter), findsOneWidget);
     expect(find.byType(AnimatedSwitcher), findsOneWidget);
     expect(find.text('page 0'), findsOneWidget);
+    final navigationRect =
+        tester.getRect(find.byKey(const ValueKey('glass-navigation-bar')));
+    expect(navigationRect.bottom, greaterThan(800));
+    expect(navigationRect.bottom, lessThanOrEqualTo(844));
 
     await tester.tap(find.text('الخدمات'));
     await tester.pumpAndSettle();
@@ -52,19 +56,19 @@ void main() {
     expect(selectedIndex, 2);
     expect(find.text('page 2'), findsOneWidget);
 
-    final gesture = await tester.startGesture(
-      tester.getCenter(find.text('حسابي')),
-    );
-    await tester.pump(const Duration(milliseconds: 140));
+    final gesture =
+        await tester.startGesture(tester.getCenter(find.text('الرئيسية')));
+    await tester.pump();
+    expect(selectedIndex, 0);
     await gesture.moveTo(tester.getCenter(find.text('الخدمات')));
     await tester.pumpAndSettle();
     expect(selectedIndex, 1);
     expect(find.text('page 1'), findsOneWidget);
 
-    await gesture.moveTo(tester.getCenter(find.text('الرئيسية')));
+    await gesture.moveTo(tester.getCenter(find.text('حسابي')));
     await tester.pumpAndSettle();
-    expect(selectedIndex, 0);
-    expect(find.text('page 0'), findsOneWidget);
+    expect(selectedIndex, 2);
+    expect(find.text('page 2'), findsOneWidget);
     await gesture.up();
     await tester.pumpAndSettle();
   });
