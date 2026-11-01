@@ -93,7 +93,7 @@ void main() {
     await tester.enterText(find.byType(TextFormField).at(0), 'فيديو جديد');
     await tester.enterText(
       find.byType(TextFormField).at(1),
-      'https://example.com/new-video.mp4',
+      'https://example.com/watch?id=new-video',
     );
     await tester.tap(find.text('إضافة العمل'));
     await tester.pumpAndSettle();
@@ -105,6 +105,17 @@ void main() {
     await tester.tap(find.text('ريلز'));
     await tester.pumpAndSettle();
     expect(find.text('فيديو جديد'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.favorite_border_rounded).first);
+    await tester.pumpAndSettle();
+    expect(find.text('1'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.mode_comment_outlined).first);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'تعليق تجريبي');
+    await tester.tap(find.byIcon(Icons.send_rounded));
+    await tester.pumpAndSettle();
+    expect(find.text('تعليق تجريبي'), findsOneWidget);
+    await tester.tap(find.text('إغلاق'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('حسابي'));
     await tester.pumpAndSettle();
     expect(find.text('العودة إلى لوحة إدارة التطبيق'), findsOneWidget);

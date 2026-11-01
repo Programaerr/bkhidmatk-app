@@ -73,6 +73,7 @@ class _ReelsTabState extends State<ReelsTab> with RealtimeRefresh<ReelsTab> {
   Future<void> _openComments(int index) async {
     final work = _works[index];
     if (work.id == null) return;
+    final repository = context.read<AppState>().repo;
     final count = await showModalBottomSheet<int>(
       context: context,
       isScrollControlled: true,
@@ -82,9 +83,19 @@ class _ReelsTabState extends State<ReelsTab> with RealtimeRefresh<ReelsTab> {
       ),
       builder: (_) => _ReelCommentsSheet(work: work),
     );
-    if (!mounted || count == null) return;
+    if (!mounted) return;
+    var actualCount = count;
+    if (actualCount == null) {
+      try {
+        actualCount = (await repository.workComments(work.id!)).length;
+      } catch (error) {
+        if (!mounted) return;
+        AppSnack.show(context, 'تعذر تحديث عدد التعليقات: $error', error: true);
+        return;
+      }
+    }
     setState(() {
-      _works[index] = _works[index].copyWith(commentCount: count);
+      _works[index] = _works[index].copyWith(commentCount: actualCount);
     });
   }
 
@@ -246,7 +257,11 @@ class _ReelPageState extends State<_ReelPage> {
   @override
   void initState() {
     super.initState();
-    if (widget.active) _initialize();
+    if (!_isDirectVideo) {
+      _failed = true;
+    } else if (widget.active) {
+      _initialize();
+    }
   }
 
   @override
@@ -254,7 +269,7 @@ class _ReelPageState extends State<_ReelPage> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.work.videoUrl != widget.work.videoUrl) {
       _disposeController();
-      _failed = false;
+      _failed = !_isDirectVideo;
       if (widget.active) _initialize();
       return;
     }
@@ -298,6 +313,7 @@ class _ReelPageState extends State<_ReelPage> {
       await controller.setVolume(_muted ? 0 : 1);
       if (!mounted || token != _initialization || !widget.active) {
         await controller.dispose();
+        if (identical(_controller, controller)) _controller = null;
         return;
       }
       await controller.play();
@@ -367,7 +383,11 @@ class _ReelPageState extends State<_ReelPage> {
                                 TextStyle(color: Colors.white70, height: 1.5),
                           ),
                         )
-                      : const CircularProgressIndicator(color: AppColors.gold),
+                      : !widget.active
+                          ? const Icon(Icons.play_circle_outline_rounded,
+                              color: Colors.white70, size: 64)
+                          : const CircularProgressIndicator(
+                              color: AppColors.gold),
                 ),
         ),
         const Positioned.fill(
@@ -612,7 +632,7 @@ class _ReelCommentsSheet extends StatefulWidget {
 class _ReelCommentsSheetState extends State<_ReelCommentsSheet> {
   final _controller = TextEditingController();
   late Future<List<WorkComment>> _comments;
-  int _count = 0;
+  int? _count;
   bool _sending = false;
 
   @override
@@ -647,12 +667,13 @@ class _ReelCommentsSheetState extends State<_ReelCommentsSheet> {
       ));
       _controller.clear();
       setState(() {
-        _count++;
+        _count = (_count ?? widget.work.commentCount) + 1;
         _load();
       });
     } catch (error) {
-      if (mounted)
+      if (mounted) {
         AppSnack.show(context, 'تعذر إرسال التعليق: $error', error: true);
+      }
     } finally {
       if (mounted) setState(() => _sending = false);
     }
@@ -688,7 +709,7 @@ class _ReelCommentsSheetState extends State<_ReelCommentsSheet> {
                         child: CircularProgressIndicator(strokeWidth: 2));
                   }
                   final comments = snapshot.data!;
-                  if (_count == 0) _count = comments.length;
+                  _count ??= comments.length;
                   if (comments.isEmpty) {
                     return const Center(
                       child: Text('لا توجد تعليقات بعد، كن أول من يعلّق.'),
@@ -778,7 +799,8 @@ class _ReelCommentsSheetState extends State<_ReelCommentsSheet> {
               ),
             ),
             TextButton(
-              onPressed: () => Navigator.pop(context, _count),
+              onPressed: () =>
+                  Navigator.pop(context, _count ?? widget.work.commentCount),
               child: const Text('إغلاق'),
             ),
           ],

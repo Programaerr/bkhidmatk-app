@@ -8,7 +8,10 @@ class PreviewRepository implements Repository {
   final StreamController<void> _changeController =
       StreamController<void>.broadcast();
   final List<OurWork> _works = [];
+  final List<WorkComment> _workComments = [];
+  final Set<String> _workLikes = {};
   int _nextWorkId = 1;
+  int _nextWorkCommentId = 1;
 
   static final _previewUser = AppUser(
     id: 1,
@@ -202,7 +205,23 @@ class PreviewRepository implements Repository {
               (work.description ?? '').toLowerCase().contains(term));
     }).toList()
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    return works.take(limit ?? works.length).toList();
+    return works
+        .map((work) {
+          final id = work.id;
+          final likes = id == null
+              ? const <String>{}
+              : _workLikes.where((like) => like.startsWith('$id:')).toSet();
+          return work.copyWith(
+            likes: likes.length,
+            likedByMe: id != null &&
+                viewerId != null &&
+                _workLikes.contains('$id:$viewerId'),
+            commentCount:
+                _workComments.where((comment) => comment.workId == id).length,
+          );
+        })
+        .take(limit ?? works.length)
+        .toList();
   }
 
   @override
@@ -241,6 +260,8 @@ class PreviewRepository implements Repository {
   @override
   Future<void> deleteWork(int id) async {
     _works.removeWhere((item) => item.id == id);
+    _workComments.removeWhere((comment) => comment.workId == id);
+    _workLikes.removeWhere((like) => like.startsWith('$id:'));
     _notifyChanged();
   }
 
@@ -254,13 +275,36 @@ class PreviewRepository implements Repository {
 
   @override
   Future<void> setWorkLike(int id,
-      {required int userId, required bool liked}) async {}
+      {required int userId, required bool liked}) async {
+    final key = '$id:$userId';
+    if (liked) {
+      _workLikes.add(key);
+    } else {
+      _workLikes.remove(key);
+    }
+    _notifyChanged();
+  }
 
   @override
-  Future<List<WorkComment>> workComments(int workId) async => const [];
+  Future<List<WorkComment>> workComments(int workId) async =>
+      _workComments.where((comment) => comment.workId == workId).toList()
+        ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
   @override
-  Future<int> addWorkComment(WorkComment comment) async => 1;
+  Future<int> addWorkComment(WorkComment comment) async {
+    final id = _nextWorkCommentId++;
+    _workComments.add(WorkComment(
+      id: id,
+      workId: comment.workId,
+      userId: comment.userId,
+      userName: comment.userName,
+      body: comment.body,
+      createdAt: comment.createdAt,
+      avatarPath: comment.avatarPath,
+    ));
+    _notifyChanged();
+    return id;
+  }
 
   @override
   Future<int> workCount() async => _works.length;
