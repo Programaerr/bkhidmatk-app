@@ -300,8 +300,13 @@ class RasterLayer {
   ui.Image? _image;
   double _resolution = 0;
 
-  void paint(Canvas canvas, double resolution) {
+  /// يجهّز الصورة قبل ظهورها، حتى لا يتأخر الإطار الذي تظهر فيه أول مرة.
+  void prepare(double resolution) {
     if (resolution != _resolution) _rasterize(resolution);
+  }
+
+  void paint(Canvas canvas, double resolution) {
+    prepare(resolution);
     final image = _image!;
     canvas.drawImageRect(
       image,

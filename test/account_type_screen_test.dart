@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -8,6 +9,7 @@ import 'package:jaik/state/app_state.dart';
 import 'package:jaik/ui/auth/account_type_screen.dart';
 import 'package:jaik/ui/auth/craftsman_screen.dart';
 import 'package:jaik/ui/auth/login_screen.dart';
+import 'package:jaik/ui/auth/privacy_screen.dart';
 import 'package:jaik/ui/auth/push_key.dart';
 import 'package:jaik/ui/auth/register_screen.dart';
 import 'package:jaik/ui/auth/thinking_scene.dart';
@@ -78,6 +80,22 @@ Finder _key(String label) =>
     find.ancestor(of: find.text(label), matching: find.byType(PushKey));
 
 Finder get _backKey => find.descendant(of: find.byType(PushKeyBack), matching: find.byType(PushKey));
+
+const _privacy = 'سياسة و الخصوصية';
+
+ValueListenable<double> _answer(WidgetTester tester) {
+  final paint = tester.widget<CustomPaint>(
+    find.descendant(of: find.byType(ThinkingScene), matching: find.byType(CustomPaint)),
+  );
+  return (paint.painter! as ThinkingScenePainter).answer;
+}
+
+/// يضغط على الغيمة نفسها في الرسم.
+Future<void> _pressCloud(WidgetTester tester) async {
+  final scene = tester.getRect(find.byType(ThinkingScene));
+  await tester.tapAt(scene.center + Offset(scene.width * .25, -scene.height * .17));
+  await tester.pump();
+}
 
 void main() {
   testWidgets('رابط إنشاء حساب جديد في صفحة الدخول يفتح هذه الصفحة', (tester) async {
@@ -161,14 +179,136 @@ void main() {
   });
 
   for (final size in const [Size(392, 825), Size(360, 780), Size(412, 915), Size(320, 568)]) {
-    testWidgets('الفراغ فوق الزرين مثل الفراغ تحتهما في هاتف $size', (tester) async {
+    testWidgets('الفراغ فوق الزرين مثل الفراغ تحت الخصوصية في هاتف $size', (tester) async {
       await _pump(tester, size: size);
       final hill = tester.getRect(find.byType(ThinkingScene)).bottom;
-      final key = tester.getRect(_key('زبون'));
-      // الفراغ السفلي يمتد إلى أيقونات شريط التنقل، وهي تحت حافة التطبيق بنحو 14.
-      expect(key.top - hill, closeTo(size.height + 14 - key.bottom, 1));
+      final privacy = tester.getRect(find.text(_privacy));
+      // فوق الزر هامش لمس لا يُرى، والفراغ السفلي يمتد إلى أيقونات شريط التنقل، وهي تحت حافة التطبيق بنحو 14.
+      final gapAbove = tester.getRect(_key('زبون')).top - 3 - hill;
+      expect(gapAbove, closeTo(size.height + 14 - privacy.bottom, 1));
     });
   }
+
+  testWidgets('«سياسة و الخصوصية» تحت الزرين وفي وسطهما، بخط كلامها في الشاشة الأولى', (tester) async {
+    await _pump(tester);
+    final text = tester.getRect(find.text(_privacy));
+    final customer = tester.getRect(_key('زبون'));
+    final craftsman = tester.getRect(_key('حرفي'));
+    expect(text.top, greaterThan(customer.bottom));
+    expect(text.center.dx, closeTo((customer.right + craftsman.left) / 2, .5));
+    final style = tester.widget<Text>(find.text(_privacy)).style!;
+    expect(style.fontFamily, 'Cairo');
+    expect(style.fontWeight, FontWeight.w700);
+    expect(style.color, const Color(0xFF383838));
+  });
+
+  testWidgets('«سياسة و الخصوصية» زر يفتح صفحتها بسرعة، وزر الرجوع يعيد منها', (tester) async {
+    await _pump(tester);
+    await tester.tap(find.text(_privacy));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    final page = tester.element(find.byType(PrivacyScreen));
+    expect(ModalRoute.of(page)!.animation!.value, 1);
+    await tester.pump(const Duration(milliseconds: 1));
+    await tester.pump();
+
+    await tester.tap(
+      find.descendant(of: find.byType(PrivacyScreen), matching: find.byType(PushKey)),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 201));
+    await tester.pump();
+    expect(find.byType(PrivacyScreen), findsNothing);
+    expect(find.text(_privacy), findsOneWidget);
+  });
+
+  testWidgets('مساحة لمس «سياسة و الخصوصية» تكفي الإصبع، ولا تأخذ ضغطة الزرين', (tester) async {
+    await _pump(tester);
+    final button = find.ancestor(of: find.text(_privacy), matching: find.byType(TextButton));
+    expect(tester.getRect(button).height, greaterThanOrEqualTo(44));
+
+    final key = tester.getRect(_key('زبون'));
+    await tester.tapAt(Offset(key.left + 10, key.bottom - 1));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 201));
+    expect(find.byType(RegisterScreen), findsOneWidget);
+    expect(find.byType(PrivacyScreen), findsNothing);
+  });
+
+  testWidgets('«سياسة و الخصوصية» فاتحة في الليل', (tester) async {
+    await _pump(tester, theme: AppTheme.dark());
+    expect(tester.widget<Text>(find.text(_privacy)).style!.color, const Color(0xFFF4F4EE));
+  });
+
+  group('الضغط على الرسم', () {
+    testWidgets('الغيمة تتغير إلى «ها فكرت» ثم ترجع بعد مدة', (tester) async {
+      await _pump(tester);
+      final answer = _answer(tester);
+      expect(answer.value, 0);
+
+      await _pressCloud(tester);
+      await tester.pump(const Duration(milliseconds: 450));
+      expect(answer.value, 1);
+
+      await tester.pump(const Duration(milliseconds: 2700));
+      expect(answer.value, 1);
+
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump(const Duration(milliseconds: 450));
+      expect(answer.value, 0);
+    });
+
+    testWidgets('الضغط مرة ثانية يطيل بقاء الكلام بلا رمشة', (tester) async {
+      await _pump(tester);
+      final answer = _answer(tester);
+      await _pressCloud(tester);
+      await tester.pump(const Duration(milliseconds: 450));
+      await tester.pump(const Duration(seconds: 2));
+
+      await _pressCloud(tester);
+      expect(answer.value, 1);
+      await tester.pump(const Duration(seconds: 2));
+      expect(answer.value, 1);
+
+      await tester.pump(const Duration(milliseconds: 800));
+      await tester.pump(const Duration(milliseconds: 450));
+      expect(answer.value, 0);
+    });
+
+    testWidgets('الضغط على الشخصية يغير الغيمة كذلك', (tester) async {
+      await _pump(tester);
+      await tester.tapAt(tester.getCenter(find.byType(ThinkingScene)));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 450));
+      expect(_answer(tester).value, 1);
+    });
+
+    testWidgets('مع تعطيل الحركات يتغير الكلام فوراً ويرجع', (tester) async {
+      await _pump(tester, disableAnimations: true);
+      final answer = _answer(tester);
+      await _pressCloud(tester);
+      expect(answer.value, 1);
+      await tester.pump(const Duration(milliseconds: 2800));
+      expect(answer.value, 0);
+      expect(tester.hasRunningAnimations, isFalse);
+    });
+
+    testWidgets('الخروج من الصفحة أثناء الكلام لا يترك شيئاً يعمل', (tester) async {
+      await _pump(tester);
+      await _pressCloud(tester);
+      await tester.tap(_backKey);
+      await _settle(tester);
+      expect(find.byType(AccountTypeScreen), findsNothing);
+    });
+
+    testWidgets('زر الرجوع لا يغير الغيمة', (tester) async {
+      await _pump(tester);
+      final answer = _answer(tester);
+      await tester.tap(_backKey);
+      await tester.pump();
+      expect(answer.value, 0);
+    });
+  });
 
   testWidgets('الجهة العليا بارتفاع الشاشة الأولى ولونها', (tester) async {
     await _pump(tester);
@@ -187,11 +327,12 @@ void main() {
     expect(tester.widget<Text>(find.text('حرفي')).style!.color, const Color(0xFFF4F4EE));
   });
 
-  testWidgets('الشاشة القصيرة تعرض الزرين بالسحب', (tester) async {
+  testWidgets('الشاشة القصيرة تعرض الزرين والخصوصية بالسحب', (tester) async {
     await _pump(tester, size: const Size(800, 300));
     await tester.drag(find.byType(SingleChildScrollView), const Offset(0, -300));
     await tester.pump();
     expect(tester.getRect(_key('زبون')).bottom, lessThan(300));
+    expect(tester.getRect(find.text(_privacy)).bottom, lessThan(300));
   });
 
   testWidgets('الشخصية تتحرك في الوضع العادي', (tester) async {
@@ -205,20 +346,34 @@ void main() {
   });
 
   group('حركة الشخصية', () {
-    test('تفكر أولاً، ثم تأتيها الفكرة فيضيء المصباح ويرجع', () {
-      expect(const ThinkingPose(3).idea, 0);
-      expect(const ThinkingPose(3).light, 0);
-      expect(const ThinkingPose(7).idea, 1);
-      expect(const ThinkingPose(7).light, 1);
-      expect(const ThinkingPose(8.8).idea, 0);
-      expect(const ThinkingPose(8.8).light, 0);
+    test('بلا ضغط تبقى تفكر طوال الوقت: المصباح مطفأ والوجه والغيمة لا يتغيران', () {
+      for (var time = 0.0; time < ThinkingPose.cycle * 3; time += .05) {
+        final pose = ThinkingPose(time);
+        expect(pose.idea, 0);
+        expect(pose.mouthOpen, 0);
+        expect(pose.questionSize, 1);
+        expect(pose.answerSize, 0);
+        expect(pose.cloudSize, 1);
+        // الحاجبان يتحركان قليلاً وهو يفكر، ولا يرتفعان ارتفاع الفكرة.
+        expect(pose.leftBrowLift.abs(), lessThanOrEqualTo(.3));
+        expect(pose.rightBrowLift, lessThanOrEqualTo(.9));
+      }
     });
 
-    test('المصباح يرتجف قبل أن يضيء', () {
-      expect(const ThinkingPose(5.76).light, closeTo(.35, .01));
-      expect(const ThinkingPose(5.95).light, 0);
-      expect(const ThinkingPose(6.08).light, closeTo(.6, .01));
-      expect(const ThinkingPose(6.35).light, 0);
+    test('الضغط يأتي بالفكرة: يضيء المصباح وينفتح الفم وتتبدل الغيمة', () {
+      const answered = ThinkingPose(3, answer: 1);
+      expect(answered.questionSize, 0);
+      expect(answered.answerSize, 1);
+      expect(answered.idea, 1);
+      expect(answered.mouthOpen, 1);
+      expect(answered.rightBrowLift, greaterThan(const ThinkingPose(3).rightBrowLift));
+    });
+
+    test('علامة الاستفهام تختفي أولاً ثم يظهر الكلام، فلا يتراكبان', () {
+      expect(const ThinkingPose(3, answer: .3).questionSize, greaterThan(0));
+      expect(const ThinkingPose(3, answer: .3).answerSize, 0);
+      expect(const ThinkingPose(3, answer: .6).questionSize, 0);
+      expect(const ThinkingPose(3, answer: .6).answerSize, greaterThan(0));
     });
 
     test('ترمش ثم تفتح عينيها', () {
@@ -236,19 +391,11 @@ void main() {
     test('لا تقفز أي حركة عند بداية الدورة التالية', () {
       const before = ThinkingPose(ThinkingPose.cycle - .001);
       const after = ThinkingPose(ThinkingPose.cycle + .001);
-      expect(after.gearTime - before.gearTime, closeTo(.002, .001));
       expect(after.headTilt, closeTo(before.headTilt, .001));
       expect(after.bodyLift, closeTo(before.bodyLift, .01));
-      expect(after.light, closeTo(before.light, .001));
+      expect(after.blink, closeTo(before.blink, .001));
+      expect(after.handTap, closeTo(before.handTap, .001));
       expect(after.eyes.dy, closeTo(before.eyes.dy, .01));
-    });
-
-    test('التروس تتسارع عند الفكرة ثم ترجع إلى سرعتها', () {
-      double speed(double time) =>
-          (ThinkingPose(time + .01).gearTime - ThinkingPose(time).gearTime) / .01;
-      expect(speed(3), closeTo(1, .001));
-      expect(speed(7), greaterThan(1.5));
-      expect(speed(8.5), closeTo(1, .001));
     });
   });
 }
