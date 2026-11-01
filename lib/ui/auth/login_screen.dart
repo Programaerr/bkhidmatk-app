@@ -5,6 +5,8 @@ import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../state/app_state.dart';
 import '../widgets/ui.dart';
+import 'push_key.dart';
+import 'raised_field.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -32,13 +34,17 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  void _clearLoginError() {
+    if (_error != null) setState(() => _error = null);
+  }
+
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!validateAndShowFirstError(_formKey.currentState!)) return;
     setState(() {
       _loading = true;
       _error = null;
     });
-    final err = await context.read<AppState>().login(_phone.text, _password.text);
+    final err = await context.read<AppState>().login(phoneFromInput(_phone.text), _password.text);
     if (!mounted) return;
     setState(() => _loading = false);
     if (err != null) {
@@ -99,42 +105,35 @@ class _LoginScreenState extends State<LoginScreen> {
               Form(
                 key: _formKey,
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    TextFormField(
+                    RequiredFieldLabel('رقم الهاتف', controller: _phone),
+                    RaisedField(
                       controller: _phone,
+                      hint: '07XX XXX XXXX',
                       keyboardType: TextInputType.phone,
                       textDirection: TextDirection.ltr,
                       textAlign: TextAlign.right,
-                      decoration: const InputDecoration(
-                        hintText: '07XX XXX XXXX',
-                        labelText: 'رقم الهاتف',
-                        prefixIcon: Icon(Icons.phone_iphone_rounded, size: 20),
-                      ),
+                      onTyped: _clearLoginError,
                       validator: (v) {
-                        if (v == null || v.trim().isEmpty) return 'أدخل رقم الهاتف';
-                        if (!validIraqiPhone(v)) return 'رقم غير صالح (11 رقم يبدأ بـ 07)';
+                        if (v.trim().isEmpty) return 'أدخل رقم الهاتف';
+                        if (!validIraqiPhone(phoneFromInput(v))) {
+                          return 'رقم غير صالح (11 رقم يبدأ بـ 07)';
+                        }
                         return null;
                       },
                     ),
                     const SizedBox(height: 14),
-                    TextFormField(
+                    RequiredFieldLabel('كلمة المرور', controller: _password),
+                    RaisedField(
                       controller: _password,
+                      hint: 'أدخل كلمة المرور',
                       autofocus: widget.initialPhone != null,
                       obscureText: _obscure,
-                      decoration: InputDecoration(
-                        labelText: 'كلمة المرور',
-                        prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
-                        suffixIcon: IconButton(
-                          onPressed: () => setState(() => _obscure = !_obscure),
-                          icon: Icon(
-                            _obscure ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                            size: 20,
-                          ),
-                        ),
-                      ),
-                      validator: (v) =>
-                          (v == null || v.length < 6) ? 'كلمة المرور 6 أحرف على الأقل' : null,
-                      onFieldSubmitted: (_) => _submit(),
+                      onToggleObscure: () => setState(() => _obscure = !_obscure),
+                      onTyped: _clearLoginError,
+                      onSubmitted: (_) => _submit(),
+                      validator: (v) => v.length < 6 ? 'كلمة المرور 6 أحرف على الأقل' : null,
                     ),
                   ],
                 ),
@@ -160,9 +159,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ],
-              const SizedBox(height: 20),
-              PrimaryButton(label: 'دخول', onPressed: _submit, loading: _loading),
-              const SizedBox(height: 14),
+              const SizedBox(height: 17),
+              PushKeyButton(
+                label: 'تسجيل الدخول',
+                onPressed: _submit,
+                loading: _loading,
+                yellow: true,
+              ),
+              const SizedBox(height: 11),
               Center(
                 child: Wrap(
                   alignment: WrapAlignment.center,

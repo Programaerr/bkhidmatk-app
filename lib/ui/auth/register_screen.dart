@@ -42,6 +42,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
+  void _clearSubmitError() {
+    if (_error != null) setState(() => _error = null);
+  }
+
   Future<void> _pickCity() async {
     setState(() => _pickingCity = true);
     final selected = await showAppSheet<String>(
@@ -121,7 +125,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 Text('أنشئ حسابك واحجز أول خدمة خلال دقيقة.',
                     style: theme.textTheme.bodySmall?.copyWith(fontSize: 13)),
                 const SizedBox(height: 22),
-                const FieldLabel('الاسم الكامل', required_: true),
+                RequiredFieldLabel('الاسم الكامل', controller: _name),
                 RaisedField(
                   controller: _name,
                   hint: 'مثال: أحمد سعد',
@@ -129,13 +133,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   validator: (v) => v.trim().length < 3 ? 'أدخل الاسم الكامل' : null,
                 ),
                 const SizedBox(height: 14),
-                const FieldLabel('رقم الهاتف', required_: true),
+                RequiredFieldLabel('رقم الهاتف', controller: _phone),
                 RaisedField(
                   controller: _phone,
                   hint: '07XX XXX XXXX',
                   keyboardType: TextInputType.phone,
                   textDirection: TextDirection.ltr,
                   textAlign: TextAlign.right,
+                  onTyped: _clearSubmitError,
                   validator: (v) {
                     if (v.trim().isEmpty) return 'أدخل رقم الهاتف';
                     if (!validIraqiPhone(phoneFromInput(v))) {
@@ -145,7 +150,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   },
                 ),
                 const SizedBox(height: 14),
-                const FieldLabel('المحافظة', required_: true),
+                FieldLabel('المحافظة', required_: true, filled: _city != null),
                 RaisedPicker(
                   value: _city,
                   hint: 'اختر المحافظة',
@@ -160,7 +165,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   hint: 'المنطقة، الشارع، أقرب نقطة دالة',
                 ),
                 const SizedBox(height: 14),
-                const FieldLabel('كلمة المرور', required_: true),
+                RequiredFieldLabel('كلمة المرور', controller: _password),
                 RaisedField(
                   controller: _password,
                   hint: '6 أحرف على الأقل',
@@ -169,7 +174,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   validator: (v) => v.length < 6 ? 'كلمة المرور 6 أحرف على الأقل' : null,
                 ),
                 const SizedBox(height: 14),
-                const FieldLabel('تأكيد كلمة المرور', required_: true),
+                RequiredFieldLabel('تأكيد كلمة المرور', controller: _confirm),
                 RaisedField(
                   controller: _confirm,
                   hint: 'أعد كتابة كلمة المرور',

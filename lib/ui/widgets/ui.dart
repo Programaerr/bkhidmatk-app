@@ -581,10 +581,13 @@ class SheetHeader extends StatelessWidget {
 }
 
 class FieldLabel extends StatelessWidget {
-  const FieldLabel(this.text, {super.key, this.required_ = false});
+  const FieldLabel(this.text, {super.key, this.required_ = false, this.filled = false});
 
   final String text;
   final bool required_;
+
+  /// الخانة المطلوبة مملوءة: تختفي نقطتها الحمراء ويبقى مكانها، فلا يتحرك ما تحتها.
+  final bool filled;
 
   @override
   Widget build(BuildContext context) {
@@ -605,7 +608,10 @@ class FieldLabel extends StatelessWidget {
             ),
           ),
           if (required_)
-            const Text(' *', style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.w800)),
+            Opacity(
+              opacity: filled ? 0 : 1,
+              child: const Text(' *', style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.w800)),
+            ),
         ],
       ),
     );

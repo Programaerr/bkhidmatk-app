@@ -1,19 +1,25 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme.dart';
+import '../widgets/ui.dart';
+
 // تصميم الخانة من Uiverse.io (0xnihilism)، والمقاسات محسوبة من rem في أصله (1rem = 16).
 const _fill = Color(0xFFF5F5F5);
 const _outline = Color(0xFFDDDDDD);
-const _accent = Color(0xFFFF7F7F);
 const _invalid = Color(0xFFFF4D4D);
 const _depthColor = Color(0xFFDFD9D9);
 const _hintColor = Color(0xFFCCCCCC);
-const _glowColor = Color(0x33FF7F7F);
+
+// وردي الأصل (#FF7F7F) يشبه لون الخطأ، فصار الأحمر للخطأ وحده: الكتابة وإطارها بالأسود.
+const _focusColor = AppColors.ink;
+const _glowAlpha = .2;
 
 // الألوان نفسها في الوضع الليلي.
 const _nightFill = Color(0xFF2C2C32);
 const _nightOutline = Color(0xFF3A3A40);
 const _nightDepthColor = Color(0xFF17171A);
 const _nightHintColor = Color(0xFF9B9BA3);
+const _nightFocusColor = Color(0xFFF4F4EE);
 
 const _fontSize = 17.6;
 const _borderWidth = 2.0;
@@ -77,6 +83,24 @@ void _showField(BuildContext field) {
   );
 }
 
+/// عنوان خانة كتابة مطلوبة: تختفي نقطته الحمراء بمجرد ملء الخانة، وترجع إذا فُرّغت.
+class RequiredFieldLabel extends StatelessWidget {
+  const RequiredFieldLabel(this.text, {super.key, required this.controller});
+
+  final String text;
+  final TextEditingController controller;
+
+  @override
+  Widget build(BuildContext context) => ListenableBuilder(
+        listenable: controller,
+        builder: (context, _) => FieldLabel(
+          text,
+          required_: true,
+          filled: controller.text.trim().isNotEmpty,
+        ),
+      );
+}
+
 /// خانة كتابة بارزة: ترتفع عند الكتابة فيها، وتحمرّ وتهتز إذا كان ما فيها غير صحيح،
 /// وتختفي حمرتها بمجرد الكتابة فيها حتى يعيد زر الإرسال فحصها.
 class RaisedField extends StatefulWidget {
@@ -94,6 +118,9 @@ class RaisedField extends StatefulWidget {
     this.obscureText = false,
     this.onToggleObscure,
     this.clearErrorWith,
+    this.onTyped,
+    this.onSubmitted,
+    this.autofocus = false,
   });
 
   final TextEditingController controller;
@@ -112,6 +139,11 @@ class RaisedField extends StatefulWidget {
 
   /// خانة تعتمد عليها هذه الخانة، فتختفي حمرتها أيضاً عند الكتابة في تلك.
   final TextEditingController? clearErrorWith;
+
+  /// عند تغيّر النص بالكتابة، لا عند تحريك المؤشر.
+  final VoidCallback? onTyped;
+  final ValueChanged<String>? onSubmitted;
+  final bool autofocus;
 
   @override
   State<RaisedField> createState() => _RaisedFieldState();
@@ -172,6 +204,7 @@ class _RaisedFieldState extends State<RaisedField> with SingleTickerProviderStat
     if (text == _text) return;
     _text = text;
     _clearError();
+    widget.onTyped?.call();
   }
 
   void _onLinkedTextChanged() {
@@ -199,7 +232,7 @@ class _RaisedFieldState extends State<RaisedField> with SingleTickerProviderStat
             child: Icon(
               widget.obscureText ? Icons.visibility_off_rounded : Icons.visibility_rounded,
               size: _eyeSize,
-              color: _accent,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ),
@@ -209,7 +242,10 @@ class _RaisedFieldState extends State<RaisedField> with SingleTickerProviderStat
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final night = theme.brightness == Brightness.dark;
-    final style = theme.textTheme.bodyLarge!.copyWith(fontSize: _fontSize);
+    final style = theme.textTheme.bodyLarge!.copyWith(
+      fontSize: _fontSize,
+      color: theme.colorScheme.onSurface,
+    );
     return FormField<String>(
       key: _field,
       validator: _validate,
@@ -227,6 +263,8 @@ class _RaisedFieldState extends State<RaisedField> with SingleTickerProviderStat
               child: TextField(
                 controller: widget.controller,
                 focusNode: _focus,
+                autofocus: widget.autofocus,
+                onSubmitted: widget.onSubmitted,
                 keyboardType: widget.keyboardType,
                 textDirection: widget.textDirection,
                 textAlign: widget.textAlign,
@@ -234,8 +272,8 @@ class _RaisedFieldState extends State<RaisedField> with SingleTickerProviderStat
                 maxLines: widget.maxLines,
                 textCapitalization: widget.textCapitalization,
                 obscureText: widget.obscureText,
-                style: style.copyWith(color: _accent),
-                cursorColor: _accent,
+                style: style,
+                cursorColor: theme.colorScheme.onSurface,
                 // يبقى أسفل الخانة وعمقها ظاهرين فوق لوحة المفاتيح.
                 scrollPadding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
                 decoration: InputDecoration(
@@ -306,7 +344,10 @@ class _RaisedPickerState extends State<RaisedPicker> with SingleTickerProviderSt
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final night = theme.brightness == Brightness.dark;
-    final style = theme.textTheme.bodyLarge!.copyWith(fontSize: _fontSize);
+    final style = theme.textTheme.bodyLarge!.copyWith(
+      fontSize: _fontSize,
+      color: theme.colorScheme.onSurface,
+    );
     final value = widget.value;
     return FormField<String>(
       validator: _validate,
@@ -332,12 +373,12 @@ class _RaisedPickerState extends State<RaisedPicker> with SingleTickerProviderSt
                           value ?? widget.hint,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: style.copyWith(
-                            color: value != null ? _accent : (night ? _nightHintColor : _hintColor),
-                          ),
+                          style: value != null
+                              ? style
+                              : style.copyWith(color: night ? _nightHintColor : _hintColor),
                         ),
                       ),
-                      const Icon(Icons.expand_more_rounded, size: 20, color: _accent),
+                      Icon(Icons.expand_more_rounded, size: 20, color: theme.colorScheme.onSurface),
                     ],
                   ),
                 ),
@@ -489,6 +530,8 @@ class _BoxPainter extends CustomPainter {
   final double invalid;
   final bool night;
 
+  Color get _focusTone => night ? _nightFocusColor : _focusColor;
+
   @override
   void paint(Canvas canvas, Size size) {
     final box = RRect.fromRectAndRadius(Offset.zero & size, const Radius.circular(_radius));
@@ -500,7 +543,7 @@ class _BoxPainter extends CustomPainter {
       )
       ..drawRRect(box, Paint()..color = night ? _nightFill : _fill);
     _paintGlow(canvas, box.deflate(_borderWidth));
-    final border = Color.lerp(night ? _nightOutline : _outline, _accent, focus);
+    final border = Color.lerp(night ? _nightOutline : _outline, _focusTone, focus);
     canvas.drawRRect(
       box.deflate(_borderWidth / 2),
       Paint()
@@ -522,7 +565,7 @@ class _BoxPainter extends CustomPainter {
       ..drawPath(
         ring,
         Paint()
-          ..color = _glowColor.withValues(alpha: _glowColor.a * focus.clamp(0.0, 1.0))
+          ..color = _focusTone.withValues(alpha: _glowAlpha * focus.clamp(0.0, 1.0))
           ..maskFilter = MaskFilter.blur(BlurStyle.normal, _glowBlur * focus / 2),
       )
       ..restore();
