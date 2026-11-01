@@ -6,7 +6,9 @@ import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 
 import 'app.dart';
+import 'data/supabase_services.dart';
 import 'state/app_state.dart';
+import 'ui/auth/supabase_setup_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,7 +27,13 @@ Future<void> main() async {
     statusBarIconBrightness: Brightness.dark,
   ));
 
-  final state = AppState();
+  final cloudServices = await SupabaseServices.initializeIfConfigured();
+  if (kIsWeb && cloudServices == null) {
+    runApp(const SupabaseSetupApp());
+    return;
+  }
+
+  final state = AppState(cloudServices: cloudServices);
   await state.boot();
 
   runApp(

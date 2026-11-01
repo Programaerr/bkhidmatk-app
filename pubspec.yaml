@@ -25,6 +25,7 @@ dependencies:
   printing: ^5.13.4
   qr_flutter: ^4.1.0
   screenshot: ^3.0.0
+  supabase_flutter: ^2.18.3
   sqflite_common_ffi_web: ^1.2.0
 
 dev_dependencies:

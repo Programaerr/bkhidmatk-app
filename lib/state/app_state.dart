@@ -5,12 +5,21 @@ import '../data/database.dart';
 import '../data/models.dart';
 import '../data/repository.dart';
 import '../data/repository_local.dart';
+import '../data/repository_supabase.dart';
+import '../data/supabase_services.dart';
 
 /// حالة التطبيق — تعمل بالكامل محلياً على الجهاز (SQLite).
 class AppState extends ChangeNotifier {
-  AppState({Repository? repository}) : repo = repository ?? LocalRepository();
+  AppState({Repository? repository, this.cloudServices})
+      : repo = repository ??
+            (cloudServices == null
+                ? LocalRepository()
+                : SupabaseRepository(cloudServices.client));
 
   final Repository repo;
+  final SupabaseServices? cloudServices;
+
+  bool get usesCloudAuth => cloudServices != null;
 
   AppUser? user;
   bool booting = true;
@@ -31,6 +40,21 @@ class AppState extends ChangeNotifier {
     themeMode = savedTheme == 'dark' ? ThemeMode.dark : ThemeMode.light;
     english = prefs.getBool('english') ?? false;
 
+    if (cloudServices != null) {
+      if (cloudServices!.isSignedIn) {
+        try {
+          user = await cloudServices!.currentProfile();
+        } catch (error, stackTrace) {
+          debugPrint('Failed to restore Supabase session: $error');
+          debugPrintStack(stackTrace: stackTrace);
+          await cloudServices!.signOut();
+        }
+      }
+      booting = false;
+      notifyListeners();
+      return;
+    }
+
     try {
       final userId = prefs.getInt('user_id');
       if (userId != null) user = await repo.userById(userId);
@@ -43,6 +67,22 @@ class AppState extends ChangeNotifier {
   }
 
   Future<String?> login(String phone, String password) async {
+    if (cloudServices != null) {
+      try {
+        user = await cloudServices!.signInWithPassword(phone, password);
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('user_id');
+        notifyListeners();
+        return null;
+      } on CloudAuthException catch (error) {
+        return error.message;
+      } catch (error, stackTrace) {
+        debugPrint('Supabase login failed: $error');
+        debugPrintStack(stackTrace: stackTrace);
+        return 'تعذر الاتصال بقاعدة البيانات. تحقق من الإنترنت وحاول مجدداً.';
+      }
+    }
+
     final found = await repo.findUserByPhone(phone);
     if (found == null) return 'لا يوجد حساب مسجل بهذا الرقم';
     if (found.passwordHash != hashPassword(password)) {
@@ -62,6 +102,26 @@ class AppState extends ChangeNotifier {
     String? city,
     String? address,
   }) async {
+    if (cloudServices != null) {
+      try {
+        user = await cloudServices!.signUpWithPassword(
+          phone: phone,
+          password: password,
+          name: name,
+          city: city,
+          address: address,
+        );
+        notifyListeners();
+        return null;
+      } on CloudAuthException catch (error) {
+        return error.message;
+      } catch (error, stackTrace) {
+        debugPrint('Supabase registration failed: $error');
+        debugPrintStack(stackTrace: stackTrace);
+        return 'تعذر إنشاء الحساب. تحقق من الاتصال وإعدادات Supabase.';
+      }
+    }
+
     if (await repo.phoneExists(phone)) return 'رقم الهاتف مستخدم مسبقاً';
     // الرقم المُضاف من الإدارة للتوظيف → الحساب يُسجّل كـ (حرفي).
     final hired = await repo.isHiredPhone(phone);
@@ -113,6 +173,7 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    if (cloudServices != null) await cloudServices!.signOut();
     user = null;
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
@@ -125,7 +186,10 @@ class AppState extends ChangeNotifier {
     try {
       user = await repo.userById(user!.id!);
       notifyListeners();
-    } catch (_) {}
+    } catch (error, stackTrace) {
+      debugPrint('Failed to refresh current user: $error');
+      debugPrintStack(stackTrace: stackTrace);
+    }
   }
 
   @override
