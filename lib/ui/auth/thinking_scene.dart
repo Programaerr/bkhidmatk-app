@@ -105,8 +105,10 @@ class ThinkingPose {
   /// حركة العينين: تنظران إلى الغيمة وتتنقلان وهو يفكر.
   Offset get eyes => Offset(.7 + .5 * _wave(4.5, 1), -.5 + .3 * _wave(3) - .4 * idea);
 
-  double get leftBrowLift => .3 * _wave(4.5) + 1.6 * idea;
-  double get rightBrowLift => .3 + .6 * _wave(4.5) + 1.6 * idea;
+  double get leftBrowLift => .3 * (1 - idea) * _wave(4.5) + 1.6 * idea;
+
+  /// الحاجب الأيمن تحت الشعر مباشرة، فيرتفع أقل عند الفكرة حتى لا يلتصق به.
+  double get rightBrowLift => .3 + .6 * (1 - idea) * _wave(4.5) + .8 * idea;
 
   /// الفم المزموم يتحرك قليلاً إلى الجانبين وهو يفكر.
   double get mouthShift => .6 * (1 - idea) * _wave(6);
