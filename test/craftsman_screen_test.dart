@@ -70,7 +70,7 @@ Future<void> _pump(WidgetTester tester, _Repo repo, Widget screen) async {
   await tester.pumpAndSettle();
 }
 
-Finder _field(String label) => find.byType(TextFormField).at(_fieldOrder.indexOf(label));
+Finder _field(String label) => find.byType(TextField).at(_fieldOrder.indexOf(label));
 
 const _fieldOrder = ['الاسم', 'الهاتف', 'العمر', 'العنوان', 'المهنة', 'الخبرة', 'النبذة'];
 
@@ -172,6 +172,62 @@ void main() {
     await tester.tap(find.text('عودة كزبون'));
     await tester.pumpAndSettle();
     expect(find.text('الشاشة الأولى'), findsOneWidget);
+  });
+
+  testWidgets('الخانة ترتفع عند الكتابة فيها ويتلاشى نصها الدليل', (tester) async {
+    await _pump(tester, _Repo(), const CraftsmanScreen());
+    final name = find.descendant(of: _field('الاسم'), matching: find.byType(EditableText));
+    final atRest = tester.getRect(name);
+    double hintOpacity() => tester
+        .widget<Opacity>(find.ancestor(of: find.text('مثال: أحمد سعد'), matching: find.byType(Opacity)).first)
+        .opacity;
+    expect(hintOpacity(), 1);
+
+    await tester.tap(_field('الاسم'));
+    await tester.pumpAndSettle();
+    final focused = tester.getRect(name);
+    expect(focused.center.dy, closeTo(atRest.center.dy - 3, .01));
+    expect(focused.width, closeTo(atRest.width * 1.01, .01));
+    expect(hintOpacity(), 0);
+  });
+
+  testWidgets('لمس أي مكان في الخانة يفتح الكتابة فيها', (tester) async {
+    await _pump(tester, _Repo(), const CraftsmanScreen());
+    await tester.tapAt(tester.getRect(_field('الاسم')).topCenter - const Offset(0, 10));
+    await tester.pump();
+    expect(tester.widget<TextField>(_field('الاسم')).focusNode!.hasFocus, isTrue);
+  });
+
+  testWidgets('الخانة الخطأ تهتز، ويرجع لونها بمجرد تصحيحها', (tester) async {
+    await _pump(tester, _Repo(), const CraftsmanScreen());
+    final name = find.descendant(of: _field('الاسم'), matching: find.byType(EditableText));
+    final atRest = tester.getRect(name);
+
+    await tester.tap(find.text('إرسال الطلب إلى الشركة'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 125));
+    expect(tester.getRect(name).left, closeTo(atRest.left - 5, .01));
+    await tester.pump(const Duration(milliseconds: 125));
+    expect(tester.getRect(name).left, closeTo(atRest.left + 5, .01));
+    await tester.pumpAndSettle();
+    expect(tester.getRect(name).left, atRest.left);
+    expect(find.text('أدخل الاسم الكامل'), findsOneWidget);
+
+    await tester.enterText(_field('الاسم'), 'كر');
+    await tester.pumpAndSettle();
+    expect(find.text('أدخل الاسم الكامل'), findsOneWidget);
+    await tester.enterText(_field('الاسم'), 'كرار');
+    await tester.pumpAndSettle();
+    expect(find.text('أدخل الاسم الكامل'), findsNothing);
+  });
+
+  testWidgets('خانة المحافظة تفتح القائمة وتأخذ المختار', (tester) async {
+    await _pump(tester, _Repo(), const CraftsmanScreen());
+    await tester.tap(find.text('بغداد'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('البصرة'));
+    await tester.pumpAndSettle();
+    expect(find.text('البصرة'), findsOneWidget);
   });
 
   testWidgets('الإدارة تقرأ الطلب وتقبله', (tester) async {

@@ -6,6 +6,7 @@ import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
 import '../widgets/ui.dart';
+import 'raised_field.dart';
 
 const _easternDigits = '٠١٢٣٤٥٦٧٨٩';
 const _persianDigits = '۰۱۲۳۴۵۶۷۸۹';
@@ -48,6 +49,7 @@ class _CraftsmanScreenState extends State<CraftsmanScreen> {
   final _years = TextEditingController();
   final _about = TextEditingController();
   String _city = 'بغداد';
+  bool _pickingCity = false;
   bool _loading = false;
   bool _sent = false;
   String? _error;
@@ -67,6 +69,7 @@ class _CraftsmanScreenState extends State<CraftsmanScreen> {
   void _backAsCustomer() => Navigator.of(context).popUntil((route) => route.isFirst);
 
   Future<void> _pickCity() async {
+    setState(() => _pickingCity = true);
     final selected = await showAppSheet<String>(
       context,
       builder: (ctx) => ConstrainedBox(
@@ -97,7 +100,11 @@ class _CraftsmanScreenState extends State<CraftsmanScreen> {
         ),
       ),
     );
-    if (selected != null) setState(() => _city = selected);
+    if (!mounted) return;
+    setState(() {
+      _pickingCity = false;
+      if (selected != null) _city = selected;
+    });
   }
 
   Future<void> _submit() async {
@@ -138,8 +145,8 @@ class _CraftsmanScreenState extends State<CraftsmanScreen> {
     });
   }
 
-  String? _checkNumber(String? value, int min, int max, String message) {
-    final number = int.tryParse(_westernDigits(value ?? ''));
+  String? _checkNumber(String value, int min, int max, String message) {
+    final number = int.tryParse(_westernDigits(value));
     return number == null || number < min || number > max ? message : null;
   }
 
@@ -193,92 +200,61 @@ class _CraftsmanScreenState extends State<CraftsmanScreen> {
             ),
             const SizedBox(height: 22),
             const FieldLabel('الاسم الكامل', required_: true),
-            TextFormField(
+            RaisedField(
               controller: _name,
-              decoration: const InputDecoration(
-                hintText: 'مثال: أحمد سعد',
-                prefixIcon: Icon(Icons.person_outline_rounded, size: 20),
-              ),
-              validator: (v) => (v == null || v.trim().length < 3) ? 'أدخل الاسم الكامل' : null,
+              hint: 'مثال: أحمد سعد',
+              validator: (v) => v.trim().length < 3 ? 'أدخل الاسم الكامل' : null,
             ),
             const SizedBox(height: 14),
             const FieldLabel('رقم الهاتف', required_: true),
-            TextFormField(
+            RaisedField(
               controller: _phone,
+              hint: '07XX XXX XXXX',
               keyboardType: TextInputType.phone,
               textDirection: TextDirection.ltr,
               textAlign: TextAlign.right,
-              decoration: const InputDecoration(
-                hintText: '07XX XXX XXXX',
-                prefixIcon: Icon(Icons.phone_iphone_rounded, size: 20),
-              ),
-              validator: (v) => validIraqiPhone(_westernDigits(v ?? ''))
-                  ? null
-                  : 'رقم غير صالح (11 رقم يبدأ بـ 07)',
+              validator: (v) =>
+                  validIraqiPhone(_westernDigits(v)) ? null : 'رقم غير صالح (11 رقم يبدأ بـ 07)',
             ),
             const SizedBox(height: 14),
             const FieldLabel('العمر', required_: true),
-            TextFormField(
+            RaisedField(
               controller: _age,
+              hint: 'مثال: 28',
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                hintText: 'مثال: 28',
-                prefixIcon: Icon(Icons.cake_outlined, size: 20),
-              ),
               validator: (v) => _checkNumber(v, 16, 80, 'أدخل عمراً صحيحاً'),
             ),
             const SizedBox(height: 14),
             const FieldLabel('المحافظة'),
-            InkWell(
-              onTap: _pickCity,
-              borderRadius: BorderRadius.circular(AppRadius.md),
-              child: InputDecorator(
-                decoration: const InputDecoration(
-                  prefixIcon: Icon(Icons.location_city_rounded, size: 20),
-                  suffixIcon: Icon(Icons.expand_more_rounded, size: 20),
-                ),
-                child: Text(_city),
-              ),
-            ),
+            RaisedPicker(value: _city, open: _pickingCity, onTap: _pickCity),
             const SizedBox(height: 14),
             const FieldLabel('العنوان التفصيلي'),
-            TextFormField(
+            RaisedField(
               controller: _address,
-              decoration: const InputDecoration(
-                hintText: 'المنطقة، الشارع، أقرب نقطة دالة',
-                prefixIcon: Icon(Icons.location_on_outlined, size: 20),
-              ),
+              hint: 'المنطقة، الشارع، أقرب نقطة دالة',
             ),
             const SizedBox(height: 14),
             const FieldLabel('المهنة', required_: true),
-            TextFormField(
+            RaisedField(
               controller: _trade,
-              decoration: const InputDecoration(
-                hintText: 'مثال: كهربائي، سباك، صباغ',
-                prefixIcon: Icon(Icons.handyman_outlined, size: 20),
-              ),
-              validator: (v) => (v == null || v.trim().length < 2) ? 'أدخل مهنتك' : null,
+              hint: 'مثال: كهربائي، سباك، صباغ',
+              validator: (v) => v.trim().length < 2 ? 'أدخل مهنتك' : null,
             ),
             const SizedBox(height: 14),
             const FieldLabel('سنوات الخبرة', required_: true),
-            TextFormField(
+            RaisedField(
               controller: _years,
+              hint: 'مثال: 5',
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                hintText: 'مثال: 5',
-                prefixIcon: Icon(Icons.workspace_premium_outlined, size: 20),
-              ),
               validator: (v) => _checkNumber(v, 0, 60, 'أدخل عدد سنوات صحيحاً'),
             ),
             const SizedBox(height: 14),
             const FieldLabel('نبذة عن خبرتك'),
-            TextFormField(
+            RaisedField(
               controller: _about,
+              hint: 'الأعمال التي أتقنها وأين عملت سابقاً',
               minLines: 3,
               maxLines: 6,
-              decoration: const InputDecoration(
-                hintText: 'الأعمال التي أتقنها وأين عملت سابقاً',
-              ),
             ),
             if (_error != null) ...[
               const SizedBox(height: 12),
