@@ -55,7 +55,7 @@ class _CustomerShellState extends State<CustomerShell> {
         ),
       ),
       BookingsTab(onBrowse: () => setState(() => _index = 1)),
-      OurWorkTab(refreshTick: _tick),
+      OurWorkTab(refreshTick: _tick, isActive: _index == 3),
       ProfileTab(
         onOpenBookings: () => setState(() => _index = 2),
         onOpenAdminDashboard: widget.onOpenAdminDashboard,

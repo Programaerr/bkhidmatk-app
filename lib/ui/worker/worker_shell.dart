@@ -32,7 +32,7 @@ class _WorkerShellState extends State<WorkerShell> {
   @override
   Widget build(BuildContext context) {
     final pages = [
-      OurWorkTab(refreshTick: _tick),
+      OurWorkTab(refreshTick: _tick, isActive: _index == 0),
       ProfileTab(
         workerMode: true,
         onOpenBookings: () => _go(0),

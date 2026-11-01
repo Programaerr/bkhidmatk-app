@@ -5,14 +5,18 @@ import '../../data/models.dart';
 import '../../state/app_state.dart';
 import '../widgets/realtime_refresh.dart';
 import '../widgets/ui.dart';
-import '../widgets/work_card.dart';
-import 'our_work_detail_screen.dart';
+import 'work_reel.dart';
 
 /// قسم «أعمالنا»: فيديوهات الشركة التي ينشرها المدير من لوحة التحكم.
 class OurWorkTab extends StatefulWidget {
-  const OurWorkTab({super.key, required this.refreshTick});
+  const OurWorkTab({
+    super.key,
+    required this.refreshTick,
+    this.isActive = true,
+  });
 
   final int refreshTick;
+  final bool isActive;
 
   @override
   State<OurWorkTab> createState() => _OurWorkTabState();
@@ -20,6 +24,8 @@ class OurWorkTab extends StatefulWidget {
 
 class _OurWorkTabState extends State<OurWorkTab> with RealtimeRefresh<OurWorkTab> {
   late Future<List<OurWork>> _future;
+  int _currentPage = 0;
+  final Set<int> _viewedWorkIds = {};
 
   @override
   void onRealtimeChange() => _load();
@@ -46,13 +52,15 @@ class _OurWorkTabState extends State<OurWorkTab> with RealtimeRefresh<OurWorkTab
     });
   }
 
-  Future<void> _open(OurWork work) async {
-    if (work.id == null) return;
-    await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => OurWorkDetailScreen(workId: work.id!)),
-    );
-    if (mounted) _load();
+  Future<void> _countView(OurWork work) async {
+    final id = work.id;
+    if (id == null || !_viewedWorkIds.add(id)) return;
+    try {
+      await context.read<AppState>().repo.incrementWorkViews(id);
+    } catch (error, stackTrace) {
+      debugPrint('Failed to count work view: $error');
+      debugPrintStack(stackTrace: stackTrace);
+    }
   }
 
   @override
@@ -71,7 +79,7 @@ class _OurWorkTabState extends State<OurWorkTab> with RealtimeRefresh<OurWorkTab
                 Text('أعمالنا', style: theme.textTheme.headlineSmall),
                 const SizedBox(height: 2),
                 Text(
-                  'أحدث فيديوهات فريق جايك موثّقة بالصور',
+                  'اسحب للأعلى لمشاهدة أحدث أعمال فريق جايك',
                   style: theme.textTheme.bodySmall,
                 ),
               ],
@@ -93,14 +101,28 @@ class _OurWorkTabState extends State<OurWorkTab> with RealtimeRefresh<OurWorkTab
                     subtitle: 'ستنشر جايك أحدث أعمالها وفيديوهاتها هنا قريباً.',
                   );
                 }
-                return RefreshIndicator(
-                  onRefresh: () async => _load(),
-                  child: ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(18, 10, 18, 30),
-                    itemCount: works.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
-                    itemBuilder: (context, i) =>
-                        WorkCard(work: works[i], onOpen: () => _open(works[i])),
+                if (_currentPage >= works.length) {
+                  _currentPage = works.length - 1;
+                }
+                if (widget.isActive && works.isNotEmpty) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted && widget.isActive) {
+                      _countView(works[_currentPage]);
+                    }
+                  });
+                }
+                return PageView.builder(
+                  scrollDirection: Axis.vertical,
+                  itemCount: works.length,
+                  onPageChanged: (index) {
+                    setState(() => _currentPage = index);
+                    _countView(works[index]);
+                  },
+                  itemBuilder: (context, index) => WorkReel(
+                    key: ValueKey(works[index].id ?? index),
+                    work: works[index],
+                    isActive: widget.isActive && index == _currentPage,
+                    onChanged: _load,
                   ),
                 );
               },
