@@ -527,6 +527,7 @@ class WorkCommentsSheet extends StatefulWidget {
 class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
   final _comment = TextEditingController();
   late Future<List<WorkComment>> _comments;
+  WorkComment? _replyTo;
   bool _sending = false;
 
   @override
@@ -536,7 +537,99 @@ class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
   }
 
   Future<List<WorkComment>> _loadComments() {
-    return context.read<AppState>().repo.workComments(widget.work.id!);
+    final state = context.read<AppState>();
+    return state.repo.workComments(
+      widget.work.id!,
+      viewerId: state.user?.id,
+      isAdmin: state.isAdmin,
+    );
+  }
+
+  void _reloadComments() {
+    setState(() => _comments = _loadComments());
+  }
+
+  Future<void> _setReaction(WorkComment comment, int reaction) async {
+    final state = context.read<AppState>();
+    final userId = state.user?.id;
+    if (comment.id == null || userId == null) return;
+    try {
+      await state.repo.setWorkCommentReaction(
+        comment.id!,
+        userId: userId,
+        reaction: comment.reactionByMe == reaction ? 0 : reaction,
+      );
+      if (mounted) _reloadComments();
+    } catch (error, stackTrace) {
+      debugPrint('Failed to react to work comment: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      if (mounted) AppSnack.show(context, 'تعذر تسجيل التفاعل', error: true);
+    }
+  }
+
+  Future<void> _setHeart(WorkComment comment) async {
+    if (comment.id == null || !context.read<AppState>().isAdmin) return;
+    try {
+      await context.read<AppState>().repo.setWorkCommentHeart(
+            comment.id!,
+            hearted: !comment.adminHearted,
+          );
+      if (mounted) _reloadComments();
+    } catch (error, stackTrace) {
+      debugPrint('Failed to heart work comment: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      if (mounted) AppSnack.show(context, 'تعذر وضع القلب', error: true);
+    }
+  }
+
+  Future<void> _editComment(WorkComment comment) async {
+    if (comment.id == null) return;
+    final controller = TextEditingController(text: comment.body);
+    final body = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('تعديل التعليق'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          minLines: 1,
+          maxLines: 5,
+          maxLength: 2000,
+          decoration: const InputDecoration(hintText: 'اكتب تعليقك'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('إلغاء'),
+          ),
+          FilledButton(
+            onPressed: () =>
+                Navigator.pop(context, controller.text.trim()),
+            child: const Text('حفظ'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    final updatedBody = body?.trim();
+    if (updatedBody == null || updatedBody.isEmpty || updatedBody == comment.body) {
+      return;
+    }
+    try {
+      await context
+          .read<AppState>()
+          .repo
+          .updateWorkComment(comment.id!, body: updatedBody);
+      if (mounted) _reloadComments();
+    } catch (error, stackTrace) {
+      debugPrint('Failed to edit work comment: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      if (mounted) AppSnack.show(context, 'تعذر تعديل التعليق', error: true);
+    }
+  }
+
+  void _replyToComment(WorkComment comment) {
+    setState(() => _replyTo = comment);
   }
 
   Future<void> _send() async {
@@ -551,12 +644,14 @@ class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
         WorkComment(
           workId: workId,
           userId: user!.id!,
+          parentCommentId: _replyTo?.id,
           userName: user.name,
           body: text,
           createdAt: DateTime.now(),
         ),
       );
       _comment.clear();
+      setState(() => _replyTo = null);
       setState(() => _comments = _loadComments());
       widget.onCommentAdded();
     } catch (error, stackTrace) {
@@ -577,6 +672,7 @@ class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final state = context.watch<AppState>();
     return SizedBox(
       height: MediaQuery.sizeOf(context).height * .78,
       child: Column(
@@ -618,60 +714,32 @@ class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
                     child: Text('لا توجد تعليقات بعد. كن أول من يعلّق!'),
                   );
                 }
+                final commentsById = {
+                  for (final comment in comments)
+                    if (comment.id != null) comment.id!: comment,
+                };
+                final replies = <int, List<WorkComment>>{};
+                for (final comment in comments) {
+                  final parentId = comment.parentCommentId;
+                  if (parentId != null && commentsById.containsKey(parentId)) {
+                    replies.putIfAbsent(parentId, () => []).add(comment);
+                  }
+                }
+                final roots = comments
+                    .where((comment) =>
+                        comment.parentCommentId == null ||
+                        !commentsById.containsKey(comment.parentCommentId))
+                    .toList();
                 return ListView.separated(
                   padding: const EdgeInsets.all(16),
-                  itemCount: comments.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 16),
-                  itemBuilder: (context, index) {
-                    final comment = comments[index];
-                    return Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        AvatarCircle(
-                          name: comment.userName,
-                          size: 36,
-                          imagePath: comment.avatarPath,
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Flexible(
-                                    child: Text(
-                                      comment.userName,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w800,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    timeAgo(comment.createdAt),
-                                    style: theme.textTheme.bodySmall
-                                        ?.copyWith(fontSize: 10),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 3),
-                              Text(
-                                comment.body,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  height: 1.5,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    );
-                  },
+                  itemCount: roots.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 18),
+                  itemBuilder: (context, index) => _commentThread(
+                    roots[index],
+                    replies,
+                    state: state,
+                    depth: 0,
+                  ),
                 );
               },
             ),
@@ -686,15 +754,44 @@ class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
               child: Row(
                 children: [
                   Expanded(
-                    child: TextField(
-                      controller: _comment,
-                      minLines: 1,
-                      maxLines: 3,
-                      decoration: const InputDecoration(
-                        hintText: 'اكتب تعليقاً...',
-                        isDense: true,
-                      ),
-                      onSubmitted: (_) => _send(),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (_replyTo != null)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 6),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    'الرد على ${_replyTo!.userName}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.textTheme.bodySmall,
+                                  ),
+                                ),
+                                IconButton(
+                                  visualDensity: VisualDensity.compact,
+                                  onPressed: () =>
+                                      setState(() => _replyTo = null),
+                                  icon: const Icon(Icons.close_rounded,
+                                      size: 18),
+                                ),
+                              ],
+                            ),
+                          ),
+                        TextField(
+                          controller: _comment,
+                          minLines: 1,
+                          maxLines: 3,
+                          decoration: InputDecoration(
+                            hintText:
+                                _replyTo == null ? 'اكتب تعليقاً...' : 'اكتب ردك...',
+                            isDense: true,
+                          ),
+                          onSubmitted: (_) => _send(),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -715,6 +812,149 @@ class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _commentThread(
+    WorkComment comment,
+    Map<int, List<WorkComment>> replies, {
+    required AppState state,
+    required int depth,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: EdgeInsetsDirectional.only(start: depth == 0 ? 0 : 24),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AvatarCircle(
+                name: comment.userName,
+                size: depth == 0 ? 36 : 30,
+                imagePath: comment.avatarPath,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            comment.userName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          timeAgo(comment.createdAt),
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(fontSize: 10),
+                        ),
+                        if (comment.adminHearted && state.isAdmin) ...[
+                          const SizedBox(width: 6),
+                          const Icon(Icons.favorite_rounded,
+                              color: AppColors.danger, size: 14),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      comment.body,
+                      style: const TextStyle(fontSize: 12, height: 1.5),
+                    ),
+                    const SizedBox(height: 4),
+                    Wrap(
+                      spacing: 2,
+                      runSpacing: 0,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        _commentAction(
+                          icon: Icons.thumb_up_alt_outlined,
+                          count: comment.likes,
+                          selected: comment.reactionByMe == 1,
+                          onPressed: () => _setReaction(comment, 1),
+                        ),
+                        _commentAction(
+                          icon: Icons.thumb_down_alt_outlined,
+                          count: comment.dislikes,
+                          selected: comment.reactionByMe == -1,
+                          onPressed: () => _setReaction(comment, -1),
+                        ),
+                        _commentAction(
+                          icon: Icons.reply_rounded,
+                          label: 'رد',
+                          onPressed: () => _replyToComment(comment),
+                        ),
+                        if (state.isAdmin)
+                          _commentAction(
+                            icon: comment.adminHearted
+                                ? Icons.favorite_rounded
+                                : Icons.favorite_border_rounded,
+                            color: AppColors.danger,
+                            label: 'قلب المدير',
+                            selected: comment.adminHearted,
+                            onPressed: () => _setHeart(comment),
+                          ),
+                        if (state.isAdmin || state.user?.id == comment.userId)
+                          _commentAction(
+                            icon: Icons.edit_outlined,
+                            label: 'تعديل',
+                            onPressed: () => _editComment(comment),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (comment.id != null)
+          for (final reply in replies[comment.id!] ?? const <WorkComment>[])
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: _commentThread(
+                reply,
+                replies,
+                state: state,
+                depth: depth + 1,
+              ),
+            ),
+      ],
+    );
+  }
+
+  Widget _commentAction({
+    required IconData icon,
+    required VoidCallback onPressed,
+    int? count,
+    String? label,
+    Color? color,
+    bool selected = false,
+  }) {
+    return TextButton.icon(
+      onPressed: onPressed,
+      style: TextButton.styleFrom(
+        visualDensity: VisualDensity.compact,
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        minimumSize: const Size(32, 30),
+        foregroundColor: selected ? AppColors.gold : color,
+      ),
+      icon: Icon(icon, size: 15),
+      label: Text(
+        count == null ? (label ?? '') : fmtNumber(count),
+        style: const TextStyle(fontSize: 10),
       ),
     );
   }
