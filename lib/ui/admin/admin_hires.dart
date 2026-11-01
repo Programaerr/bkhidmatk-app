@@ -31,8 +31,9 @@ class _AdminHiresScreenState extends State<AdminHiresScreen>
   }
 
   void _load() {
+    final state = context.read<AppState>();
     setState(() {
-      _future = context.read<AppState>().repo.listHires();
+      _future = state.cloudServices?.listHirePhones() ?? state.repo.listHires();
     });
   }
 
@@ -41,12 +42,15 @@ class _AdminHiresScreenState extends State<AdminHiresScreen>
     final ok = await confirmAction(
       context,
       title: 'حذف الرقم؟',
-      message: 'سيتم حذف ${hire.phone} من قائمة التوظيف، ويعود صاحبه زبوناً عادياً.',
+      message:
+          'سيتم حذف ${hire.phone} من قائمة التوظيف، ويعود صاحبه زبوناً عادياً.',
       confirmLabel: 'حذف',
       danger: true,
     );
     if (!ok || !mounted) return;
-    await context.read<AppState>().repo.deleteHire(hire.id!);
+    final state = context.read<AppState>();
+    await state.cloudServices?.deleteHirePhone(hire.phone);
+    await state.repo.deleteHire(hire.id!);
     if (mounted) {
       AppSnack.show(context, 'تم حذف الرقم');
       _load();
@@ -118,6 +122,10 @@ class _AdminHiresScreenState extends State<AdminHiresScreen>
     final state = context.read<AppState>();
     final normalized = normalizePhone(phone.text.trim());
     final existing = await state.repo.findUserByPhone(normalized);
+    await state.cloudServices?.addHirePhone(
+      normalized,
+      note: note.text.trim().isEmpty ? null : note.text.trim(),
+    );
     await state.repo.createHire(Hire(
       phone: normalized,
       note: note.text.trim().isEmpty ? null : note.text.trim(),

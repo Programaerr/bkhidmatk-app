@@ -8,6 +8,7 @@ import '../../data/models.dart';
 import '../../state/app_state.dart';
 import '../customer/messages_screen.dart';
 import '../customer/receipts_screen.dart';
+import '../common/notifications_screen.dart';
 import '../widgets/realtime_refresh.dart';
 import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
@@ -125,12 +126,13 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
                           Text(
                             user.phone,
                             textDirection: TextDirection.ltr,
-                            style: const TextStyle(color: Colors.white54, fontSize: 11),
+                            style: const TextStyle(
+                                color: Colors.white54, fontSize: 11),
                           ),
                           const SizedBox(height: 6),
                           Container(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
                               color: AppColors.gold,
                               borderRadius: BorderRadius.circular(100),
@@ -162,8 +164,8 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
                               ),
                             ),
                             const Text('زبون',
-                                style:
-                                    TextStyle(color: Colors.white54, fontSize: 9)),
+                                style: TextStyle(
+                                    color: Colors.white54, fontSize: 9)),
                           ],
                         );
                       },
@@ -183,7 +185,8 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
                       subtitle: 'عرض الحسابات والتواصل معهم',
                       onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const AdminCustomersScreen()),
+                        MaterialPageRoute(
+                            builder: (_) => const AdminCustomersScreen()),
                       ),
                     ),
                     const Divider(height: 1),
@@ -193,7 +196,8 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
                       subtitle: 'محادثات الزبائن والدعم',
                       onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const AdminThreadsScreen()),
+                        MaterialPageRoute(
+                            builder: (_) => const AdminThreadsScreen()),
                       ).then((_) => _load()),
                     ),
                     const Divider(height: 1),
@@ -204,7 +208,8 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (_) => const ReceiptsScreen(adminMode: true)),
+                            builder: (_) =>
+                                const ReceiptsScreen(adminMode: true)),
                       ),
                     ),
                     const Divider(height: 1),
@@ -228,9 +233,24 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
                       subtitle: 'إضافة أرقام موظفين ومتابعة التسجيل',
                       onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const AdminHiresScreen()),
+                        MaterialPageRoute(
+                            builder: (_) => const AdminHiresScreen()),
                       ).then((_) => _load()),
                     ),
+                    if (state.usesCloudAuth) ...[
+                      const Divider(height: 1),
+                      _Tile(
+                        icon: Icons.notifications_active_outlined,
+                        title: 'الإشعارات',
+                        subtitle: 'إرسال رسالة للزبائن أو الحرفيين أو رقم محدد',
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const AdminNotificationsScreen(),
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -257,9 +277,10 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
                         size: 20,
                       ),
                       title: const Text('البانر الرئيسي',
-                          style:
-                              TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-                      subtitle: const Text('إظهار البانر في أعلى الصفحة الرئيسية',
+                          style: TextStyle(
+                              fontSize: 13, fontWeight: FontWeight.w700)),
+                      subtitle: const Text(
+                          'إظهار البانر في أعلى الصفحة الرئيسية',
                           style: TextStyle(fontSize: 10.5)),
                     ),
                     const Divider(height: 1),
@@ -273,8 +294,8 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
                         size: 20,
                       ),
                       title: const Text('الوضع الليلي',
-                          style:
-                              TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                          style: TextStyle(
+                              fontSize: 13, fontWeight: FontWeight.w700)),
                       subtitle: const Text('تغيير مظهر التطبيق بالكامل',
                           style: TextStyle(fontSize: 10.5)),
                     ),
@@ -331,7 +352,8 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
                   label: const Text('تسجيل الخروج'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.danger,
-                    side: BorderSide(color: AppColors.danger.withValues(alpha: .3)),
+                    side: BorderSide(
+                        color: AppColors.danger.withValues(alpha: .3)),
                   ),
                 ),
               ),
@@ -349,7 +371,8 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
 
   Future<void> _editSupportPhone(BuildContext context) async {
     final repo = context.read<AppState>().repo;
-    final current = await repo.getSetting('admin_phone', fallback: '07700000000');
+    final current =
+        await repo.getSetting('admin_phone', fallback: '07700000000');
     if (!context.mounted) return;
     final controller = TextEditingController(text: current);
     final saved = await showAppSheet<bool>(
@@ -416,7 +439,8 @@ class _Tile extends StatelessWidget {
         width: 38,
         height: 38,
         decoration: BoxDecoration(
-          color: (danger ? AppColors.danger : AppColors.gold).withValues(alpha: .15),
+          color: (danger ? AppColors.danger : AppColors.gold)
+              .withValues(alpha: .15),
           borderRadius: BorderRadius.circular(11),
         ),
         child: Icon(
@@ -433,7 +457,8 @@ class _Tile extends StatelessWidget {
           color: danger ? AppColors.danger : null,
         ),
       ),
-      subtitle: Text(subtitle, style: theme.textTheme.bodySmall?.copyWith(fontSize: 10)),
+      subtitle: Text(subtitle,
+          style: theme.textTheme.bodySmall?.copyWith(fontSize: 10)),
       trailing: const Icon(Icons.chevron_left_rounded, size: 20),
     );
   }
@@ -475,13 +500,17 @@ class _AdminCustomersScreenState extends State<AdminCustomersScreen>
 
   Future<void> _call(String phone) async {
     if (!await launchUrl(Uri.parse('tel:${phoneForCall(phone)}'))) {
-      if (mounted) AppSnack.show(context, 'تعذر فتح تطبيق الاتصال', error: true);
+      if (mounted) {
+        AppSnack.show(context, 'تعذر فتح تطبيق الاتصال', error: true);
+      }
     }
   }
 
   Future<void> _sms(String phone) async {
     if (!await launchUrl(Uri.parse('sms:${phoneForCall(phone)}'))) {
-      if (mounted) AppSnack.show(context, 'تعذر فتح تطبيق الرسائل', error: true);
+      if (mounted) {
+        AppSnack.show(context, 'تعذر فتح تطبيق الرسائل', error: true);
+      }
     }
   }
 
@@ -585,7 +614,8 @@ class _AdminCustomersScreenState extends State<AdminCustomersScreen>
                                   ),
                                 ),
                               ),
-                              icon: const Icon(Icons.chat_bubble_outline_rounded,
+                              icon: const Icon(
+                                  Icons.chat_bubble_outline_rounded,
                                   size: 19),
                               tooltip: 'محادثة',
                             ),

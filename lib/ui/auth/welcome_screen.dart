@@ -12,11 +12,11 @@ import 'push_key.dart';
 import 'register_screen.dart';
 import 'truck_scene.dart';
 
-const _cream = Color(0xFFFFFEE2);
-const _blue = Color(0xFF416F9E);
-const _ink = Color(0xFF263238);
-const _hint = Color(0xFF6B7378);
-const _divider = Color(0xFFD3D0C2);
+const _cream = Color(0xFFFFFCE6);
+const _blue = Color(0xFFFCCF03);
+const _ink = Color(0xFF080807);
+const _hint = Color(0xFF5F5F66);
+const _divider = Color(0xFFFFD92E);
 
 /// ألوان شريطي النظام في بقية شاشات التطبيق.
 const _appSystemBars = SystemUiOverlayStyle(
@@ -62,7 +62,8 @@ class _IraqiPhoneFormatter extends TextInputFormatter {
   static const _persian = '۰۱۲۳۴۵۶۷۸۹';
 
   @override
-  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
     final buffer = StringBuffer();
     for (final char in newValue.text.characters) {
       final eastern = _eastern.indexOf(char);
@@ -94,7 +95,8 @@ class WelcomeScreen extends StatefulWidget {
   State<WelcomeScreen> createState() => _WelcomeScreenState();
 }
 
-class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProviderStateMixin {
+class _WelcomeScreenState extends State<WelcomeScreen>
+    with SingleTickerProviderStateMixin {
   final _phone = TextEditingController();
   final _focus = FocusNode();
   late final _alarm = AnimationController(vsync: this, duration: _alarmDuration)
@@ -138,8 +140,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
 
   void _onFocusChanged() => setState(() {});
 
-  /// لا يوجد تحقق برسالة SMS في التطبيق، لذلك لا يكفي الرقم وحده للدخول:
-  /// الرقم المسجل يكمل بكلمة المرور، والرقم الجديد يكمل بإنشاء حساب.
+  /// في وضع Supabase نتابع برمز الهاتف دون كشف ما إذا كان الرقم مسجلاً.
   Future<void> _submit() async {
     final digits = _phone.text;
     final phone = digits.startsWith('0') ? digits : '0$digits';
@@ -153,8 +154,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
       _busy = true;
       _error = null;
     });
-    final repo = context.read<AppState>().repo;
-    final registered = await repo.phoneExists(phone);
+    final state = context.read<AppState>();
+    final registered =
+        state.usesCloudAuth ? true : await state.repo.phoneExists(phone);
     if (!mounted) return;
     setState(() => _busy = false);
     _focus.unfocus();
@@ -163,7 +165,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
       MaterialPageRoute(
         builder: (_) => AnnotatedRegion<SystemUiOverlayStyle>(
           value: _appSystemBars,
-          child: registered ? LoginScreen(initialPhone: phone) : RegisterScreen(initialPhone: phone),
+          child: registered
+              ? LoginScreen(initialPhone: phone)
+              : RegisterScreen(initialPhone: phone),
         ),
       ),
     );
@@ -173,7 +177,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final keyboard = MediaQuery.viewInsetsOf(context).bottom;
-    final fit = math.min(size.width / _Design.width, size.height / _Design.height);
+    final fit =
+        math.min(size.width / _Design.width, size.height / _Design.height);
     final unit = math.max(fit, _Design.minControlScale);
 
     final blueBottom = size.height * _Design.blueBottom / _Design.height;
@@ -181,11 +186,13 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
         (size.height - blueBottom) *
             (_Design.rowTop - _Design.blueBottom) /
             (_Design.height - _Design.blueBottom);
-    double x(double design) => size.width / 2 + (design - _Design.width / 2) * unit;
+    double x(double design) =>
+        size.width / 2 + (design - _Design.width / 2) * unit;
     double y(double design) => rowTop + (design - _Design.rowTop) * unit;
 
     final errorTop = y(_Design.buttonBottom) + 8 * unit;
-    final contentBottom = (_error == null ? y(_Design.buttonBottom) : errorTop + 22 * unit) + 12;
+    final contentBottom =
+        (_error == null ? y(_Design.buttonBottom) : errorTop + 22 * unit) + 12;
     final lift = math.max(0.0, contentBottom - (size.height - keyboard));
 
     // هامش اللمس يكمل الأزرار إلى 48 بكسل دون تغيير حجمها الظاهر.
@@ -298,9 +305,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                               disabledBorder: InputBorder.none,
                               errorBorder: InputBorder.none,
                               focusedErrorBorder: InputBorder.none,
-                              hintText: alarm > 0 ? '07XX XXX XXXX' : 'رقم الموبايل',
-                              hintTextDirection:
-                                  alarm > 0 ? TextDirection.ltr : TextDirection.rtl,
+                              hintText:
+                                  alarm > 0 ? '07XX XXX XXXX' : 'رقم الموبايل',
+                              hintTextDirection: alarm > 0
+                                  ? TextDirection.ltr
+                                  : TextDirection.rtl,
                               hintStyle: _textStyle(unit).copyWith(
                                 color: Color.lerp(_hint, Colors.white, alarm),
                                 fontWeight: FontWeight.w600,
@@ -341,7 +350,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                                 fit: BoxFit.scaleDown,
                                 child: Text(
                                   'تسجيل الدخول',
-                                  style: _textStyle(unit).copyWith(fontWeight: FontWeight.w800),
+                                  style: _textStyle(unit)
+                                      .copyWith(fontWeight: FontWeight.w800),
                                 ),
                               ),
                       ),

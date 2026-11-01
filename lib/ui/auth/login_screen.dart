@@ -21,14 +21,17 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   late final _phone = TextEditingController(text: widget.initialPhone);
   final _password = TextEditingController();
+  final _otp = TextEditingController();
   bool _obscure = true;
   bool _loading = false;
+  bool _otpSent = false;
   String? _error;
 
   @override
   void dispose() {
     _phone.dispose();
     _password.dispose();
+    _otp.dispose();
     super.dispose();
   }
 
@@ -38,11 +41,21 @@ class _LoginScreenState extends State<LoginScreen> {
       _loading = true;
       _error = null;
     });
-    final err = await context.read<AppState>().login(_phone.text, _password.text);
+    final state = context.read<AppState>();
+    final err = state.usesCloudAuth
+        ? _otpSent
+            ? await state.verifyPhoneOtp(phone: _phone.text, token: _otp.text)
+            : await state.requestPhoneOtp(phone: _phone.text, createUser: false)
+        : await state.login(_phone.text, _password.text);
     if (!mounted) return;
     setState(() => _loading = false);
     if (err != null) {
       setState(() => _error = err);
+      return;
+    }
+    if (state.usesCloudAuth && !_otpSent) {
+      setState(() => _otpSent = true);
+      AppSnack.show(context, 'أرسلنا رمز التحقق إلى هاتفك');
       return;
     }
     Navigator.of(context).popUntil((route) => route.isFirst);
@@ -57,6 +70,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final cloudAuth = context.watch<AppState>().usesCloudAuth;
     return Scaffold(
       appBar: AppBar(title: const Text('تسجيل الدخول')),
       body: SafeArea(
@@ -72,29 +86,32 @@ class _LoginScreenState extends State<LoginScreen> {
               Text('سجّل دخولك لمتابعة حجوزاتك وخدماتك.',
                   style: theme.textTheme.bodySmall?.copyWith(fontSize: 13)),
               const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                decoration: BoxDecoration(
-                  color: AppColors.gold.withValues(alpha: .12),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.gold.withValues(alpha: .4)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.smartphone_rounded, size: 18),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'وضع تجريبي محلي: البيانات محفوظة على هذا الجهاز فقط، ولا تتزامن مع أجهزة أخرى.',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          fontSize: 11.5,
-                          height: 1.6,
+              if (!cloudAuth)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: AppColors.gold.withValues(alpha: .12),
+                    borderRadius: BorderRadius.circular(12),
+                    border:
+                        Border.all(color: AppColors.gold.withValues(alpha: .4)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.smartphone_rounded, size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'وضع تجريبي محلي: البيانات محفوظة على هذا الجهاز فقط، ولا تتزامن مع أجهزة أخرى.',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            fontSize: 11.5,
+                            height: 1.6,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
               const SizedBox(height: 24),
               Form(
                 key: _formKey,
@@ -111,31 +128,61 @@ class _LoginScreenState extends State<LoginScreen> {
                         prefixIcon: Icon(Icons.phone_iphone_rounded, size: 20),
                       ),
                       validator: (v) {
-                        if (v == null || v.trim().isEmpty) return 'أدخل رقم الهاتف';
-                        if (!validIraqiPhone(v)) return 'رقم غير صالح (11 رقم يبدأ بـ 07)';
+                        if (v == null || v.trim().isEmpty) {
+                          return 'أدخل رقم الهاتف';
+                        }
+                        if (!validIraqiPhone(v)) {
+                          return 'رقم غير صالح (11 رقم يبدأ بـ 07)';
+                        }
                         return null;
                       },
                     ),
                     const SizedBox(height: 14),
-                    TextFormField(
-                      controller: _password,
-                      autofocus: widget.initialPhone != null,
-                      obscureText: _obscure,
-                      decoration: InputDecoration(
-                        labelText: 'كلمة المرور',
-                        prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
-                        suffixIcon: IconButton(
-                          onPressed: () => setState(() => _obscure = !_obscure),
-                          icon: Icon(
-                            _obscure ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                            size: 20,
+                    if (!cloudAuth)
+                      TextFormField(
+                        controller: _password,
+                        autofocus: widget.initialPhone != null,
+                        obscureText: _obscure,
+                        decoration: InputDecoration(
+                          labelText: 'كلمة المرور',
+                          prefixIcon:
+                              const Icon(Icons.lock_outline_rounded, size: 20),
+                          suffixIcon: IconButton(
+                            onPressed: () =>
+                                setState(() => _obscure = !_obscure),
+                            icon: Icon(
+                              _obscure
+                                  ? Icons.visibility_off_rounded
+                                  : Icons.visibility_rounded,
+                              size: 20,
+                            ),
                           ),
                         ),
+                        validator: (v) => (v == null || v.length < 6)
+                            ? 'كلمة المرور 6 أحرف على الأقل'
+                            : null,
+                        onFieldSubmitted: (_) => _submit(),
                       ),
-                      validator: (v) =>
-                          (v == null || v.length < 6) ? 'كلمة المرور 6 أحرف على الأقل' : null,
-                      onFieldSubmitted: (_) => _submit(),
-                    ),
+                    if (cloudAuth && _otpSent) ...[
+                      const SizedBox(height: 14),
+                      TextFormField(
+                        controller: _otp,
+                        keyboardType: TextInputType.number,
+                        textDirection: TextDirection.ltr,
+                        textAlign: TextAlign.center,
+                        maxLength: 6,
+                        decoration: const InputDecoration(
+                          labelText: 'رمز التحقق',
+                          prefixIcon: Icon(Icons.sms_outlined, size: 20),
+                          counterText: '',
+                        ),
+                        validator: (value) =>
+                            value == null || value.trim().length != 6
+                                ? 'أدخل رمز التحقق المكوّن من 6 أرقام'
+                                : null,
+                        onFieldSubmitted: (_) => _submit(),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -146,22 +193,33 @@ class _LoginScreenState extends State<LoginScreen> {
                   decoration: BoxDecoration(
                     color: AppColors.danger.withValues(alpha: .08),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.danger.withValues(alpha: .2)),
+                    border: Border.all(
+                        color: AppColors.danger.withValues(alpha: .2)),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.error_outline_rounded, color: AppColors.danger, size: 18),
+                      const Icon(Icons.error_outline_rounded,
+                          color: AppColors.danger, size: 18),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(_error!,
-                            style: const TextStyle(color: AppColors.danger, fontSize: 12.5)),
+                            style: const TextStyle(
+                                color: AppColors.danger, fontSize: 12.5)),
                       ),
                     ],
                   ),
                 ),
               ],
               const SizedBox(height: 20),
-              PrimaryButton(label: 'دخول', onPressed: _submit, loading: _loading),
+              PrimaryButton(
+                label: cloudAuth
+                    ? _otpSent
+                        ? 'تأكيد الرمز والدخول'
+                        : 'إرسال رمز التحقق'
+                    : 'دخول',
+                onPressed: _submit,
+                loading: _loading,
+              ),
               const SizedBox(height: 14),
               Center(
                 child: Wrap(
@@ -172,7 +230,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     TextButton(
                       onPressed: () => Navigator.pushReplacement(
                         context,
-                        MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                        MaterialPageRoute(
+                            builder: (_) => const RegisterScreen()),
                       ),
                       child: const Text('إنشاء حساب جديد'),
                     ),
@@ -180,53 +239,63 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 18),
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: theme.colorScheme.outline),
+              if (!cloudAuth)
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: theme.colorScheme.outline),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.science_outlined, size: 16),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              'دخول تجريبي سريع',
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  color: theme.colorScheme.onSurface),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: _loading
+                                  ? null
+                                  : () => _quick('07701234567', '123456'),
+                              style: OutlinedButton.styleFrom(
+                                  minimumSize: const Size(0, 42)),
+                              child: const Text('زبون',
+                                  style: TextStyle(fontSize: 12)),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: _loading
+                                  ? null
+                                  : () => _quick('07700000000', 'admin123'),
+                              style: OutlinedButton.styleFrom(
+                                  minimumSize: const Size(0, 42)),
+                              child: const Text('مدير',
+                                  style: TextStyle(fontSize: 12)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.science_outlined, size: 16),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: Text(
-                            'دخول تجريبي سريع',
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.bodySmall
-                                ?.copyWith(fontWeight: FontWeight.w800, color: theme.colorScheme.onSurface),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: _loading ? null : () => _quick('07701234567', '123456'),
-                            style: OutlinedButton.styleFrom(minimumSize: const Size(0, 42)),
-                            child: const Text('زبون', style: TextStyle(fontSize: 12)),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: _loading ? null : () => _quick('07700000000', 'admin123'),
-                            style: OutlinedButton.styleFrom(minimumSize: const Size(0, 42)),
-                            child: const Text('مدير', style: TextStyle(fontSize: 12)),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
             ],
           ),
         ),

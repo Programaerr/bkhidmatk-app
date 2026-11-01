@@ -24,9 +24,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _address = TextEditingController();
   final _password = TextEditingController();
   final _confirm = TextEditingController();
+  final _otp = TextEditingController();
   String _city = 'بغداد';
   bool _obscure = true;
   bool _loading = false;
+  bool _otpSent = false;
   String? _error;
 
   @override
@@ -36,6 +38,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _address.dispose();
     _password.dispose();
     _confirm.dispose();
+    _otp.dispose();
     super.dispose();
   }
 
@@ -59,7 +62,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   return ListTile(
                     title: Text(city),
                     trailing: city == _city
-                        ? const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 20)
+                        ? const Icon(Icons.check_circle_rounded,
+                            color: AppColors.success, size: 20)
                         : null,
                     onTap: () => Navigator.pop(ctx, city),
                   );
@@ -75,10 +79,36 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    final state = context.read<AppState>();
     setState(() {
       _loading = true;
       _error = null;
     });
+    if (state.usesCloudAuth) {
+      final verifyingOtp = _otpSent;
+      final error = verifyingOtp
+          ? await state.verifyPhoneOtp(phone: _phone.text, token: _otp.text)
+          : await state.requestPhoneOtp(
+              phone: normalizePhone(_phone.text),
+              createUser: true,
+              name: _name.text,
+              city: _city,
+              address: _address.text,
+            );
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        if (error == null && !verifyingOtp) _otpSent = true;
+        _error = error;
+      });
+      if (error == null && !verifyingOtp) {
+        AppSnack.show(context, 'أرسلنا رمز التحقق إلى هاتفك');
+      }
+      if (error == null && verifyingOtp) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
+      return;
+    }
     final err = await context.read<AppState>().register(
           name: _name.text,
           phone: normalizePhone(_phone.text),
@@ -98,6 +128,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final cloudAuth = context.watch<AppState>().usesCloudAuth;
     return Scaffold(
       appBar: AppBar(title: const Text('إنشاء حساب')),
       body: SafeArea(
@@ -121,8 +152,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     hintText: 'مثال: أحمد سعد',
                     prefixIcon: Icon(Icons.person_outline_rounded, size: 20),
                   ),
-                  validator: (v) =>
-                      (v == null || v.trim().length < 3) ? 'أدخل الاسم الكامل' : null,
+                  validator: (v) => (v == null || v.trim().length < 3)
+                      ? 'أدخل الاسم الكامل'
+                      : null,
                 ),
                 const SizedBox(height: 14),
                 const FieldLabel('رقم الهاتف', required_: true),
@@ -137,7 +169,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) return 'أدخل رقم الهاتف';
-                    if (!validIraqiPhone(v)) return 'رقم غير صالح (11 رقم يبدأ بـ 07)';
+                    if (!validIraqiPhone(v)) {
+                      return 'رقم غير صالح (11 رقم يبدأ بـ 07)';
+                    }
                     return null;
                   },
                 ),
@@ -164,41 +198,79 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 const SizedBox(height: 14),
-                const FieldLabel('كلمة المرور', required_: true),
-                TextFormField(
-                  controller: _password,
-                  obscureText: _obscure,
-                  decoration: InputDecoration(
-                    hintText: '6 أحرف على الأقل',
-                    prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
-                    suffixIcon: IconButton(
-                      onPressed: () => setState(() => _obscure = !_obscure),
-                      icon: Icon(
-                        _obscure ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                        size: 20,
+                if (!cloudAuth) ...[
+                  const FieldLabel('كلمة المرور', required_: true),
+                  TextFormField(
+                    controller: _password,
+                    obscureText: _obscure,
+                    decoration: InputDecoration(
+                      hintText: '6 أحرف على الأقل',
+                      prefixIcon:
+                          const Icon(Icons.lock_outline_rounded, size: 20),
+                      suffixIcon: IconButton(
+                        onPressed: () => setState(() => _obscure = !_obscure),
+                        icon: Icon(
+                          _obscure
+                              ? Icons.visibility_off_rounded
+                              : Icons.visibility_rounded,
+                          size: 20,
+                        ),
                       ),
                     ),
+                    validator: (v) => (v == null || v.length < 6)
+                        ? 'كلمة المرور 6 أحرف على الأقل'
+                        : null,
                   ),
-                  validator: (v) =>
-                      (v == null || v.length < 6) ? 'كلمة المرور 6 أحرف على الأقل' : null,
-                ),
-                const SizedBox(height: 14),
-                const FieldLabel('تأكيد كلمة المرور', required_: true),
-                TextFormField(
-                  controller: _confirm,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    hintText: 'أعد كتابة كلمة المرور',
-                    prefixIcon: Icon(Icons.lock_reset_rounded, size: 20),
+                  const SizedBox(height: 14),
+                  const FieldLabel('تأكيد كلمة المرور', required_: true),
+                  TextFormField(
+                    controller: _confirm,
+                    obscureText: true,
+                    decoration: const InputDecoration(
+                      hintText: 'أعد كتابة كلمة المرور',
+                      prefixIcon: Icon(Icons.lock_reset_rounded, size: 20),
+                    ),
+                    validator: (v) => v != _password.text
+                        ? 'كلمتا المرور غير متطابقتين'
+                        : null,
                   ),
-                  validator: (v) => v != _password.text ? 'كلمتا المرور غير متطابقتين' : null,
-                ),
+                ],
+                if (cloudAuth && _otpSent) ...[
+                  const SizedBox(height: 14),
+                  const FieldLabel('رمز التحقق', required_: true),
+                  TextFormField(
+                    controller: _otp,
+                    keyboardType: TextInputType.number,
+                    textDirection: TextDirection.ltr,
+                    textAlign: TextAlign.center,
+                    maxLength: 6,
+                    decoration: const InputDecoration(
+                      labelText: 'أدخل الرمز المرسل إلى هاتفك',
+                      prefixIcon: Icon(Icons.sms_outlined, size: 20),
+                      counterText: '',
+                    ),
+                    validator: (value) =>
+                        value == null || value.trim().length != 6
+                            ? 'أدخل رمز التحقق المكوّن من 6 أرقام'
+                            : null,
+                  ),
+                ],
                 if (_error != null) ...[
                   const SizedBox(height: 12),
-                  Text(_error!, style: const TextStyle(color: AppColors.danger, fontSize: 12.5)),
+                  Text(_error!,
+                      style: const TextStyle(
+                          color: AppColors.danger, fontSize: 12.5)),
                 ],
                 const SizedBox(height: 22),
-                PrimaryButton(label: 'إنشاء الحساب', onPressed: _submit, loading: _loading),
+                PrimaryButton(
+                  label: cloudAuth
+                      ? _otpSent
+                          ? 'تأكيد الرمز وإنشاء الحساب'
+                          : 'إرسال رمز التحقق'
+                      : 'إنشاء الحساب',
+                  onPressed: _submit,
+                  loading: _loading,
+                ),
                 const SizedBox(height: 10),
                 Center(
                   child: Wrap(
@@ -208,7 +280,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       TextButton(
                         onPressed: () => Navigator.pushReplacement(
                           context,
-                          MaterialPageRoute(builder: (_) => const LoginScreen()),
+                          MaterialPageRoute(
+                              builder: (_) => const LoginScreen()),
                         ),
                         child: const Text('تسجيل الدخول'),
                       ),

@@ -5,21 +5,41 @@
 وللمدير لوحة تحكم كاملة.
 
 - **Flutter** + Provider + Cairo + Material 3 (فاتح/داكن)
-- **كل شيء محلي**: SQLite على الجهاز — بدون إنترنت وبدون أي خدمات سحابية (لا Supabase)
+- **مصادقة الهاتف والإشعارات** عبر Supabase؛ بيانات الخدمات والحجوزات الحالية ما زالت محلية في SQLite.
 
 ## تشغيل سريع
 
 ```bash
 flutter pub get
-flutter run
+flutter run --dart-define=SUPABASE_URL=https://YOUR_PROJECT.supabase.co --dart-define=SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY
 ```
 
-بدون أي إعدادات إضافية — البيانات كلها محفوظة على الجهاز:
+أكمل إعداد Supabase أدناه قبل استخدام تسجيل الهاتف والإشعارات. يلزم تفعيل تسجيل الهاتف ومزوّد SMS. من دون المتغيرين أعلاه يعمل التطبيق في الوضع المحلي فقط.
 
-| الحساب | الهاتف | كلمة المرور |
-|---|---|---|
-| مدير | `07700000000` | `admin123` |
-| زبون | `07701234567` | `123456` |
+## Supabase: تسجيل الهاتف والإشعارات
+
+1. افتح **Supabase → SQL Editor**، والصق الملف [`supabase/setup.sql`](./supabase/setup.sql) ونفّذه.
+2. فعّل **Phone** في إعدادات Authentication واضبط مزوّد SMS في Supabase. لا يحتاج هذا التكامل إلى Firebase.
+3. أنشئ حساب المدير من التطبيق برقم الهاتف وتحقق من رمز SMS، ثم رقِّ الحساب مرة واحدة من SQL Editor:
+
+   ```sql
+   update public.app_profiles set role = 'admin' where phone = '07700000000';
+   ```
+
+   استبدل الرقم برقم المدير الفعلي ثم سجّل الخروج والدخول مجدداً. لا تمنح التطبيق صلاحية ترقية الحسابات.
+4. شغّل التطبيق باستخدام **Project URL** و **anon/public key** من إعدادات المشروع:
+
+   ```powershell
+   flutter run --dart-define=SUPABASE_URL=https://YOUR_PROJECT.supabase.co --dart-define=SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY
+   ```
+
+   لا تستخدم `service_role` داخل تطبيق الهاتف أو تشاركه؛ صلاحياته تتجاوز سياسات قاعدة البيانات.
+
+لبناء نسخة GitHub Actions مرتبطة بالمشروع، أضف `SUPABASE_URL` و`SUPABASE_PUBLISHABLE_KEY` إلى **Repository secrets**. من دونها تُبنى النسخة في الوضع المحلي فقط.
+
+بعدها يعمل تسجيل الدخول والتسجيل برمز الهاتف، وتُرسل الإدارة إشعارات داخل التطبيق للزبائن أو الحرفيين أو رقم مسجل. يستطيع المستخدم قراءتها من «حسابي ← إشعارات جايك». الإشعارات محفوظة في Supabase ولا تُرسل SMS أو إشعارات نظام الهاتف.
+
+**مهم:** بقية بيانات التطبيق الحالية (مثل الخدمات والحجوزات والمحادثات والوصولات) ما زالت تستخدم SQLite المحلية. ملف SQL هذا يربط الحسابات والتوظيف والإشعارات فقط؛ لا يجعل بقية البيانات متزامنة بين الأجهزة.
 
 ## نظام النقاط
 
@@ -29,7 +49,7 @@ flutter run
 ## بناء APK
 
 ```bash
-flutter build apk --release
+flutter build apk --release --dart-define=SUPABASE_URL=https://YOUR_PROJECT.supabase.co --dart-define=SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY
 ```
 
 أو اترك البناء للـ GitHub Actions: ملف `.github/workflows/build-apk.yml`

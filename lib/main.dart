@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'app.dart';
+import 'data/supabase_services.dart';
 import 'state/app_state.dart';
 
 Future<void> main() async {
@@ -19,7 +20,8 @@ Future<void> main() async {
     statusBarIconBrightness: Brightness.dark,
   ));
 
-  final state = AppState();
+  final cloudServices = await SupabaseServices.initializeIfConfigured();
+  final state = AppState(cloudServices: cloudServices);
   await state.boot();
 
   runApp(
