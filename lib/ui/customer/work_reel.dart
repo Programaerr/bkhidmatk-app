@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -35,13 +36,15 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
   bool _failed = false;
   bool _userPaused = false;
   bool _showPlayIcon = false;
+  bool _isPlaying = false;
+  int _initializationGeneration = 0;
 
   @override
   void initState() {
     super.initState();
     _work = widget.work;
     WidgetsBinding.instance.addObserver(this);
-    _initializeVideo();
+    if (widget.isActive) _initializeVideo();
   }
 
   @override
@@ -49,15 +52,28 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
     super.didUpdateWidget(oldWidget);
     _work = widget.work;
     if (oldWidget.work.videoUrl != widget.work.videoUrl) {
-      _disposeVideo();
       _failed = false;
-      _initializeVideo();
+      _isPlaying = false;
+      unawaited(_replaceVideo());
     } else if (oldWidget.isActive != widget.isActive) {
-      _syncPlayback();
+      _userPaused = false;
+      if (widget.isActive) {
+        _initializeVideo();
+      } else {
+        _isPlaying = false;
+        unawaited(_disposeVideo());
+      }
     }
   }
 
+  Future<void> _replaceVideo() async {
+    await _disposeVideo();
+    if (mounted && widget.isActive) _initializeVideo();
+  }
+
   Future<void> _initializeVideo() async {
+    if (!widget.isActive || _controller != null) return;
+    final generation = ++_initializationGeneration;
     final path = widget.work.videoUrl.trim();
     VideoPlayerController? controller;
     try {
@@ -71,23 +87,30 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
       }
       await controller.initialize();
       await controller.setLooping(true);
-      if (!mounted) {
+      if (!mounted ||
+          generation != _initializationGeneration ||
+          !widget.isActive) {
         await controller.dispose();
         return;
       }
       setState(() => _controller = controller);
       controller.addListener(_videoChanged);
-      _syncPlayback();
+      await _syncPlayback();
     } catch (error, stackTrace) {
       await controller?.dispose();
       debugPrint('Failed to initialize work video: $error');
       debugPrintStack(stackTrace: stackTrace);
-      if (mounted) setState(() => _failed = true);
+      if (mounted && generation == _initializationGeneration) {
+        setState(() => _failed = true);
+      }
     }
   }
 
   void _videoChanged() {
-    if (mounted) setState(() {});
+    final isPlaying = _controller?.value.isPlaying ?? false;
+    if (mounted && isPlaying != _isPlaying) {
+      setState(() => _isPlaying = isPlaying);
+    }
   }
 
   Future<void> _syncPlayback() async {
@@ -101,6 +124,9 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
     } else if (!shouldPlay && controller.value.isPlaying) {
       await controller.pause();
     }
+    if (mounted && _isPlaying != controller.value.isPlaying) {
+      setState(() => _isPlaying = controller.value.isPlaying);
+    }
   }
 
   @override
@@ -111,7 +137,7 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
   Future<void> _togglePlayback() async {
     final controller = _controller;
     if (controller == null || !controller.value.isInitialized) return;
-    _userPaused = controller.value.isPlaying;
+    _userPaused = _isPlaying;
     await _syncPlayback();
     if (mounted) {
       setState(() => _showPlayIcon = _userPaused);
@@ -184,17 +210,31 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
     }
   }
 
-  void _disposeVideo() {
+  Future<void> _disposeVideo() async {
+    _initializationGeneration++;
     final controller = _controller;
     _controller = null;
+    _isPlaying = false;
     controller?.removeListener(_videoChanged);
-    controller?.dispose();
+    if (controller == null) return;
+    try {
+      await controller.pause();
+    } catch (error, stackTrace) {
+      debugPrint('Failed to pause inactive work video: $error');
+      debugPrintStack(stackTrace: stackTrace);
+    }
+    try {
+      await controller.dispose();
+    } catch (error, stackTrace) {
+      debugPrint('Failed to release work video: $error');
+      debugPrintStack(stackTrace: stackTrace);
+    }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _disposeVideo();
+    unawaited(_disposeVideo());
     super.dispose();
   }
 
@@ -226,7 +266,7 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
               },
               child: Center(
                 child: AnimatedOpacity(
-                  opacity: _showPlayIcon || !controller.value.isPlaying ? 1 : 0,
+                  opacity: _showPlayIcon || !_isPlaying ? 1 : 0,
                   duration: const Duration(milliseconds: 180),
                   child: const Icon(
                     Icons.play_circle_fill_rounded,
