@@ -5,6 +5,8 @@ import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../state/app_state.dart';
 import '../widgets/ui.dart';
+import 'push_key.dart';
+import 'raised_field.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -18,13 +20,12 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
   late final _phone = TextEditingController(text: widget.initialPhone);
   final _password = TextEditingController();
   bool _obscure = true;
   bool _loading = false;
   String? _error;
-  String? _phoneError;
-  String? _passwordError;
 
   @override
   void dispose() {
@@ -33,18 +34,12 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  String? _checkPhone() {
-    if (_phone.text.trim().isEmpty) return 'أدخل رقم الهاتف';
-    if (!validIraqiPhone(phoneFromInput(_phone.text))) return 'رقم غير صالح (11 رقم يبدأ بـ 07)';
-    return null;
+  void _clearLoginError() {
+    if (_error != null) setState(() => _error = null);
   }
 
   Future<void> _submit() async {
-    setState(() {
-      _phoneError = _checkPhone();
-      _passwordError = _password.text.length < 6 ? 'كلمة المرور 6 أحرف على الأقل' : null;
-    });
-    if (_phoneError != null || _passwordError != null) return;
+    if (!validateAndShowFirstError(_formKey.currentState!)) return;
     setState(() {
       _loading = true;
       _error = null;
@@ -107,49 +102,41 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              // تختفي حمرة الخانة ورسالة الدخول بمجرد الكتابة، حتى يعيد زر الدخول فحصهما.
-              Column(
-                children: [
-                  TextFormField(
-                    controller: _phone,
-                    keyboardType: TextInputType.phone,
-                    textDirection: TextDirection.ltr,
-                    textAlign: TextAlign.right,
-                    forceErrorText: _phoneError,
-                    onChanged: (_) => setState(() {
-                      _phoneError = null;
-                      _error = null;
-                    }),
-                    decoration: const InputDecoration(
-                      hintText: '07XX XXX XXXX',
-                      labelText: 'رقم الهاتف',
-                      prefixIcon: Icon(Icons.phone_iphone_rounded, size: 20),
+              Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    RequiredFieldLabel('رقم الهاتف', controller: _phone),
+                    RaisedField(
+                      controller: _phone,
+                      hint: '07XX XXX XXXX',
+                      keyboardType: TextInputType.phone,
+                      textDirection: TextDirection.ltr,
+                      textAlign: TextAlign.right,
+                      onTyped: _clearLoginError,
+                      validator: (v) {
+                        if (v.trim().isEmpty) return 'أدخل رقم الهاتف';
+                        if (!validIraqiPhone(phoneFromInput(v))) {
+                          return 'رقم غير صالح (11 رقم يبدأ بـ 07)';
+                        }
+                        return null;
+                      },
                     ),
-                  ),
-                  const SizedBox(height: 14),
-                  TextFormField(
-                    controller: _password,
-                    autofocus: widget.initialPhone != null,
-                    obscureText: _obscure,
-                    forceErrorText: _passwordError,
-                    onChanged: (_) => setState(() {
-                      _passwordError = null;
-                      _error = null;
-                    }),
-                    decoration: InputDecoration(
-                      labelText: 'كلمة المرور',
-                      prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
-                      suffixIcon: IconButton(
-                        onPressed: () => setState(() => _obscure = !_obscure),
-                        icon: Icon(
-                          _obscure ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                          size: 20,
-                        ),
-                      ),
+                    const SizedBox(height: 14),
+                    RequiredFieldLabel('كلمة المرور', controller: _password),
+                    RaisedField(
+                      controller: _password,
+                      hint: 'أدخل كلمة المرور',
+                      autofocus: widget.initialPhone != null,
+                      obscureText: _obscure,
+                      onToggleObscure: () => setState(() => _obscure = !_obscure),
+                      onTyped: _clearLoginError,
+                      onSubmitted: (_) => _submit(),
+                      validator: (v) => v.length < 6 ? 'كلمة المرور 6 أحرف على الأقل' : null,
                     ),
-                    onFieldSubmitted: (_) => _submit(),
-                  ),
-                ],
+                  ],
+                ),
               ),
               if (_error != null) ...[
                 const SizedBox(height: 12),
@@ -172,9 +159,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ],
-              const SizedBox(height: 20),
-              PrimaryButton(label: 'دخول', onPressed: _submit, loading: _loading),
-              const SizedBox(height: 14),
+              const SizedBox(height: 17),
+              PushKeyButton(
+                label: 'تسجيل الدخول',
+                onPressed: _submit,
+                loading: _loading,
+                yellow: true,
+              ),
+              const SizedBox(height: 11),
               Center(
                 child: Wrap(
                   alignment: WrapAlignment.center,

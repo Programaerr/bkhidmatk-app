@@ -76,37 +76,44 @@ abstract final class _Design {
   static const craftsmanRight = 188.6;
   static const buttonLeft = 202.4;
   static const buttonRight = 323.8;
-  static const buttonTop = 514.9;
+  static const buttonTop = 483.14;
   static const buttonBottom = buttonTop + keyHeight;
+
+  // زر الحساب صف كامل تحتهما، والمسافة فوقه 80% من مسافة الصفين الأولين كما في الصورة.
+  static const accountTop = buttonBottom + 4.8;
+  static const accountBottom = accountTop + keyHeight;
 
   static const wideLineLeft = 92.63;
   static const wideLineRight = 299.46;
-  static const wideLineTop = 566.38;
+  static const wideLineTop = accountBottom + 6.74;
   static const wideLineHeight = 2.0;
 
   static const privacySize = 11.2;
   static const privacyCenterX = 191.2;
-  static const privacyCenterY = 583.9;
+  static const privacyCenterY = 601.68;
 
   static const shortLineLeft = 172.64;
   static const shortLineRight = 213.79;
-  static const privacyLineTop = 604.4;
+  static const privacyLineTop = 622.18;
 
   // من اليمين: فيسبوك ثم انستغرام ثم تيك توك، وبين قواعد الأزرار مسافة واضحة.
   static const socialCenters = [250.0, 193.0, 136.0];
   static const socialFaceWidth = 34.0;
-  static const socialTop = 618.4;
+  static const socialTop = 636.18;
   static const socialFaceHeight = 35.7;
   static const socialBottom = socialTop + socialFaceHeight + PushKey.depth;
   static const socialMarkSize = 19.0;
 
   static const contactSize = 10.0;
   static const contactCenterX = 191.2;
-  static const contactCenterY = 676.4;
+  static const contactCenterY = 694.18;
 
   /// لا يظهر هذا الخط في الصورة، وطلبته الملاحظة: بُعده عن الكلام كبُعد خط الخصوصية.
-  static const contactLineTop = 695.4;
+  static const contactLineTop = 713.18;
   static const contentBottom = contactLineTop + 1;
+
+  /// الأزرار قريبة من المنحني كما في الصورة، فيذهب أغلب الفراغ الزائد تحت المحتوى.
+  static const spaceBelow = 46.0;
 
   /// لا تصغر الخانات عن هذا الحد في الهواتف الضيقة حتى تبقى مقروءة.
   static const minControlScale = .95;
@@ -122,6 +129,7 @@ class _Words {
     required this.mobileNumber,
     required this.login,
     required this.craftsman,
+    required this.account,
     required this.wrongNumber,
     required this.privacy,
     required this.contact,
@@ -136,6 +144,7 @@ class _Words {
   final String mobileNumber;
   final String login;
   final String craftsman;
+  final String account;
   final String wrongNumber;
   final String privacy;
   final String contact;
@@ -153,6 +162,7 @@ const _arabic = _Words(
   mobileNumber: 'رقم الموبايل',
   login: 'تسجيل الدخول',
   craftsman: 'حرفي',
+  account: 'هل لديك حساب',
   wrongNumber: 'أدخل رقم موبايل عراقي صحيح يبدأ بـ 07',
   privacy: 'سياسة و الخصوصية',
   contact: 'تواصلوا معنى',
@@ -168,6 +178,7 @@ const _english = _Words(
   mobileNumber: 'Mobile number',
   login: 'Log in',
   craftsman: 'Craftsman',
+  account: 'Have an account?',
   wrongNumber: 'Enter a valid Iraqi mobile number starting with 07',
   privacy: 'Privacy Policy',
   contact: 'Contact us',
@@ -307,7 +318,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
     return digits.startsWith('0') ? digits : '0$digits';
   }
 
-  void _openCraftsman() {
+  void _openCraftsman() => _openWithPhone((phone) => CraftsmanScreen(initialPhone: phone));
+
+  void _openLogin() => _openWithPhone((phone) => LoginScreen(initialPhone: phone));
+
+  void _openWithPhone(Widget Function(String? phone) page) {
     final phone = _typedPhone;
     _focus.unfocus();
     Navigator.push(
@@ -315,7 +330,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
       _QuickRoute(
         builder: (_) => AnnotatedRegion<SystemUiOverlayStyle>(
           value: _appSystemBars(night: _nightMode),
-          child: CraftsmanScreen(initialPhone: validIraqiPhone(phone) ? phone : null),
+          child: page(validIraqiPhone(phone) ? phone : null),
         ),
       ),
     );
@@ -368,12 +383,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
 
     // الهواتف الأطول توزع مساحتها الزائدة فوق الأزرار وتحتها بنسب التصميم.
     final spaceAbove = _Design.rowTop - _Design.blueBottom;
-    final spaceBelow = _Design.height - _Design.contentBottom;
     final freeSpace = size.height -
         safeArea.bottom -
         blueBottom -
         (_Design.contentBottom - _Design.rowTop) * unit;
-    final rowTop = blueBottom + math.max(freeSpace, 0.0) * spaceAbove / (spaceAbove + spaceBelow);
+    final rowTop =
+        blueBottom + math.max(freeSpace, 0.0) * spaceAbove / (spaceAbove + _Design.spaceBelow);
     double x(double design) => size.width / 2 + (design - _Design.width / 2) * unit;
     double y(double design) => rowTop + (design - _Design.rowTop) * unit;
 
@@ -730,6 +745,36 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
                                 ),
                               ),
                             ),
+                            _touchArea(
+                              left: x(_Design.craftsmanLeft),
+                              right: x(_Design.buttonRight),
+                              top: y(_Design.accountTop),
+                              bottom: y(_Design.accountBottom),
+                              above: touchMargin,
+                              below: touchMargin,
+                              onTap: _busy ? null : _openLogin,
+                              child: PushKey(
+                                unit: unit,
+                                faceHeight: faceHeight,
+                                night: _night,
+                                child: Semantics(
+                                  button: true,
+                                  enabled: !_busy,
+                                  child: Center(
+                                    child: FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: _dayNight(
+                                        (night) => Text(
+                                          words.account,
+                                          style: _textStyle(unit, night ? _nightInk : _ink)
+                                              .copyWith(fontWeight: FontWeight.w800),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
                             line(
                               _Design.wideLineLeft,
                               _Design.wideLineRight,
@@ -797,7 +842,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
                               Positioned(
                                 left: 16,
                                 right: 16,
-                                bottom: pageHeight - y(_Design.rowTop) + 4 * unit,
+                                bottom: pageHeight - y(_Design.rowTop) + unit,
                                 child: AnimatedBuilder(
                                   animation: _alarmAndNight,
                                   builder: (context, _) => Opacity(

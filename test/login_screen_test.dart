@@ -8,6 +8,8 @@ import 'package:jaik/data/database.dart';
 import 'package:jaik/data/models.dart';
 import 'package:jaik/state/app_state.dart';
 import 'package:jaik/ui/auth/login_screen.dart';
+import 'package:jaik/ui/auth/push_key.dart';
+import 'package:jaik/ui/auth/raised_field.dart';
 
 import 'fake_repository.dart';
 
@@ -35,7 +37,7 @@ AppUser _customer() => AppUser(
       createdAt: DateTime(2026, 11, 1),
     );
 
-Future<void> _pump(WidgetTester tester, _Repo repo) async {
+Future<void> _pump(WidgetTester tester, _Repo repo, {String? phone}) async {
   SharedPreferences.setMockInitialValues({});
   tester.view
     ..physicalSize = const Size(412, 1600)
@@ -54,7 +56,7 @@ Future<void> _pump(WidgetTester tester, _Repo repo) async {
               child: TextButton(
                 onPressed: () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  MaterialPageRoute(builder: (_) => LoginScreen(initialPhone: phone)),
                 ),
                 child: const Text('الشاشة الأولى'),
               ),
@@ -72,11 +74,44 @@ Finder get _phone => find.byType(TextField).at(0);
 Finder get _password => find.byType(TextField).at(1);
 
 Future<void> _pressLogin(WidgetTester tester) async {
-  await tester.tap(find.text('دخول'));
+  await tester.tap(find.byType(PushKeyButton));
   await tester.pumpAndSettle();
 }
 
 void main() {
+  testWidgets('الصفحة بخانات صفحة الحرفي وزرها الأصفر', (tester) async {
+    await _pump(tester, _Repo());
+    expect(find.byType(RaisedField), findsNWidgets(2));
+    expect(find.byType(TextFormField), findsNothing);
+    final key = tester.widget<PushKeyButton>(find.byType(PushKeyButton));
+    expect(key.label, 'تسجيل الدخول');
+    expect(key.yellow, isTrue);
+  });
+
+  testWidgets('زر العين يظهر كلمة المرور ويخفيها', (tester) async {
+    await _pump(tester, _Repo());
+    expect(tester.widget<TextField>(_password).obscureText, isTrue);
+    await tester.tap(find.byIcon(Icons.visibility_off_rounded));
+    await tester.pump();
+    expect(tester.widget<TextField>(_password).obscureText, isFalse);
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('الرقم القادم من الشاشة الأولى يظهر، والكتابة تبدأ في كلمة المرور', (tester) async {
+    await _pump(tester, _Repo(), phone: '07701234567');
+    expect(tester.widget<TextField>(_phone).controller!.text, '07701234567');
+    expect(tester.widget<TextField>(_password).focusNode!.hasFocus, isTrue);
+  });
+
+  testWidgets('زر الإدخال في لوحة المفاتيح يسجل الدخول', (tester) async {
+    await _pump(tester, _Repo(customer: _customer()));
+    await tester.enterText(_phone, '07701234567');
+    await tester.enterText(_password, 'secret1');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+    expect(find.byType(LoginScreen), findsNothing);
+  });
+
   testWidgets('حمرة الخانة تختفي بمجرد الكتابة، وترجع عند الدخول إذا بقي الخطأ', (tester) async {
     await _pump(tester, _Repo());
     await _pressLogin(tester);

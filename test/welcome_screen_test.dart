@@ -91,6 +91,7 @@ void main() {
     expect(find.text('AR'), findsNothing);
     expect(find.text('Log in'), findsOneWidget);
     expect(find.text('Craftsman'), findsOneWidget);
+    expect(find.text('Have an account?'), findsOneWidget);
     expect(find.text('Mobile number'), findsOneWidget);
     expect(find.text('Privacy Policy'), findsOneWidget);
     expect(find.text('Contact us'), findsOneWidget);
@@ -154,9 +155,9 @@ void main() {
     await _pump(tester);
     final login = tester.getRect(find.byType(PushKey).at(2));
     final privacy = tester.getRect(find.text('سياسة و الخصوصية'));
-    final facebook = tester.getRect(find.byType(PushKey).at(4));
-    final instagram = tester.getRect(find.byType(PushKey).at(5));
-    final tiktok = tester.getRect(find.byType(PushKey).at(6));
+    final facebook = tester.getRect(find.byType(PushKey).at(5));
+    final instagram = tester.getRect(find.byType(PushKey).at(6));
+    final tiktok = tester.getRect(find.byType(PushKey).at(7));
     final contact = tester.getRect(find.text('تواصلوا معنى'));
 
     expect(privacy.top, greaterThan(login.bottom));
@@ -176,18 +177,76 @@ void main() {
     }
   });
 
-  testWidgets('كل العناصر داخل أصغر هاتف، وزرا الأعلى تحت شريط الحالة', (tester) async {
+  testWidgets('زر الحساب صف كامل تحت زري الدخول والحرفي، وفوق خط الخصوصية', (tester) async {
+    await _pump(tester);
+    final number = tester.getRect(find.byType(PushKey).at(1));
+    final login = tester.getRect(find.byType(PushKey).at(2));
+    final craftsman = tester.getRect(find.byType(PushKey).at(3));
+    final account = tester.getRect(
+      find.ancestor(of: find.text('هل لديك حساب'), matching: find.byType(PushKey)),
+    );
+
+    expect(account.left, craftsman.left);
+    expect(account.right, login.right);
+    expect(account.height, login.height);
+    expect(tester.widget<PushKey>(find.byType(PushKey).at(4)).yellow, isFalse);
+
+    final gapAbove = login.top - number.bottom;
+    final gap = account.top - login.bottom;
+    expect(gap, greaterThan(0));
+    expect(gap / gapAbove, closeTo(.8, .05));
+    expect(tester.getRect(find.text('سياسة و الخصوصية')).top, greaterThan(account.bottom));
+  });
+
+  testWidgets('زر الحساب يفتح صفحة الدخول بسرعة وبالرقم المكتوب', (tester) async {
+    final repo = await _pump(tester, registered: true);
+    await tester.enterText(find.byType(TextField), '7701234567');
+    await tester.tap(find.text('هل لديك حساب'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    final page = tester.element(find.byType(LoginScreen));
+    expect(ModalRoute.of(page)!.animation!.value, 1);
+    expect(
+      tester.widget<TextField>(
+        find.descendant(of: find.byType(LoginScreen), matching: find.byType(TextField)).first,
+      ).controller!.text,
+      '07701234567',
+    );
+    expect(repo.asked, isEmpty);
+  });
+
+  testWidgets('زر الحساب بدون رقم يفتح صفحة الدخول فارغة، ولا يعرض خطأ', (tester) async {
+    await _pump(tester);
+    await tester.tap(find.text('هل لديك حساب'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 201));
+
+    expect(find.byType(LoginScreen), findsOneWidget);
+    expect(find.text('أدخل رقم موبايل عراقي صحيح يبدأ بـ 07'), findsNothing);
+    expect(
+      tester.widget<TextField>(
+        find.descendant(of: find.byType(LoginScreen), matching: find.byType(TextField)).first,
+      ).controller!.text,
+      isEmpty,
+    );
+  });
+
+  testWidgets('في أصغر هاتف تظهر الأزرار ويُسحب الباقي، وزرا الأعلى تحت شريط الحالة', (tester) async {
     _useScreen(tester, const Size(320, 568), statusBar: 24);
     await _pump(tester);
     final language = tester.getRect(find.text('AR'));
     final dayNight = tester.getRect(find.byType(DayNightSwitch));
-    final contact = tester.getRect(find.text('تواصلوا معنى'));
 
     expect(language.left, greaterThan(0));
     expect(language.top, greaterThan(24));
     expect(dayNight.right, lessThan(320));
     expect(dayNight.top, greaterThanOrEqualTo(24 + 20));
-    expect(contact.bottom, lessThan(568));
+    expect(tester.getRect(find.text('هل لديك حساب')).bottom, lessThan(568));
+
+    await tester.drag(find.byType(SingleChildScrollView), const Offset(0, -300));
+    await tester.pump();
+    expect(tester.getRect(find.text('تواصلوا معنى')).bottom, lessThan(568));
   });
 
   testWidgets('زر حرفي يسار زر الدخول بنفس مقاسه، ويفتح صفحة الحرفي بالرقم المكتوب', (tester) async {
