@@ -8,7 +8,11 @@
             "program": "lib/main.dart",
             "cwd": "${workspaceFolder}",
             "flutterMode": "debug",
-            "toolArgs": ["--no-pub"]
+            "toolArgs": [
+                "--no-pub",
+                "--dart-define=SUPABASE_URL=${env:SUPABASE_URL}",
+                "--dart-define=SUPABASE_PUBLISHABLE_KEY=${env:SUPABASE_PUBLISHABLE_KEY}"
+            ]
         }
     ]
 }

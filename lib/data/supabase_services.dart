@@ -45,9 +45,11 @@ class SupabaseServices {
     defaultValue: String.fromEnvironment('SUPABASE_ANON_KEY'),
   );
 
+  static bool get isConfigured => _url.isNotEmpty && _publishableKey.isNotEmpty;
+
   static Future<SupabaseServices?> initializeIfConfigured() async {
-    if (_url.isEmpty && _publishableKey.isEmpty) return null;
-    if (_url.isEmpty || _publishableKey.isEmpty) {
+    if (!isConfigured) {
+      if (_url.isEmpty && _publishableKey.isEmpty) return null;
       throw StateError(
         'Supabase configuration is incomplete. Run with --dart-define=SUPABASE_URL=... '
         'and --dart-define=SUPABASE_PUBLISHABLE_KEY=... .',

@@ -17,14 +17,16 @@ import 'package:jaik/ui/auth/welcome_screen.dart';
 import 'fake_repository.dart';
 
 class _Repo extends FakeRepo {
-  _Repo({required this.registered});
+  _Repo({required this.registered, this.failPhoneCheck = false});
 
   final bool registered;
+  final bool failPhoneCheck;
   final asked = <String>[];
 
   @override
   Future<bool> phoneExists(String phone) async {
     asked.add(phone);
+    if (failPhoneCheck) throw StateError('database unavailable');
     return registered;
   }
 }
@@ -32,9 +34,13 @@ class _Repo extends FakeRepo {
 Future<_Repo> _pump(
   WidgetTester tester, {
   bool registered = false,
+  bool failPhoneCheck = false,
   bool disableAnimations = false,
 }) async {
-  final repo = _Repo(registered: registered);
+  final repo = _Repo(
+    registered: registered,
+    failPhoneCheck: failPhoneCheck,
+  );
   await tester.pumpWidget(
     ChangeNotifierProvider<AppState>.value(
       value: AppState(repository: repo),
@@ -42,8 +48,10 @@ Future<_Repo> _pump(
         theme: AppTheme.light(),
         locale: const Locale('ar'),
         builder: (context, child) => MediaQuery(
-          data: MediaQuery.of(context).copyWith(disableAnimations: disableAnimations),
-          child: Directionality(textDirection: TextDirection.rtl, child: child!),
+          data: MediaQuery.of(context)
+              .copyWith(disableAnimations: disableAnimations),
+          child:
+              Directionality(textDirection: TextDirection.rtl, child: child!),
         ),
         home: const WelcomeScreen(),
       ),
@@ -61,7 +69,8 @@ Future<void> _submit(WidgetTester tester, String phone) async {
 }
 
 /// يضبط مقاس الشاشة ويرجعه بعد انتهاء الاختبار.
-void _useScreen(WidgetTester tester, Size size, {double statusBar = 0, double keyboard = 0}) {
+void _useScreen(WidgetTester tester, Size size,
+    {double statusBar = 0, double keyboard = 0}) {
   tester.view
     ..physicalSize = size
     ..devicePixelRatio = 1
@@ -74,11 +83,23 @@ void _useScreen(WidgetTester tester, Size size, {double statusBar = 0, double ke
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
-  testWidgets('زر اللغة يبدّل نصوص الشاشة وكلام السائق، ثم يرجعها', (tester) async {
+  testWidgets('يعرض خطأ قاعدة البيانات ولا يترك شاشة الدخول في حالة تحميل',
+      (tester) async {
+    await _pump(tester, failPhoneCheck: true);
+
+    await _submit(tester, '07701234567');
+
+    expect(find.textContaining('تعذر التحقق من رقم الهاتف'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+  });
+
+  testWidgets('زر اللغة يبدّل نصوص الشاشة وكلام السائق، ثم يرجعها',
+      (tester) async {
     await _pump(tester);
     TruckScenePainter scene() => tester
         .widget<CustomPaint>(
-          find.descendant(of: find.byType(TruckScene), matching: find.byType(CustomPaint)),
+          find.descendant(
+              of: find.byType(TruckScene), matching: find.byType(CustomPaint)),
         )
         .painter! as TruckScenePainter;
     expect(find.text('AR'), findsOneWidget);
@@ -105,13 +126,19 @@ void main() {
     expect(scene().english, isFalse);
   });
 
-  testWidgets('زر الليل والنهار يغيّر ثيم التطبيق ولون الشاشة بالتدريج ثم يرجع', (tester) async {
+  testWidgets('زر الليل والنهار يغيّر ثيم التطبيق ولون الشاشة بالتدريج ثم يرجع',
+      (tester) async {
     await _pump(tester);
     final state = tester.element(find.byType(WelcomeScreen)).read<AppState>();
-    double night() => tester.widget<PushKey>(find.byType(PushKey).first).night.value;
+    double night() =>
+        tester.widget<PushKey>(find.byType(PushKey).first).night.value;
     Color? ground() => tester
         .widget<ColoredBox>(
-          find.descendant(of: find.byType(WelcomeScreen), matching: find.byType(ColoredBox)).first,
+          find
+              .descendant(
+                  of: find.byType(WelcomeScreen),
+                  matching: find.byType(ColoredBox))
+              .first,
         )
         .color;
     final dayGround = ground();
@@ -125,10 +152,12 @@ void main() {
 
     await tester.pump(const Duration(milliseconds: 300));
     expect(night(), 1);
-    expect(tester.widget<DayNightSwitch>(find.byType(DayNightSwitch)).night, isTrue);
+    expect(tester.widget<DayNightSwitch>(find.byType(DayNightSwitch)).night,
+        isTrue);
     expect(ground(), Colors.black);
     // زر اللغة فوق الجهة الصفراء، فيبقى لونه داكناً في الليل أيضاً.
-    expect(tester.widget<Text>(find.text('AR')).style!.color, const Color(0xFF383838));
+    expect(tester.widget<Text>(find.text('AR')).style!.color,
+        const Color(0xFF383838));
 
     await tester.tap(find.bySemanticsLabel('الوضع الليلي'));
     await tester.pump();
@@ -150,7 +179,8 @@ void main() {
     expect(next.themeMode, ThemeMode.dark);
   });
 
-  testWidgets('الخصوصية والتواصل وأزرار المنصات تحت زر الدخول بترتيب التصميم', (tester) async {
+  testWidgets('الخصوصية والتواصل وأزرار المنصات تحت زر الدخول بترتيب التصميم',
+      (tester) async {
     await _pump(tester);
     final login = tester.getRect(find.byType(PushKey).at(2));
     final privacy = tester.getRect(find.text('سياسة و الخصوصية'));
@@ -176,7 +206,8 @@ void main() {
     }
   });
 
-  testWidgets('كل العناصر داخل أصغر هاتف، وزرا الأعلى تحت شريط الحالة', (tester) async {
+  testWidgets('كل العناصر داخل أصغر هاتف، وزرا الأعلى تحت شريط الحالة',
+      (tester) async {
     _useScreen(tester, const Size(320, 568), statusBar: 24);
     await _pump(tester);
     final language = tester.getRect(find.text('AR'));
@@ -190,7 +221,9 @@ void main() {
     expect(contact.bottom, lessThan(568));
   });
 
-  testWidgets('زر حرفي يسار زر الدخول بنفس مقاسه، ويفتح صفحة الحرفي بالرقم المكتوب', (tester) async {
+  testWidgets(
+      'زر حرفي يسار زر الدخول بنفس مقاسه، ويفتح صفحة الحرفي بالرقم المكتوب',
+      (tester) async {
     await _pump(tester);
     final login = tester.getRect(find.byType(PushKey).at(2));
     final craftsman = tester.getRect(find.byType(PushKey).at(3));
@@ -208,7 +241,8 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
     expect(find.byType(CraftsmanScreen), findsOneWidget);
     expect(
-      find.descendant(of: find.byType(CraftsmanScreen), matching: find.text('07701234567')),
+      find.descendant(
+          of: find.byType(CraftsmanScreen), matching: find.text('07701234567')),
       findsOneWidget,
     );
 
@@ -222,11 +256,13 @@ void main() {
     expect(find.text('حرفي'), findsOneWidget);
   });
 
-  testWidgets('الكرة الأرضية بجانب رمز اللغة، والضغط عليها يبدّل اللغة', (tester) async {
+  testWidgets('الكرة الأرضية بجانب رمز اللغة، والضغط عليها يبدّل اللغة',
+      (tester) async {
     await _pump(tester);
     final globe = find.byIcon(Icons.public);
     expect(globe, findsOneWidget);
-    expect(tester.getRect(globe).right, lessThanOrEqualTo(tester.getRect(find.text('AR')).left));
+    expect(tester.getRect(globe).right,
+        lessThanOrEqualTo(tester.getRect(find.text('AR')).left));
 
     await tester.tap(globe);
     await tester.pump();
@@ -234,9 +270,11 @@ void main() {
     expect(find.text('EN'), findsOneWidget);
   });
 
-  testWidgets('صيغة الرقم تذوب ثم يظهر نص الخانة بالتدريج دون قفزة', (tester) async {
+  testWidgets('صيغة الرقم تذوب ثم يظهر نص الخانة بالتدريج دون قفزة',
+      (tester) async {
     await _pump(tester);
-    double level(String text) => tester.widget<Text>(find.text(text)).style!.color!.a;
+    double level(String text) =>
+        tester.widget<Text>(find.text(text)).style!.color!.a;
 
     await tester.tap(find.text('تسجيل الدخول'));
     await tester.pump();
@@ -263,7 +301,8 @@ void main() {
     final contact = find.text('تواصلوا معنى');
     expect(tester.getRect(contact).top, greaterThan(360));
 
-    await tester.drag(find.byType(SingleChildScrollView), const Offset(0, -300));
+    await tester.drag(
+        find.byType(SingleChildScrollView), const Offset(0, -300));
     await tester.pump();
     expect(tester.getRect(contact).bottom, lessThan(360));
   });
@@ -272,22 +311,27 @@ void main() {
     _useScreen(tester, const Size(392, 872), keyboard: 330);
     await _pump(tester);
     await tester.pump(const Duration(milliseconds: 300));
-    expect(tester.getRect(find.byType(PushKey).at(2)).bottom, lessThanOrEqualTo(872 - 330));
+    expect(tester.getRect(find.byType(PushKey).at(2)).bottom,
+        lessThanOrEqualTo(872 - 330));
   });
 
   for (final size in const [Size(360, 640), Size(392, 872)]) {
-    testWidgets('رسالة الخطأ فوق خانة الرقم ولا تغطيها في هاتف $size', (tester) async {
+    testWidgets('رسالة الخطأ فوق خانة الرقم ولا تغطيها في هاتف $size',
+        (tester) async {
       _useScreen(tester, size);
       await _pump(tester);
       await tester.tap(find.text('تسجيل الدخول'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
-      final message = tester.getRect(find.text('أدخل رقم موبايل عراقي صحيح يبدأ بـ 07'));
-      expect(message.bottom, lessThanOrEqualTo(tester.getRect(find.byType(PushKey).at(1)).top));
+      final message =
+          tester.getRect(find.text('أدخل رقم موبايل عراقي صحيح يبدأ بـ 07'));
+      expect(message.bottom,
+          lessThanOrEqualTo(tester.getRect(find.byType(PushKey).at(1)).top));
     });
   }
 
-  testWidgets('الرقم غير العراقي لا ينتقل لشاشة أخرى ويعرض خطأ', (tester) async {
+  testWidgets('الرقم غير العراقي لا ينتقل لشاشة أخرى ويعرض خطأ',
+      (tester) async {
     final repo = await _pump(tester);
     await _submit(tester, '1234567890');
 
@@ -297,7 +341,9 @@ void main() {
     expect(find.byType(RegisterScreen), findsNothing);
   });
 
-  testWidgets('الخطأ يجعل الخانة حمراء بالكامل ثم تعود ببطء ويختفي الأحمر والرسالة', (tester) async {
+  testWidgets(
+      'الخطأ يجعل الخانة حمراء بالكامل ثم تعود ببطء ويختفي الأحمر والرسالة',
+      (tester) async {
     await _pump(tester);
     double alarm() => tester.widget<PushKey>(find.byType(PushKey).at(1)).alarm;
     const message = 'أدخل رقم موبايل عراقي صحيح يبدأ بـ 07';
@@ -338,7 +384,8 @@ void main() {
 
     expect(repo.asked, ['07711112222']);
     expect(
-      find.descendant(of: find.byType(RegisterScreen), matching: find.text('07711112222')),
+      find.descendant(
+          of: find.byType(RegisterScreen), matching: find.text('07711112222')),
       findsOneWidget,
     );
   });
@@ -356,12 +403,14 @@ void main() {
     expect(tester.hasRunningAnimations, isTrue);
   });
 
-  testWidgets('المشهد يثبت إذا عطّل المستخدم الحركات من الجهاز', (tester) async {
+  testWidgets('المشهد يثبت إذا عطّل المستخدم الحركات من الجهاز',
+      (tester) async {
     await _pump(tester, disableAnimations: true);
     expect(tester.hasRunningAnimations, isFalse);
   });
 
-  testWidgets('علم العراق بجانب الرمز، والزر ينخفض عند اللمس ويعود', (tester) async {
+  testWidgets('علم العراق بجانب الرمز، والزر ينخفض عند اللمس ويعود',
+      (tester) async {
     await _pump(tester);
     expect(find.text('🇮🇶 +964'), findsOneWidget);
 
@@ -450,11 +499,14 @@ void main() {
     });
   });
 
-  testWidgets('الضغط على السيارة يسرعها، والضغط خارجها لا يغيّر شيئاً', (tester) async {
+  testWidgets('الضغط على السيارة يسرعها، والضغط خارجها لا يغيّر شيئاً',
+      (tester) async {
     await _pump(tester);
     VanDirector director() => (tester
             .widget<CustomPaint>(
-              find.descendant(of: find.byType(TruckScene), matching: find.byType(CustomPaint)),
+              find.descendant(
+                  of: find.byType(TruckScene),
+                  matching: find.byType(CustomPaint)),
             )
             .painter! as TruckScenePainter)
         .director;
@@ -470,10 +522,13 @@ void main() {
   });
 
   test('قارئ مسارات SVG يفهم الصيغة المختصرة والأقواس', () {
-    expect(parseSvgPath('M0,0h10v10h-10Z').getBounds(), const Rect.fromLTRB(0, 0, 10, 10));
-    expect(parseSvgPath('M1-2l.5.5-1.5 1.5Z').getBounds(), const Rect.fromLTRB(0, -2, 1.5, 0));
+    expect(parseSvgPath('M0,0h10v10h-10Z').getBounds(),
+        const Rect.fromLTRB(0, 0, 10, 10));
+    expect(parseSvgPath('M1-2l.5.5-1.5 1.5Z').getBounds(),
+        const Rect.fromLTRB(0, -2, 1.5, 0));
 
-    final circle = parseSvgPath('M0,5A5,5,0,1,0,10,5A5,5,0,1,0,0,5Z').getBounds();
+    final circle =
+        parseSvgPath('M0,5A5,5,0,1,0,10,5A5,5,0,1,0,0,5Z').getBounds();
     expect(circle.width, closeTo(10, .01));
     expect(circle.height, closeTo(10, .01));
   });

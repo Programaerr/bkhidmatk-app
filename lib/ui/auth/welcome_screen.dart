@@ -333,8 +333,18 @@ class _WelcomeScreenState extends State<WelcomeScreen>
       _wrongNumber = false;
     });
     final state = context.read<AppState>();
-    final registered =
-        state.usesCloudAuth ? true : await state.repo.phoneExists(phone);
+    late final bool registered;
+    try {
+      registered =
+          state.usesCloudAuth ? true : await state.repo.phoneExists(phone);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _busy = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('تعذر التحقق من رقم الهاتف: $error')),
+      );
+      return;
+    }
     if (!mounted) return;
     setState(() => _busy = false);
     _focus.unfocus();
