@@ -74,107 +74,16 @@ class _AdminWorksState extends State<AdminWorks>
 
   Future<void> _edit({OurWork? work}) async {
     final state = context.read<AppState>();
-    final title = TextEditingController(text: work?.title ?? '');
-    final description = TextEditingController(text: work?.description ?? '');
-    final url = TextEditingController(text: work?.videoUrl ?? '');
-    final formKey = GlobalKey<FormState>();
-
-    final saved = await showAppSheet<bool>(
+    final editedWork = await showAppSheet<OurWork>(
       context,
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-        child: SingleChildScrollView(
-          child: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SheetHeader(
-                  title: work == null ? 'إضافة عمل جديد' : 'تعديل العمل',
-                  subtitle:
-                      'للتشغيل داخل الريلز استخدم رابط فيديو مباشر مثل MP4 أو HLS',
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: title,
-                  textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(
-                    labelText: 'عنوان العمل',
-                    prefixIcon: Icon(Icons.title_rounded, size: 20),
-                  ),
-                  validator: (v) => (v == null || v.trim().isEmpty)
-                      ? 'أدخل عنوان العمل'
-                      : null,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: url,
-                  textDirection: TextDirection.ltr,
-                  keyboardType: TextInputType.url,
-                  decoration: const InputDecoration(
-                    hintText: 'https://example.com/video.mp4',
-                    labelText: 'رابط الفيديو',
-                    prefixIcon: Icon(Icons.link_rounded, size: 20),
-                  ),
-                  validator: (v) {
-                    final t = v?.trim() ?? '';
-                    if (t.isEmpty) return 'أدخل رابط الفيديو';
-                    if (!t.startsWith('http://') && !t.startsWith('https://')) {
-                      return 'الرابط يجب أن يبدأ بـ http';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: description,
-                  maxLines: 3,
-                  decoration: const InputDecoration(
-                    labelText: 'وصف (اختياري)',
-                    prefixIcon: Icon(Icons.notes_rounded, size: 20),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                PrimaryButton(
-                  label: work == null ? 'إضافة العمل' : 'حفظ التعديلات',
-                  onPressed: () {
-                    if (formKey.currentState?.validate() ?? false) {
-                      Navigator.pop(ctx, true);
-                    }
-                  },
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+      builder: (_) => _WorkForm(work: work),
     );
-    if (saved != true || !mounted) {
-      title.dispose();
-      description.dispose();
-      url.dispose();
-      return;
-    }
+    if (editedWork == null || !mounted) return;
     if (work == null) {
-      await state.repo.createWork(OurWork(
-        title: title.text.trim(),
-        description:
-            description.text.trim().isEmpty ? null : description.text.trim(),
-        videoUrl: url.text.trim(),
-        createdAt: DateTime.now(),
-      ));
+      await state.repo.createWork(editedWork);
     } else {
-      await state.repo.updateWork(work.copyWith(
-        title: title.text.trim(),
-        description:
-            description.text.trim().isEmpty ? null : description.text.trim(),
-        videoUrl: url.text.trim(),
-      ));
+      await state.repo.updateWork(editedWork);
     }
-    title.dispose();
-    description.dispose();
-    url.dispose();
     if (!mounted) return;
     AppSnack.show(
         context, work == null ? 'تمت إضافة العمل' : 'تم حفظ التعديلات');
@@ -357,6 +266,127 @@ class _AdminWorksState extends State<AdminWorks>
           ),
         ),
       ],
+    );
+  }
+}
+
+class _WorkForm extends StatefulWidget {
+  const _WorkForm({this.work});
+
+  final OurWork? work;
+
+  @override
+  State<_WorkForm> createState() => _WorkFormState();
+}
+
+class _WorkFormState extends State<_WorkForm> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _title;
+  late final TextEditingController _description;
+  late final TextEditingController _url;
+
+  @override
+  void initState() {
+    super.initState();
+    _title = TextEditingController(text: widget.work?.title ?? '');
+    _description = TextEditingController(text: widget.work?.description ?? '');
+    _url = TextEditingController(text: widget.work?.videoUrl ?? '');
+  }
+
+  @override
+  void dispose() {
+    _title.dispose();
+    _description.dispose();
+    _url.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    final work = widget.work;
+    Navigator.pop(
+      context,
+      OurWork(
+        id: work?.id,
+        title: _title.text.trim(),
+        description:
+            _description.text.trim().isEmpty ? null : _description.text.trim(),
+        videoUrl: _url.text.trim(),
+        active: work?.active ?? true,
+        views: work?.views ?? 0,
+        likes: work?.likes ?? 0,
+        createdAt: work?.createdAt ?? DateTime.now(),
+        commentCount: work?.commentCount ?? 0,
+        likedByMe: work?.likedByMe ?? false,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+      child: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SheetHeader(
+                title: widget.work == null ? 'إضافة عمل جديد' : 'تعديل العمل',
+                subtitle:
+                    'للتشغيل داخل الريلز استخدم رابط فيديو مباشر مثل MP4 أو HLS',
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _title,
+                textInputAction: TextInputAction.next,
+                decoration: const InputDecoration(
+                  labelText: 'عنوان العمل',
+                  prefixIcon: Icon(Icons.title_rounded, size: 20),
+                ),
+                validator: (v) =>
+                    (v == null || v.trim().isEmpty) ? 'أدخل عنوان العمل' : null,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _url,
+                textDirection: TextDirection.ltr,
+                keyboardType: TextInputType.url,
+                decoration: const InputDecoration(
+                  hintText: 'https://example.com/video.mp4',
+                  labelText: 'رابط الفيديو',
+                  prefixIcon: Icon(Icons.link_rounded, size: 20),
+                ),
+                validator: (v) {
+                  final value = v?.trim() ?? '';
+                  if (value.isEmpty) return 'أدخل رابط الفيديو';
+                  if (!value.startsWith('http://') &&
+                      !value.startsWith('https://')) {
+                    return 'الرابط يجب أن يبدأ بـ http';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _description,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  labelText: 'وصف (اختياري)',
+                  prefixIcon: Icon(Icons.notes_rounded, size: 20),
+                ),
+              ),
+              const SizedBox(height: 20),
+              PrimaryButton(
+                label: widget.work == null ? 'إضافة العمل' : 'حفظ التعديلات',
+                onPressed: _save,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -87,13 +88,23 @@ void main() {
     await tester.tap(find.text('إدارة الريلز'));
     await tester.pumpAndSettle();
     expect(find.text('ريل تجربة'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextFormField).at(0), 'فيديو جديد');
+    await tester.enterText(
+      find.byType(TextFormField).at(1),
+      'https://example.com/new-video.mp4',
+    );
+    await tester.tap(find.text('إضافة العمل'));
+    await tester.pumpAndSettle();
+    expect(find.text('فيديو جديد'), findsOneWidget);
 
     await tester.tap(find.text('واجهة الزبون'));
     await tester.pumpAndSettle();
     expect(find.byType(CustomerShell), findsOneWidget);
     await tester.tap(find.text('ريلز'));
     await tester.pumpAndSettle();
-    expect(find.text('ريل تجربة'), findsOneWidget);
+    expect(find.text('فيديو جديد'), findsOneWidget);
     state.dispose();
   });
 }
