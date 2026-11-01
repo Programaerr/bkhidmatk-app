@@ -46,6 +46,70 @@ const _loginInk = Color(0xFF263238);
 const _loginNightInk = Color(0xFFF4F4EE);
 const _loginSpinner = Color(0xFF416F9E);
 
+// زر الرجوع: حافته على حافة خانات الصفحة، وبعده عنوانها.
+const _backFaceWidth = 34.0;
+const _backArrowSize = 20.0;
+const _pageMargin = 22.0;
+const _backTitleGap = 12.0;
+
+double _keyUnit(BuildContext context) {
+  final size = MediaQuery.sizeOf(context);
+  final fit = math.min(size.width / _loginDesignWidth, size.height / _loginDesignHeight);
+  return math.max(fit, _loginMinScale);
+}
+
+/// شريط صفحة تُفتح من الشاشة الأولى: عنوانها وزر رجوع بشكل أزرارها، سهم فقط.
+class PushKeyAppBar extends StatelessWidget implements PreferredSizeWidget {
+  const PushKeyAppBar({super.key, required this.title});
+
+  final String title;
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+
+  @override
+  Widget build(BuildContext context) {
+    final unit = _keyUnit(context);
+    final night = Theme.of(context).brightness == Brightness.dark;
+    final faceHeight = _loginFaceHeight * unit;
+    final keyWidth = (_backFaceWidth + PushKey.faceInset * 2) * unit;
+    return AppBar(
+      leadingWidth: _pageMargin + keyWidth,
+      titleSpacing: _backTitleGap,
+      leading: Semantics(
+        button: true,
+        label: 'رجوع',
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => Navigator.maybePop(context),
+          child: Padding(
+            padding: const EdgeInsetsDirectional.only(start: _pageMargin),
+            child: Center(
+              child: SizedBox(
+                width: keyWidth,
+                height: faceHeight + PushKey.depth * unit,
+                child: PushKey(
+                  unit: unit,
+                  faceHeight: faceHeight,
+                  night: night ? kAlwaysCompleteAnimation : kAlwaysDismissedAnimation,
+                  child: Center(
+                    child: Icon(
+                      Icons.arrow_back,
+                      size: _backArrowSize * unit,
+                      color: night ? _loginNightInk : _loginInk,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+      title: Text(title),
+    );
+  }
+}
+
 /// زر بشكل أزرار الشاشة الأولى ومقاساتها، ويأخذ عرض المكان الذي يوضع فيه.
 class PushKeyButton extends StatelessWidget {
   const PushKeyButton({
@@ -63,9 +127,7 @@ class PushKeyButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
-    final fit = math.min(size.width / _loginDesignWidth, size.height / _loginDesignHeight);
-    final unit = math.max(fit, _loginMinScale);
+    final unit = _keyUnit(context);
     final night = Theme.of(context).brightness == Brightness.dark;
     final faceHeight = _loginFaceHeight * unit;
     return GestureDetector(

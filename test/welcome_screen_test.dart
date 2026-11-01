@@ -74,14 +74,14 @@ void main() {
     expect(find.text('Have an account?'), findsOneWidget);
     expect(find.text('Privacy Policy'), findsOneWidget);
     expect(find.text('Contact us'), findsOneWidget);
-    expect(find.text('كزبون'), findsNothing);
+    expect(find.text('زبون'), findsNothing);
     expect(scene().english, isTrue);
 
     await tester.tap(find.text('EN'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
     expect(find.text('AR'), findsOneWidget);
-    expect(find.text('كزبون'), findsOneWidget);
+    expect(find.text('زبون'), findsOneWidget);
     expect(scene().english, isFalse);
   });
 
@@ -244,9 +244,9 @@ void main() {
     expect(ModalRoute.of(page)!.animation!.value, 1);
   });
 
-  testWidgets('زر كزبون يفتح صفحة إنشاء الحساب بسرعة', (tester) async {
+  testWidgets('زر زبون يفتح صفحة إنشاء الحساب بسرعة', (tester) async {
     await _pump(tester);
-    await tester.tap(find.text('كزبون'));
+    await tester.tap(find.text('زبون'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -314,7 +314,7 @@ void main() {
     final customerHeight = tester.getSize(customerKey).height;
     final customerUnit = tester.widget<PushKey>(customerKey).unit;
     final customerFace = tester.widget<PushKey>(customerKey).faceHeight;
-    final customerText = tester.widget<Text>(find.text('كزبون')).style!;
+    final customerText = tester.widget<Text>(find.text('زبون')).style!;
 
     await tester.tap(find.text('حرفي'));
     await tester.pump();
@@ -375,7 +375,7 @@ void main() {
   testWidgets('الزر ينخفض عند اللمس، ويكون مرتفعاً عند الرجوع إلى الشاشة',
       (tester) async {
     await _pump(tester);
-    final label = find.text('كزبون');
+    final label = find.text('زبون');
     final up = tester.getTopLeft(label).dy;
 
     final finger = await tester.startGesture(tester.getCenter(label));

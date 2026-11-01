@@ -256,7 +256,7 @@ class _CraftsmanScreenState extends State<CraftsmanScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('التقديم كحرفي')),
+      appBar: const PushKeyAppBar(title: 'التقديم كحرفي'),
       body: SafeArea(child: _sent ? _sentMessage(theme) : _form()),
     );
   }
