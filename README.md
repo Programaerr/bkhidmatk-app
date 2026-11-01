@@ -38,15 +38,17 @@ flutter run --dart-define=SUPABASE_URL=https://YOUR_PROJECT.supabase.co --dart-d
 
    ### معاينة لوحة المدير محلياً في المتصفح
 
-   للتطوير فقط، يمكن فتح واجهة المدير دون Supabase أو SMS عبر إعداد VS Code
-   **Flutter: Admin preview (local only)**، أو تشغيل:
+   للتطوير فقط، يمكن فتح التطبيق محلياً دون Supabase أو SMS عبر إعداد VS Code
+   **Flutter: Local app preview**، أو تشغيل:
 
    ```powershell
    flutter run -d chrome --dart-define=DEV_ADMIN_PREVIEW=true
    ```
 
-   هذا الوضع متاح في debug على الويب فقط، ويستخدم مستودعاً وهمياً لا يحفظ
-   التعديلات ولا يتصل بقاعدة البيانات. لا تستخدمه كنسخة تشغيل أو نشر.
+   يفتح هذا الوضع واجهة الزبون العادية. للوصول إلى لوحة التحكم، افتح «حسابي»
+   ثم «لوحة التحكم». روابط الريلز التي تضيفها تعمل طوال جلسة المعاينة فقط؛
+   المستودع محلي مؤقت لا يحفظ التعديلات بعد إعادة التشغيل ولا يتصل بقاعدة
+   البيانات. هذا الوضع متاح في debug على الويب فقط، ولا يستخدم للنشر.
 
 لبناء نسخة GitHub Actions مرتبطة بالمشروع، أضف `SUPABASE_URL` و`SUPABASE_PUBLISHABLE_KEY` إلى **Repository secrets**. من دونها تُبنى النسخة في الوضع المحلي فقط.
 

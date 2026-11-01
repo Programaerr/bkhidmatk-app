@@ -47,10 +47,10 @@ class AppState extends ChangeNotifier {
     if (developmentAdminPreview) {
       user = AppUser(
         id: 1,
-        name: 'مدير جايك',
-        phone: '07700000000',
+        name: 'أحمد سعد',
+        phone: '07701234567',
         passwordHash: '',
-        role: 'admin',
+        role: 'customer',
         city: 'بغداد',
         createdAt: DateTime.utc(2026),
       );
@@ -188,6 +188,42 @@ class AppState extends ChangeNotifier {
   Future<void> updateProfile(AppUser updated) async {
     await repo.updateUser(updated);
     user = updated;
+    notifyListeners();
+  }
+
+  void openDevelopmentAdmin() {
+    if (!developmentAdminPreview) return;
+    final current = user;
+    if (current == null) return;
+    user = AppUser(
+      id: current.id,
+      name: 'مدير جايك',
+      phone: current.phone,
+      passwordHash: current.passwordHash,
+      role: 'admin',
+      city: current.city,
+      address: current.address,
+      avatarPath: current.avatarPath,
+      createdAt: current.createdAt,
+    );
+    notifyListeners();
+  }
+
+  void returnToDevelopmentCustomer() {
+    if (!developmentAdminPreview) return;
+    final current = user;
+    if (current == null) return;
+    user = AppUser(
+      id: current.id,
+      name: 'أحمد سعد',
+      phone: current.phone,
+      passwordHash: current.passwordHash,
+      role: 'customer',
+      city: current.city,
+      address: current.address,
+      avatarPath: current.avatarPath,
+      createdAt: current.createdAt,
+    );
     notifyListeners();
   }
 

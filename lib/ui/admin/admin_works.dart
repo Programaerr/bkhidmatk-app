@@ -184,8 +184,8 @@ class _AdminWorksState extends State<AdminWorks> with RealtimeRefresh<AdminWorks
     return Column(
       children: [
         AdminHeader(
-          title: 'أعمالنا',
-          subtitle: 'نشر فيديوهات الشركة ومتابعة المشاهدات والتفاعل',
+          title: 'إدارة الريلز',
+          subtitle: 'أضف رابط فيديو مباشر ليظهر في ريلز الزبائن',
           actions: [
             AppIconButton(icon: Icons.add_rounded, onTap: () => _edit()),
           ],

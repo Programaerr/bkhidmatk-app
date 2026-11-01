@@ -1,29 +1,38 @@
+import 'dart:async';
+
 import 'models.dart';
 import 'repository.dart';
 
 /// In-memory no-op repository for the isolated web admin preview.
 class PreviewRepository implements Repository {
-  PreviewRepository();
+  final StreamController<void> _changeController =
+      StreamController<void>.broadcast();
+  final List<OurWork> _works = [];
+  int _nextWorkId = 1;
 
-  static final _admin = AppUser(
+  static final _previewUser = AppUser(
     id: 1,
-    name: 'مدير جايك',
-    phone: '07700000000',
+    name: 'أحمد سعد',
+    phone: '07701234567',
     passwordHash: '',
-    role: 'admin',
+    role: 'customer',
     city: 'بغداد',
     createdAt: DateTime.utc(2026),
   );
 
   @override
-  Stream<void> get changes => const Stream<void>.empty();
+  Stream<void> get changes => _changeController.stream;
+
+  void _notifyChanged() {
+    if (!_changeController.isClosed) _changeController.add(null);
+  }
 
   // users
   @override
-  Future<AppUser?> findUserByPhone(String phone) async => _admin;
+  Future<AppUser?> findUserByPhone(String phone) async => _previewUser;
 
   @override
-  Future<AppUser?> userById(int id) async => _admin;
+  Future<AppUser?> userById(int id) async => _previewUser;
 
   @override
   Future<int> createUser(AppUser user) async => 1;
@@ -184,26 +193,64 @@ class PreviewRepository implements Repository {
     String query = '',
     int? limit,
     int? viewerId,
-  }) async =>
-      const [];
+  }) async {
+    final term = query.trim().toLowerCase();
+    final works = _works.where((work) {
+      return (!onlyActive || work.active) &&
+          (term.isEmpty ||
+              work.title.toLowerCase().contains(term) ||
+              (work.description ?? '').toLowerCase().contains(term));
+    }).toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return works.take(limit ?? works.length).toList();
+  }
 
   @override
-  Future<OurWork?> workById(int id, {int? viewerId}) async => null;
+  Future<OurWork?> workById(int id, {int? viewerId}) async {
+    for (final work in _works) {
+      if (work.id == id) return work;
+    }
+    return null;
+  }
 
   @override
-  Future<int> createWork(OurWork work) async => 1;
+  Future<int> createWork(OurWork work) async {
+    final id = _nextWorkId++;
+    _works.add(work.copyWith(id: id));
+    _notifyChanged();
+    return id;
+  }
 
   @override
-  Future<void> updateWork(OurWork work) async {}
+  Future<void> updateWork(OurWork work) async {
+    if (work.id == null) return;
+    final index = _works.indexWhere((item) => item.id == work.id);
+    if (index < 0) return;
+    _works[index] = work;
+    _notifyChanged();
+  }
 
   @override
-  Future<void> setWorkActive(int id, bool active) async {}
+  Future<void> setWorkActive(int id, bool active) async {
+    final index = _works.indexWhere((item) => item.id == id);
+    if (index < 0) return;
+    _works[index] = _works[index].copyWith(active: active);
+    _notifyChanged();
+  }
 
   @override
-  Future<void> deleteWork(int id) async {}
+  Future<void> deleteWork(int id) async {
+    _works.removeWhere((item) => item.id == id);
+    _notifyChanged();
+  }
 
   @override
-  Future<void> incrementWorkViews(int id) async {}
+  Future<void> incrementWorkViews(int id) async {
+    final index = _works.indexWhere((item) => item.id == id);
+    if (index < 0) return;
+    _works[index] = _works[index].copyWith(views: _works[index].views + 1);
+    _notifyChanged();
+  }
 
   @override
   Future<void> setWorkLike(int id,
@@ -216,7 +263,7 @@ class PreviewRepository implements Repository {
   Future<int> addWorkComment(WorkComment comment) async => 1;
 
   @override
-  Future<int> workCount() async => 0;
+  Future<int> workCount() async => _works.length;
 
   // التوظيف
   @override
@@ -322,5 +369,5 @@ class PreviewRepository implements Repository {
   Future<void> resetDemoData() async {}
 
   @override
-  Future<void> close() async {}
+  Future<void> close() => _changeController.close();
 }

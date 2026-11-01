@@ -24,7 +24,7 @@ class _AdminShellState extends State<AdminShell> {
     NavItem('الرئيسية', Icons.space_dashboard_outlined, Icons.space_dashboard_rounded),
     NavItem('الحجوزات', Icons.event_note_outlined, Icons.event_note_rounded),
     NavItem('الخدمات', Icons.handyman_outlined, Icons.handyman_rounded),
-    NavItem('الأعمال', Icons.video_library_outlined, Icons.video_library_rounded),
+    NavItem('إدارة الريلز', Icons.video_library_outlined, Icons.video_library_rounded),
     NavItem('المزيد', Icons.more_horiz_rounded, Icons.more_horiz_rounded),
   ];
 

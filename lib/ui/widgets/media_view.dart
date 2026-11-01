@@ -173,10 +173,16 @@ class MediaThumb extends StatelessWidget {
 
 /// Full video player used on the post details screen.
 class InlineVideoPlayer extends StatefulWidget {
-  const InlineVideoPlayer({super.key, required this.path, this.height = 230});
+  const InlineVideoPlayer({
+    super.key,
+    required this.path,
+    this.height = 230,
+    this.autoPlay = false,
+  });
 
   final String path;
   final double height;
+  final bool autoPlay;
 
   @override
   State<InlineVideoPlayer> createState() => _InlineVideoPlayerState();
@@ -193,6 +199,19 @@ class _InlineVideoPlayerState extends State<InlineVideoPlayer> {
     _init();
   }
 
+  @override
+  void didUpdateWidget(covariant InlineVideoPlayer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.autoPlay == widget.autoPlay) return;
+    final controller = _controller;
+    if (controller == null) return;
+    if (widget.autoPlay) {
+      controller.play();
+    } else {
+      controller.pause();
+    }
+  }
+
   Future<void> _init() async {
     try {
       final controller = isAssetMedia(widget.path)
@@ -202,6 +221,7 @@ class _InlineVideoPlayerState extends State<InlineVideoPlayer> {
               : VideoPlayerController.file(File(widget.path));
       await controller.initialize();
       await controller.setLooping(true);
+      if (widget.autoPlay) await controller.play();
       if (!mounted) {
         controller.dispose();
         return;

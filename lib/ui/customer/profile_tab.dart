@@ -284,6 +284,15 @@ class _ProfileTabState extends State<ProfileTab>
             padding: EdgeInsets.zero,
             child: Column(
               children: [
+                if (state.developmentAdminPreview) ...[
+                  _MenuTile(
+                    icon: Icons.admin_panel_settings_outlined,
+                    title: 'لوحة التحكم',
+                    subtitle: 'إدارة التطبيق والريلز (وضع التطوير المحلي)',
+                    onTap: state.openDevelopmentAdmin,
+                  ),
+                  const Divider(height: 1),
+                ],
                 if (!widget.workerMode) ...[
                   _MenuTile(
                     icon: Icons.event_note_rounded,

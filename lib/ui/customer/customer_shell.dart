@@ -5,6 +5,7 @@ import 'bookings_tab.dart';
 import 'home_tab.dart';
 import 'our_work_tab.dart';
 import 'profile_tab.dart';
+import 'reels_tab.dart';
 import 'services_tab.dart';
 
 class CustomerShell extends StatefulWidget {
@@ -22,6 +23,7 @@ class _CustomerShellState extends State<CustomerShell> {
     NavItem('الرئيسية', Icons.home_outlined, Icons.home_rounded),
     NavItem('الخدمات', Icons.grid_view_outlined, Icons.grid_view_rounded),
     NavItem('حجوزاتي', Icons.event_note_outlined, Icons.event_note_rounded),
+    NavItem('ريلز', Icons.play_circle_outline_rounded, Icons.play_circle_fill_rounded),
     NavItem('أعمالنا', Icons.video_library_outlined, Icons.video_library_rounded),
     NavItem('حسابي', Icons.person_outline_rounded, Icons.person_rounded),
   ];
@@ -31,7 +33,7 @@ class _CustomerShellState extends State<CustomerShell> {
     final pages = [
       HomeTab(
         onBrowseServices: () => setState(() => _index = 1),
-        onOpenWorks: () => setState(() => _index = 3),
+        onOpenWorks: () => setState(() => _index = 4),
         onOpenBookings: () => setState(() => _index = 2),
       ),
       SafeArea(
@@ -47,6 +49,7 @@ class _CustomerShellState extends State<CustomerShell> {
         ),
       ),
       BookingsTab(onBrowse: () => setState(() => _index = 1)),
+      const ReelsTab(),
       OurWorkTab(refreshTick: _tick),
       ProfileTab(
         onOpenBookings: () => setState(() => _index = 2),
