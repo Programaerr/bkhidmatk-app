@@ -63,6 +63,7 @@ class AppState extends ChangeNotifier {
     if (cloudServices != null) {
       if (cloudServices!.isSignedIn) {
         try {
+          await cloudServices!.claimAdminRole();
           user = await cloudServices!.currentProfile();
         } catch (error) {
           debugPrint('Failed to restore the Supabase session: $error');
@@ -231,6 +232,7 @@ class AppState extends ChangeNotifier {
     if (user?.id == null) return;
     try {
       if (cloudServices != null && cloudServices!.isSignedIn) {
+        await cloudServices!.claimAdminRole();
         user = await cloudServices!.currentProfile();
       } else {
         user = await repo.userById(user!.id!);

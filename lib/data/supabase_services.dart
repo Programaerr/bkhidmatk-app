@@ -101,6 +101,7 @@ class SupabaseServices {
           'تعذر إنشاء جلسة الدخول. تحقق من إعدادات Supabase.',
         );
       }
+      await claimAdminRole();
       return await currentProfile();
     } catch (error) {
       throw _friendly(error);
@@ -133,9 +134,21 @@ class SupabaseServices {
           '«Confirm email»، ثم سجّل الدخول.',
         );
       }
+      await claimAdminRole();
       return await currentProfile();
     } catch (error) {
       throw _friendly(error);
+    }
+  }
+
+  /// يرقّي الحساب الحالي إلى مدير إذا كان رقمه في admin_phones
+  /// أو مطابقاً لمفتاح admin_phone في جدول settings.
+  Future<void> claimAdminRole() async {
+    try {
+      await client.rpc('claim_admin_phone');
+    } catch (_) {
+      // الدالة تُنشأ مع supabase/setup.sql؛ نتجاهل الخطأ حتى لا يتعطل الدخول
+      // إذا لم يُنفَّذ السكربت المحدّث بعد.
     }
   }
 
