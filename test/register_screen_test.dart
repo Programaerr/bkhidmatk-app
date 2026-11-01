@@ -9,7 +9,6 @@ import 'package:jaik/core/theme.dart';
 import 'package:jaik/data/database.dart';
 import 'package:jaik/data/models.dart';
 import 'package:jaik/state/app_state.dart';
-import 'package:jaik/ui/auth/login_screen.dart';
 import 'package:jaik/ui/auth/push_key.dart';
 import 'package:jaik/ui/auth/raised_field.dart';
 import 'package:jaik/ui/auth/register_screen.dart';
@@ -128,7 +127,7 @@ void main() {
     expect(find.byType(TextFormField), findsNothing);
 
     final key = tester.widget<PushKeyButton>(find.byType(PushKeyButton));
-    expect(key.label, 'إنشاء الحساب');
+    expect(key.label, 'متابعة');
     expect(key.yellow, isTrue);
   });
 
@@ -151,7 +150,7 @@ void main() {
     expect(tester.widget<RaisedPicker>(find.byType(RaisedPicker)).open, isFalse);
     expect(tester.widget<RaisedPicker>(find.byType(RaisedPicker)).value, 'البصرة');
 
-    await tester.tap(find.text('إنشاء الحساب').last);
+    await tester.tap(find.text('متابعة'));
     await tester.pumpAndSettle();
 
     final user = repo.created.single;
@@ -168,7 +167,7 @@ void main() {
     final repo = _Repo();
     await _pump(tester, repo);
 
-    await tester.tap(find.text('إنشاء الحساب').last);
+    await tester.tap(find.text('متابعة'));
     await tester.pump();
     expect(find.text('أدخل الاسم الكامل'), findsOneWidget);
     expect(find.text('أدخل رقم الهاتف'), findsOneWidget);
@@ -178,7 +177,7 @@ void main() {
     await tester.enterText(_field('الهاتف'), '123');
     await tester.enterText(_field('المرور'), 'secret1');
     await tester.enterText(_field('التأكيد'), 'secret2');
-    await tester.tap(find.text('إنشاء الحساب').last);
+    await tester.tap(find.text('متابعة'));
     await tester.pump();
     expect(find.text('رقم غير صالح (11 رقم يبدأ بـ 07)'), findsOneWidget);
     expect(find.text('كلمتا المرور غير متطابقتين'), findsOneWidget);
@@ -188,7 +187,7 @@ void main() {
 
   testWidgets('حمرة كلمة المرور تختفي بمجرد الكتابة، وترجع إذا بقيت قصيرة عند الإنشاء', (tester) async {
     await _pump(tester, _Repo());
-    await tester.tap(find.text('إنشاء الحساب').last);
+    await tester.tap(find.text('متابعة'));
     await tester.pumpAndSettle();
     expect(find.text(_shortPassword), findsOneWidget);
 
@@ -196,7 +195,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text(_shortPassword), findsNothing);
 
-    await tester.tap(find.text('إنشاء الحساب').last);
+    await tester.tap(find.text('متابعة'));
     await tester.pumpAndSettle();
     expect(find.text(_shortPassword), findsOneWidget);
   });
@@ -205,7 +204,7 @@ void main() {
     await _pump(tester, _Repo());
     await tester.enterText(_field('المرور'), 'secret1');
     await tester.enterText(_field('التأكيد'), 'secret2');
-    await tester.tap(find.text('إنشاء الحساب').last);
+    await tester.tap(find.text('متابعة'));
     await tester.pumpAndSettle();
     expect(find.text(_mismatch), findsOneWidget);
 
@@ -213,7 +212,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text(_mismatch), findsNothing);
 
-    await tester.tap(find.text('إنشاء الحساب').last);
+    await tester.tap(find.text('متابعة'));
     await tester.pumpAndSettle();
     expect(find.text(_mismatch), findsOneWidget);
 
@@ -226,7 +225,7 @@ void main() {
     await _pump(tester, _Repo());
     await tester.enterText(_field('المرور'), 'secret1');
     await tester.enterText(_field('التأكيد'), 'secret2');
-    await tester.tap(find.text('إنشاء الحساب').last);
+    await tester.tap(find.text('متابعة'));
     await tester.pumpAndSettle();
 
     for (final label in ['المرور', 'التأكيد']) {
@@ -239,7 +238,7 @@ void main() {
 
   testWidgets('حمرة الاسم والرقم تختفي بمجرد الكتابة', (tester) async {
     await _pump(tester, _Repo());
-    await tester.tap(find.text('إنشاء الحساب').last);
+    await tester.tap(find.text('متابعة'));
     await tester.pumpAndSettle();
 
     await tester.enterText(_field('الاسم'), 'ك');
@@ -261,7 +260,7 @@ void main() {
       await _pump(tester, repo);
       await _fill(tester);
       await tester.enterText(_field('الهاتف'), typed);
-      await tester.tap(find.text('إنشاء الحساب').last);
+      await tester.tap(find.text('متابعة'));
       await tester.pumpAndSettle();
       expect(find.text('رقم غير صالح (11 رقم يبدأ بـ 07)'), findsNothing);
       expect(repo.created.single.phone, '07701234567');
@@ -276,14 +275,14 @@ void main() {
     expect(find.text('اختر المحافظة'), findsOneWidget);
 
     await _fill(tester, city: null);
-    await tester.tap(find.text('إنشاء الحساب').last);
+    await tester.tap(find.text('متابعة'));
     await tester.pumpAndSettle();
     expect(find.text('اختر محافظتك'), findsOneWidget);
     expect(repo.created, isEmpty);
 
     await _chooseCity(tester, 'النجف');
     expect(find.text('اختر محافظتك'), findsNothing);
-    await tester.tap(find.text('إنشاء الحساب').last);
+    await tester.tap(find.text('متابعة'));
     await tester.pumpAndSettle();
     expect(repo.created.single.city, 'النجف');
   });
@@ -335,7 +334,7 @@ void main() {
 
   testWidgets('الكتابة وإطارها بالأسود، والأحمر للخطأ فقط', (tester) async {
     await _pump(tester, _Repo());
-    await tester.tap(find.text('إنشاء الحساب').last);
+    await tester.tap(find.text('متابعة'));
     await tester.pumpAndSettle();
     final name = find.byType(RaisedField).at(0);
     _expectBorder(tester, name, const Color(0xFFFF4D4D));
@@ -363,7 +362,7 @@ void main() {
   testWidgets('رسالة الرقم المستخدم تختفي بتعديل الرقم، لا بتحريك المؤشر', (tester) async {
     await _pump(tester, _Repo(phoneTaken: true));
     await _fill(tester);
-    await tester.tap(find.text('إنشاء الحساب').last);
+    await tester.tap(find.text('متابعة'));
     await tester.pumpAndSettle();
     expect(find.text('رقم الهاتف مستخدم مسبقاً'), findsOneWidget);
 
@@ -483,7 +482,7 @@ void main() {
     await _pump(tester, repo);
     await _fill(tester);
 
-    await tester.tap(find.text('إنشاء الحساب').last);
+    await tester.tap(find.text('متابعة'));
     await tester.pump();
     expect(tester.widget<PushKeyButton>(find.byType(PushKeyButton)).loading, isTrue);
     await tester.tap(find.byType(PushKeyButton));
@@ -494,12 +493,9 @@ void main() {
     expect(repo.created, hasLength(1));
   });
 
-  testWidgets('رابط تسجيل الدخول يبقى ويفتح صفحة الدخول', (tester) async {
+  testWidgets('لا رابط تسجيل دخول تحت الزر', (tester) async {
     await _pump(tester, _Repo());
-    expect(find.text('لديك حساب؟'), findsOneWidget);
-    await tester.tap(find.text('تسجيل الدخول'));
-    await tester.pumpAndSettle();
-    expect(find.byType(LoginScreen), findsOneWidget);
-    expect(find.byType(RegisterScreen), findsNothing);
+    expect(find.text('لديك حساب؟'), findsNothing);
+    expect(find.text('تسجيل الدخول'), findsNothing);
   });
 }
