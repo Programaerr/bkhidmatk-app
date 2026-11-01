@@ -20,6 +20,7 @@ flutter run --dart-define=SUPABASE_URL=https://YOUR_PROJECT.supabase.co --dart-d
 
 1. افتح **Supabase → SQL Editor**، والصق الملف [`supabase/setup.sql`](./supabase/setup.sql) ونفّذه. ينشئ الجداول والعلاقات والفهارس وسياسات RLS ودوال العمليات وStorage وبيانات الكتالوج التجريبية.
 2. فعّل **Phone** في إعدادات Authentication واضبط مزوّد SMS. لا يحتاج هذا التكامل إلى Firebase.
+   شاشة الدخول تسمح بإنشاء حساب Auth عند أول استخدام للرقم بعد تأكيد رمز SMS؛ سيُنشأ ملف التطبيق تلقائياً بواسطة trigger قاعدة البيانات.
 3. أضف رقم هاتف المدير بصيغته المحلية العراقية إلى جدول `admin_phones` في SQL Editor:
 
    ```sql
