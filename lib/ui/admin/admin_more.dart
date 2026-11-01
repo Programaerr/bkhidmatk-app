@@ -300,25 +300,26 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
                           style: TextStyle(fontSize: 10.5)),
                     ),
                     const Divider(height: 1),
-                    _Tile(
-                      icon: Icons.restart_alt_rounded,
-                      title: 'إعادة ضبط البيانات التجريبية',
-                      subtitle: 'حذف كل التعديلات والعودة لبيانات البداية',
-                      danger: true,
-                      onTap: () async {
-                        final ok = await confirmAction(
-                          context,
-                          title: 'إعادة الضبط؟',
-                          message:
-                              'سيتم حذف كل الحجوزات والأعمال والزبائن الذين أنشأتهم، والعودة للبيانات التجريبية الأصلية.',
-                          confirmLabel: 'إعادة الضبط',
-                          danger: true,
-                        );
-                        if (!ok) return;
-                        await state.repo.resetDemoData();
-                        await state.logout();
-                      },
-                    ),
+                    if (!state.usesCloudAuth)
+                      _Tile(
+                        icon: Icons.restart_alt_rounded,
+                        title: 'إعادة ضبط البيانات التجريبية',
+                        subtitle: 'حذف كل التعديلات والعودة لبيانات البداية',
+                        danger: true,
+                        onTap: () async {
+                          final ok = await confirmAction(
+                            context,
+                            title: 'إعادة الضبط؟',
+                            message:
+                                'سيتم حذف كل الحجوزات والأعمال والزبائن الذين أنشأتهم، والعودة للبيانات التجريبية الأصلية.',
+                            confirmLabel: 'إعادة الضبط',
+                            danger: true,
+                          );
+                          if (!ok) return;
+                          await state.repo.resetDemoData();
+                          await state.logout();
+                        },
+                      ),
                   ],
                 ),
               ),

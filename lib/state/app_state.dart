@@ -5,12 +5,16 @@ import '../data/database.dart';
 import '../data/models.dart';
 import '../data/repository.dart';
 import '../data/repository_local.dart';
+import '../data/repository_supabase.dart';
 import '../data/supabase_services.dart';
 
 /// جلسة التطبيق والإعدادات؛ مصادقة الهاتف اختيارية عبر Supabase.
 class AppState extends ChangeNotifier {
   AppState({Repository? repository, this.cloudServices})
-      : repo = repository ?? LocalRepository();
+      : repo = repository ??
+            (cloudServices == null
+                ? LocalRepository()
+                : SupabaseRepository(cloudServices.client));
 
   final Repository repo;
   final SupabaseServices? cloudServices;
@@ -34,7 +38,7 @@ class AppState extends ChangeNotifier {
 
     if (cloudServices != null) {
       if (cloudServices!.isSignedIn) {
-        user = await _cacheCloudUser(await cloudServices!.currentProfile());
+        user = await cloudServices!.currentProfile();
       }
       booting = false;
       notifyListeners();
@@ -53,6 +57,9 @@ class AppState extends ChangeNotifier {
   }
 
   Future<String?> login(String phone, String password) async {
+    if (usesCloudAuth) {
+      return 'استخدم رمز التحقق المرسل إلى هاتفك لتسجيل الدخول';
+    }
     final found = await repo.findUserByPhone(phone);
     if (found == null) return 'لا يوجد حساب مسجل بهذا الرقم';
     if (found.passwordHash != hashPassword(password)) {
@@ -99,7 +106,7 @@ class AppState extends ChangeNotifier {
       return 'تسجيل الدخول برمز الهاتف يتطلب الاتصال بـ Supabase';
     }
     try {
-      user = await _cacheCloudUser(await cloud.verifyPhoneOtp(phone, token));
+      user = await cloud.verifyPhoneOtp(phone, token);
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt('user_id', user!.id!);
       notifyListeners();
@@ -109,42 +116,6 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  Future<AppUser> _cacheCloudUser(AppUser remoteUser) async {
-    final existing = await repo.findUserByPhone(remoteUser.phone);
-    final localUser = AppUser(
-      id: existing?.id,
-      name: remoteUser.name,
-      phone: remoteUser.phone,
-      passwordHash: '',
-      role: remoteUser.role,
-      city: remoteUser.city,
-      address: remoteUser.address,
-      avatarPath: remoteUser.avatarPath,
-      createdAt: remoteUser.createdAt,
-      points: remoteUser.points,
-    );
-    final id = existing == null
-        ? await repo.createUser(localUser)
-        : await _updateAndReturnId(localUser);
-    return AppUser(
-      id: id,
-      name: localUser.name,
-      phone: localUser.phone,
-      passwordHash: '',
-      role: localUser.role,
-      city: localUser.city,
-      address: localUser.address,
-      avatarPath: localUser.avatarPath,
-      createdAt: localUser.createdAt,
-      points: localUser.points,
-    );
-  }
-
-  Future<int> _updateAndReturnId(AppUser user) async {
-    await repo.updateUser(user);
-    return user.id!;
-  }
-
   Future<String?> register({
     required String name,
     required String phone,
@@ -152,6 +123,9 @@ class AppState extends ChangeNotifier {
     String? city,
     String? address,
   }) async {
+    if (usesCloudAuth) {
+      return 'أنشئ الحساب وتحقق من رقم الهاتف عبر رمز SMS';
+    }
     if (await repo.phoneExists(phone)) return 'رقم الهاتف مستخدم مسبقاً';
     // الرقم المُضاف من الإدارة للتوظيف → الحساب يُسجّل كـ (حرفي).
     final hired = await repo.isHiredPhone(phone);
@@ -183,7 +157,6 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> updateProfile(AppUser updated) async {
-    await cloudServices?.updateProfile(updated);
     await repo.updateUser(updated);
     user = updated;
     notifyListeners();
@@ -209,24 +182,7 @@ class AppState extends ChangeNotifier {
     if (user?.id == null) return;
     try {
       if (cloudServices != null && cloudServices!.isSignedIn) {
-        final remote = await cloudServices!.currentProfile();
-        final existing = await repo.userById(user!.id!);
-        if (existing != null) {
-          final refreshed = AppUser(
-            id: existing.id,
-            name: remote.name,
-            phone: remote.phone,
-            passwordHash: '',
-            role: remote.role,
-            city: remote.city,
-            address: remote.address,
-            avatarPath: remote.avatarPath,
-            createdAt: remote.createdAt,
-            points: remote.points,
-          );
-          await repo.updateUser(refreshed);
-          user = refreshed;
-        }
+        user = await cloudServices!.currentProfile();
       } else {
         user = await repo.userById(user!.id!);
       }
