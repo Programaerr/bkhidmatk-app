@@ -299,8 +299,9 @@ class LocalRepository implements Repository {
     if (status == BookingStatus.completed) {
       final rows = await db.query('bookings',
           columns: ['worker_id'], where: 'id=?', whereArgs: [id]);
-      if (rows.isNotEmpty)
+      if (rows.isNotEmpty) {
         await incrementWorkerJobs(rows.first['worker_id'] as int?);
+      }
     }
   }
 
