@@ -52,6 +52,7 @@ insert into public.admin_phones(phone)
 select public.normalize_iraqi_phone(phone)
   from public.app_profiles
  where role = 'admin'
+   and public.normalize_iraqi_phone(phone) ~ '^07[0-9]{9}$'
 on conflict (phone) do nothing;
 
 create table if not exists public.craftsman_applications (
@@ -178,10 +179,16 @@ select
   u.id,
   coalesce(nullif(trim(u.raw_user_meta_data ->> 'name'), ''), p.phone),
   p.phone,
-  case when exists (
+  case
+    when exists (
+      select 1 from public.admin_phones a where a.phone = p.phone
+    ) then 'admin'
+    when exists (
     select 1 from public.hire_phones h
      where public.normalize_iraqi_phone(h.phone) = p.phone
-  ) then 'worker' else 'customer' end,
+    ) then 'worker'
+    else 'customer'
+  end,
   nullif(u.raw_user_meta_data ->> 'city', ''),
   nullif(u.raw_user_meta_data ->> 'address', '')
 from auth.users u
@@ -256,6 +263,38 @@ as $$
     select 1 from public.app_profiles p
      where p.auth_user_id = auth.uid() and p.role = 'admin'
   )
+$$;
+
+create or replace function public.list_admin_workers(p_worker_id bigint default null)
+returns table (
+  id bigint,
+  name text,
+  phone text,
+  specialty text,
+  category_id bigint,
+  rating double precision,
+  jobs_done integer,
+  bio text,
+  avatar text,
+  available boolean
+)
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_app_admin() then
+    raise exception 'Only administrators can view worker phone numbers'
+      using errcode = '42501';
+  end if;
+  return query
+    select w.id, w.name, w.phone, w.specialty, w.category_id,
+           w.rating, w.jobs_done, w.bio, w.avatar, w.available
+      from public.workers w
+     where p_worker_id is null or w.id = p_worker_id
+     order by w.rating desc;
+end
 $$;
 
 create or replace function public.submit_craftsman_application(
@@ -496,6 +535,8 @@ revoke all on function public.normalize_iraqi_phone(text) from public, anon;
 grant execute on function public.normalize_iraqi_phone(text) to authenticated;
 revoke all on function public.is_app_admin() from public, anon;
 grant execute on function public.is_app_admin() to authenticated;
+revoke all on function public.list_admin_workers(bigint) from public, anon;
+grant execute on function public.list_admin_workers(bigint) to authenticated;
 
 -- Full application data: catalog, bookings, community, chats, cards, receipts,
 -- settings, hired-worker accounts, notifications, and public media.
@@ -892,7 +933,6 @@ set search_path = ''
 as $$
 declare
   booking_row public.bookings%rowtype;
-  earned_points integer;
 begin
   if p_rating not between 1 and 5 then raise exception 'Rating must be between 1 and 5'; end if;
   select * into booking_row
@@ -901,7 +941,6 @@ begin
      or booking_row.status <> 'completed' or booking_row.rating is not null then
     return 0;
   end if;
-  earned_points := p_rating * 10;
   update public.bookings set rating = p_rating, review = p_review where id = p_booking_id;
   if booking_row.worker_id is not null then
     update public.workers w
@@ -909,12 +948,11 @@ begin
                       where b.worker_id = booking_row.worker_id and b.rating is not null)
      where w.id = booking_row.worker_id;
   end if;
-  update public.app_profiles
-     set points = points + earned_points
-   where id = booking_row.customer_id;
-  return earned_points;
+  return 1;
 end
 $$;
+
+alter table public.app_profiles drop column if exists points;
 
 create or replace function public.set_post_like(p_post_id bigint, p_liked boolean)
 returns void
@@ -1193,11 +1231,15 @@ create policy "settings_admin_manage" on public.settings
   for all to authenticated using ((select public.is_app_admin()))
   with check ((select public.is_app_admin()));
 
-grant select, insert, update, delete on public.categories, public.workers,
+grant select, insert, update, delete on public.categories,
   public.services, public.bookings, public.posts, public.post_likes,
   public.comments, public.our_works, public.work_likes, public.work_comments,
   public.messages, public.cards, public.receipts, public.settings
 to authenticated;
+revoke all on public.workers from anon, authenticated;
+grant select (id, name, specialty, category_id, rating, jobs_done, bio, avatar, available)
+  on public.workers to authenticated;
+grant insert, update, delete on public.workers to authenticated;
 grant usage, select on sequence public.categories_id_seq,
   public.workers_id_seq, public.services_id_seq, public.bookings_id_seq,
   public.posts_id_seq, public.comments_id_seq, public.our_works_id_seq,
@@ -1283,6 +1325,7 @@ create policy "jaik_media_owner_delete" on storage.objects
 
 commit;
 
--- Register the intended administrator with phone OTP, then run this once in SQL Editor:
--- update public.app_profiles set role = 'admin' where phone = '07700000000';
--- This one-time promotion is intentionally not exposed to the mobile client.
+-- Add administrators here after registering them with phone OTP:
+-- insert into public.admin_phones(phone) values ('07700000000');
+-- The trigger grants the admin role to the matching registered profile. This table
+-- is deliberately inaccessible to application clients.

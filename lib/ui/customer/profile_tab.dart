@@ -19,7 +19,7 @@ class ProfileTab extends StatefulWidget {
 
   final VoidCallback onOpenBookings;
 
-  /// وضع الموظف بالتوضيف: يُخفى كل ما لا يخصه (حجوزات، وصولات، نقاط).
+  /// وضع الموظف بالتوضيف: يُخفى كل ما لا يخصه من الحجوزات والوصولات.
   final bool workerMode;
 
   @override

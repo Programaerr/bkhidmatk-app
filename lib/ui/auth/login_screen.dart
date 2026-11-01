@@ -45,7 +45,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final err = state.usesCloudAuth
         ? _otpSent
             ? await state.verifyPhoneOtp(phone: _phone.text, token: _otp.text)
-            : await state.requestPhoneOtp(phone: _phone.text, createUser: false)
+            : await state.requestPhoneOtp(phone: _phone.text, createUser: true)
         : await state.login(_phone.text, _password.text);
     if (!mounted) return;
     setState(() => _loading = false);

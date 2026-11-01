@@ -194,7 +194,7 @@ class AppState extends ChangeNotifier {
     await prefs.remove('user_id');
   }
 
-  /// إعادة تحميل بيانات المستخدم الحالي (بما فيها رصيد النقاط).
+  /// إعادة تحميل بيانات المستخدم الحالي.
   Future<void> refreshUser() async {
     if (user?.id == null) return;
     try {

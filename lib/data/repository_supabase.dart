@@ -478,12 +478,11 @@ class SupabaseRepository implements Repository {
 
   // Bookings.
   Future<List<Map<String, dynamic>>> _bookingRows() async {
-    final workerColumns = await _isAdmin() ? 'name,phone' : 'name';
     return _allRows(
       (from, to) => _client
           .from('bookings')
           .select(
-            '*,services(title),workers($workerColumns),app_profiles!bookings_customer_id_fkey(name,phone)',
+            '*,services(title),workers(name),app_profiles!bookings_customer_id_fkey(name,phone)',
           )
           .range(from, to),
     );
@@ -541,12 +540,11 @@ class SupabaseRepository implements Repository {
 
   @override
   Future<Booking?> bookingById(int id) async {
-    final workerColumns = await _isAdmin() ? 'name,phone' : 'name';
     final rows = _maps(
       await _client
           .from('bookings')
           .select(
-              '*,services(title),workers($workerColumns),app_profiles!bookings_customer_id_fkey(name,phone)')
+              '*,services(title),workers(name),app_profiles!bookings_customer_id_fkey(name,phone)')
           .eq('id', id)
           .limit(1),
     );
