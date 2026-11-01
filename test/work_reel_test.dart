@@ -124,12 +124,17 @@ void main() {
     );
 
     await tester.tap(find.byIcon(Icons.mode_comment_rounded));
-    await tester.pump(const Duration(milliseconds: 400));
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.text('التعليقات'), findsOneWidget);
     expect(find.text('تعليق موجود'), findsOneWidget);
 
     await tester.enterText(find.byType(TextField), 'تعليقي الجديد');
     await tester.tap(find.byIcon(Icons.send_rounded));
-    await tester.pump(const Duration(milliseconds: 400));
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
 
     expect(find.text('تعليقي الجديد'), findsOneWidget);
     expect(find.text('تعذر تحديث بعض التعليقات'), findsOneWidget);

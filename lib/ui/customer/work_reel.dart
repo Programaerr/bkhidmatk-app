@@ -587,10 +587,12 @@ class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
 
   Future<List<WorkComment>> _loadComments() async {
     final state = context.read<AppState>();
-    final comments = await state.repo.workComments(
-      widget.work.id!,
-      viewerId: state.user?.id,
-      isAdmin: state.isAdmin,
+    final comments = await Future<List<WorkComment>>.microtask(
+      () => state.repo.workComments(
+        widget.work.id!,
+        viewerId: state.user?.id,
+        isAdmin: state.isAdmin,
+      ),
     );
     if (mounted) _cachedComments = comments;
     return comments;
