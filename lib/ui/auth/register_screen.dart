@@ -26,7 +26,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _address = TextEditingController();
   final _password = TextEditingController();
   final _confirm = TextEditingController();
-  String _city = 'بغداد';
+  String? _city;
   bool _obscure = true;
   bool _pickingCity = false;
   bool _loading = false;
@@ -82,14 +82,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!validateAndShowFirstError(_formKey.currentState!)) return;
     setState(() {
       _loading = true;
       _error = null;
     });
     final err = await context.read<AppState>().register(
           name: _name.text,
-          phone: normalizePhone(_phone.text),
+          phone: phoneFromInput(_phone.text),
           password: _password.text,
           city: _city,
           address: _address.text.trim(),
@@ -138,13 +138,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   textAlign: TextAlign.right,
                   validator: (v) {
                     if (v.trim().isEmpty) return 'أدخل رقم الهاتف';
-                    if (!validIraqiPhone(v)) return 'رقم غير صالح (11 رقم يبدأ بـ 07)';
+                    if (!validIraqiPhone(phoneFromInput(v))) {
+                      return 'رقم غير صالح (11 رقم يبدأ بـ 07)';
+                    }
                     return null;
                   },
                 ),
                 const SizedBox(height: 14),
-                const FieldLabel('المحافظة'),
-                RaisedPicker(value: _city, open: _pickingCity, onTap: _pickCity),
+                const FieldLabel('المحافظة', required_: true),
+                RaisedPicker(
+                  value: _city,
+                  hint: 'اختر المحافظة',
+                  emptyError: 'اختر محافظتك',
+                  open: _pickingCity,
+                  onTap: _pickCity,
+                ),
                 const SizedBox(height: 14),
                 const FieldLabel('العنوان التفصيلي'),
                 RaisedField(
@@ -166,6 +174,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   controller: _confirm,
                   hint: 'أعد كتابة كلمة المرور',
                   obscureText: true,
+                  clearErrorWith: _password,
                   validator: (v) => v != _password.text ? 'كلمتا المرور غير متطابقتين' : null,
                 ),
                 if (_error != null) ...[

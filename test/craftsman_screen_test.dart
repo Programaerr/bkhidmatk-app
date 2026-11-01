@@ -10,6 +10,7 @@ import 'package:jaik/state/app_state.dart';
 import 'package:jaik/ui/admin/admin_applications.dart';
 import 'package:jaik/ui/auth/craftsman_screen.dart';
 import 'package:jaik/ui/auth/push_key.dart';
+import 'package:jaik/ui/auth/raised_field.dart';
 
 import 'fake_repository.dart';
 
@@ -50,9 +51,14 @@ class _SlowRepo extends _Repo {
   Future<bool> hasPendingApplication(String phone) => answer.future;
 }
 
-Future<void> _pump(WidgetTester tester, _Repo repo, Widget screen) async {
+Future<void> _pump(
+  WidgetTester tester,
+  _Repo repo,
+  Widget screen, {
+  Size size = const Size(412, 1600),
+}) async {
   tester.view
-    ..physicalSize = const Size(412, 1600)
+    ..physicalSize = size
     ..devicePixelRatio = 1;
   addTearDown(tester.view.reset);
   await tester.pumpWidget(
@@ -84,13 +90,28 @@ Finder _field(String label) => find.byType(TextField).at(_fieldOrder.indexOf(lab
 
 const _fieldOrder = ['الاسم', 'الهاتف', 'العمر', 'العنوان', 'المهنة', 'الخبرة', 'النبذة'];
 
-Future<void> _fill(WidgetTester tester, {String phone = '07701234567', String age = '28'}) async {
+Future<void> _chooseCity(WidgetTester tester, String city) async {
+  await tester.ensureVisible(find.byType(RaisedPicker));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byType(RaisedPicker));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text(city).last);
+  await tester.pumpAndSettle();
+}
+
+Future<void> _fill(
+  WidgetTester tester, {
+  String phone = '07701234567',
+  String age = '28',
+  String? city = 'بغداد',
+}) async {
   await tester.enterText(_field('الاسم'), 'كرار عبد الله');
   await tester.enterText(_field('الهاتف'), phone);
   await tester.enterText(_field('العمر'), age);
   await tester.enterText(_field('المهنة'), 'كهربائي');
   await tester.enterText(_field('الخبرة'), '5');
   await tester.enterText(_field('النبذة'), 'عملت في تأسيس البيوت');
+  if (city != null) await _chooseCity(tester, city);
 }
 
 CraftsmanApplication _application({int id = 7, String status = CraftsmanApplication.pending}) =>
@@ -208,7 +229,7 @@ void main() {
     expect(tester.widget<TextField>(_field('الاسم')).focusNode!.hasFocus, isTrue);
   });
 
-  testWidgets('الخانة الخطأ تهتز، ويرجع لونها بمجرد تصحيحها', (tester) async {
+  testWidgets('الخانة الخطأ تهتز، وتختفي حمرتها بمجرد الكتابة فيها', (tester) async {
     await _pump(tester, _Repo(), const CraftsmanScreen());
     final name = find.descendant(of: _field('الاسم'), matching: find.byType(EditableText));
     final atRest = tester.getRect(name);
@@ -223,21 +244,65 @@ void main() {
     expect(tester.getRect(name).left, atRest.left);
     expect(find.text('أدخل الاسم الكامل'), findsOneWidget);
 
-    await tester.enterText(_field('الاسم'), 'كر');
-    await tester.pumpAndSettle();
-    expect(find.text('أدخل الاسم الكامل'), findsOneWidget);
-    await tester.enterText(_field('الاسم'), 'كرار');
+    await tester.enterText(_field('الاسم'), 'ك');
     await tester.pumpAndSettle();
     expect(find.text('أدخل الاسم الكامل'), findsNothing);
+
+    await tester.tap(find.text('إرسال الطلب إلى الشركة'));
+    await tester.pumpAndSettle();
+    expect(find.text('أدخل الاسم الكامل'), findsOneWidget);
   });
 
-  testWidgets('خانة المحافظة تفتح القائمة وتأخذ المختار', (tester) async {
+  testWidgets('خانة المحافظة تبدأ فارغة وتأخذ المختار', (tester) async {
     await _pump(tester, _Repo(), const CraftsmanScreen());
-    await tester.tap(find.text('بغداد'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('البصرة'));
-    await tester.pumpAndSettle();
+    expect(find.text('بغداد'), findsNothing);
+    expect(find.text('اختر المحافظة'), findsOneWidget);
+
+    await _chooseCity(tester, 'البصرة');
     expect(find.text('البصرة'), findsOneWidget);
+    expect(find.text('اختر المحافظة'), findsNothing);
+  });
+
+  testWidgets('الإرسال بدون محافظة يظهر خطأها، ويختفي عند الاختيار', (tester) async {
+    final repo = _Repo();
+    await _pump(tester, repo, const CraftsmanScreen());
+    await _fill(tester, city: null);
+    await tester.tap(find.text('إرسال الطلب إلى الشركة'));
+    await tester.pumpAndSettle();
+    expect(find.text('اختر محافظتك'), findsOneWidget);
+    expect(repo.created, isEmpty);
+
+    await _chooseCity(tester, 'البصرة');
+    expect(find.text('اختر محافظتك'), findsNothing);
+    await tester.tap(find.text('إرسال الطلب إلى الشركة'));
+    await tester.pumpAndSettle();
+    expect(repo.created.single.city, 'البصرة');
+  });
+
+  testWidgets('الإرسال مع خانة خطأ ينقل الصفحة إليها', (tester) async {
+    final repo = _Repo();
+    await _pump(tester, repo, const CraftsmanScreen(), size: const Size(412, 600));
+    await _fill(tester, age: '5');
+    final send = find.text('إرسال الطلب إلى الشركة');
+    await tester.ensureVisible(send);
+    await tester.pumpAndSettle();
+    final appBarBottom = tester.getBottomLeft(find.byType(AppBar)).dy;
+    expect(tester.getTopLeft(find.text('العمر')).dy, lessThan(appBarBottom));
+
+    await tester.tap(send);
+    await tester.pumpAndSettle();
+    expect(tester.getTopLeft(find.text('العمر')).dy, greaterThanOrEqualTo(appBarBottom));
+    expect(tester.getBottomLeft(find.text('أدخل عمراً صحيحاً')).dy, lessThanOrEqualTo(600));
+    expect(repo.created, isEmpty);
+  });
+
+  testWidgets('الرقم بدون الصفر يُقبل ويُحفظ بالصفر', (tester) async {
+    final repo = _Repo();
+    await _pump(tester, repo, const CraftsmanScreen());
+    await _fill(tester, phone: '7701234567');
+    await tester.tap(find.text('إرسال الطلب إلى الشركة'));
+    await tester.pumpAndSettle();
+    expect(repo.created.single.phone, '07701234567');
   });
 
   testWidgets('زر الإرسال وحده أصفر', (tester) async {

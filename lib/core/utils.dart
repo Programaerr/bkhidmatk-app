@@ -154,6 +154,33 @@ bool validIraqiPhone(String phone) {
   return RegExp(r'^07\d{9}$').hasMatch(p);
 }
 
+const _easternDigits = '٠١٢٣٤٥٦٧٨٩';
+const _persianDigits = '۰۱۲۳۴۵۶۷۸۹';
+
+/// لوحات المفاتيح العربية قد تكتب أرقاماً شرقية، فتُحوَّل قبل الفحص والحفظ.
+String westernDigits(String value) {
+  final buffer = StringBuffer();
+  for (final char in value.split('')) {
+    final eastern = _easternDigits.indexOf(char);
+    final persian = _persianDigits.indexOf(char);
+    if (eastern >= 0) {
+      buffer.write(eastern);
+    } else if (persian >= 0) {
+      buffer.write(persian);
+    } else {
+      buffer.write(char);
+    }
+  }
+  return buffer.toString().trim();
+}
+
+/// الرقم كما يُحفظ مهما كُتب: بأرقام غربية وبالصفر في أوله،
+/// فالشاشة الأولى تقبله بدون الصفر لأن +964 تسبقه، وقد يُكتب في الاستمارة كذلك.
+String phoneFromInput(String value) {
+  final phone = normalizePhone(westernDigits(value));
+  return phone.startsWith('7') ? '0$phone' : phone;
+}
+
 String phoneForCall(String phone) => normalizePhone(phone);
 
 const iraqCities = [

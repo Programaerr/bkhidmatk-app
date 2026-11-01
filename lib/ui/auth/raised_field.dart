@@ -35,6 +35,11 @@ const _focusGrow = .01;
 const _glowBlur = 10.0;
 const _hintSlide = 10.0;
 const _transition = Duration(milliseconds: 300);
+const _shakeDuration = Duration(milliseconds: 500);
+
+// عند الوصول إلى خانة خطأ تقف قرب أعلى الشاشة، فيظهر عنوانها فوقها ورسالتها تحتها.
+const _errorAlignment = .3;
+const _labelRoom = 32.0;
 
 final _shakeSteps = TweenSequence<double>([
   for (final (begin, end) in const [(0.0, -5.0), (-5.0, 5.0), (5.0, -5.0), (-5.0, 0.0)])
@@ -47,7 +52,33 @@ final _shakeSteps = TweenSequence<double>([
 Duration _motion(BuildContext context, Duration duration) =>
     MediaQuery.disableAnimationsOf(context) ? Duration.zero : duration;
 
-/// خانة كتابة بارزة: ترتفع عند الكتابة فيها، وتحمرّ وتهتز إذا كان ما فيها غير صحيح.
+/// يفحص الاستمارة، وإذا وجد خطأ ينقل الصفحة إلى أول خانة خطأ ما لم تكن ظاهرة بالكامل.
+bool validateAndShowFirstError(FormState form) {
+  final invalid = form.validateGranularly();
+  if (invalid.isEmpty) return true;
+  // رسائل الخطأ تغيّر مواضع الخانات، فيُحسب المكان بعد ظهورها.
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    final field = invalid.first;
+    if (field.mounted) _showField(field.context);
+  });
+  return false;
+}
+
+void _showField(BuildContext field) {
+  final box = field.findRenderObject()! as RenderBox;
+  final viewport = Scrollable.of(field).context.findRenderObject()! as RenderBox;
+  final top = box.localToGlobal(Offset.zero, ancestor: viewport).dy;
+  if (top >= _labelRoom && top + box.size.height <= viewport.size.height) return;
+  Scrollable.ensureVisible(
+    field,
+    alignment: _errorAlignment,
+    duration: _motion(field, _transition),
+    curve: Curves.easeInOut,
+  );
+}
+
+/// خانة كتابة بارزة: ترتفع عند الكتابة فيها، وتحمرّ وتهتز إذا كان ما فيها غير صحيح،
+/// وتختفي حمرتها بمجرد الكتابة فيها حتى يعيد زر الإرسال فحصها.
 class RaisedField extends StatefulWidget {
   const RaisedField({
     super.key,
@@ -62,6 +93,7 @@ class RaisedField extends StatefulWidget {
     this.textCapitalization = TextCapitalization.none,
     this.obscureText = false,
     this.onToggleObscure,
+    this.clearErrorWith,
   });
 
   final TextEditingController controller;
@@ -78,6 +110,9 @@ class RaisedField extends StatefulWidget {
   /// إذا وُجد تظهر في الخانة عين تُظهر كلمة المرور وتخفيها.
   final VoidCallback? onToggleObscure;
 
+  /// خانة تعتمد عليها هذه الخانة، فتختفي حمرتها أيضاً عند الكتابة في تلك.
+  final TextEditingController? clearErrorWith;
+
   @override
   State<RaisedField> createState() => _RaisedFieldState();
 }
@@ -85,17 +120,19 @@ class RaisedField extends StatefulWidget {
 class _RaisedFieldState extends State<RaisedField> with SingleTickerProviderStateMixin {
   final _field = GlobalKey<FormFieldState<String>>();
   final _focus = FocusNode();
-  late final _shakeController = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 500),
-  );
+  late final _shakeController = AnimationController(vsync: this, duration: _shakeDuration);
   late final _shake = _shakeSteps.animate(_shakeController);
+  late String _text;
+  String? _linkedText;
 
   @override
   void initState() {
     super.initState();
     _focus.addListener(_onFocusChanged);
+    _text = widget.controller.text;
+    _linkedText = widget.clearErrorWith?.text;
     widget.controller.addListener(_onTextChanged);
+    widget.clearErrorWith?.addListener(_onLinkedTextChanged);
   }
 
   @override
@@ -103,13 +140,20 @@ class _RaisedFieldState extends State<RaisedField> with SingleTickerProviderStat
     super.didUpdateWidget(oldWidget);
     if (oldWidget.controller != widget.controller) {
       oldWidget.controller.removeListener(_onTextChanged);
+      _text = widget.controller.text;
       widget.controller.addListener(_onTextChanged);
+    }
+    if (oldWidget.clearErrorWith != widget.clearErrorWith) {
+      oldWidget.clearErrorWith?.removeListener(_onLinkedTextChanged);
+      _linkedText = widget.clearErrorWith?.text;
+      widget.clearErrorWith?.addListener(_onLinkedTextChanged);
     }
   }
 
   @override
   void dispose() {
     widget.controller.removeListener(_onTextChanged);
+    widget.clearErrorWith?.removeListener(_onLinkedTextChanged);
     _focus.dispose();
     _shakeController.dispose();
     super.dispose();
@@ -117,12 +161,24 @@ class _RaisedFieldState extends State<RaisedField> with SingleTickerProviderStat
 
   void _onFocusChanged() => setState(() {});
 
-  /// يرجع لون الخانة الطبيعي بمجرد تصحيح ما فيها.
-  void _onTextChanged() {
+  void _clearError() {
     final field = _field.currentState;
-    if (field != null && field.hasError && widget.validator?.call(widget.controller.text) == null) {
-      field.reset();
-    }
+    if (field != null && field.hasError) field.reset();
+  }
+
+  // تحريك المؤشر يُبلّغ عنه أيضاً، فلا تختفي الحمرة إلا إذا تغيّر النص.
+  void _onTextChanged() {
+    final text = widget.controller.text;
+    if (text == _text) return;
+    _text = text;
+    _clearError();
+  }
+
+  void _onLinkedTextChanged() {
+    final text = widget.clearErrorWith!.text;
+    if (text == _linkedText) return;
+    _linkedText = text;
+    _clearError();
   }
 
   String? _validate(String? _) {
@@ -201,50 +257,113 @@ class _RaisedFieldState extends State<RaisedField> with SingleTickerProviderStat
               ),
             ),
           ),
-          if (field.hasError)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(_paddingX, 4, _paddingX, 0),
-              child: Text(
-                field.errorText!,
-                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error),
-              ),
-            ),
+          if (field.hasError) _ErrorText(field.errorText!),
         ],
       ),
     );
   }
 }
 
-/// خانة اختيار بشكل خانة الكتابة، تبقى مرفوعة ما دامت قائمتها مفتوحة.
-class RaisedPicker extends StatelessWidget {
-  const RaisedPicker({super.key, required this.value, required this.open, required this.onTap});
+/// خانة اختيار بشكل خانة الكتابة: تبدأ فارغة، وتبقى مرفوعة ما دامت قائمتها مفتوحة،
+/// وتحمرّ وتهتز إذا ضُغط زر الإرسال قبل الاختيار.
+class RaisedPicker extends StatefulWidget {
+  const RaisedPicker({
+    super.key,
+    required this.value,
+    required this.hint,
+    required this.emptyError,
+    required this.open,
+    required this.onTap,
+  });
 
-  final String value;
+  final String? value;
+  final String hint;
+  final String emptyError;
   final bool open;
   final VoidCallback onTap;
 
   @override
+  State<RaisedPicker> createState() => _RaisedPickerState();
+}
+
+class _RaisedPickerState extends State<RaisedPicker> with SingleTickerProviderStateMixin {
+  late final _shakeController = AnimationController(vsync: this, duration: _shakeDuration);
+  late final _shake = _shakeSteps.animate(_shakeController);
+
+  @override
+  void dispose() {
+    _shakeController.dispose();
+    super.dispose();
+  }
+
+  String? _validate(String? _) {
+    if (widget.value != null) return null;
+    if (!MediaQuery.disableAnimationsOf(context)) _shakeController.forward(from: 0);
+    return widget.emptyError;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final style = Theme.of(context).textTheme.bodyLarge!.copyWith(
-          fontSize: _fontSize,
-          color: _accent,
+    final theme = Theme.of(context);
+    final night = theme.brightness == Brightness.dark;
+    final style = theme.textTheme.bodyLarge!.copyWith(fontSize: _fontSize);
+    final value = widget.value;
+    return FormField<String>(
+      validator: _validate,
+      builder: (field) {
+        // الاختيار يصحح الخطأ فوراً، فلا تبقى الحمرة حتى الإرسال التالي.
+        final invalid = field.hasError && value == null;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Semantics(
+              button: true,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: widget.onTap,
+                child: _RaisedBox(
+                  focused: widget.open,
+                  invalid: invalid,
+                  shake: _shake,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          value ?? widget.hint,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: style.copyWith(
+                            color: value != null ? _accent : (night ? _nightHintColor : _hintColor),
+                          ),
+                        ),
+                      ),
+                      const Icon(Icons.expand_more_rounded, size: 20, color: _accent),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            if (invalid) _ErrorText(field.errorText!),
+          ],
         );
-    return Semantics(
-      button: true,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: _RaisedBox(
-          focused: open,
-          invalid: false,
-          shake: kAlwaysDismissedAnimation,
-          child: Row(
-            children: [
-              Expanded(child: Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: style)),
-              const Icon(Icons.expand_more_rounded, size: 20, color: _accent),
-            ],
-          ),
-        ),
+      },
+    );
+  }
+}
+
+class _ErrorText extends StatelessWidget {
+  const _ErrorText(this.message);
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(_paddingX, 4, _paddingX, 0),
+      child: Text(
+        message,
+        style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error),
       ),
     );
   }

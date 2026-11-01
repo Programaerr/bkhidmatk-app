@@ -9,26 +9,6 @@ import '../widgets/ui.dart';
 import 'push_key.dart';
 import 'raised_field.dart';
 
-const _easternDigits = '٠١٢٣٤٥٦٧٨٩';
-const _persianDigits = '۰۱۲۳۴۵۶۷۸۹';
-
-/// لوحات المفاتيح العربية قد تكتب أرقاماً شرقية، فتُحوَّل قبل الفحص والحفظ.
-String _westernDigits(String value) {
-  final buffer = StringBuffer();
-  for (final char in value.characters) {
-    final eastern = _easternDigits.indexOf(char);
-    final persian = _persianDigits.indexOf(char);
-    if (eastern >= 0) {
-      buffer.write(eastern);
-    } else if (persian >= 0) {
-      buffer.write(persian);
-    } else {
-      buffer.write(char);
-    }
-  }
-  return buffer.toString().trim();
-}
-
 /// صفحة الحرفي: يملأ معلوماته الشخصية وخبرته ويرسلها إلى الشركة.
 class CraftsmanScreen extends StatefulWidget {
   const CraftsmanScreen({super.key, this.initialPhone});
@@ -49,7 +29,7 @@ class _CraftsmanScreenState extends State<CraftsmanScreen> {
   final _trade = TextEditingController();
   final _years = TextEditingController();
   final _about = TextEditingController();
-  String _city = 'بغداد';
+  String? _city;
   bool _pickingCity = false;
   bool _loading = false;
   bool _sent = false;
@@ -109,13 +89,13 @@ class _CraftsmanScreenState extends State<CraftsmanScreen> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!validateAndShowFirstError(_formKey.currentState!)) return;
     setState(() {
       _loading = true;
       _error = null;
     });
     final repo = context.read<AppState>().repo;
-    final phone = normalizePhone(_westernDigits(_phone.text));
+    final phone = phoneFromInput(_phone.text);
     if (await repo.hasPendingApplication(phone)) {
       if (!mounted) return;
       setState(() {
@@ -130,11 +110,11 @@ class _CraftsmanScreenState extends State<CraftsmanScreen> {
       CraftsmanApplication(
         name: _name.text.trim(),
         phone: phone,
-        age: int.parse(_westernDigits(_age.text)),
-        city: _city,
+        age: int.parse(westernDigits(_age.text)),
+        city: _city!,
         address: address.isEmpty ? null : address,
         trade: _trade.text.trim(),
-        experienceYears: int.parse(_westernDigits(_years.text)),
+        experienceYears: int.parse(westernDigits(_years.text)),
         about: about.isEmpty ? null : about,
         createdAt: DateTime.now(),
       ),
@@ -147,7 +127,7 @@ class _CraftsmanScreenState extends State<CraftsmanScreen> {
   }
 
   String? _checkNumber(String value, int min, int max, String message) {
-    final number = int.tryParse(_westernDigits(value));
+    final number = int.tryParse(westernDigits(value));
     return number == null || number < min || number > max ? message : null;
   }
 
@@ -207,7 +187,7 @@ class _CraftsmanScreenState extends State<CraftsmanScreen> {
               textDirection: TextDirection.ltr,
               textAlign: TextAlign.right,
               validator: (v) =>
-                  validIraqiPhone(_westernDigits(v)) ? null : 'رقم غير صالح (11 رقم يبدأ بـ 07)',
+                  validIraqiPhone(phoneFromInput(v)) ? null : 'رقم غير صالح (11 رقم يبدأ بـ 07)',
             ),
             const SizedBox(height: 14),
             const FieldLabel('العمر', required_: true),
@@ -218,8 +198,14 @@ class _CraftsmanScreenState extends State<CraftsmanScreen> {
               validator: (v) => _checkNumber(v, 16, 80, 'أدخل عمراً صحيحاً'),
             ),
             const SizedBox(height: 14),
-            const FieldLabel('المحافظة'),
-            RaisedPicker(value: _city, open: _pickingCity, onTap: _pickCity),
+            const FieldLabel('المحافظة', required_: true),
+            RaisedPicker(
+              value: _city,
+              hint: 'اختر المحافظة',
+              emptyError: 'اختر محافظتك',
+              open: _pickingCity,
+              onTap: _pickCity,
+            ),
             const SizedBox(height: 14),
             const FieldLabel('العنوان التفصيلي'),
             RaisedField(

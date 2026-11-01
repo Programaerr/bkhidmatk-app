@@ -33,10 +33,15 @@ class _SlowRepo extends _Repo {
   Future<bool> phoneExists(String phone) => answer.future;
 }
 
-Future<void> _pump(WidgetTester tester, _Repo repo, {String? phone}) async {
+Future<void> _pump(
+  WidgetTester tester,
+  _Repo repo, {
+  String? phone,
+  Size size = const Size(412, 1600),
+}) async {
   SharedPreferences.setMockInitialValues({});
   tester.view
-    ..physicalSize = const Size(412, 1600)
+    ..physicalSize = size
     ..devicePixelRatio = 1;
   addTearDown(tester.view.reset);
   await tester.pumpWidget(
@@ -70,12 +75,25 @@ Finder _field(String label) => find.byType(TextField).at(_fieldOrder.indexOf(lab
 
 const _fieldOrder = ['الاسم', 'الهاتف', 'العنوان', 'المرور', 'التأكيد'];
 
-Future<void> _fill(WidgetTester tester) async {
+const _shortPassword = 'كلمة المرور 6 أحرف على الأقل';
+const _mismatch = 'كلمتا المرور غير متطابقتين';
+
+Future<void> _chooseCity(WidgetTester tester, String city) async {
+  await tester.ensureVisible(find.byType(RaisedPicker));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byType(RaisedPicker));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text(city).last);
+  await tester.pumpAndSettle();
+}
+
+Future<void> _fill(WidgetTester tester, {String? city = 'بغداد'}) async {
   await tester.enterText(_field('الاسم'), 'كرار عبد الله');
   await tester.enterText(_field('الهاتف'), '07701234567');
   await tester.enterText(_field('العنوان'), 'الكرادة');
   await tester.enterText(_field('المرور'), 'secret1');
   await tester.enterText(_field('التأكيد'), 'secret1');
+  if (city != null) await _chooseCity(tester, city);
 }
 
 bool _hidden(WidgetTester tester, String label) =>
@@ -133,6 +151,7 @@ void main() {
     expect(find.text('أدخل الاسم الكامل'), findsOneWidget);
     expect(find.text('أدخل رقم الهاتف'), findsOneWidget);
     expect(find.text('كلمة المرور 6 أحرف على الأقل'), findsOneWidget);
+    expect(find.text('اختر محافظتك'), findsOneWidget);
 
     await tester.enterText(_field('الهاتف'), '123');
     await tester.enterText(_field('المرور'), 'secret1');
@@ -143,6 +162,153 @@ void main() {
     expect(find.text('كلمتا المرور غير متطابقتين'), findsOneWidget);
     expect(repo.created, isEmpty);
     await tester.pumpAndSettle();
+  });
+
+  testWidgets('حمرة كلمة المرور تختفي بمجرد الكتابة، وترجع إذا بقيت قصيرة عند الإنشاء', (tester) async {
+    await _pump(tester, _Repo());
+    await tester.tap(find.text('إنشاء الحساب').last);
+    await tester.pumpAndSettle();
+    expect(find.text(_shortPassword), findsOneWidget);
+
+    await tester.enterText(_field('المرور'), '1');
+    await tester.pumpAndSettle();
+    expect(find.text(_shortPassword), findsNothing);
+
+    await tester.tap(find.text('إنشاء الحساب').last);
+    await tester.pumpAndSettle();
+    expect(find.text(_shortPassword), findsOneWidget);
+  });
+
+  testWidgets('حمرة التأكيد تختفي عند الكتابة فيه أو عند تعديل كلمة المرور', (tester) async {
+    await _pump(tester, _Repo());
+    await tester.enterText(_field('المرور'), 'secret1');
+    await tester.enterText(_field('التأكيد'), 'secret2');
+    await tester.tap(find.text('إنشاء الحساب').last);
+    await tester.pumpAndSettle();
+    expect(find.text(_mismatch), findsOneWidget);
+
+    await tester.enterText(_field('التأكيد'), 's');
+    await tester.pumpAndSettle();
+    expect(find.text(_mismatch), findsNothing);
+
+    await tester.tap(find.text('إنشاء الحساب').last);
+    await tester.pumpAndSettle();
+    expect(find.text(_mismatch), findsOneWidget);
+
+    await tester.enterText(_field('المرور'), 'secret9');
+    await tester.pumpAndSettle();
+    expect(find.text(_mismatch), findsNothing);
+  });
+
+  testWidgets('تحريك المؤشر بلا كتابة لا يخفي الحمرة', (tester) async {
+    await _pump(tester, _Repo());
+    await tester.enterText(_field('المرور'), 'secret1');
+    await tester.enterText(_field('التأكيد'), 'secret2');
+    await tester.tap(find.text('إنشاء الحساب').last);
+    await tester.pumpAndSettle();
+
+    for (final label in ['المرور', 'التأكيد']) {
+      tester.widget<TextField>(_field(label)).controller!.selection =
+          const TextSelection.collapsed(offset: 1);
+    }
+    await tester.pumpAndSettle();
+    expect(find.text(_mismatch), findsOneWidget);
+  });
+
+  testWidgets('حمرة الاسم والرقم تختفي بمجرد الكتابة', (tester) async {
+    await _pump(tester, _Repo());
+    await tester.tap(find.text('إنشاء الحساب').last);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(_field('الاسم'), 'ك');
+    await tester.enterText(_field('الهاتف'), '0');
+    await tester.pumpAndSettle();
+    expect(find.text('أدخل الاسم الكامل'), findsNothing);
+    expect(find.text('أدخل رقم الهاتف'), findsNothing);
+  });
+
+  for (final typed in const [
+    '7701234567',
+    '٠٧٧٠١٢٣٤٥٦٧',
+    '۰۷۷۰۱۲۳۴۵۶۷',
+    '+964 770 123 4567',
+    '0770 123 4567',
+  ]) {
+    testWidgets('الرقم $typed يُقبل ويُحفظ بصيغة واحدة', (tester) async {
+      final repo = _Repo();
+      await _pump(tester, repo);
+      await _fill(tester);
+      await tester.enterText(_field('الهاتف'), typed);
+      await tester.tap(find.text('إنشاء الحساب').last);
+      await tester.pumpAndSettle();
+      expect(find.text('رقم غير صالح (11 رقم يبدأ بـ 07)'), findsNothing);
+      expect(repo.created.single.phone, '07701234567');
+    });
+  }
+
+  testWidgets('الصفحة تبدأ بلا محافظة، ولا يُنشأ الحساب قبل اختيارها', (tester) async {
+    final repo = _Repo();
+    await _pump(tester, repo);
+    expect(find.text('بغداد'), findsNothing);
+    expect(tester.widget<RaisedPicker>(find.byType(RaisedPicker)).value, isNull);
+    expect(find.text('اختر المحافظة'), findsOneWidget);
+
+    await _fill(tester, city: null);
+    await tester.tap(find.text('إنشاء الحساب').last);
+    await tester.pumpAndSettle();
+    expect(find.text('اختر محافظتك'), findsOneWidget);
+    expect(repo.created, isEmpty);
+
+    await _chooseCity(tester, 'النجف');
+    expect(find.text('اختر محافظتك'), findsNothing);
+    await tester.tap(find.text('إنشاء الحساب').last);
+    await tester.pumpAndSettle();
+    expect(repo.created.single.city, 'النجف');
+  });
+
+  testWidgets('الإنشاء مع خانة ناقصة ينقل الصفحة إلى أول خانة خطأ', (tester) async {
+    await _pump(tester, _Repo(), size: const Size(412, 600));
+    final key = find.byType(PushKeyButton);
+    await tester.ensureVisible(key);
+    await tester.pumpAndSettle();
+    final appBarBottom = tester.getBottomLeft(find.byType(AppBar)).dy;
+    expect(tester.getTopLeft(find.text('الاسم الكامل')).dy, lessThan(appBarBottom));
+
+    await tester.tap(key);
+    await tester.pumpAndSettle();
+    expect(tester.getTopLeft(find.text('الاسم الكامل')).dy, greaterThanOrEqualTo(appBarBottom));
+    expect(tester.getBottomLeft(find.text('أدخل الاسم الكامل')).dy, lessThanOrEqualTo(600));
+  });
+
+  testWidgets('الصفحة تنتقل إلى المحافظة إذا كانت هي الناقصة', (tester) async {
+    final repo = _Repo();
+    await _pump(tester, repo, size: const Size(412, 600));
+    await _fill(tester, city: null);
+    final key = find.byType(PushKeyButton);
+    await tester.ensureVisible(key);
+    await tester.pumpAndSettle();
+
+    await tester.tap(key);
+    await tester.pumpAndSettle();
+    final appBarBottom = tester.getBottomLeft(find.byType(AppBar)).dy;
+    expect(tester.getTopLeft(find.text('المحافظة')).dy, greaterThanOrEqualTo(appBarBottom));
+    expect(tester.getBottomLeft(find.text('اختر محافظتك')).dy, lessThanOrEqualTo(600));
+    expect(repo.created, isEmpty);
+  });
+
+  testWidgets('الصفحة لا تتحرك إذا كانت الخانة الخطأ ظاهرة', (tester) async {
+    await _pump(tester, _Repo(), size: const Size(412, 600));
+    await _fill(tester);
+    await tester.enterText(_field('التأكيد'), 'different');
+    final key = find.byType(PushKeyButton);
+    await tester.ensureVisible(key);
+    await tester.pumpAndSettle();
+    final before = tester.getTopLeft(find.text('تأكيد كلمة المرور'));
+
+    await tester.tap(key);
+    await tester.pumpAndSettle();
+    expect(find.text(_mismatch), findsOneWidget);
+    expect(tester.getTopLeft(find.text('تأكيد كلمة المرور')), before);
   });
 
   testWidgets('زر العين يظهر كلمة المرور ويخفيها، وخانة التأكيد تبقى مخفية', (tester) async {
