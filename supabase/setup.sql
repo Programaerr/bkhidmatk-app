@@ -1236,7 +1236,7 @@ grant select, insert, update, delete on public.categories,
   public.comments, public.our_works, public.work_likes, public.work_comments,
   public.messages, public.cards, public.receipts, public.settings
 to authenticated;
-revoke all on public.workers from anon, authenticated;
+revoke all on public.workers from public, anon, authenticated;
 grant select (id, name, specialty, category_id, rating, jobs_done, bio, avatar, available)
   on public.workers to authenticated;
 grant insert, update, delete on public.workers to authenticated;

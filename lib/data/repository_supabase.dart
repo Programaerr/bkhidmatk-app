@@ -324,13 +324,13 @@ class SupabaseRepository implements Repository {
     final rows = isAdmin
         ? _maps(await _client.rpc('list_admin_workers'))
         : await _allRows((from, to) {
-        dynamic query = _client.from('workers').select(
-          'id,name,specialty,category_id,rating,jobs_done,bio,avatar,available',
-        );
-        if (categoryId != null) query = query.eq('category_id', categoryId);
-        if (onlyAvailable) query = query.eq('available', true);
-        return query.order('rating', ascending: false).range(from, to);
-      });
+            dynamic query = _client.from('workers').select(
+                  'id,name,specialty,category_id,rating,jobs_done,bio,avatar,available',
+                );
+            if (categoryId != null) query = query.eq('category_id', categoryId);
+            if (onlyAvailable) query = query.eq('available', true);
+            return query.order('rating', ascending: false).range(from, to);
+          });
     final workers = rows
         .where(
           (row) =>
