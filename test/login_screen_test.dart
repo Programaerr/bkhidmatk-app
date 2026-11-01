@@ -88,6 +88,12 @@ void main() {
     expect(key.yellow, isTrue);
   });
 
+  testWidgets('الصفحة تبدأ بالخانات مباشرة تحت الشريط العلوي', (tester) async {
+    await _pump(tester, _Repo());
+    final barBottom = tester.getBottomLeft(find.byType(AppBar)).dy;
+    expect(tester.getTopLeft(find.text('رقم الهاتف')).dy - barBottom, lessThan(16));
+  });
+
   testWidgets('خانة الهاتف تقبل الأرقام فقط، وكلمة المرور تقبل كل شيء', (tester) async {
     await _pump(tester, _Repo());
     await tester.enterText(_phone, 'abc0770xyz123456789');

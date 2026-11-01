@@ -161,7 +161,7 @@ class _CraftsmanScreenState extends State<CraftsmanScreen> {
     );
   }
 
-  Widget _form(ThemeData theme) {
+  Widget _form() {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(22, 8, 22, 28),
       child: Form(
@@ -169,13 +169,6 @@ class _CraftsmanScreenState extends State<CraftsmanScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('اعمل مع جايك', style: theme.textTheme.headlineSmall),
-            const SizedBox(height: 4),
-            Text(
-              'املأ معلوماتك وخبرتك وأرسلها إلى الشركة.',
-              style: theme.textTheme.bodySmall?.copyWith(fontSize: 13),
-            ),
-            const SizedBox(height: 22),
             RequiredFieldLabel('الاسم الكامل', controller: _name),
             RaisedField(
               controller: _name,
@@ -267,7 +260,7 @@ class _CraftsmanScreenState extends State<CraftsmanScreen> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(title: const Text('التقديم كحرفي')),
-      body: SafeArea(child: _sent ? _sentMessage(theme) : _form(theme)),
+      body: SafeArea(child: _sent ? _sentMessage(theme) : _form()),
     );
   }
 }

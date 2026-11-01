@@ -133,6 +133,12 @@ void main() {
     expect(key.yellow, isTrue);
   });
 
+  testWidgets('الصفحة تبدأ بالخانات مباشرة تحت الشريط العلوي', (tester) async {
+    await _pump(tester, _Repo());
+    final barBottom = tester.getBottomLeft(find.byType(AppBar)).dy;
+    expect(tester.getTopLeft(find.text('الاسم الكامل')).dy - barBottom, lessThan(16));
+  });
+
   testWidgets('الطلب الكامل ينشئ الحساب بالمحافظة المختارة ويرجع إلى الشاشة الأولى', (tester) async {
     final repo = _Repo();
     await _pump(tester, repo);

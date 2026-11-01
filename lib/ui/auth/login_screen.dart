@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../state/app_state.dart';
-import '../widgets/ui.dart';
 import 'push_key.dart';
 import 'raised_field.dart';
 import 'register_screen.dart';
@@ -71,37 +70,6 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const BrandLogo(size: 62, radius: 18),
-              const SizedBox(height: 18),
-              Text('أهلاً بعودتك 👋', style: theme.textTheme.headlineSmall),
-              const SizedBox(height: 4),
-              Text('سجّل دخولك لمتابعة حجوزاتك وخدماتك.',
-                  style: theme.textTheme.bodySmall?.copyWith(fontSize: 13)),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                decoration: BoxDecoration(
-                  color: AppColors.gold.withValues(alpha: .12),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.gold.withValues(alpha: .4)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.smartphone_rounded, size: 18),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'وضع تجريبي محلي: البيانات محفوظة على هذا الجهاز فقط، ولا تتزامن مع أجهزة أخرى.',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          fontSize: 11.5,
-                          height: 1.6,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
               Form(
                 key: _formKey,
                 child: Column(

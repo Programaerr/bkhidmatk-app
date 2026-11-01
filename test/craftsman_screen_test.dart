@@ -196,6 +196,12 @@ void main() {
     expect(find.text('يوجد طلب قيد المراجعة بهذا الرقم'), findsOneWidget);
   });
 
+  testWidgets('الصفحة تبدأ بالخانات مباشرة تحت الشريط العلوي', (tester) async {
+    await _pump(tester, _Repo(), const CraftsmanScreen());
+    final barBottom = tester.getBottomLeft(find.byType(AppBar)).dy;
+    expect(tester.getTopLeft(find.text('الاسم الكامل')).dy - barBottom, lessThan(16));
+  });
+
   testWidgets('الرقم من الشاشة الأولى جاهز في الحقل', (tester) async {
     await _pump(tester, _Repo(), const CraftsmanScreen(initialPhone: '07701234567'));
     expect(find.text('07701234567'), findsOneWidget);

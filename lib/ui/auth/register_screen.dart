@@ -120,11 +120,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('انضم إلى جايك', style: theme.textTheme.headlineSmall),
-                const SizedBox(height: 4),
-                Text('أنشئ حسابك واحجز أول خدمة خلال دقيقة.',
-                    style: theme.textTheme.bodySmall?.copyWith(fontSize: 13)),
-                const SizedBox(height: 22),
                 RequiredFieldLabel('الاسم الكامل', controller: _name),
                 RaisedField(
                   controller: _name,
