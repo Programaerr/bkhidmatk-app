@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -15,7 +16,9 @@ import '../widgets/ui.dart';
 import 'package:webview_all/webview_all.dart';
 
 class ReelsTab extends StatefulWidget {
-  const ReelsTab({super.key});
+  const ReelsTab({super.key, this.active = true});
+
+  final bool active;
 
   @override
   State<ReelsTab> createState() => _ReelsTabState();
@@ -117,79 +120,83 @@ class _ReelsTabState extends State<ReelsTab> with RealtimeRefresh<ReelsTab> {
   }
 
   @override
-  Widget build(BuildContext context) => FutureBuilder<List<OurWork>>(
-        future: _future,
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return _ReelsMessage(
-              icon: Icons.error_outline_rounded,
-              title: 'تعذر تحميل الريلز',
-              subtitle: 'تحقق من اتصال الإنترنت ثم أعد المحاولة.',
-              action: FilledButton(
-                onPressed: _load,
-                child: const Text('إعادة المحاولة'),
+  Widget build(BuildContext context) {
+    final english = context.watch<AppState>().english;
+    return FutureBuilder<List<OurWork>>(
+      future: _future,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return _ReelsMessage(
+            icon: Icons.error_outline_rounded,
+            title: 'تعذر تحميل الريلز',
+            subtitle: 'تحقق من اتصال الإنترنت ثم أعد المحاولة.',
+            action: FilledButton(
+              onPressed: _load,
+              child: const Text('إعادة المحاولة'),
+            ),
+          );
+        }
+        if (!_loaded && snapshot.hasData) {
+          _works = snapshot.data!;
+          _loaded = true;
+          if (_currentPage >= _works.length) {
+            _currentPage = _works.isEmpty ? 0 : _works.length - 1;
+          }
+        }
+        if (snapshot.connectionState == ConnectionState.waiting && !_loaded) {
+          return const Center(
+            child: CircularProgressIndicator(color: AppColors.gold),
+          );
+        }
+        if (_works.isEmpty) {
+          return const _ReelsMessage(
+            icon: Icons.video_library_outlined,
+            title: 'لا توجد ريلز حالياً',
+            subtitle: 'ستظهر هنا الفيديوهات التي تنشرها الإدارة.',
+          );
+        }
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            PageView.builder(
+              key: const PageStorageKey('customer-reels'),
+              scrollDirection: Axis.vertical,
+              itemCount: _works.length,
+              onPageChanged: (index) {
+                setState(() => _currentPage = index);
+                _incrementViews(_works[index]);
+              },
+              itemBuilder: (context, index) => _ReelPage(
+                key: ValueKey(_works[index].id ?? index),
+                work: _works[index],
+                active: widget.active && index == _currentPage,
+                english: english,
+                onLike: () => _toggleLike(index),
+                onComments: () => _openComments(index),
+                onShare: () => _share(_works[index]),
               ),
-            );
-          }
-          if (!_loaded && snapshot.hasData) {
-            _works = snapshot.data!;
-            _loaded = true;
-            if (_currentPage >= _works.length) {
-              _currentPage = _works.isEmpty ? 0 : _works.length - 1;
-            }
-          }
-          if (snapshot.connectionState == ConnectionState.waiting && !_loaded) {
-            return const Center(
-              child: CircularProgressIndicator(color: AppColors.gold),
-            );
-          }
-          if (_works.isEmpty) {
-            return const _ReelsMessage(
-              icon: Icons.video_library_outlined,
-              title: 'لا توجد ريلز حالياً',
-              subtitle: 'ستظهر هنا الفيديوهات التي تنشرها الإدارة.',
-            );
-          }
-          return Stack(
-            fit: StackFit.expand,
-            children: [
-              PageView.builder(
-                key: const PageStorageKey('customer-reels'),
-                scrollDirection: Axis.vertical,
-                itemCount: _works.length,
-                onPageChanged: (index) {
-                  setState(() => _currentPage = index);
-                  _incrementViews(_works[index]);
-                },
-                itemBuilder: (context, index) => _ReelPage(
-                  key: ValueKey(_works[index].id ?? index),
-                  work: _works[index],
-                  active: index == _currentPage,
-                  onLike: () => _toggleLike(index),
-                  onComments: () => _openComments(index),
-                  onShare: () => _share(_works[index]),
-                ),
-              ),
-              const PositionedDirectional(
-                top: 10,
-                end: 18,
-                child: SafeArea(
-                  bottom: false,
-                  child: Text(
-                    'ريلز',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                      shadows: [Shadow(color: Colors.black54, blurRadius: 8)],
-                    ),
+            ),
+            const PositionedDirectional(
+              top: 10,
+              end: 18,
+              child: SafeArea(
+                bottom: false,
+                child: Text(
+                  'ريلز',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    shadows: [Shadow(color: Colors.black54, blurRadius: 8)],
                   ),
                 ),
               ),
-            ],
-          );
-        },
-      );
+            ),
+          ],
+        );
+      },
+    );
+  }
 }
 
 class _ReelsMessage extends StatelessWidget {
@@ -236,6 +243,7 @@ class _ReelPage extends StatefulWidget {
     super.key,
     required this.work,
     required this.active,
+    required this.english,
     required this.onLike,
     required this.onComments,
     required this.onShare,
@@ -243,6 +251,7 @@ class _ReelPage extends StatefulWidget {
 
   final OurWork work;
   final bool active;
+  final bool english;
   final VoidCallback onLike;
   final VoidCallback onComments;
   final VoidCallback onShare;
@@ -261,13 +270,127 @@ class _ReelPageState extends State<_ReelPage> {
   bool _webLoaded = false;
   bool _isPaused = false;
   bool _showPlaybackControls = false;
+  bool _isLandscape = false;
+  bool _orientationBusy = false;
   double _zoomScale = 1;
   double _zoomStartScale = 1;
+  double _seekStartProgress = 0;
+  double _seekDelta = 0;
+  double _seekWidth = 0;
+  double? _seekPreviewProgress;
   String? _seekFeedback;
   Timer? _controlsTimer;
   Timer? _seekFeedbackTimer;
   Timer? _webPositionTimer;
   int _webPositionSeconds = 0;
+
+  Future<void> _toggleOrientation() async {
+    if (_orientationBusy) return;
+    if (kIsWeb) {
+      AppSnack.show(
+        context,
+        widget.english
+            ? 'Screen rotation is available in the mobile app'
+            : 'تدوير الشاشة متاح عند فتح التطبيق على الهاتف',
+      );
+      return;
+    }
+
+    final landscape = !_isLandscape;
+    setState(() => _orientationBusy = true);
+    try {
+      await SystemChrome.setPreferredOrientations(
+        landscape
+            ? const [
+                DeviceOrientation.landscapeLeft,
+                DeviceOrientation.landscapeRight,
+              ]
+            : const [
+                DeviceOrientation.portraitUp,
+                DeviceOrientation.portraitDown,
+              ],
+      );
+      await SystemChrome.setEnabledSystemUIMode(
+        landscape ? SystemUiMode.immersiveSticky : SystemUiMode.edgeToEdge,
+      );
+      if (mounted) setState(() => _isLandscape = landscape);
+    } catch (error) {
+      debugPrint('Failed to change reel orientation: $error');
+      if (mounted) {
+        AppSnack.show(
+          context,
+          widget.english
+              ? 'Could not rotate the screen on this device'
+              : 'تعذر تدوير الشاشة على هذا الجهاز',
+          error: true,
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _orientationBusy = false);
+    }
+  }
+
+  void _restorePortrait() {
+    if (!_isLandscape) return;
+    _isLandscape = false;
+    SystemChrome.setPreferredOrientations(const [
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]).catchError((error) {
+      debugPrint('Failed to restore app orientation: $error');
+    });
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge).catchError(
+      (error) => debugPrint('Failed to restore system UI: $error'),
+    );
+  }
+
+  void _startSeeking() {
+    final video = _controller;
+    if (_isDirectVideo &&
+        video != null &&
+        video.value.isInitialized &&
+        video.value.duration > Duration.zero) {
+      _seekStartProgress = video.value.position.inMicroseconds /
+          video.value.duration.inMicroseconds;
+    } else {
+      _seekStartProgress = (_webPositionSeconds % 60) / 60;
+    }
+    _seekDelta = 0;
+    _seekWidth = 0;
+    _seekPreviewProgress = _seekStartProgress;
+  }
+
+  void _updateSeeking(DragUpdateDetails details, double width) {
+    if (width <= 0) return;
+    _seekWidth = width;
+    final isRtl = Directionality.of(context) == TextDirection.rtl;
+    _seekDelta += details.delta.dx * (isRtl ? -1 : 1);
+    setState(() {
+      _seekPreviewProgress =
+          (_seekStartProgress + _seekDelta / width).clamp(0.0, 1.0);
+    });
+  }
+
+  Future<void> _finishSeeking() async {
+    final video = _controller;
+    final progress = _seekPreviewProgress;
+    final delta = _seekDelta;
+    setState(() => _seekPreviewProgress = null);
+
+    if (_isDirectVideo &&
+        video != null &&
+        video.value.isInitialized &&
+        progress != null) {
+      final duration = video.value.duration;
+      await video.seekTo(Duration(
+        microseconds: (duration.inMicroseconds * progress).round(),
+      ));
+      return;
+    }
+
+    final seconds = _seekWidth <= 0 ? 0 : (delta / _seekWidth * 60).round();
+    if (seconds != 0) await _seek(Duration(seconds: seconds));
+  }
 
   @override
   void initState() {
@@ -318,6 +441,7 @@ class _ReelPageState extends State<_ReelPage> {
         _controlEmbeddedVideo('pauseVideo');
         _isPaused = true;
         _webPositionTimer?.cancel();
+        _restorePortrait();
       }
     }
   }
@@ -500,6 +624,9 @@ class _ReelPageState extends State<_ReelPage> {
     _controlsTimer?.cancel();
     _seekFeedbackTimer?.cancel();
     _webPositionTimer?.cancel();
+    if (_isLandscape) {
+      _restorePortrait();
+    }
     _disposeController();
     super.dispose();
   }
@@ -543,7 +670,7 @@ class _ReelPageState extends State<_ReelPage> {
       }
       if (mounted) setState(() => _isPaused = nextPaused);
     }
-    _revealPlaybackControls();
+    if (mounted) _revealPlaybackControls();
   }
 
   Future<void> _seek(Duration offset) async {
@@ -582,29 +709,30 @@ class _ReelPageState extends State<_ReelPage> {
       }
     }
     if (!mounted) return;
-    setState(() => _seekFeedback = offset.isNegative ? '-10' : '+10');
+    final seconds = offset.inSeconds.abs();
+    final sign = offset.isNegative ? '-' : '+';
+    setState(() {
+      _seekFeedback = widget.english ? '$sign${seconds}s' : '$sign${seconds}ث';
+    });
     _seekFeedbackTimer?.cancel();
     _seekFeedbackTimer = Timer(const Duration(milliseconds: 700), () {
       if (mounted) setState(() => _seekFeedback = null);
     });
-    _revealPlaybackControls();
   }
 
   void _revealPlaybackControls() {
     _controlsTimer?.cancel();
     setState(() => _showPlaybackControls = true);
-    if (!_isPaused) {
-      _controlsTimer = Timer(const Duration(seconds: 2), () {
-        if (mounted) setState(() => _showPlaybackControls = false);
-      });
-    }
+    _controlsTimer = Timer(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _showPlaybackControls = false);
+    });
   }
 
   void _startWebPositionTimer() {
     _webPositionTimer?.cancel();
     _webPositionTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted && !_isPaused && widget.active) {
-        _webPositionSeconds++;
+        setState(() => _webPositionSeconds++);
       }
     });
   }
@@ -698,25 +826,6 @@ class _ReelPageState extends State<_ReelPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               _ReelAction(
-                icon:
-                    _isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded,
-                label: _isPaused ? 'تشغيل' : 'إيقاف',
-                onTap: _togglePlayback,
-              ),
-              const SizedBox(height: 14),
-              _ReelAction(
-                icon: Icons.replay_10_rounded,
-                label: '-10',
-                onTap: () => _seek(const Duration(seconds: -10)),
-              ),
-              const SizedBox(height: 14),
-              _ReelAction(
-                icon: Icons.forward_10_rounded,
-                label: '+10',
-                onTap: () => _seek(const Duration(seconds: 10)),
-              ),
-              const SizedBox(height: 14),
-              _ReelAction(
                 icon: widget.work.likedByMe
                     ? Icons.favorite_rounded
                     : Icons.favorite_border_rounded,
@@ -736,11 +845,23 @@ class _ReelPageState extends State<_ReelPage> {
                 label: 'مشاركة',
                 onTap: widget.onShare,
               ),
+              const SizedBox(height: 18),
+              _ReelAction(
+                icon: _isLandscape
+                    ? Icons.stay_current_portrait_rounded
+                    : Icons.screen_rotation_rounded,
+                label: widget.english
+                    ? (_isLandscape ? 'Portrait' : 'Landscape')
+                    : (_isLandscape ? 'عمودي' : 'عرض أفقي'),
+                onTap: _orientationBusy ? () {} : _toggleOrientation,
+              ),
               if (!_failed) ...[
                 const SizedBox(height: 18),
                 IconButton(
                   onPressed: _toggleSound,
-                  tooltip: _muted ? 'تشغيل الصوت' : 'كتم الصوت',
+                  tooltip: widget.english
+                      ? (_muted ? 'Unmute' : 'Mute')
+                      : (_muted ? 'تشغيل الصوت' : 'كتم الصوت'),
                   color: Colors.white,
                   icon: Icon(
                     _muted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
@@ -860,12 +981,6 @@ class _ReelPageState extends State<_ReelPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   _PlaybackButton(
-                    icon: Icons.replay_10_rounded,
-                    tooltip: 'ترجيع 10 ثوانٍ',
-                    onTap: () => _seek(const Duration(seconds: -10)),
-                  ),
-                  const SizedBox(width: 24),
-                  _PlaybackButton(
                     icon: _isPaused
                         ? Icons.play_arrow_rounded
                         : Icons.pause_rounded,
@@ -873,42 +988,30 @@ class _ReelPageState extends State<_ReelPage> {
                     onTap: _togglePlayback,
                     size: 62,
                   ),
-                  const SizedBox(width: 24),
-                  _PlaybackButton(
-                    icon: Icons.forward_10_rounded,
-                    tooltip: 'تقديم 10 ثوانٍ',
-                    onTap: () => _seek(const Duration(seconds: 10)),
-                  ),
                 ],
               ),
             ),
           ),
-        if (_isDirectVideo &&
-            video != null &&
-            video.value.isInitialized &&
-            !video.value.isPlaying)
-          const IgnorePointer(
-            child: Center(
-              child: Icon(Icons.play_arrow_rounded,
-                  color: Colors.white70, size: 74),
-            ),
-          ),
-        if (_isDirectVideo && video != null && video.value.isInitialized)
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: VideoProgressIndicator(
-              video,
-              allowScrubbing: true,
-              padding: EdgeInsets.zero,
-              colors: const VideoProgressColors(
-                playedColor: AppColors.gold,
-                bufferedColor: Colors.white38,
-                backgroundColor: Colors.white12,
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: 24,
+          child: LayoutBuilder(
+            builder: (context, constraints) => GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onHorizontalDragStart: (_) => _startSeeking(),
+              onHorizontalDragUpdate: (details) =>
+                  _updateSeeking(details, constraints.maxWidth),
+              onHorizontalDragEnd: (_) => _finishSeeking(),
+              child: _ReelSeekBar(
+                controller: _isDirectVideo ? video : null,
+                fallbackProgress: (_webPositionSeconds % 60) / 60,
+                previewProgress: _seekPreviewProgress,
               ),
             ),
           ),
+        ),
       ],
     );
   }
@@ -939,6 +1042,88 @@ class _PlaybackButton extends StatelessWidget {
         ),
         icon: Icon(icon),
       );
+}
+
+class _ReelSeekBar extends StatelessWidget {
+  const _ReelSeekBar({
+    required this.controller,
+    required this.fallbackProgress,
+    required this.previewProgress,
+  });
+
+  final VideoPlayerController? controller;
+  final double fallbackProgress;
+  final double? previewProgress;
+
+  @override
+  Widget build(BuildContext context) {
+    final video = controller;
+    if (video == null || !video.value.isInitialized) {
+      return _buildBar(context, fallbackProgress);
+    }
+
+    return AnimatedBuilder(
+      animation: video,
+      builder: (context, _) {
+        final duration = video.value.duration;
+        final progress = duration > Duration.zero
+            ? video.value.position.inMicroseconds / duration.inMicroseconds
+            : 0.0;
+        return _buildBar(context, progress);
+      },
+    );
+  }
+
+  Widget _buildBar(BuildContext context, double actualProgress) {
+    final progress = (previewProgress ?? actualProgress).clamp(0.0, 1.0);
+    final isSeeking = previewProgress != null;
+    final color = isSeeking ? AppColors.gold : Colors.white;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        return Stack(
+          alignment: Alignment.center,
+          clipBehavior: Clip.none,
+          children: [
+            Container(
+              height: isSeeking ? 4 : 2,
+              decoration: BoxDecoration(
+                color: Colors.white38,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            Align(
+              alignment: Directionality.of(context) == TextDirection.rtl
+                  ? Alignment.centerRight
+                  : Alignment.centerLeft,
+              child: FractionallySizedBox(
+                widthFactor: progress,
+                child: Container(
+                  height: isSeeking ? 4 : 2,
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ),
+            ),
+            if (isSeeking && width > 0)
+              PositionedDirectional(
+                start: (progress * width - 5).clamp(0.0, width - 10),
+                child: Container(
+                  width: 10,
+                  height: 10,
+                  decoration: const BoxDecoration(
+                    color: AppColors.gold,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
 }
 
 class _CoverVideo extends StatelessWidget {

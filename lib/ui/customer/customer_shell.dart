@@ -51,7 +51,7 @@ class _CustomerShellState extends State<CustomerShell> {
         ),
       ),
       BookingsTab(onBrowse: () => setState(() => _index = 1)),
-      const ReelsTab(),
+      ReelsTab(active: _index == 3),
       OurWorkTab(refreshTick: _tick),
       ProfileTab(
         onOpenBookings: () => setState(() => _index = 2),

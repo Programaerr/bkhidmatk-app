@@ -27,7 +27,7 @@ class JaikApp extends StatelessWidget {
         themeMode: state.themeMode,
         // الشاشة الأولى تتدرج بألوانها الخاصة، فلا حاجة إلى حركة الثيم فوقها.
         themeAnimationDuration: state.user == null ? Duration.zero : kThemeAnimationDuration,
-        locale: const Locale('ar'),
+        locale: Locale(state.english ? 'en' : 'ar'),
         supportedLocales: const [Locale('ar'), Locale('en')],
         localizationsDelegates: const [
           GlobalMaterialLocalizations.delegate,
@@ -37,7 +37,11 @@ class JaikApp extends StatelessWidget {
         builder: (context, child) => MediaQuery.withClampedTextScaling(
           minScaleFactor: .9,
           maxScaleFactor: 1.3,
-          child: Directionality(textDirection: TextDirection.rtl, child: child!),
+          child: Directionality(
+            textDirection:
+                state.english ? TextDirection.ltr : TextDirection.rtl,
+            child: child!,
+          ),
         ),
         home: const _RootGate(),
       ),
