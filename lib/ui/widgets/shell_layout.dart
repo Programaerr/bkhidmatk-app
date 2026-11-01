@@ -22,6 +22,7 @@ class AppShellLayout extends StatelessWidget {
     this.floatingActionButton,
     this.accent = AppColors.gold,
     this.headerBadge,
+    this.topBanner,
   });
 
   final int index;
@@ -31,6 +32,7 @@ class AppShellLayout extends StatelessWidget {
   final Widget? floatingActionButton;
   final Color accent;
   final Widget? headerBadge;
+  final Widget? topBanner;
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +43,14 @@ class AppShellLayout extends StatelessWidget {
 
     if (!wide) {
       return Scaffold(
-        body: body,
+        body: topBanner == null
+            ? body
+            : Column(
+                children: [
+                  topBanner!,
+                  Expanded(child: body),
+                ],
+              ),
         floatingActionButton: floatingActionButton,
         bottomNavigationBar: Container(
           decoration: BoxDecoration(
@@ -69,7 +78,8 @@ class AppShellLayout extends StatelessWidget {
           Container(
             width: 92,
             decoration: BoxDecoration(
-              border: Border(left: BorderSide(color: theme.colorScheme.outline)),
+              border:
+                  Border(left: BorderSide(color: theme.colorScheme.outline)),
             ),
             child: SafeArea(
               child: NavigationRail(
@@ -81,7 +91,8 @@ class AppShellLayout extends StatelessWidget {
                   padding: const EdgeInsets.only(top: 12, bottom: 16),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(14),
-                    child: Image.asset('assets/images/logo.jpg', width: 44, height: 44),
+                    child: Image.asset('assets/images/logo.jpg',
+                        width: 44, height: 44),
                   ),
                 ),
                 destinations: [
@@ -95,7 +106,16 @@ class AppShellLayout extends StatelessWidget {
               ),
             ),
           ),
-          Expanded(child: body),
+          Expanded(
+            child: topBanner == null
+                ? body
+                : Column(
+                    children: [
+                      topBanner!,
+                      Expanded(child: body),
+                    ],
+                  ),
+          ),
         ],
       ),
       floatingActionButton: floatingActionButton,
@@ -124,7 +144,9 @@ class CustomerHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(18, 8, 18, 14),
       decoration: BoxDecoration(
         color: theme.scaffoldBackgroundColor,
-        border: Border(bottom: BorderSide(color: theme.colorScheme.outline.withValues(alpha: .6))),
+        border: Border(
+            bottom: BorderSide(
+                color: theme.colorScheme.outline.withValues(alpha: .6))),
       ),
       child: SafeArea(
         bottom: false,
@@ -142,7 +164,9 @@ class CustomerHeader extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: theme.textTheme.titleLarge?.copyWith(fontSize: 19)),
+                  Text(title,
+                      style:
+                          theme.textTheme.titleLarge?.copyWith(fontSize: 19)),
                   if (subtitle != null) ...[
                     const SizedBox(height: 1),
                     Text(subtitle!, style: theme.textTheme.bodySmall),
@@ -234,7 +258,8 @@ class AppIconButton extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppColors.danger,
               borderRadius: BorderRadius.circular(100),
-              border: Border.all(color: theme.scaffoldBackgroundColor, width: 2),
+              border:
+                  Border.all(color: theme.scaffoldBackgroundColor, width: 2),
             ),
             child: Text(
               badge > 9 ? '9+' : '$badge',
@@ -251,10 +276,12 @@ class AppIconButton extends StatelessWidget {
   }
 }
 
-String newInvoiceNumber(int bookingId, DateTime date) => invoiceNumber(bookingId, date);
+String newInvoiceNumber(int bookingId, DateTime date) =>
+    invoiceNumber(bookingId, date);
 
 class PaymentMethodBadge extends StatelessWidget {
-  const PaymentMethodBadge({super.key, required this.method, this.last4, this.brand});
+  const PaymentMethodBadge(
+      {super.key, required this.method, this.last4, this.brand});
 
   final String method;
   final String? last4;
@@ -272,7 +299,9 @@ class PaymentMethodBadge extends StatelessWidget {
         ),
         const SizedBox(width: 6),
         Text(
-          isCard ? '${brand ?? 'Card'} •••• ${last4 ?? ''}' : 'الدفع عند الوصول',
+          isCard
+              ? '${brand ?? 'Card'} •••• ${last4 ?? ''}'
+              : 'الدفع عند الوصول',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurface,
                 fontWeight: FontWeight.w700,

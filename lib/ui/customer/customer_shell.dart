@@ -8,7 +8,9 @@ import 'profile_tab.dart';
 import 'services_tab.dart';
 
 class CustomerShell extends StatefulWidget {
-  const CustomerShell({super.key});
+  const CustomerShell({super.key, this.adminPreview = false});
+
+  final bool adminPreview;
 
   @override
   State<CustomerShell> createState() => _CustomerShellState();
@@ -22,7 +24,8 @@ class _CustomerShellState extends State<CustomerShell> {
     NavItem('الرئيسية', Icons.home_outlined, Icons.home_rounded),
     NavItem('الخدمات', Icons.grid_view_outlined, Icons.grid_view_rounded),
     NavItem('حجوزاتي', Icons.event_note_outlined, Icons.event_note_rounded),
-    NavItem('أعمالنا', Icons.video_library_outlined, Icons.video_library_rounded),
+    NavItem(
+        'أعمالنا', Icons.video_library_outlined, Icons.video_library_rounded),
     NavItem('حسابي', Icons.person_outline_rounded, Icons.person_rounded),
   ];
 
@@ -58,6 +61,23 @@ class _CustomerShellState extends State<CustomerShell> {
       items: _items,
       pages: pages,
       onSelect: (i) => setState(() => _index = i),
+      topBanner: widget.adminPreview
+          ? Material(
+              color: const Color(0xFFFFF3B0),
+              child: SafeArea(
+                bottom: false,
+                child: SizedBox(
+                  height: 44,
+                  width: double.infinity,
+                  child: TextButton.icon(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                    label: const Text('العودة إلى لوحة المدير'),
+                  ),
+                ),
+              ),
+            )
+          : null,
     );
   }
 }

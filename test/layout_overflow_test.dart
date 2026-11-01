@@ -31,7 +31,6 @@ AppUser _customer() => AppUser(
       role: 'customer',
       city: 'بغداد',
       createdAt: DateTime(2026),
-      points: 100,
     );
 
 AppUser _admin() => AppUser(
@@ -55,8 +54,7 @@ Future<void> _pumpAt(
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.reset);
 
-  final state = AppState(
-      repository: FakeRepo(customer: user ?? _customer()));
+  final state = AppState(repository: FakeRepo(customer: user ?? _customer()));
   if (user != null) state.user = user;
 
   await tester.pumpWidget(

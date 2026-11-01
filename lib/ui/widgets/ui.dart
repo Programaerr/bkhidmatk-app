@@ -72,7 +72,8 @@ const categoryIconKeys = [
 ];
 
 class BrandLogo extends StatelessWidget {
-  const BrandLogo({super.key, this.size = 44, this.radius = 12, this.showBorder = false});
+  const BrandLogo(
+      {super.key, this.size = 44, this.radius = 12, this.showBorder = false});
 
   final double size;
   final double radius;
@@ -85,18 +86,11 @@ class BrandLogo extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(radius),
-        border: showBorder ? Border.all(color: AppColors.ink.withValues(alpha: .08)) : null,
+        border: showBorder
+            ? Border.all(color: AppColors.ink.withValues(alpha: .08))
+            : null,
       ),
       clipBehavior: Clip.antiAlias,
-      child: Image.asset(
-        'assets/images/logo.jpg',
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => Container(
-          color: AppColors.gold,
-          alignment: Alignment.center,
-          child: Icon(Icons.handyman_rounded, color: AppColors.ink, size: size * .6),
-        ),
-      ),
     );
   }
 }
@@ -123,7 +117,8 @@ class BrandTitle extends StatelessWidget {
 }
 
 class PagePadding extends StatelessWidget {
-  const PagePadding({super.key, required this.child, this.maxWidth = 860, this.padding});
+  const PagePadding(
+      {super.key, required this.child, this.maxWidth = 860, this.padding});
 
   final Widget child;
   final double maxWidth;
@@ -191,7 +186,9 @@ class SectionHeader extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(actionLabel!, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5)),
+                  Text(actionLabel!,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w800, fontSize: 12.5)),
                   const SizedBox(width: 2),
                   const Icon(Icons.chevron_left_rounded, size: 18),
                 ],
@@ -271,7 +268,8 @@ class PrimaryButton extends StatelessWidget {
           const SizedBox(
             width: 18,
             height: 18,
-            child: CircularProgressIndicator(strokeWidth: 2.4, color: AppColors.ink),
+            child: CircularProgressIndicator(
+                strokeWidth: 2.4, color: AppColors.ink),
           )
         else if (icon != null) ...[
           Icon(icon, size: 20),
@@ -315,7 +313,8 @@ class StatusPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = colorOf(status);
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: dense ? 8 : 10, vertical: dense ? 4 : 6),
+      padding: EdgeInsets.symmetric(
+          horizontal: dense ? 8 : 10, vertical: dense ? 4 : 6),
       decoration: BoxDecoration(
         color: color.withValues(alpha: .12),
         borderRadius: BorderRadius.circular(100),
@@ -345,7 +344,8 @@ class StatusPill extends StatelessWidget {
 }
 
 class AvatarCircle extends StatelessWidget {
-  const AvatarCircle({super.key, required this.name, this.size = 44, this.imagePath, this.bg});
+  const AvatarCircle(
+      {super.key, required this.name, this.size = 44, this.imagePath, this.bg});
 
   final String name;
   final double size;
@@ -402,7 +402,8 @@ class AvatarCircle extends StatelessWidget {
 }
 
 class RatingStars extends StatelessWidget {
-  const RatingStars({super.key, required this.rating, this.size = 13, this.showValue = true});
+  const RatingStars(
+      {super.key, required this.rating, this.size = 13, this.showValue = true});
 
   final double rating;
   final double size;
@@ -464,16 +465,21 @@ class EmptyState extends StatelessWidget {
               child: Icon(icon, size: 34, color: theme.colorScheme.onSurface),
             ),
             const SizedBox(height: 16),
-            Text(title, style: theme.textTheme.titleMedium, textAlign: TextAlign.center),
+            Text(title,
+                style: theme.textTheme.titleMedium,
+                textAlign: TextAlign.center),
             if (subtitle != null) ...[
               const SizedBox(height: 6),
-              Text(subtitle!, style: theme.textTheme.bodySmall, textAlign: TextAlign.center),
+              Text(subtitle!,
+                  style: theme.textTheme.bodySmall,
+                  textAlign: TextAlign.center),
             ],
             if (actionLabel != null) ...[
               const SizedBox(height: 18),
               SizedBox(
                 width: 190,
-                child: PrimaryButton(label: actionLabel!, onPressed: onAction, height: 46),
+                child: PrimaryButton(
+                    label: actionLabel!, onPressed: onAction, height: 46),
               ),
             ],
           ],
@@ -490,7 +496,9 @@ class AppSnack {
         content: Row(
           children: [
             Icon(
-              error ? Icons.error_outline_rounded : Icons.check_circle_outline_rounded,
+              error
+                  ? Icons.error_outline_rounded
+                  : Icons.check_circle_outline_rounded,
               color: error ? const Color(0xFFFF8A80) : AppColors.gold,
               size: 20,
             ),
@@ -516,10 +524,13 @@ Future<bool> confirmAction(
       title: Text(title),
       content: Text(message),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
+        TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('إلغاء')),
         TextButton(
           onPressed: () => Navigator.pop(ctx, true),
-          style: TextButton.styleFrom(foregroundColor: danger ? AppColors.danger : null),
+          style: TextButton.styleFrom(
+              foregroundColor: danger ? AppColors.danger : null),
           child: Text(confirmLabel),
         ),
       ],
@@ -542,7 +553,9 @@ Future<T?> showAppSheet<T>(
       child: ConstrainedBox(
         // تحديد أقصى ارتفاع حسب المساحة المتاحة حتى لا يفيض المحتوى.
         constraints: BoxConstraints(
-          maxHeight: MediaQuery.sizeOf(ctx).height - MediaQuery.viewInsetsOf(ctx).bottom - 24,
+          maxHeight: MediaQuery.sizeOf(ctx).height -
+              MediaQuery.viewInsetsOf(ctx).bottom -
+              24,
         ),
         child: builder(ctx),
       ),
@@ -551,7 +564,8 @@ Future<T?> showAppSheet<T>(
 }
 
 class SheetHeader extends StatelessWidget {
-  const SheetHeader({super.key, required this.title, this.subtitle, this.action});
+  const SheetHeader(
+      {super.key, required this.title, this.subtitle, this.action});
 
   final String title;
   final String? subtitle;
@@ -581,7 +595,8 @@ class SheetHeader extends StatelessWidget {
 }
 
 class FieldLabel extends StatelessWidget {
-  const FieldLabel(this.text, {super.key, this.required_ = false, this.filled = false});
+  const FieldLabel(this.text,
+      {super.key, this.required_ = false, this.filled = false});
 
   final String text;
   final bool required_;
@@ -610,7 +625,9 @@ class FieldLabel extends StatelessWidget {
           if (required_)
             Opacity(
               opacity: filled ? 0 : 1,
-              child: const Text(' *', style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.w800)),
+              child: const Text(' *',
+                  style: TextStyle(
+                      color: AppColors.danger, fontWeight: FontWeight.w800)),
             ),
         ],
       ),
@@ -619,7 +636,12 @@ class FieldLabel extends StatelessWidget {
 }
 
 class InfoRow extends StatelessWidget {
-  const InfoRow({super.key, required this.icon, required this.label, this.value, this.trailing});
+  const InfoRow(
+      {super.key,
+      required this.icon,
+      required this.label,
+      this.value,
+      this.trailing});
 
   final IconData icon;
   final String label;
@@ -647,11 +669,13 @@ class InfoRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: theme.textTheme.bodySmall?.copyWith(fontSize: 11)),
+                Text(label,
+                    style: theme.textTheme.bodySmall?.copyWith(fontSize: 11)),
                 const SizedBox(height: 1),
                 Text(
                   value ?? '—',
-                  style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+                  style: theme.textTheme.bodyMedium
+                      ?.copyWith(fontWeight: FontWeight.w700),
                 ),
               ],
             ),
@@ -706,18 +730,23 @@ class StatTile extends StatelessWidget {
                         color: color.withValues(alpha: .16),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Icon(icon, size: 17, color: color == AppColors.gold ? null : color),
+                      child: Icon(icon,
+                          size: 17,
+                          color: color == AppColors.gold ? null : color),
                     ),
                     const SizedBox(width: 6),
                     Icon(Icons.arrow_outward_rounded,
-                        size: 14, color: theme.colorScheme.onSurface.withValues(alpha: .35)),
+                        size: 14,
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: .35)),
                   ],
                 ),
                 const SizedBox(height: 8),
                 Text(value,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900)),
+                    style: theme.textTheme.titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w900)),
                 const SizedBox(height: 2),
                 Text(label,
                     style: theme.textTheme.bodySmall,
@@ -774,7 +803,8 @@ class SegmentedTabs extends StatelessWidget {
                   labels?[i] ?? values[i],
                   style: theme.textTheme.bodySmall?.copyWith(
                     fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-                    color: selected ? AppColors.ink : theme.colorScheme.onSurface,
+                    color:
+                        selected ? AppColors.ink : theme.colorScheme.onSurface,
                     fontSize: 12,
                   ),
                 ),

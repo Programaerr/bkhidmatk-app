@@ -43,7 +43,9 @@ class _LoginScreenState extends State<LoginScreen> {
       _loading = true;
       _error = null;
     });
-    final err = await context.read<AppState>().login(phoneFromInput(_phone.text), _password.text);
+    final err = await context
+        .read<AppState>()
+        .login(phoneFromInput(_phone.text), _password.text);
     if (!mounted) return;
     setState(() => _loading = false);
     if (err != null) {
@@ -99,10 +101,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       hint: 'أدخل كلمة المرور',
                       autofocus: widget.initialPhone != null,
                       obscureText: _obscure,
-                      onToggleObscure: () => setState(() => _obscure = !_obscure),
+                      onToggleObscure: () =>
+                          setState(() => _obscure = !_obscure),
                       onTyped: _clearLoginError,
                       onSubmitted: (_) => _submit(),
-                      validator: (v) => v.length < 6 ? 'كلمة المرور 6 أحرف على الأقل' : null,
+                      validator: (v) =>
+                          v.length < 6 ? 'كلمة المرور 6 أحرف على الأقل' : null,
                     ),
                   ],
                 ),
@@ -114,15 +118,18 @@ class _LoginScreenState extends State<LoginScreen> {
                   decoration: BoxDecoration(
                     color: AppColors.danger.withValues(alpha: .08),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.danger.withValues(alpha: .2)),
+                    border: Border.all(
+                        color: AppColors.danger.withValues(alpha: .2)),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.error_outline_rounded, color: AppColors.danger, size: 18),
+                      const Icon(Icons.error_outline_rounded,
+                          color: AppColors.danger, size: 18),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(_error!,
-                            style: const TextStyle(color: AppColors.danger, fontSize: 12.5)),
+                            style: const TextStyle(
+                                color: AppColors.danger, fontSize: 12.5)),
                       ),
                     ],
                   ),
@@ -145,7 +152,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     TextButton(
                       onPressed: () => Navigator.pushReplacement(
                         context,
-                        MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                        MaterialPageRoute(
+                            builder: (_) => const RegisterScreen()),
                       ),
                       child: const Text('إنشاء حساب جديد'),
                     ),
@@ -171,8 +179,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: Text(
                             'دخول تجريبي سريع',
                             overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.bodySmall
-                                ?.copyWith(fontWeight: FontWeight.w800, color: theme.colorScheme.onSurface),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                color: theme.colorScheme.onSurface),
                           ),
                         ),
                       ],
@@ -182,17 +191,25 @@ class _LoginScreenState extends State<LoginScreen> {
                       children: [
                         Expanded(
                           child: OutlinedButton(
-                            onPressed: _loading ? null : () => _quick('07701234567', '123456'),
-                            style: OutlinedButton.styleFrom(minimumSize: const Size(0, 42)),
-                            child: const Text('زبون', style: TextStyle(fontSize: 12)),
+                            onPressed: _loading
+                                ? null
+                                : () => _quick('07701234567', '123456'),
+                            style: OutlinedButton.styleFrom(
+                                minimumSize: const Size(0, 42)),
+                            child: const Text('زبون',
+                                style: TextStyle(fontSize: 12)),
                           ),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: OutlinedButton(
-                            onPressed: _loading ? null : () => _quick('07700000000', 'admin123'),
-                            style: OutlinedButton.styleFrom(minimumSize: const Size(0, 42)),
-                            child: const Text('مدير', style: TextStyle(fontSize: 12)),
+                            onPressed: _loading
+                                ? null
+                                : () => _quick('07700000000', 'admin123'),
+                            style: OutlinedButton.styleFrom(
+                                minimumSize: const Size(0, 42)),
+                            child: const Text('مدير',
+                                style: TextStyle(fontSize: 12)),
                           ),
                         ),
                       ],

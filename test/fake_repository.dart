@@ -51,7 +51,8 @@ class FakeRepo implements Repository {
 
   // workers
   @override
-  Future<List<Worker>> listWorkers({int? categoryId, bool onlyAvailable = false}) async =>
+  Future<List<Worker>> listWorkers(
+          {int? categoryId, bool onlyAvailable = false}) async =>
       const [];
 
   @override
@@ -90,11 +91,13 @@ class FakeRepo implements Repository {
 
   // bookings
   @override
-  Future<List<Booking>> bookingsForCustomer(int customerId, {String? status}) async =>
+  Future<List<Booking>> bookingsForCustomer(int customerId,
+          {String? status}) async =>
       const [];
 
   @override
-  Future<List<Booking>> allBookings({String? status, String query = ''}) async =>
+  Future<List<Booking>> allBookings(
+          {String? status, String query = ''}) async =>
       const [];
 
   @override
@@ -110,8 +113,11 @@ class FakeRepo implements Repository {
   Future<void> assignWorker(int bookingId, int? workerId) async {}
 
   @override
-  Future<int> rateBooking({required int bookingId, required int rating, String? review}) async =>
-      0;
+  Future<bool> rateBooking(
+          {required int bookingId,
+          required int rating,
+          String? review}) async =>
+      false;
 
   @override
   Future<int> bookingsTodayCount() async => 0;
@@ -193,7 +199,8 @@ class FakeRepo implements Repository {
   Future<void> incrementWorkViews(int id) async {}
 
   @override
-  Future<void> setWorkLike(int id, {required int userId, required bool liked}) async {}
+  Future<void> setWorkLike(int id,
+      {required int userId, required bool liked}) async {}
 
   @override
   Future<List<WorkComment>> workComments(int workId) async => const [];
@@ -241,7 +248,8 @@ class FakeRepo implements Repository {
   Future<int> sendMessage(ChatMessage message) async => 1;
 
   @override
-  Future<void> markThreadRead(int customerId, {required String readerRole}) async {}
+  Future<void> markThreadRead(int customerId,
+      {required String readerRole}) async {}
 
   @override
   Future<int> unreadForAdmin() async => 0;
@@ -293,7 +301,8 @@ class FakeRepo implements Repository {
 
   // settings
   @override
-  Future<String> getSetting(String key, {String fallback = ''}) async => fallback;
+  Future<String> getSetting(String key, {String fallback = ''}) async =>
+      fallback;
 
   @override
   Future<void> setSetting(String key, String value) async {}

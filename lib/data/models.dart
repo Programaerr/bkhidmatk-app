@@ -16,9 +16,6 @@ class AppUser {
   final String? avatarPath;
   final DateTime createdAt;
 
-  /// رصيد النقاط المكتسبة من التقييمات والمكافآت.
-  final int points;
-
   const AppUser({
     this.id,
     required this.name,
@@ -30,7 +27,6 @@ class AppUser {
     this.address,
     this.avatarPath,
     required this.createdAt,
-    this.points = 0,
   });
 
   bool get isAdmin => role == 'admin';
@@ -48,7 +44,6 @@ class AppUser {
         'city': city,
         'address': address,
         'avatar': avatarPath,
-        'points': points,
         'created_at': createdAt.toIso8601String(),
       };
 
@@ -63,7 +58,6 @@ class AppUser {
         address: m['address'] as String?,
         avatarPath: m['avatar'] as String?,
         createdAt: _date(m['created_at']) ?? DateTime.now(),
-        points: (m['points'] as num?)?.toInt() ?? 0,
       );
 
   AppUser copyWith({
@@ -73,7 +67,6 @@ class AppUser {
     String? city,
     String? address,
     String? avatarPath,
-    int? points,
   }) =>
       AppUser(
         id: id,
@@ -86,7 +79,6 @@ class AppUser {
         address: address ?? this.address,
         avatarPath: avatarPath ?? this.avatarPath,
         createdAt: createdAt,
-        points: points ?? this.points,
       );
 }
 
@@ -717,7 +709,8 @@ class CraftsmanApplication {
         'created_at': createdAt.toIso8601String(),
       };
 
-  factory CraftsmanApplication.fromMap(Map<String, Object?> m) => CraftsmanApplication(
+  factory CraftsmanApplication.fromMap(Map<String, Object?> m) =>
+      CraftsmanApplication(
         id: m['id'] as int?,
         name: m['name'] as String? ?? '',
         phone: m['phone'] as String? ?? '',

@@ -8,6 +8,7 @@ import 'admin_dashboard.dart';
 import 'admin_more.dart';
 import 'admin_services.dart';
 import 'admin_works.dart';
+import '../customer/customer_shell.dart';
 
 class AdminShell extends StatefulWidget {
   const AdminShell({super.key});
@@ -21,10 +22,12 @@ class _AdminShellState extends State<AdminShell> {
   int _tick = 0;
 
   static const _items = [
-    NavItem('الرئيسية', Icons.space_dashboard_outlined, Icons.space_dashboard_rounded),
+    NavItem('الرئيسية', Icons.space_dashboard_outlined,
+        Icons.space_dashboard_rounded),
     NavItem('الحجوزات', Icons.event_note_outlined, Icons.event_note_rounded),
     NavItem('الخدمات', Icons.handyman_outlined, Icons.handyman_rounded),
-    NavItem('الأعمال', Icons.video_library_outlined, Icons.video_library_rounded),
+    NavItem(
+        'الأعمال', Icons.video_library_outlined, Icons.video_library_rounded),
     NavItem('المزيد', Icons.more_horiz_rounded, Icons.more_horiz_rounded),
   ];
 
@@ -42,6 +45,12 @@ class _AdminShellState extends State<AdminShell> {
         onOpenBookings: () => _go(1),
         onOpenMessages: () => _go(4),
         onOpenWorks: () => _go(3),
+        onPreviewApp: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const CustomerShell(adminPreview: true),
+          ),
+        ),
       ),
       AdminBookings(initialFilter: null, refreshTick: _tick),
       AdminServices(refreshTick: _tick),
@@ -101,12 +110,14 @@ class AdminHeader extends StatelessWidget {
                         child: Text(title,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.titleLarge?.copyWith(fontSize: 19)),
+                            style: theme.textTheme.titleLarge
+                                ?.copyWith(fontSize: 19)),
                       ),
                       if (!showBack) ...[
                         const SizedBox(width: 6),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 7, vertical: 2),
                           decoration: BoxDecoration(
                             color: AppColors.gold,
                             borderRadius: BorderRadius.circular(100),
@@ -122,7 +133,9 @@ class AdminHeader extends StatelessWidget {
                   ),
                   if (subtitle != null) ...[
                     const SizedBox(height: 1),
-                    Text(subtitle!, style: theme.textTheme.bodySmall?.copyWith(fontSize: 10.5)),
+                    Text(subtitle!,
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(fontSize: 10.5)),
                   ],
                 ],
               ),

@@ -28,7 +28,8 @@ class LocalRepository implements Repository {
   @override
   Future<AppUser?> userById(int id) async {
     final db = await _db;
-    final rows = await db.query('users', where: 'id = ?', whereArgs: [id], limit: 1);
+    final rows =
+        await db.query('users', where: 'id = ?', whereArgs: [id], limit: 1);
     return rows.isEmpty ? null : AppUser.fromMap(rows.first);
   }
 
@@ -41,11 +42,13 @@ class LocalRepository implements Repository {
   @override
   Future<void> updateUser(AppUser user) async {
     final db = await _db;
-    await db.update('users', user.toMap(), where: 'id = ?', whereArgs: [user.id]);
+    await db
+        .update('users', user.toMap(), where: 'id = ?', whereArgs: [user.id]);
   }
 
   @override
-  Future<bool> phoneExists(String phone) async => (await findUserByPhone(phone)) != null;
+  Future<bool> phoneExists(String phone) async =>
+      (await findUserByPhone(phone)) != null;
 
   @override
   Future<List<AppUser>> listCustomers({String query = ''}) async {
@@ -55,7 +58,9 @@ class LocalRepository implements Repository {
       where: query.trim().isEmpty
           ? "role = 'customer'"
           : "role = 'customer' AND (name LIKE ? OR phone LIKE ?)",
-      whereArgs: query.trim().isEmpty ? null : ['%${query.trim()}%', '%${query.trim()}%'],
+      whereArgs: query.trim().isEmpty
+          ? null
+          : ['%${query.trim()}%', '%${query.trim()}%'],
       orderBy: 'created_at DESC',
     );
     return rows.map(AppUser.fromMap).toList();
@@ -64,7 +69,8 @@ class LocalRepository implements Repository {
   @override
   Future<int> customerCount() async {
     final db = await _db;
-    final r = await db.rawQuery("SELECT COUNT(*) c FROM users WHERE role='customer'");
+    final r =
+        await db.rawQuery("SELECT COUNT(*) c FROM users WHERE role='customer'");
     return (r.first['c'] as int?) ?? 0;
   }
 
@@ -72,14 +78,16 @@ class LocalRepository implements Repository {
   @override
   Future<List<Category>> listCategories() async {
     final db = await _db;
-    final rows = await db.query('categories', orderBy: 'sort_order ASC, id ASC');
+    final rows =
+        await db.query('categories', orderBy: 'sort_order ASC, id ASC');
     return rows.map(Category.fromMap).toList();
   }
 
   @override
   Future<Category?> categoryById(int id) async {
     final db = await _db;
-    final rows = await db.query('categories', where: 'id = ?', whereArgs: [id], limit: 1);
+    final rows = await db.query('categories',
+        where: 'id = ?', whereArgs: [id], limit: 1);
     return rows.isEmpty ? null : Category.fromMap(rows.first);
   }
 
@@ -87,14 +95,16 @@ class LocalRepository implements Repository {
   Future<int> saveCategory(Category c) async {
     final db = await _db;
     if (c.id == null) return db.insert('categories', c.toMap());
-    await db.update('categories', c.toMap(), where: 'id = ?', whereArgs: [c.id]);
+    await db
+        .update('categories', c.toMap(), where: 'id = ?', whereArgs: [c.id]);
     return c.id!;
   }
 
   @override
   Future<int> serviceCountForCategory(int id) async {
     final db = await _db;
-    final r = await db.rawQuery('SELECT COUNT(*) c FROM services WHERE category_id=?', [id]);
+    final r = await db
+        .rawQuery('SELECT COUNT(*) c FROM services WHERE category_id=?', [id]);
     return (r.first['c'] as int?) ?? 0;
   }
 
@@ -106,7 +116,8 @@ class LocalRepository implements Repository {
 
   // -------------------------------------------------------------- workers
   @override
-  Future<List<Worker>> listWorkers({int? categoryId, bool onlyAvailable = false}) async {
+  Future<List<Worker>> listWorkers(
+      {int? categoryId, bool onlyAvailable = false}) async {
     final db = await _db;
     final where = <String>[];
     final args = <Object?>[];
@@ -127,7 +138,8 @@ class LocalRepository implements Repository {
   @override
   Future<Worker?> workerById(int id) async {
     final db = await _db;
-    final rows = await db.query('workers', where: 'id = ?', whereArgs: [id], limit: 1);
+    final rows =
+        await db.query('workers', where: 'id = ?', whereArgs: [id], limit: 1);
     return rows.isEmpty ? null : Worker.fromMap(rows.first);
   }
 
@@ -142,7 +154,8 @@ class LocalRepository implements Repository {
   @override
   Future<void> deleteWorker(int id) async {
     final db = await _db;
-    await db.update('services', {'worker_id': null}, where: 'worker_id = ?', whereArgs: [id]);
+    await db.update('services', {'worker_id': null},
+        where: 'worker_id = ?', whereArgs: [id]);
     await db.delete('workers', where: 'id = ?', whereArgs: [id]);
   }
 
@@ -150,7 +163,9 @@ class LocalRepository implements Repository {
   Future<void> incrementWorkerJobs(int? workerId) async {
     if (workerId == null) return;
     final db = await _db;
-    await db.rawUpdate('UPDATE workers SET jobs_done = jobs_done + 1 WHERE id = ?', [workerId]);
+    await db.rawUpdate(
+        'UPDATE workers SET jobs_done = jobs_done + 1 WHERE id = ?',
+        [workerId]);
   }
 
   // ------------------------------------------------------------- services
@@ -178,11 +193,13 @@ class LocalRepository implements Repository {
       args.add(categoryId);
     }
     if (query.trim().isNotEmpty) {
-      where.add('(s.title LIKE ? OR s.description LIKE ? OR w.name LIKE ? OR c.name LIKE ?)');
+      where.add(
+          '(s.title LIKE ? OR s.description LIKE ? OR w.name LIKE ? OR c.name LIKE ?)');
       final q = '%${query.trim()}%';
       args.addAll([q, q, q, q]);
     }
-    final sql = '$_serviceSelect ${where.isEmpty ? '' : 'WHERE ${where.join(' AND ')}'} '
+    final sql =
+        '$_serviceSelect ${where.isEmpty ? '' : 'WHERE ${where.join(' AND ')}'} '
         'ORDER BY s.created_at DESC ${limit != null ? 'LIMIT $limit' : ''}';
     final rows = await db.rawQuery(sql, args);
     return rows.map(Service.fromMap).toList();
@@ -212,7 +229,8 @@ class LocalRepository implements Repository {
   @override
   Future<int> serviceCount() async {
     final db = await _db;
-    final r = await db.rawQuery('SELECT COUNT(*) c FROM services WHERE active=1');
+    final r =
+        await db.rawQuery('SELECT COUNT(*) c FROM services WHERE active=1');
     return (r.first['c'] as int?) ?? 0;
   }
 
@@ -227,7 +245,8 @@ class LocalRepository implements Repository {
   ''';
 
   @override
-  Future<List<Booking>> bookingsForCustomer(int customerId, {String? status}) async {
+  Future<List<Booking>> bookingsForCustomer(int customerId,
+      {String? status}) async {
     final db = await _db;
     final rows = await db.rawQuery(
       '$_bookingSelect WHERE b.customer_id = ? '
@@ -275,37 +294,41 @@ class LocalRepository implements Repository {
   @override
   Future<void> updateBookingStatus(int id, String status) async {
     final db = await _db;
-    await db.update('bookings', {'status': status}, where: 'id = ?', whereArgs: [id]);
+    await db.update('bookings', {'status': status},
+        where: 'id = ?', whereArgs: [id]);
     if (status == BookingStatus.completed) {
-      final rows = await db.query('bookings', columns: ['worker_id'], where: 'id=?', whereArgs: [id]);
-      if (rows.isNotEmpty) await incrementWorkerJobs(rows.first['worker_id'] as int?);
+      final rows = await db.query('bookings',
+          columns: ['worker_id'], where: 'id=?', whereArgs: [id]);
+      if (rows.isNotEmpty)
+        await incrementWorkerJobs(rows.first['worker_id'] as int?);
     }
   }
 
   @override
   Future<void> assignWorker(int bookingId, int? workerId) async {
     final db = await _db;
-    await db.update('bookings', {'worker_id': workerId}, where: 'id = ?', whereArgs: [bookingId]);
+    await db.update('bookings', {'worker_id': workerId},
+        where: 'id = ?', whereArgs: [bookingId]);
   }
 
   @override
-  Future<int> rateBooking({
+  Future<bool> rateBooking({
     required int bookingId,
     required int rating,
     String? review,
   }) async {
     final db = await _db;
     final stars = rating.clamp(1, 5);
-    return db.transaction<int>((tx) async {
+    return db.transaction<bool>((tx) async {
       final rows = await tx.query('bookings',
-          columns: ['id', 'customer_id', 'worker_id', 'status', 'rating'],
+          columns: ['id', 'worker_id', 'status', 'rating'],
           where: 'id = ?',
           whereArgs: [bookingId],
           limit: 1);
-      if (rows.isEmpty) return 0;
+      if (rows.isEmpty) return false;
       final b = rows.first;
-      if (b['status'] != BookingStatus.completed) return 0;
-      if (b['rating'] != null) return 0; // تقييم مسبق
+      if (b['status'] != BookingStatus.completed) return false;
+      if (b['rating'] != null) return false;
 
       await tx.update(
         'bookings',
@@ -330,13 +353,7 @@ class LocalRepository implements Repository {
         );
       }
 
-      // إضافة نقاط المكافأة إلى رصيد العميل.
-      final points = pointsForRating(stars);
-      await tx.rawUpdate(
-        'UPDATE users SET points = COALESCE(points,0) + ? WHERE id = ?',
-        [points, b['customer_id'] as int?],
-      );
-      return points;
+      return true;
     });
   }
 
@@ -352,7 +369,8 @@ class LocalRepository implements Repository {
   @override
   Future<int> pendingBookingsCount() async {
     final db = await _db;
-    final r = await db.rawQuery("SELECT COUNT(*) c FROM bookings WHERE status='pending'");
+    final r = await db
+        .rawQuery("SELECT COUNT(*) c FROM bookings WHERE status='pending'");
     return (r.first['c'] as int?) ?? 0;
   }
 
@@ -414,13 +432,15 @@ class LocalRepository implements Repository {
   @override
   Future<void> approvePost(int id, bool approved) async {
     final db = await _db;
-    await db.update('posts', {'approved': approved ? 1 : 0}, where: 'id = ?', whereArgs: [id]);
+    await db.update('posts', {'approved': approved ? 1 : 0},
+        where: 'id = ?', whereArgs: [id]);
   }
 
   @override
   Future<void> deletePost(int id) async {
     final db = await _db;
-    final rows = await db.query('posts', columns: ['media'], where: 'id=?', whereArgs: [id]);
+    final rows = await db.query('posts',
+        columns: ['media'], where: 'id=?', whereArgs: [id]);
     if (rows.isNotEmpty) {
       final media = rows.first['media'] as String?;
       if (media != null && !media.startsWith('asset:')) {
@@ -440,7 +460,8 @@ class LocalRepository implements Repository {
   Future<void> toggleLike(int id, bool liked) async {
     final db = await _db;
     await db.rawUpdate(
-        'UPDATE posts SET likes = MAX(0, likes + ?) WHERE id = ?', [liked ? 1 : -1, id]);
+        'UPDATE posts SET likes = MAX(0, likes + ?) WHERE id = ?',
+        [liked ? 1 : -1, id]);
   }
 
   @override
@@ -453,7 +474,8 @@ class LocalRepository implements Repository {
   @override
   Future<int> pendingPostsCount() async {
     final db = await _db;
-    final r = await db.rawQuery('SELECT COUNT(*) c FROM posts WHERE approved = 0');
+    final r =
+        await db.rawQuery('SELECT COUNT(*) c FROM posts WHERE approved = 0');
     return (r.first['c'] as int?) ?? 0;
   }
 
@@ -484,7 +506,8 @@ class LocalRepository implements Repository {
   @override
   Future<int> commentCountForUser(int userId) async {
     final db = await _db;
-    final r = await db.rawQuery('SELECT COUNT(*) c FROM comments WHERE user_id=?', [userId]);
+    final r = await db
+        .rawQuery('SELECT COUNT(*) c FROM comments WHERE user_id=?', [userId]);
     return (r.first['c'] as int?) ?? 0;
   }
 
@@ -523,7 +546,8 @@ class LocalRepository implements Repository {
   @override
   Future<OurWork?> workById(int id, {int? viewerId}) async {
     final db = await _db;
-    final rows = await db.rawQuery('$_workSelect WHERE w.id = ?', [viewerId ?? -1, id]);
+    final rows =
+        await db.rawQuery('$_workSelect WHERE w.id = ?', [viewerId ?? -1, id]);
     return rows.isEmpty ? null : OurWork.fromMap(rows.first);
   }
 
@@ -567,18 +591,20 @@ class LocalRepository implements Repository {
   @override
   Future<void> incrementWorkViews(int id) async {
     final db = await _db;
-    await db.rawUpdate('UPDATE our_works SET views = views + 1 WHERE id = ?', [id]);
+    await db
+        .rawUpdate('UPDATE our_works SET views = views + 1 WHERE id = ?', [id]);
   }
 
   @override
-  Future<void> setWorkLike(int id, {required int userId, required bool liked}) async {
+  Future<void> setWorkLike(int id,
+      {required int userId, required bool liked}) async {
     final db = await _db;
     if (liked) {
       await db.insert('work_likes', {'work_id': id, 'user_id': userId},
           conflictAlgorithm: ConflictAlgorithm.ignore);
     } else {
-      await db.delete('work_likes', where: 'work_id = ? AND user_id = ?',
-          whereArgs: [id, userId]);
+      await db.delete('work_likes',
+          where: 'work_id = ? AND user_id = ?', whereArgs: [id, userId]);
     }
     await db.rawUpdate(
       'UPDATE our_works SET likes = (SELECT COUNT(*) FROM work_likes WHERE work_id = ?) '
@@ -638,15 +664,16 @@ class LocalRepository implements Repository {
   @override
   Future<bool> isHiredPhone(String phone) async {
     final db = await _db;
-    final r = await db.rawQuery('SELECT COUNT(*) c FROM hires WHERE phone = ?', [phone]);
+    final r = await db
+        .rawQuery('SELECT COUNT(*) c FROM hires WHERE phone = ?', [phone]);
     return ((r.first['c'] as int?) ?? 0) > 0;
   }
 
   @override
   Future<void> deleteHire(int id) async {
     final db = await _db;
-    final rows = await db.query('hires', columns: ['phone'], where: 'id = ?',
-        whereArgs: [id], limit: 1);
+    final rows = await db.query('hires',
+        columns: ['phone'], where: 'id = ?', whereArgs: [id], limit: 1);
     if (rows.isNotEmpty) {
       final phone = rows.first['phone'] as String?;
       if (phone != null) {
@@ -667,7 +694,8 @@ class LocalRepository implements Repository {
   @override
   Future<List<CraftsmanApplication>> listApplications() async {
     final db = await _db;
-    final rows = await db.query('craftsman_applications', orderBy: 'created_at DESC');
+    final rows =
+        await db.query('craftsman_applications', orderBy: 'created_at DESC');
     return rows.map(CraftsmanApplication.fromMap).toList();
   }
 
@@ -684,7 +712,10 @@ class LocalRepository implements Repository {
   @override
   Future<void> acceptApplication(CraftsmanApplication application) async {
     await createHire(
-      Hire(phone: application.phone, note: application.trade, createdAt: DateTime.now()),
+      Hire(
+          phone: application.phone,
+          note: application.trade,
+          createdAt: DateTime.now()),
     );
     await _setApplicationStatus(application.id!, CraftsmanApplication.accepted);
   }
@@ -708,7 +739,9 @@ class LocalRepository implements Repository {
   Future<List<ChatMessage>> threadMessages(int customerId) async {
     final db = await _db;
     final rows = await db.query('messages',
-        where: 'thread_id = ?', whereArgs: [customerId], orderBy: 'created_at ASC');
+        where: 'thread_id = ?',
+        whereArgs: [customerId],
+        orderBy: 'created_at ASC');
     return rows.map(ChatMessage.fromMap).toList();
   }
 
@@ -719,11 +752,13 @@ class LocalRepository implements Repository {
   }
 
   @override
-  Future<void> markThreadRead(int customerId, {required String readerRole}) async {
+  Future<void> markThreadRead(int customerId,
+      {required String readerRole}) async {
     final db = await _db;
     final other = readerRole == 'admin' ? 'customer' : 'admin';
     await db.update('messages', {'read': 1},
-        where: 'thread_id = ? AND sender_role = ?', whereArgs: [customerId, other]);
+        where: 'thread_id = ? AND sender_role = ?',
+        whereArgs: [customerId, other]);
   }
 
   @override
@@ -762,7 +797,8 @@ class LocalRepository implements Repository {
               customerName: r['customer_name'] as String? ?? 'زبون',
               customerPhone: r['customer_phone'] as String? ?? '',
               lastMessage: r['last_message'] as String? ?? '',
-              lastAt: DateTime.tryParse(r['last_at'] as String? ?? '') ?? DateTime.now(),
+              lastAt: DateTime.tryParse(r['last_at'] as String? ?? '') ??
+                  DateTime.now(),
               unread: r['unread'] as int? ?? 0,
             ))
         .toList();
@@ -772,8 +808,10 @@ class LocalRepository implements Repository {
   @override
   Future<List<PaymentCard>> cardsForUser(int userId) async {
     final db = await _db;
-    final rows = await db
-        .query('cards', where: 'user_id = ?', whereArgs: [userId], orderBy: 'is_default DESC, id DESC');
+    final rows = await db.query('cards',
+        where: 'user_id = ?',
+        whereArgs: [userId],
+        orderBy: 'is_default DESC, id DESC');
     return rows.map(PaymentCard.fromMap).toList();
   }
 
@@ -781,7 +819,8 @@ class LocalRepository implements Repository {
   Future<int> addCard(PaymentCard c) async {
     final db = await _db;
     if (c.isDefault) {
-      await db.update('cards', {'is_default': 0}, where: 'user_id = ?', whereArgs: [c.userId]);
+      await db.update('cards', {'is_default': 0},
+          where: 'user_id = ?', whereArgs: [c.userId]);
     }
     return db.insert('cards', c.toMap());
   }
@@ -834,15 +873,17 @@ class LocalRepository implements Repository {
   @override
   Future<List<Receipt>> receiptsForUser(int userId) async {
     final db = await _db;
-    final rows = await db
-        .rawQuery('$_receiptSelect WHERE r.user_id = ? ORDER BY r.created_at DESC', [userId]);
+    final rows = await db.rawQuery(
+        '$_receiptSelect WHERE r.user_id = ? ORDER BY r.created_at DESC',
+        [userId]);
     return rows.map(Receipt.fromMap).toList();
   }
 
   @override
   Future<List<Receipt>> allReceipts() async {
     final db = await _db;
-    final rows = await db.rawQuery('$_receiptSelect ORDER BY r.created_at DESC');
+    final rows =
+        await db.rawQuery('$_receiptSelect ORDER BY r.created_at DESC');
     return rows.map(Receipt.fromMap).toList();
   }
 
@@ -856,21 +897,24 @@ class LocalRepository implements Repository {
   @override
   Future<Receipt?> receiptForBooking(int bookingId) async {
     final db = await _db;
-    final rows = await db.rawQuery('$_receiptSelect WHERE r.booking_id = ? LIMIT 1', [bookingId]);
+    final rows = await db.rawQuery(
+        '$_receiptSelect WHERE r.booking_id = ? LIMIT 1', [bookingId]);
     return rows.isEmpty ? null : Receipt.fromMap(rows.first);
   }
 
   @override
   Future<void> markReceiptPaid(int id, bool paid) async {
     final db = await _db;
-    await db.update('receipts', {'paid': paid ? 1 : 0}, where: 'id = ?', whereArgs: [id]);
+    await db.update('receipts', {'paid': paid ? 1 : 0},
+        where: 'id = ?', whereArgs: [id]);
   }
 
   // ------------------------------------------------------------- settings
   @override
   Future<String> getSetting(String key, {String fallback = ''}) async {
     final db = await _db;
-    final rows = await db.query('settings', where: 'key = ?', whereArgs: [key], limit: 1);
+    final rows = await db.query('settings',
+        where: 'key = ?', whereArgs: [key], limit: 1);
     return rows.isEmpty ? fallback : rows.first['value'] as String;
   }
 
@@ -891,7 +935,8 @@ class LocalRepository implements Repository {
     final services = await serviceCount();
     final posts = await postCount();
     final unread = await unreadForAdmin();
-    final receipts = await db.rawQuery('SELECT COALESCE(SUM(amount),0) s FROM receipts WHERE paid=1');
+    final receipts = await db.rawQuery(
+        'SELECT COALESCE(SUM(amount),0) s FROM receipts WHERE paid=1');
 
     final since = DateTime.now().subtract(const Duration(days: 6));
     final rows = await db.rawQuery(
@@ -899,13 +944,16 @@ class LocalRepository implements Repository {
       "WHERE paid=1 AND date(created_at) >= date(?) GROUP BY date(created_at)",
       [since.toIso8601String()],
     );
-    final map = {for (final r in rows) r['d'] as String: (r['s'] as num).toDouble()};
+    final map = {
+      for (final r in rows) r['d'] as String: (r['s'] as num).toDouble()
+    };
     final days = <RevenuePoint>[];
     for (var i = 6; i >= 0; i--) {
       final day = DateTime.now().subtract(Duration(days: i));
       final key =
           '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
-      days.add(RevenuePoint(DateTime(day.year, day.month, day.day), map[key] ?? 0));
+      days.add(
+          RevenuePoint(DateTime(day.year, day.month, day.day), map[key] ?? 0));
     }
     return AppStats(
       bookingsToday: today,
