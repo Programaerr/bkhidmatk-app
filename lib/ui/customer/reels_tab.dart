@@ -123,9 +123,13 @@ class _ReelPage extends StatelessWidget {
     return ['.mp4', '.m3u8', '.webm', '.mov'].any(path.endsWith);
   }
 
-  Future<void> _openVideo() async {
+  Future<void> _openVideo(BuildContext context) async {
     final uri = Uri.tryParse(work.videoUrl);
-    if (uri == null || !await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+    if (uri == null ||
+        !await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      if (context.mounted) {
+        AppSnack.show(context, 'تعذر فتح رابط الفيديو', error: true);
+      }
       return;
     }
   }
@@ -147,7 +151,7 @@ class _ReelPage extends StatelessWidget {
                       )
                     : Center(
                         child: IconButton(
-                          onPressed: _openVideo,
+                          onPressed: () => _openVideo(context),
                           icon: const Icon(
                             Icons.play_circle_fill_rounded,
                             color: AppColors.gold,
@@ -197,7 +201,9 @@ class _ReelPage extends StatelessWidget {
                                 color: Colors.white,
                                 fontSize: 18,
                                 fontWeight: FontWeight.w900,
-                                shadows: [Shadow(color: Colors.black87, blurRadius: 8)],
+                                shadows: [
+                                  Shadow(color: Colors.black87, blurRadius: 8)
+                                ],
                               ),
                             ),
                             if (work.description?.isNotEmpty == true) ...[
@@ -209,14 +215,17 @@ class _ReelPage extends StatelessWidget {
                                 style: const TextStyle(
                                   color: Colors.white,
                                   height: 1.4,
-                                  shadows: [Shadow(color: Colors.black87, blurRadius: 8)],
+                                  shadows: [
+                                    Shadow(color: Colors.black87, blurRadius: 8)
+                                  ],
                                 ),
                               ),
                             ],
                             const SizedBox(height: 8),
                             Text(
                               '${work.views} مشاهدة',
-                              style: const TextStyle(color: Colors.white70, fontSize: 12),
+                              style: const TextStyle(
+                                  color: Colors.white70, fontSize: 12),
                             ),
                           ],
                         ),
@@ -225,13 +234,15 @@ class _ReelPage extends StatelessWidget {
                     const SizedBox(width: 14),
                     IconButton(
                       onPressed: onDetails,
-                      icon: const Icon(Icons.info_outline_rounded, color: Colors.white),
+                      icon: const Icon(Icons.info_outline_rounded,
+                          color: Colors.white),
                       tooltip: 'تفاصيل الفيديو',
                     ),
                     if (!_isDirectVideo(work.videoUrl))
                       IconButton(
-                        onPressed: _openVideo,
-                        icon: const Icon(Icons.open_in_new_rounded, color: Colors.white),
+                        onPressed: () => _openVideo(context),
+                        icon: const Icon(Icons.open_in_new_rounded,
+                            color: Colors.white),
                         tooltip: 'فتح رابط الفيديو',
                       ),
                   ],

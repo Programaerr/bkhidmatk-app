@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../core/theme.dart';
+import '../../state/app_state.dart';
 import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
 import 'admin_bookings.dart';
@@ -21,10 +23,12 @@ class _AdminShellState extends State<AdminShell> {
   int _tick = 0;
 
   static const _items = [
-    NavItem('الرئيسية', Icons.space_dashboard_outlined, Icons.space_dashboard_rounded),
+    NavItem('الرئيسية', Icons.space_dashboard_outlined,
+        Icons.space_dashboard_rounded),
     NavItem('الحجوزات', Icons.event_note_outlined, Icons.event_note_rounded),
     NavItem('الخدمات', Icons.handyman_outlined, Icons.handyman_rounded),
-    NavItem('إدارة الريلز', Icons.video_library_outlined, Icons.video_library_rounded),
+    NavItem('إدارة الريلز', Icons.video_library_outlined,
+        Icons.video_library_rounded),
     NavItem('المزيد', Icons.more_horiz_rounded, Icons.more_horiz_rounded),
   ];
 
@@ -54,6 +58,13 @@ class _AdminShellState extends State<AdminShell> {
       items: _items,
       pages: pages,
       onSelect: _go,
+      floatingActionButton: context.read<AppState>().developmentAdminPreview
+          ? FloatingActionButton.extended(
+              onPressed: context.read<AppState>().returnToDevelopmentCustomer,
+              icon: const Icon(Icons.storefront_outlined),
+              label: const Text('واجهة الزبون'),
+            )
+          : null,
     );
   }
 }
@@ -101,12 +112,14 @@ class AdminHeader extends StatelessWidget {
                         child: Text(title,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.titleLarge?.copyWith(fontSize: 19)),
+                            style: theme.textTheme.titleLarge
+                                ?.copyWith(fontSize: 19)),
                       ),
                       if (!showBack) ...[
                         const SizedBox(width: 6),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 7, vertical: 2),
                           decoration: BoxDecoration(
                             color: AppColors.gold,
                             borderRadius: BorderRadius.circular(100),
@@ -122,7 +135,9 @@ class AdminHeader extends StatelessWidget {
                   ),
                   if (subtitle != null) ...[
                     const SizedBox(height: 1),
-                    Text(subtitle!, style: theme.textTheme.bodySmall?.copyWith(fontSize: 10.5)),
+                    Text(subtitle!,
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(fontSize: 10.5)),
                   ],
                 ],
               ),

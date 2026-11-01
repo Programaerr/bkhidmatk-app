@@ -23,8 +23,10 @@ class _CustomerShellState extends State<CustomerShell> {
     NavItem('الرئيسية', Icons.home_outlined, Icons.home_rounded),
     NavItem('الخدمات', Icons.grid_view_outlined, Icons.grid_view_rounded),
     NavItem('حجوزاتي', Icons.event_note_outlined, Icons.event_note_rounded),
-    NavItem('ريلز', Icons.play_circle_outline_rounded, Icons.play_circle_fill_rounded),
-    NavItem('أعمالنا', Icons.video_library_outlined, Icons.video_library_rounded),
+    NavItem('ريلز', Icons.play_circle_outline_rounded,
+        Icons.play_circle_fill_rounded),
+    NavItem(
+        'أعمالنا', Icons.video_library_outlined, Icons.video_library_rounded),
     NavItem('حسابي', Icons.person_outline_rounded, Icons.person_rounded),
   ];
 

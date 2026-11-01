@@ -64,12 +64,6 @@ class _AdminDashboardState extends State<AdminDashboard>
               ? 'معاينة مدير محلية · البيانات لا تُحفظ ولا تتصل بـ Supabase'
               : 'مرحباً ${user.name} · إدارة كاملة للتطبيق',
           actions: [
-            if (context.read<AppState>().developmentAdminPreview)
-              IconButton(
-                tooltip: 'العودة إلى واجهة الزبون',
-                onPressed: context.read<AppState>().returnToDevelopmentCustomer,
-                icon: const Icon(Icons.storefront_outlined),
-              ),
             AppIconButton(
               icon: Icons.chat_bubble_outline_rounded,
               badge: 0,

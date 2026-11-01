@@ -9,7 +9,7 @@ import 'data/supabase_services.dart';
 import 'state/app_state.dart';
 import 'ui/auth/supabase_setup_screen.dart';
 
-const _adminPreviewEnabled = bool.fromEnvironment('DEV_ADMIN_PREVIEW');
+const _localPreviewEnabled = bool.fromEnvironment('DEV_ADMIN_PREVIEW');
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,7 +25,7 @@ Future<void> main() async {
     statusBarIconBrightness: Brightness.dark,
   ));
 
-  if (kIsWeb && kDebugMode && _adminPreviewEnabled) {
+  if (kIsWeb && kDebugMode && _localPreviewEnabled) {
     final state = AppState(
       repository: PreviewRepository(),
       developmentAdminPreview: true,

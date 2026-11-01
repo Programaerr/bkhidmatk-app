@@ -3,7 +3,7 @@ import 'dart:async';
 import 'models.dart';
 import 'repository.dart';
 
-/// In-memory no-op repository for the isolated web admin preview.
+/// In-memory repository for an isolated local web preview.
 class PreviewRepository implements Repository {
   final StreamController<void> _changeController =
       StreamController<void>.broadcast();

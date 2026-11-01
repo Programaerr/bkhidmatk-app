@@ -20,7 +20,8 @@ class AdminWorks extends StatefulWidget {
   State<AdminWorks> createState() => _AdminWorksState();
 }
 
-class _AdminWorksState extends State<AdminWorks> with RealtimeRefresh<AdminWorks> {
+class _AdminWorksState extends State<AdminWorks>
+    with RealtimeRefresh<AdminWorks> {
   late Future<List<OurWork>> _future;
 
   @override
@@ -50,10 +51,7 @@ class _AdminWorksState extends State<AdminWorks> with RealtimeRefresh<AdminWorks
 
   Future<void> _toggleActive(OurWork work) async {
     if (work.id == null) return;
-    await context
-        .read<AppState>()
-        .repo
-        .setWorkActive(work.id!, !work.active);
+    await context.read<AppState>().repo.setWorkActive(work.id!, !work.active);
     if (mounted) _load();
   }
 
@@ -94,7 +92,8 @@ class _AdminWorksState extends State<AdminWorks> with RealtimeRefresh<AdminWorks
               children: [
                 SheetHeader(
                   title: work == null ? 'إضافة عمل جديد' : 'تعديل العمل',
-                  subtitle: 'الصق رابط الفيديو (MP4 / رابط مشاهدة)',
+                  subtitle:
+                      'للتشغيل داخل الريلز استخدم رابط فيديو مباشر مثل MP4 أو HLS',
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -104,8 +103,9 @@ class _AdminWorksState extends State<AdminWorks> with RealtimeRefresh<AdminWorks
                     labelText: 'عنوان العمل',
                     prefixIcon: Icon(Icons.title_rounded, size: 20),
                   ),
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'أدخل عنوان العمل' : null,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'أدخل عنوان العمل'
+                      : null,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
@@ -159,14 +159,16 @@ class _AdminWorksState extends State<AdminWorks> with RealtimeRefresh<AdminWorks
     if (work == null) {
       await state.repo.createWork(OurWork(
         title: title.text.trim(),
-        description: description.text.trim().isEmpty ? null : description.text.trim(),
+        description:
+            description.text.trim().isEmpty ? null : description.text.trim(),
         videoUrl: url.text.trim(),
         createdAt: DateTime.now(),
       ));
     } else {
       await state.repo.updateWork(work.copyWith(
         title: title.text.trim(),
-        description: description.text.trim().isEmpty ? null : description.text.trim(),
+        description:
+            description.text.trim().isEmpty ? null : description.text.trim(),
         videoUrl: url.text.trim(),
       ));
     }
@@ -174,7 +176,8 @@ class _AdminWorksState extends State<AdminWorks> with RealtimeRefresh<AdminWorks
     description.dispose();
     url.dispose();
     if (!mounted) return;
-    AppSnack.show(context, work == null ? 'تمت إضافة العمل' : 'تم حفظ التعديلات');
+    AppSnack.show(
+        context, work == null ? 'تمت إضافة العمل' : 'تم حفظ التعديلات');
     _load();
   }
 
@@ -229,7 +232,10 @@ class _AdminWorksState extends State<AdminWorks> with RealtimeRefresh<AdminWorks
                                   gradient: const LinearGradient(
                                     begin: Alignment.topRight,
                                     end: Alignment.bottomLeft,
-                                    colors: [Color(0xFF141416), Color(0xFF3A3308)],
+                                    colors: [
+                                      Color(0xFF141416),
+                                      Color(0xFF3A3308)
+                                    ],
                                   ),
                                 ),
                                 child: const Icon(Icons.play_arrow_rounded,
@@ -260,7 +266,8 @@ class _AdminWorksState extends State<AdminWorks> with RealtimeRefresh<AdminWorks
                               ),
                               PopupMenuButton<String>(
                                 padding: EdgeInsets.zero,
-                                icon: const Icon(Icons.more_vert_rounded, size: 20),
+                                icon: const Icon(Icons.more_vert_rounded,
+                                    size: 20),
                                 onSelected: (v) {
                                   if (v == 'edit') {
                                     _edit(work: w);
@@ -284,7 +291,8 @@ class _AdminWorksState extends State<AdminWorks> with RealtimeRefresh<AdminWorks
                                           size: 17, color: AppColors.danger),
                                       SizedBox(width: 8),
                                       Text('حذف',
-                                          style: TextStyle(color: AppColors.danger)),
+                                          style: TextStyle(
+                                              color: AppColors.danger)),
                                     ]),
                                   ),
                                 ],
@@ -366,7 +374,8 @@ class _StatLabel extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icon,
-            size: 13, color: theme.colorScheme.onSurface.withValues(alpha: .55)),
+            size: 13,
+            color: theme.colorScheme.onSurface.withValues(alpha: .55)),
         const SizedBox(width: 4),
         Text(
           label,
