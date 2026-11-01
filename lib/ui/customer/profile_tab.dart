@@ -7,6 +7,8 @@ import '../../state/app_state.dart';
 import '../widgets/realtime_refresh.dart';
 import '../widgets/ui.dart';
 import '../common/notifications_screen.dart';
+import '../auth/login_screen.dart';
+import '../auth/register_screen.dart';
 import 'messages_screen.dart';
 import 'receipts_screen.dart';
 
@@ -41,7 +43,11 @@ class _ProfileTabState extends State<ProfileTab>
 
   void _load() {
     final state = context.read<AppState>();
-    final id = state.user!.id!;
+    final id = state.user?.id;
+    if (id == null) {
+      _stats = Future.value(const [0, 0]);
+      return;
+    }
     setState(() {
       _stats = Future.wait([
         state.repo.bookingsForCustomer(id).then((v) => v.length),
@@ -196,7 +202,57 @@ class _ProfileTabState extends State<ProfileTab>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final state = context.watch<AppState>();
-    final user = state.user!;
+    final user = state.user;
+    if (user == null) {
+      return SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.person_outline_rounded,
+                    size: 64, color: AppColors.gold),
+                const SizedBox(height: 12),
+                Text('تصفح كزبون', style: theme.textTheme.headlineSmall),
+                const SizedBox(height: 6),
+                Text(
+                  'أنشئ حساباً أو سجّل الدخول لحجز الخدمات وحفظ بياناتك.',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodySmall,
+                ),
+                const SizedBox(height: 18),
+                PrimaryButton(
+                  label: 'إنشاء حساب',
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const RegisterScreen(),
+                    ),
+                  ).then((_) {
+                    if (mounted && state.user != null) {
+                      _load();
+                    }
+                  }),
+                ),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  ).then((_) {
+                    if (mounted && state.user != null) {
+                      _load();
+                    }
+                  }),
+                  child: const Text('لدي حساب — تسجيل الدخول'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
     return SafeArea(
       bottom: false,
       child: ListView(

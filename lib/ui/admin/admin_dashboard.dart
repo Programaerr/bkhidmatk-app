@@ -17,11 +17,13 @@ class AdminDashboard extends StatefulWidget {
     required this.onOpenBookings,
     required this.onOpenMessages,
     required this.onOpenWorks,
+    required this.onReturnToCustomer,
   });
 
   final VoidCallback onOpenBookings;
   final VoidCallback onOpenMessages;
   final VoidCallback onOpenWorks;
+  final VoidCallback onReturnToCustomer;
 
   @override
   State<AdminDashboard> createState() => _AdminDashboardState();
@@ -60,6 +62,8 @@ class _AdminDashboardState extends State<AdminDashboard>
       children: [
         AdminHeader(
           title: 'لوحة التحكم',
+          showBack: true,
+          onBack: widget.onReturnToCustomer,
           subtitle: context.read<AppState>().developmentAdminPreview
               ? 'معاينة مدير محلية · البيانات لا تُحفظ ولا تتصل بـ Supabase'
               : 'مرحباً ${user.name} · إدارة كاملة للتطبيق',

@@ -54,6 +54,29 @@ void main() {
     await repository.close();
   });
 
+  testWidgets('customer can browse as a guest and reach the app home',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final state = AppState(repository: PreviewRepository());
+    await state.boot();
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<AppState>.value(
+        value: state,
+        child: const JaikApp(),
+      ),
+    );
+    expect(find.text('Browse as customer'), findsNothing);
+    expect(find.text('تصفح كزبون'), findsOneWidget);
+
+    await tester.tap(find.text('تصفح كزبون'));
+    await tester.pumpAndSettle();
+    expect(state.isGuestBrowsing, isTrue);
+    expect(find.byType(CustomerShell), findsOneWidget);
+    expect(find.text('أهلاً بك 👋'), findsOneWidget);
+    state.dispose();
+  });
+
   testWidgets('customer profile has a development-only dashboard entry',
       (tester) async {
     SharedPreferences.setMockInitialValues({});
@@ -99,7 +122,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('فيديو جديد'), findsOneWidget);
 
-    await tester.tap(find.text('واجهة الزبون'));
+    await tester.tap(find.text('الرئيسية').first);
+    await tester.pumpAndSettle();
+    expect(find.byIcon(Icons.arrow_forward_rounded), findsOneWidget);
+    expect(find.text('واجهة الزبون'), findsNothing);
+    await tester.tap(find.byIcon(Icons.arrow_forward_rounded));
     await tester.pumpAndSettle();
     expect(find.byType(CustomerShell), findsOneWidget);
     await tester.tap(find.text('أعمالنا'));

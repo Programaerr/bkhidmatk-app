@@ -5,6 +5,8 @@ import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
+import '../auth/login_screen.dart';
+import '../auth/register_screen.dart';
 import '../widgets/realtime_refresh.dart';
 import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
@@ -22,7 +24,7 @@ class BookingsTab extends StatefulWidget {
 class _BookingsTabState extends State<BookingsTab>
     with RealtimeRefresh<BookingsTab> {
   int _filter = 0;
-  late Future<List<Booking>> _future;
+  Future<List<Booking>> _future = Future.value(const []);
 
   static const _filters = ['الكل', 'القادمة', 'المكتملة', 'الملغاة'];
 
@@ -64,6 +66,42 @@ class _BookingsTabState extends State<BookingsTab>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    if (context.watch<AppState>().user == null) {
+      return SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.event_note_rounded,
+                    size: 54, color: AppColors.gold),
+                const SizedBox(height: 12),
+                Text('سجّل الدخول لمتابعة حجوزاتك',
+                    style: theme.textTheme.titleMedium),
+                const SizedBox(height: 16),
+                FilledButton(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const RegisterScreen(),
+                    ),
+                  ),
+                  child: const Text('إنشاء حساب'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  ),
+                  child: const Text('تسجيل الدخول'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
     return SafeArea(
       bottom: false,
       child: Column(
@@ -107,16 +145,20 @@ class _BookingsTabState extends State<BookingsTab>
                     padding: const EdgeInsets.symmetric(horizontal: 14),
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: selected ? AppColors.gold : theme.colorScheme.surface,
+                      color:
+                          selected ? AppColors.gold : theme.colorScheme.surface,
                       borderRadius: BorderRadius.circular(100),
                       border: Border.all(
-                          color: selected ? AppColors.gold : theme.colorScheme.outline),
+                          color: selected
+                              ? AppColors.gold
+                              : theme.colorScheme.outline),
                     ),
                     child: Text(
                       _filters[i],
                       style: TextStyle(
                         fontSize: 12,
-                        fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                        fontWeight:
+                            selected ? FontWeight.w800 : FontWeight.w600,
                         color: theme.colorScheme.onSurface,
                       ),
                     ),
@@ -131,7 +173,8 @@ class _BookingsTabState extends State<BookingsTab>
               future: _future,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+                  return const Center(
+                      child: CircularProgressIndicator(strokeWidth: 2.4));
                 }
                 final bookings = _apply(snapshot.data ?? const []);
                 if (bookings.isEmpty) {
@@ -178,7 +221,8 @@ class _BookingCard extends StatelessWidget {
       onTap: () async {
         await Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => BookingDetailScreen(bookingId: booking.id!)),
+          MaterialPageRoute(
+              builder: (_) => BookingDetailScreen(bookingId: booking.id!)),
         );
         onChanged();
       },
@@ -204,12 +248,14 @@ class _BookingCard extends StatelessWidget {
                       booking.serviceTitle ?? 'خدمة',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleSmall?.copyWith(fontSize: 13.5),
+                      style:
+                          theme.textTheme.titleSmall?.copyWith(fontSize: 13.5),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       '${fmtDate(booking.scheduledAt)} · ${fmtSlot(booking.slot)}',
-                      style: theme.textTheme.bodySmall?.copyWith(fontSize: 10.5),
+                      style:
+                          theme.textTheme.bodySmall?.copyWith(fontSize: 10.5),
                     ),
                   ],
                 ),
@@ -217,11 +263,13 @@ class _BookingCard extends StatelessWidget {
               StatusPill(status: booking.status, dense: true),
             ],
           ),
-          const Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Divider()),
+          const Padding(
+              padding: EdgeInsets.symmetric(vertical: 10), child: Divider()),
           Row(
             children: [
               Icon(Icons.engineering_rounded,
-                  size: 15, color: theme.colorScheme.onSurface.withValues(alpha: .5)),
+                  size: 15,
+                  color: theme.colorScheme.onSurface.withValues(alpha: .5)),
               const SizedBox(width: 5),
               Expanded(
                 child: Text(

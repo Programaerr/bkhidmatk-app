@@ -8,10 +8,17 @@ import '../widgets/ui.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key, this.initialPhone});
+  const LoginScreen({
+    super.key,
+    this.initialPhone,
+    this.returnAfterSuccess = false,
+    this.requireAddress = false,
+  });
 
   /// الرقم المُدخل في الشاشة الأولى حتى لا يُعاد كتابته.
   final String? initialPhone;
+  final bool returnAfterSuccess;
+  final bool requireAddress;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -46,7 +53,11 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() => _error = err);
       return;
     }
-    Navigator.of(context).popUntil((route) => route.isFirst);
+    if (widget.returnAfterSuccess) {
+      Navigator.pop(context, true);
+    } else {
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    }
   }
 
   Future<void> _quick(String phone, String pass) async {
@@ -221,7 +232,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       onPressed: () => Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
-                            builder: (_) => const RegisterScreen()),
+                            builder: (_) => RegisterScreen(
+                                  returnAfterSuccess: widget.returnAfterSuccess,
+                                  requireAddress: widget.requireAddress,
+                                )),
                       ),
                       child: const Text('إنشاء حساب جديد'),
                     ),

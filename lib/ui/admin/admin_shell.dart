@@ -46,6 +46,7 @@ class _AdminShellState extends State<AdminShell> {
         onOpenBookings: () => _go(1),
         onOpenMessages: () => _go(4),
         onOpenWorks: () => _go(3),
+        onReturnToCustomer: context.read<AppState>().viewAsCustomer,
       ),
       AdminBookings(initialFilter: null, refreshTick: _tick),
       AdminServices(refreshTick: _tick),
@@ -58,13 +59,6 @@ class _AdminShellState extends State<AdminShell> {
       items: _items,
       pages: pages,
       onSelect: _go,
-      floatingActionButton: context.read<AppState>().hasAdminAccess
-          ? FloatingActionButton.extended(
-              onPressed: context.read<AppState>().viewAsCustomer,
-              icon: const Icon(Icons.storefront_outlined),
-              label: const Text('واجهة الزبون'),
-            )
-          : null,
     );
   }
 }
@@ -76,12 +70,14 @@ class AdminHeader extends StatelessWidget {
     this.subtitle,
     this.actions = const [],
     this.showBack = false,
+    this.onBack,
   });
 
   final String title;
   final String? subtitle;
   final List<Widget> actions;
   final bool showBack;
+  final VoidCallback? onBack;
 
   @override
   Widget build(BuildContext context) {
@@ -95,7 +91,7 @@ class AdminHeader extends StatelessWidget {
             if (showBack)
               IconButton(
                 icon: const Icon(Icons.arrow_forward_rounded),
-                onPressed: () => Navigator.pop(context),
+                onPressed: onBack ?? () => Navigator.pop(context),
               )
             else
               const Padding(

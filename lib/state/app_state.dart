@@ -34,6 +34,7 @@ class AppState extends ChangeNotifier {
   bool english = false;
 
   bool get isLoggedIn => user != null;
+  bool get isGuestBrowsing => _isGuestBrowsing;
   bool get hasAdminAccess => user?.isAdmin ?? false;
   bool get isViewingAsCustomer => _isViewingAsCustomer;
   bool get isAdmin => hasAdminAccess && !_isViewingAsCustomer;
@@ -42,6 +43,7 @@ class AppState extends ChangeNotifier {
   bool get isWorker => user?.isWorker ?? false;
 
   bool _isViewingAsCustomer = false;
+  bool _isGuestBrowsing = false;
 
   Future<void> boot() async {
     final prefs = await SharedPreferences.getInstance();
@@ -59,6 +61,7 @@ class AppState extends ChangeNotifier {
         city: 'بغداد',
         createdAt: DateTime.utc(2026),
       );
+      _isGuestBrowsing = false;
       booting = false;
       notifyListeners();
       return;
@@ -95,6 +98,7 @@ class AppState extends ChangeNotifier {
     if (cloud != null) {
       try {
         user = await cloud.signInWithPassword(normalizePhone(phone), password);
+        _isGuestBrowsing = false;
         notifyListeners();
         return null;
       } catch (error) {
@@ -107,6 +111,7 @@ class AppState extends ChangeNotifier {
       return 'كلمة المرور غير صحيحة';
     }
     user = found;
+    _isGuestBrowsing = false;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('user_id', found.id!);
     notifyListeners();
@@ -130,6 +135,7 @@ class AppState extends ChangeNotifier {
           city: city,
           address: address,
         );
+        _isGuestBrowsing = false;
         notifyListeners();
         return null;
       } catch (error) {
@@ -160,6 +166,7 @@ class AppState extends ChangeNotifier {
       address: address,
       createdAt: newUser.createdAt,
     );
+    _isGuestBrowsing = false;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('user_id', id);
     notifyListeners();
@@ -214,6 +221,12 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  void enterGuestMode() {
+    if (user != null) return;
+    _isGuestBrowsing = true;
+    notifyListeners();
+  }
+
   void returnToAdminDashboard() {
     if (!hasAdminAccess) return;
     _isViewingAsCustomer = false;
@@ -238,6 +251,7 @@ class AppState extends ChangeNotifier {
     await cloudServices?.signOut();
     user = null;
     _isViewingAsCustomer = false;
+    _isGuestBrowsing = false;
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('user_id');

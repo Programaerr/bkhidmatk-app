@@ -8,10 +8,17 @@ import '../widgets/ui.dart';
 import 'login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key, this.initialPhone});
+  const RegisterScreen({
+    super.key,
+    this.initialPhone,
+    this.returnAfterSuccess = false,
+    this.requireAddress = false,
+  });
 
   /// الرقم المُدخل في الشاشة الأولى حتى لا يُعاد كتابته.
   final String? initialPhone;
+  final bool returnAfterSuccess;
+  final bool requireAddress;
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -93,7 +100,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
       setState(() => _error = err);
       return;
     }
-    Navigator.of(context).popUntil((route) => route.isFirst);
+    if (widget.returnAfterSuccess) {
+      Navigator.pop(context, true);
+    } else {
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    }
   }
 
   @override
@@ -166,6 +177,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     hintText: 'المنطقة، الشارع، أقرب نقطة دالة',
                     prefixIcon: Icon(Icons.location_on_outlined, size: 20),
                   ),
+                  validator: widget.requireAddress
+                      ? (value) => (value == null || value.trim().length < 8)
+                          ? 'أدخل عنواناً تفصيلياً لا يقل عن 8 أحرف'
+                          : null
+                      : null,
                 ),
                 const SizedBox(height: 14),
                 const FieldLabel('كلمة المرور', required_: true),

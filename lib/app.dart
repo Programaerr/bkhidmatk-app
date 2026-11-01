@@ -26,7 +26,8 @@ class JaikApp extends StatelessWidget {
         darkTheme: _darkTheme,
         themeMode: state.themeMode,
         // الشاشة الأولى تتدرج بألوانها الخاصة، فلا حاجة إلى حركة الثيم فوقها.
-        themeAnimationDuration: state.user == null ? Duration.zero : kThemeAnimationDuration,
+        themeAnimationDuration:
+            state.user == null ? Duration.zero : kThemeAnimationDuration,
         locale: Locale(state.english ? 'en' : 'ar'),
         supportedLocales: const [Locale('ar'), Locale('en')],
         localizationsDelegates: const [
@@ -56,7 +57,11 @@ class _RootGate extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
     if (state.booting) return const SplashScreen();
-    if (state.user == null) return const WelcomeScreen();
+    if (state.user == null) {
+      return state.isGuestBrowsing
+          ? const CustomerShell()
+          : const WelcomeScreen();
+    }
     if (state.isAdmin) return const AdminShell();
     // الموظف بالتوضيف يرى فقط ما تسمح به الإدارة.
     if (state.isWorker) return const WorkerShell();
@@ -80,7 +85,8 @@ class SplashScreen extends StatelessWidget {
             SizedBox(
               width: 26,
               height: 26,
-              child: CircularProgressIndicator(strokeWidth: 2.5, color: AppColors.gold),
+              child: CircularProgressIndicator(
+                  strokeWidth: 2.5, color: AppColors.gold),
             ),
           ],
         ),
@@ -98,7 +104,8 @@ class BrandLogoBig extends StatelessWidget {
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(26),
-          child: Image.asset('assets/images/logo.jpg', width: 104, height: 104, fit: BoxFit.cover),
+          child: Image.asset('assets/images/logo.jpg',
+              width: 104, height: 104, fit: BoxFit.cover),
         ),
         const SizedBox(height: 16),
         const Text(

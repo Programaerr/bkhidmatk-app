@@ -319,7 +319,12 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     );
   }
 
-  /// في وضع Supabase نتابع برمز الهاتف دون كشف ما إذا كان الرقم مسجلاً.
+  void _browseAsCustomer() {
+    _focus.unfocus();
+    context.read<AppState>().enterGuestMode();
+  }
+
+  /// تسجيل الدخول وإنشاء الحساب يعتمدان كلمة المرور ولا يطلبان OTP.
   Future<void> _submit() async {
     final phone = _typedPhone;
     if (!validIraqiPhone(phone)) {
@@ -327,6 +332,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
       _alarm.forward(from: 0);
       return;
     }
+
     _alarm.reset();
     setState(() {
       _busy = true;
@@ -703,6 +709,26 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                                     ),
                                   );
                                 },
+                              ),
+                            ),
+                            Positioned(
+                              left: x(90),
+                              width: x(301) - x(90),
+                              top: y(_Design.buttonTop) - 42 * unit,
+                              height: 34 * unit,
+                              child: TextButton(
+                                onPressed: _busy ? null : _browseAsCustomer,
+                                child: Text(
+                                  state.english
+                                      ? 'Browse as customer'
+                                      : 'تصفح كزبون',
+                                  style: TextStyle(
+                                    fontFamily: 'Cairo',
+                                    fontSize: 12 * unit,
+                                    fontWeight: FontWeight.w700,
+                                    color: _nightMode ? _nightInk : _ink,
+                                  ),
+                                ),
                               ),
                             ),
                             line(

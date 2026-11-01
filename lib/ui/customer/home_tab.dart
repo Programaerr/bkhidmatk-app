@@ -46,19 +46,20 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
 
   void _load() {
     final state = context.read<AppState>();
-    final user = state.user!;
     setState(() {
-      _future = _fetch(state.repo, user.id!);
+      _future = _fetch(state.repo, state.user?.id);
     });
   }
 
-  Future<_HomeData> _fetch(Repository repo, int userId) async {
-    final results = await Future.wait([
+  Future<_HomeData> _fetch(Repository repo, int? userId) async {
+    final results = await Future.wait<Object?>([
       repo.listCategories(),
       repo.listServices(limit: 6),
       repo.listWorks(onlyActive: true, limit: 3, viewerId: userId),
-      repo.bookingsForCustomer(userId),
-      repo.unreadForCustomer(userId),
+      userId == null
+          ? Future<List<Booking>>.value(const [])
+          : repo.bookingsForCustomer(userId),
+      userId == null ? Future<int>.value(0) : repo.unreadForCustomer(userId),
       // البانر الرئيسي أصبح خياراً يتحكم به المدير من لوحة التحكم.
       repo.getSetting('show_hero_banner', fallback: '0'),
     ]);
@@ -83,7 +84,7 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final user = context.watch<AppState>().user!;
+    final user = context.watch<AppState>().user;
     return SafeArea(
       bottom: false,
       child: FutureBuilder<_HomeData>(
@@ -103,24 +104,31 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('أهلاً، ${user.name.split(' ').first} 👋',
-                              style: theme.textTheme.titleMedium?.copyWith(fontSize: 16)),
+                          Text(
+                              user == null
+                                  ? 'أهلاً بك 👋'
+                                  : 'أهلاً، ${user.name.split(' ').first} 👋',
+                              style: theme.textTheme.titleMedium
+                                  ?.copyWith(fontSize: 16)),
                           Text('كيف نقدر نخدمك اليوم؟',
-                              style: theme.textTheme.bodySmall?.copyWith(fontSize: 11)),
+                              style: theme.textTheme.bodySmall
+                                  ?.copyWith(fontSize: 11)),
                         ],
                       ),
                     ),
-                    AppIconButton(
-                      icon: Icons.chat_bubble_outline_rounded,
-                      badge: data?.unread ?? 0,
-                      onTap: () async {
-                        await Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const MessagesScreen()),
-                        );
-                        _load();
-                      },
-                    ),
+                    if (user != null)
+                      AppIconButton(
+                        icon: Icons.chat_bubble_outline_rounded,
+                        badge: data?.unread ?? 0,
+                        onTap: () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const MessagesScreen()),
+                          );
+                          _load();
+                        },
+                      ),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -130,7 +138,8 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
                     MaterialPageRoute(builder: (_) => const ServicesPage()),
                   ),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 14),
                     decoration: BoxDecoration(
                       color: theme.colorScheme.surface,
                       borderRadius: BorderRadius.circular(16),
@@ -139,13 +148,16 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
                     child: Row(
                       children: [
                         Icon(Icons.search_rounded,
-                            size: 22, color: theme.colorScheme.onSurface.withValues(alpha: .5)),
+                            size: 22,
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: .5)),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text('ابحث عن كهربائي، صباغ، تصليح غسالات...',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.bodySmall?.copyWith(fontSize: 11.5)),
+                              style: theme.textTheme.bodySmall
+                                  ?.copyWith(fontSize: 11.5)),
                         ),
                       ],
                     ),
@@ -164,7 +176,8 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
                 if (data == null)
                   const SizedBox(
                     height: 160,
-                    child: Center(child: CircularProgressIndicator(strokeWidth: 2.4)),
+                    child: Center(
+                        child: CircularProgressIndicator(strokeWidth: 2.4)),
                   )
                 else
                   GridView.count(
@@ -183,7 +196,8 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
                           onTap: () => Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => ServicesPage(initialCategoryId: c.id),
+                              builder: (_) =>
+                                  ServicesPage(initialCategoryId: c.id),
                             ),
                           ),
                         ),
@@ -213,7 +227,8 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
                             color: AppColors.gold.withValues(alpha: .18),
                             borderRadius: BorderRadius.circular(14),
                           ),
-                          child: const Icon(Icons.event_available_rounded, size: 22),
+                          child: const Icon(Icons.event_available_rounded,
+                              size: 22),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
@@ -223,10 +238,12 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
                               Text(data!.upcoming!.serviceTitle ?? 'خدمة',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: theme.textTheme.titleSmall?.copyWith(fontSize: 13.5)),
+                                  style: theme.textTheme.titleSmall
+                                      ?.copyWith(fontSize: 13.5)),
                               Text(
                                 '${fmtDate(data.upcoming!.scheduledAt)} · ${fmtSlot(data.upcoming!.slot)}',
-                                style: theme.textTheme.bodySmall?.copyWith(fontSize: 10.5),
+                                style: theme.textTheme.bodySmall
+                                    ?.copyWith(fontSize: 10.5),
                               ),
                             ],
                           ),
@@ -272,7 +289,8 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
                         const Icon(Icons.video_library_outlined, size: 26),
                         const SizedBox(height: 6),
                         Text('لا توجد أعمال منشورة بعد',
-                            style: theme.textTheme.bodySmall?.copyWith(fontSize: 11)),
+                            style: theme.textTheme.bodySmall
+                                ?.copyWith(fontSize: 11)),
                       ],
                     ),
                   )
@@ -285,7 +303,8 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
                         onOpen: () => Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => OurWorkDetailScreen(workId: work.id!),
+                            builder: (_) =>
+                                OurWorkDetailScreen(workId: work.id!),
                           ),
                         ).then((_) => _load()),
                       ),
@@ -362,7 +381,8 @@ class _HeroBanner extends StatelessWidget {
                 child: Opacity(
                   opacity: .9,
                   child: Image.asset('assets/images/logo.jpg',
-                      fit: BoxFit.contain, errorBuilder: (_, __, ___) => const SizedBox()),
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => const SizedBox()),
                 ),
               ),
             ),
@@ -374,14 +394,17 @@ class _HeroBanner extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
                     decoration: BoxDecoration(
                       color: AppColors.gold,
                       borderRadius: BorderRadius.circular(100),
                     ),
                     child: const Text('عرض هذا الأسبوع',
                         style: TextStyle(
-                            fontSize: 9, fontWeight: FontWeight.w900, color: AppColors.ink)),
+                            fontSize: 9,
+                            fontWeight: FontWeight.w900,
+                            color: AppColors.ink)),
                   ),
                   const SizedBox(height: 8),
                   const Text(
@@ -402,7 +425,8 @@ class _HeroBanner extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(100),
@@ -412,15 +436,19 @@ class _HeroBanner extends StatelessWidget {
                             children: [
                               Text('احجز الآن',
                                   style: TextStyle(
-                                      fontSize: 10, fontWeight: FontWeight.w800, color: AppColors.ink)),
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w800,
+                                      color: AppColors.ink)),
                               SizedBox(width: 2),
-                              Icon(Icons.chevron_left_rounded, size: 14, color: AppColors.ink),
+                              Icon(Icons.chevron_left_rounded,
+                                  size: 14, color: AppColors.ink),
                             ],
                           ),
                         ),
                         const SizedBox(width: 8),
                         const Text('لفترة محدودة',
-                            style: TextStyle(color: Colors.white54, fontSize: 8.5)),
+                            style: TextStyle(
+                                color: Colors.white54, fontSize: 8.5)),
                       ],
                     ),
                   ),
@@ -449,7 +477,8 @@ class _ServiceMiniCard extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         onTap: () => Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => ServiceDetailScreen(service: service)),
+          MaterialPageRoute(
+              builder: (_) => ServiceDetailScreen(service: service)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -461,7 +490,10 @@ class _ServiceMiniCard extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [color.withValues(alpha: .28), color.withValues(alpha: .08)],
+                  colors: [
+                    color.withValues(alpha: .28),
+                    color.withValues(alpha: .08)
+                  ],
                 ),
                 borderRadius: BorderRadius.circular(14),
               ),
@@ -471,14 +503,17 @@ class _ServiceMiniCard extends StatelessWidget {
             Text(service.title,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.titleSmall?.copyWith(fontSize: 12.5, height: 1.4)),
+                style: theme.textTheme.titleSmall
+                    ?.copyWith(fontSize: 12.5, height: 1.4)),
             const Spacer(),
             Row(
               children: [
                 Text(fmtMoney(service.price),
-                    style: theme.textTheme.titleSmall?.copyWith(fontSize: 11.5)),
+                    style:
+                        theme.textTheme.titleSmall?.copyWith(fontSize: 11.5)),
                 const Spacer(),
-                const Icon(Icons.star_rounded, size: 12, color: Color(0xFFF5A623)),
+                const Icon(Icons.star_rounded,
+                    size: 12, color: Color(0xFFF5A623)),
                 Text(service.rating.toStringAsFixed(1),
                     style: theme.textTheme.bodySmall?.copyWith(fontSize: 9.5)),
               ],

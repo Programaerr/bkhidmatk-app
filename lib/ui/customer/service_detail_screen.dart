@@ -1,17 +1,87 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
+import '../../state/app_state.dart';
+import '../auth/login_screen.dart';
+import '../auth/register_screen.dart';
 import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
 import 'booking_screen.dart';
 import 'messages_screen.dart';
+import 'profile_completion_screen.dart';
 
 class ServiceDetailScreen extends StatelessWidget {
   const ServiceDetailScreen({super.key, required this.service});
 
   final Service service;
+
+  Future<void> _startBooking(BuildContext context) async {
+    final state = context.read<AppState>();
+    if (state.user == null) {
+      final createAccount = await showModalBottomSheet<bool>(
+        context: context,
+        showDragHandle: true,
+        builder: (context) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'سجّل الدخول لإكمال الحجز',
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 14),
+                PrimaryButton(
+                  label: 'إنشاء حساب زبون',
+                  onPressed: () => Navigator.pop(context, true),
+                ),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('لدي حساب — تسجيل الدخول'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      if (createAccount == null || !context.mounted) return;
+      final authenticated = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => createAccount
+              ? const RegisterScreen(
+                  returnAfterSuccess: true,
+                  requireAddress: true,
+                )
+              : const LoginScreen(returnAfterSuccess: true),
+        ),
+      );
+      if (authenticated != true || !context.mounted) return;
+    }
+
+    final user = context.read<AppState>().user;
+    if (user == null) return;
+    if (user.name.trim().length < 3 ||
+        (user.address?.trim().length ?? 0) < 8 ||
+        (user.city?.trim().isNotEmpty ?? false) == false) {
+      final completed = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const ProfileCompletionScreen(),
+        ),
+      );
+      if (completed != true || !context.mounted) return;
+    }
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => BookingScreen(service: service)),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -58,7 +128,8 @@ class ServiceDetailScreen extends StatelessWidget {
                       top: 58,
                       right: 22,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
                           color: AppColors.gold,
                           borderRadius: BorderRadius.circular(100),
@@ -66,7 +137,9 @@ class ServiceDetailScreen extends StatelessWidget {
                         child: Text(
                           service.categoryName ?? 'خدمة',
                           style: const TextStyle(
-                              fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.ink),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.ink),
                         ),
                       ),
                     ),
@@ -82,9 +155,13 @@ class ServiceDetailScreen extends StatelessWidget {
                             decoration: BoxDecoration(
                               color: color.withValues(alpha: .2),
                               borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: color.withValues(alpha: .35)),
+                              border: Border.all(
+                                  color: color.withValues(alpha: .35)),
                             ),
-                            child: Icon(appIcon(service.categoryIcon ?? 'build'), color: color, size: 30),
+                            child: Icon(
+                                appIcon(service.categoryIcon ?? 'build'),
+                                color: color,
+                                size: 30),
                           ),
                           const SizedBox(width: 14),
                           Expanded(
@@ -103,16 +180,22 @@ class ServiceDetailScreen extends StatelessWidget {
                                 const SizedBox(height: 6),
                                 Row(
                                   children: [
-                                    const Icon(Icons.star_rounded, color: Color(0xFFF5A623), size: 15),
+                                    const Icon(Icons.star_rounded,
+                                        color: Color(0xFFF5A623), size: 15),
                                     const SizedBox(width: 3),
                                     Text(service.rating.toStringAsFixed(1),
                                         style: const TextStyle(
-                                            color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w700)),
+                                            color: Colors.white,
+                                            fontSize: 11.5,
+                                            fontWeight: FontWeight.w700)),
                                     const SizedBox(width: 10),
-                                    const Icon(Icons.schedule_rounded, color: Colors.white54, size: 14),
+                                    const Icon(Icons.schedule_rounded,
+                                        color: Colors.white54, size: 14),
                                     const SizedBox(width: 4),
                                     Text(fmtDuration(service.durationMinutes),
-                                        style: const TextStyle(color: Colors.white54, fontSize: 11)),
+                                        style: const TextStyle(
+                                            color: Colors.white54,
+                                            fontSize: 11)),
                                   ],
                                 ),
                               ],
@@ -139,45 +222,55 @@ class ServiceDetailScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text('سعر الخدمة يبدأ من',
-                                style: theme.textTheme.bodySmall?.copyWith(fontSize: 11)),
+                                style: theme.textTheme.bodySmall
+                                    ?.copyWith(fontSize: 11)),
                             const SizedBox(height: 3),
                             Text(fmtMoney(service.price),
-                                style: theme.textTheme.headlineSmall?.copyWith(fontSize: 22)),
+                                style: theme.textTheme.headlineSmall
+                                    ?.copyWith(fontSize: 22)),
                           ],
                         ),
                         const Spacer(),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 5),
                           decoration: BoxDecoration(
                             color: AppColors.success.withValues(alpha: .1),
                             borderRadius: BorderRadius.circular(100),
                           ),
                           child: const Text('ضمان الخدمة',
                               style: TextStyle(
-                                  fontSize: 10, color: AppColors.success, fontWeight: FontWeight.w800)),
+                                  fontSize: 10,
+                                  color: AppColors.success,
+                                  fontWeight: FontWeight.w800)),
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(height: 20),
                   const SectionHeader(title: 'عن الخدمة'),
-                  Text(service.description, style: theme.textTheme.bodyMedium?.copyWith(height: 1.85)),
+                  Text(service.description,
+                      style:
+                          theme.textTheme.bodyMedium?.copyWith(height: 1.85)),
                   const SizedBox(height: 20),
                   const SectionHeader(title: 'الفني المسؤول'),
                   SoftCard(
                     child: Row(
                       children: [
-                        AvatarCircle(name: service.workerName ?? 'فريق جايك', size: 52),
+                        AvatarCircle(
+                            name: service.workerName ?? 'فريق جايك', size: 52),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(service.workerName ?? 'فريق جايك',
-                                  style: theme.textTheme.titleSmall?.copyWith(fontSize: 14.5)),
+                                  style: theme.textTheme.titleSmall
+                                      ?.copyWith(fontSize: 14.5)),
                               const SizedBox(height: 2),
                               Text('فني معتمد · موثّق من جايك',
-                                  style: theme.textTheme.bodySmall?.copyWith(fontSize: 10.5)),
+                                  style: theme.textTheme.bodySmall
+                                      ?.copyWith(fontSize: 10.5)),
                               const SizedBox(height: 6),
                               RatingStars(rating: service.rating),
                             ],
@@ -189,7 +282,8 @@ class ServiceDetailScreen extends StatelessWidget {
                           tooltip: 'مراسلة جايك',
                           onTap: () => Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (_) => const MessagesScreen()),
+                            MaterialPageRoute(
+                                builder: (_) => const MessagesScreen()),
                           ),
                         ),
                       ],
@@ -221,9 +315,12 @@ class ServiceDetailScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('الإجمالي', style: theme.textTheme.bodySmall?.copyWith(fontSize: 10.5)),
+                  Text('الإجمالي',
+                      style:
+                          theme.textTheme.bodySmall?.copyWith(fontSize: 10.5)),
                   Text(fmtMoney(service.price),
-                      style: theme.textTheme.titleLarge?.copyWith(fontSize: 17)),
+                      style:
+                          theme.textTheme.titleLarge?.copyWith(fontSize: 17)),
                 ],
               ),
               const SizedBox(width: 16),
@@ -231,10 +328,7 @@ class ServiceDetailScreen extends StatelessWidget {
                 child: PrimaryButton(
                   label: 'احجز هذه الخدمة',
                   icon: Icons.calendar_month_rounded,
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => BookingScreen(service: service)),
-                  ),
+                  onPressed: () => _startBooking(context),
                 ),
               ),
             ],
@@ -263,10 +357,12 @@ class _IncludeRow extends StatelessWidget {
               color: AppColors.success.withValues(alpha: .12),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.check_rounded, size: 14, color: AppColors.success),
+            child: const Icon(Icons.check_rounded,
+                size: 14, color: AppColors.success),
           ),
           const SizedBox(width: 10),
-          Expanded(child: Text(text, style: Theme.of(context).textTheme.bodyMedium)),
+          Expanded(
+              child: Text(text, style: Theme.of(context).textTheme.bodyMedium)),
         ],
       ),
     );

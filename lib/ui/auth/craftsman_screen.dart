@@ -6,6 +6,7 @@ import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
 import '../widgets/ui.dart';
+import 'login_screen.dart';
 
 const _easternDigits = '٠١٢٣٤٥٦٧٨٩';
 const _persianDigits = '۰۱۲۳۴۵۶۷۸۹';
@@ -64,7 +65,8 @@ class _CraftsmanScreenState extends State<CraftsmanScreen> {
     super.dispose();
   }
 
-  void _backAsCustomer() => Navigator.of(context).popUntil((route) => route.isFirst);
+  void _backAsCustomer() =>
+      Navigator.of(context).popUntil((route) => route.isFirst);
 
   Future<void> _pickCity() async {
     final selected = await showAppSheet<String>(
@@ -86,7 +88,8 @@ class _CraftsmanScreenState extends State<CraftsmanScreen> {
                   return ListTile(
                     title: Text(city),
                     trailing: city == _city
-                        ? const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 20)
+                        ? const Icon(Icons.check_circle_rounded,
+                            color: AppColors.success, size: 20)
                         : null,
                     onTap: () => Navigator.pop(ctx, city),
                   );
@@ -160,7 +163,8 @@ class _CraftsmanScreenState extends State<CraftsmanScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.check_circle_rounded, size: 68, color: AppColors.success),
+            const Icon(Icons.check_circle_rounded,
+                size: 68, color: AppColors.success),
             const SizedBox(height: 14),
             Text('وصل طلبك إلى الشركة', style: theme.textTheme.headlineSmall),
             const SizedBox(height: 6),
@@ -199,7 +203,9 @@ class _CraftsmanScreenState extends State<CraftsmanScreen> {
                 hintText: 'مثال: أحمد سعد',
                 prefixIcon: Icon(Icons.person_outline_rounded, size: 20),
               ),
-              validator: (v) => (v == null || v.trim().length < 3) ? 'أدخل الاسم الكامل' : null,
+              validator: (v) => (v == null || v.trim().length < 3)
+                  ? 'أدخل الاسم الكامل'
+                  : null,
             ),
             const SizedBox(height: 14),
             const FieldLabel('رقم الهاتف', required_: true),
@@ -257,7 +263,8 @@ class _CraftsmanScreenState extends State<CraftsmanScreen> {
                 hintText: 'مثال: كهربائي، سباك، صباغ',
                 prefixIcon: Icon(Icons.handyman_outlined, size: 20),
               ),
-              validator: (v) => (v == null || v.trim().length < 2) ? 'أدخل مهنتك' : null,
+              validator: (v) =>
+                  (v == null || v.trim().length < 2) ? 'أدخل مهنتك' : null,
             ),
             const SizedBox(height: 14),
             const FieldLabel('سنوات الخبرة', required_: true),
@@ -282,10 +289,15 @@ class _CraftsmanScreenState extends State<CraftsmanScreen> {
             ),
             if (_error != null) ...[
               const SizedBox(height: 12),
-              Text(_error!, style: const TextStyle(color: AppColors.danger, fontSize: 12.5)),
+              Text(_error!,
+                  style:
+                      const TextStyle(color: AppColors.danger, fontSize: 12.5)),
             ],
             const SizedBox(height: 22),
-            PrimaryButton(label: 'إرسال الطلب إلى الشركة', onPressed: _submit, loading: _loading),
+            PrimaryButton(
+                label: 'إرسال الطلب إلى الشركة',
+                onPressed: _submit,
+                loading: _loading),
             const SizedBox(height: 10),
             _backButton(),
           ],
@@ -298,7 +310,24 @@ class _CraftsmanScreenState extends State<CraftsmanScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('التقديم كحرفي')),
+      appBar: AppBar(
+        title: const Text('التقديم كحرفي'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => LoginScreen(
+                  initialPhone: validIraqiPhone(_phone.text)
+                      ? normalizePhone(_phone.text)
+                      : null,
+                ),
+              ),
+            ),
+            child: const Text('دخول الزبون'),
+          ),
+        ],
+      ),
       body: SafeArea(child: _sent ? _sentMessage(theme) : _form(theme)),
     );
   }
