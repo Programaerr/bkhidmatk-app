@@ -5,7 +5,6 @@ import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../state/app_state.dart';
 import '../widgets/ui.dart';
-import 'login_screen.dart';
 import 'push_key.dart';
 import 'raised_field.dart';
 
@@ -106,7 +105,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(title: const Text('إنشاء حساب')),
       body: SafeArea(
@@ -181,26 +179,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ],
                 const SizedBox(height: 19),
                 PushKeyButton(
-                  label: 'إنشاء الحساب',
+                  label: 'متابعة',
                   onPressed: _submit,
                   loading: _loading,
                   yellow: true,
-                ),
-                const SizedBox(height: 7),
-                Center(
-                  child: Wrap(
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      Text('لديك حساب؟', style: theme.textTheme.bodySmall),
-                      TextButton(
-                        onPressed: () => Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (_) => const LoginScreen()),
-                        ),
-                        child: const Text('تسجيل الدخول'),
-                      ),
-                    ],
-                  ),
                 ),
               ],
             ),
