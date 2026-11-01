@@ -608,6 +608,35 @@ create trigger prepare_booking_before_insert
   before insert on public.bookings
   for each row execute function public.prepare_booking();
 
+create or replace function public.prepare_receipt()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  booking_customer bigint;
+  booking_total numeric(12,2);
+begin
+  if new.booking_id is not null then
+    select b.customer_id, b.total
+      into booking_customer, booking_total
+      from public.bookings b
+     where b.id = new.booking_id;
+    if not found or booking_customer <> new.user_id then
+      raise exception 'Receipt must belong to the booking customer';
+    end if;
+    new.amount := booking_total;
+  end if;
+  return new;
+end
+$$;
+
+drop trigger if exists prepare_receipt_before_insert on public.receipts;
+create trigger prepare_receipt_before_insert
+  before insert on public.receipts
+  for each row execute function public.prepare_receipt();
+
 create or replace function public.increment_worker_jobs(p_worker_id bigint)
 returns void
 language plpgsql
@@ -999,6 +1028,7 @@ grant update (paid) on public.receipts to authenticated;
 revoke all on function public.current_app_profile_id() from public, anon;
 grant execute on function public.current_app_profile_id() to authenticated;
 revoke all on function public.prepare_booking() from public, anon;
+revoke all on function public.prepare_receipt() from public, anon;
 revoke all on function public.increment_worker_jobs(bigint) from public, anon;
 grant execute on function public.increment_worker_jobs(bigint) to authenticated;
 revoke all on function public.update_booking_status(bigint, text) from public, anon;
@@ -1045,7 +1075,13 @@ create policy "jaik_media_owner_update" on storage.objects
       (storage.foldername(name))[2] = (select auth.uid())::text
       or (select public.is_app_admin())
     )
-  ) with check (bucket_id = 'jaik-media');
+  ) with check (
+    bucket_id = 'jaik-media'
+    and (
+      (storage.foldername(name))[2] = (select auth.uid())::text
+      or (select public.is_app_admin())
+    )
+  );
 drop policy if exists "jaik_media_owner_delete" on storage.objects;
 create policy "jaik_media_owner_delete" on storage.objects
   for delete to authenticated using (

@@ -55,10 +55,12 @@ class SupabaseRepository implements Repository {
     }
   }
 
-  List<Map<String, dynamic>> _maps(Object? value) =>
-      (value as List).map((row) => Map<String, dynamic>.from(row as Map)).toList();
+  List<Map<String, dynamic>> _maps(Object? value) => (value as List)
+      .map((row) => Map<String, dynamic>.from(row as Map))
+      .toList();
 
-  Map<String, dynamic> _map(Object? value) => Map<String, dynamic>.from(value as Map);
+  Map<String, dynamic> _map(Object? value) =>
+      Map<String, dynamic>.from(value as Map);
 
   Map<String, dynamic> _write(Map<String, Object?> source) {
     const booleanColumns = {
@@ -172,7 +174,9 @@ class SupabaseRepository implements Repository {
     final marker = '/storage/v1/object/public/jaik-media/';
     final path = uri.path;
     final index = path.indexOf(marker);
-    return index < 0 ? null : Uri.decodeComponent(path.substring(index + marker.length));
+    return index < 0
+        ? null
+        : Uri.decodeComponent(path.substring(index + marker.length));
   }
 
   Future<void> _removeMedia(String? url) async {
@@ -182,7 +186,8 @@ class SupabaseRepository implements Repository {
     }
   }
 
-  Future<Map<int, int>> _countBy(List<Map<String, dynamic>> rows, String key) async {
+  Future<Map<int, int>> _countBy(
+      List<Map<String, dynamic>> rows, String key) async {
     final counts = <int, int>{};
     for (final row in rows) {
       final id = (row[key] as num).toInt();
@@ -258,11 +263,7 @@ class SupabaseRepository implements Repository {
   @override
   Future<List<Category>> listCategories() async {
     final rows = _maps(
-      await _client
-          .from('categories')
-          .select()
-          .order('sort_order')
-          .order('id'),
+      await _client.from('categories').select().order('sort_order').order('id'),
     );
     return rows.map((row) => Category.fromMap(row)).toList();
   }
@@ -279,7 +280,10 @@ class SupabaseRepository implements Repository {
   Future<int> saveCategory(Category category) async {
     final values = category.toMap()..remove('id');
     if (category.id == null) return _insert('categories', values);
-    await _client.from('categories').update(_write(values)).eq('id', category.id!);
+    await _client
+        .from('categories')
+        .update(_write(values))
+        .eq('id', category.id!);
     return category.id!;
   }
 
@@ -343,7 +347,8 @@ class SupabaseRepository implements Repository {
   @override
   Future<void> incrementWorkerJobs(int? workerId) async {
     if (workerId != null) {
-      await _client.rpc('increment_worker_jobs', params: {'p_worker_id': workerId});
+      await _client
+          .rpc('increment_worker_jobs', params: {'p_worker_id': workerId});
     }
   }
 
@@ -436,9 +441,12 @@ class SupabaseRepository implements Repository {
 
   // Bookings.
   Future<List<Map<String, dynamic>>> _bookingRows() => _allRows(
-        (from, to) => _client.from('bookings').select(
+        (from, to) => _client
+            .from('bookings')
+            .select(
               '*,services(title),workers(name,phone),app_profiles!bookings_customer_id_fkey(name,phone)',
-            ).range(from, to),
+            )
+            .range(from, to),
       );
 
   Booking _bookingFrom(Map<String, dynamic> row) {
@@ -456,16 +464,16 @@ class SupabaseRepository implements Repository {
   }
 
   @override
-  Future<List<Booking>> bookingsForCustomer(int customerId, {String? status}) async {
+  Future<List<Booking>> bookingsForCustomer(int customerId,
+      {String? status}) async {
     final rows = await _allRows((from, to) {
       dynamic query = _client
           .from('bookings')
-          .select('*,services(title),workers(name,phone),app_profiles!bookings_customer_id_fkey(name,phone)')
+          .select(
+              '*,services(title),workers(name,phone),app_profiles!bookings_customer_id_fkey(name,phone)')
           .eq('customer_id', customerId);
       if (status != null) query = query.eq('status', status);
-      return query
-          .order('scheduled_at', ascending: false)
-          .range(from, to);
+      return query.order('scheduled_at', ascending: false).range(from, to);
     });
     return rows.map(_bookingFrom).toList();
   }
@@ -480,7 +488,9 @@ class SupabaseRepository implements Repository {
           if (term.isEmpty) return true;
           final customer = row['app_profiles'] as Map<String, dynamic>?;
           final service = row['services'] as Map<String, dynamic>?;
-          return (customer?['name'] as String? ?? '').toLowerCase().contains(term) ||
+          return (customer?['name'] as String? ?? '')
+                  .toLowerCase()
+                  .contains(term) ||
               (customer?['phone'] as String? ?? '').contains(term) ||
               (service?['title'] as String? ?? '').toLowerCase().contains(term);
         })
@@ -494,7 +504,8 @@ class SupabaseRepository implements Repository {
     final rows = _maps(
       await _client
           .from('bookings')
-          .select('*,services(title),workers(name,phone),app_profiles!bookings_customer_id_fkey(name,phone)')
+          .select(
+              '*,services(title),workers(name,phone),app_profiles!bookings_customer_id_fkey(name,phone)')
           .eq('id', id)
           .limit(1),
     );
@@ -517,8 +528,7 @@ class SupabaseRepository implements Repository {
   Future<void> assignWorker(int bookingId, int? workerId) async {
     await _client
         .from('bookings')
-        .update({'worker_id': workerId})
-        .eq('id', bookingId);
+        .update({'worker_id': workerId}).eq('id', bookingId);
   }
 
   @override
@@ -564,7 +574,8 @@ class SupabaseRepository implements Repository {
     final posts = await _allRows(
       (from, to) => _client
           .from('posts')
-          .select('*,app_profiles!posts_customer_id_fkey(name,phone),categories(name)')
+          .select(
+              '*,app_profiles!posts_customer_id_fkey(name,phone),categories(name)')
           .order('created_at', ascending: false)
           .range(from, to),
     );
@@ -763,7 +774,9 @@ class SupabaseRepository implements Repository {
             (!onlyActive || row['active'] == true) &&
             (term.isEmpty ||
                 (row['title'] as String).toLowerCase().contains(term) ||
-                (row['description'] as String? ?? '').toLowerCase().contains(term)))
+                (row['description'] as String? ?? '')
+                    .toLowerCase()
+                    .contains(term)))
         .take(limit ?? rows.length)
         .map((row) => OurWork.fromMap(_read(row)))
         .toList();
@@ -861,10 +874,10 @@ class SupabaseRepository implements Repository {
     );
     if (existing.isEmpty) return _insert('hire_phones', values);
     final id = (existing.first['id'] as num).toInt();
-    await _client
-        .from('hire_phones')
-        .update({'note': hire.note, 'created_at': hire.createdAt.toIso8601String()})
-        .eq('id', id);
+    await _client.from('hire_phones').update({
+      'note': hire.note,
+      'created_at': hire.createdAt.toIso8601String()
+    }).eq('id', id);
     return id;
   }
 
@@ -876,7 +889,8 @@ class SupabaseRepository implements Repository {
           .select()
           .order('created_at', ascending: false),
     );
-    final profiles = _maps(await _client.from('app_profiles').select('id,phone,name'));
+    final profiles =
+        _maps(await _client.from('app_profiles').select('id,phone,name'));
     final profilesByPhone = {
       for (final profile in profiles) profile['phone'] as String: profile,
     };
@@ -1048,9 +1062,12 @@ class SupabaseRepository implements Repository {
 
   // Receipts.
   Future<List<Map<String, dynamic>>> _receiptRows() => _allRows(
-        (from, to) => _client.from('receipts').select(
+        (from, to) => _client
+            .from('receipts')
+            .select(
               '*,bookings!left(worker_id,services(title),workers(name)),app_profiles!receipts_user_id_fkey(name,phone)',
-            ).range(from, to),
+            )
+            .range(from, to),
       );
 
   Receipt _receiptFrom(Map<String, dynamic> row) {
