@@ -134,7 +134,7 @@ const _arabic = _Words(
   language: 'AR',
   changeLanguage: 'تغيير اللغة إلى الإنجليزية',
   nightMode: 'الوضع الليلي',
-  customer: 'كزبون',
+  customer: 'زبون',
   craftsman: 'حرفي',
   account: 'هل لديك حساب',
   privacy: 'سياسة و الخصوصية',
