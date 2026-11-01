@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../state/app_state.dart';
+import 'auth_route.dart';
 import 'craftsman_screen.dart';
 import 'day_night_switch.dart';
 import 'login_screen.dart';
@@ -24,15 +25,6 @@ const _nightGround = Colors.black;
 const _nightInk = Color(0xFFF4F4EE);
 const _nightDivider = Color(0xFF3A3A40);
 const _nightShortLine = Color(0xFF5F5F66);
-
-/// ألوان شريطي النظام في بقية شاشات التطبيق.
-SystemUiOverlayStyle _appSystemBars({required bool night}) =>
-    SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: night ? Brightness.light : Brightness.dark,
-      systemNavigationBarColor: Colors.black,
-      systemNavigationBarIconBrightness: Brightness.light,
-    );
 
 /// مقاسات التصميم المعتمد بالبكسل (إطار 391×715)، ومنها تُشتق كل القياسات.
 abstract final class _Design {
@@ -156,19 +148,6 @@ const _english = _Words(
   direction: TextDirection.ltr,
 );
 
-/// انتقال الصفحة المعتاد نفسه، لكنه أسرع منه بأكثر من الضعف.
-class _QuickRoute extends MaterialPageRoute<void> {
-  _QuickRoute({required super.builder});
-
-  static const _duration = Duration(milliseconds: 200);
-
-  @override
-  Duration get transitionDuration => _duration;
-
-  @override
-  Duration get reverseTransitionDuration => _duration;
-}
-
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
 
@@ -216,21 +195,11 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     _appState.removeListener(_onAppStateChanged);
     _night.dispose();
     _nightController.dispose();
-    SystemChrome.setSystemUIOverlayStyle(_appSystemBars(night: _nightMode));
+    SystemChrome.setSystemUIOverlayStyle(appSystemBars(night: _nightMode));
     super.dispose();
   }
 
-  void _open(Widget page) {
-    Navigator.push(
-      context,
-      _QuickRoute(
-        builder: (_) => AnnotatedRegion<SystemUiOverlayStyle>(
-          value: _appSystemBars(night: _nightMode),
-          child: page,
-        ),
-      ),
-    );
-  }
+  void _open(Widget page) => openAuthPage(context, page, night: _nightMode);
 
   @override
   Widget build(BuildContext context) {

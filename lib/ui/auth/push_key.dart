@@ -52,13 +52,56 @@ const _backArrowSize = 20.0;
 const _pageMargin = 22.0;
 const _backTitleGap = 12.0;
 
-double _keyUnit(BuildContext context) {
+/// مقياس أزرار الشاشة الأولى على هذه الشاشة.
+double pushKeyUnit(BuildContext context) {
   final size = MediaQuery.sizeOf(context);
   final fit = math.min(size.width / _loginDesignWidth, size.height / _loginDesignHeight);
   return math.max(fit, _loginMinScale);
 }
 
-/// شريط صفحة تُفتح من الشاشة الأولى: عنوانها وزر رجوع بشكل أزرارها، سهم فقط.
+/// زر الرجوع بشكل أزرار الشاشة الأولى، سهم فقط. يملأ مكانه بمساحة اللمس، والزر في طرفه.
+class PushKeyBack extends StatelessWidget {
+  const PushKeyBack({super.key});
+
+  /// عرض الزر بوحدات التصميم.
+  static const width = _backFaceWidth + PushKey.faceInset * 2;
+
+  @override
+  Widget build(BuildContext context) {
+    final unit = pushKeyUnit(context);
+    final night = Theme.of(context).brightness == Brightness.dark;
+    final faceHeight = _loginFaceHeight * unit;
+    return Semantics(
+      button: true,
+      label: 'رجوع',
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => Navigator.maybePop(context),
+        child: Align(
+          alignment: AlignmentDirectional.centerEnd,
+          child: SizedBox(
+            width: width * unit,
+            height: faceHeight + PushKey.depth * unit,
+            child: PushKey(
+              unit: unit,
+              faceHeight: faceHeight,
+              night: night ? kAlwaysCompleteAnimation : kAlwaysDismissedAnimation,
+              child: Center(
+                child: Icon(
+                  Icons.arrow_back,
+                  size: _backArrowSize * unit,
+                  color: night ? _loginNightInk : _loginInk,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// شريط صفحة تُفتح من الشاشة الأولى: عنوانها وزر الرجوع.
 class PushKeyAppBar extends StatelessWidget implements PreferredSizeWidget {
   const PushKeyAppBar({super.key, required this.title});
 
@@ -69,42 +112,10 @@ class PushKeyAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final unit = _keyUnit(context);
-    final night = Theme.of(context).brightness == Brightness.dark;
-    final faceHeight = _loginFaceHeight * unit;
-    final keyWidth = (_backFaceWidth + PushKey.faceInset * 2) * unit;
     return AppBar(
-      leadingWidth: _pageMargin + keyWidth,
+      leadingWidth: _pageMargin + PushKeyBack.width * pushKeyUnit(context),
       titleSpacing: _backTitleGap,
-      leading: Semantics(
-        button: true,
-        label: 'رجوع',
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () => Navigator.maybePop(context),
-          child: Padding(
-            padding: const EdgeInsetsDirectional.only(start: _pageMargin),
-            child: Center(
-              child: SizedBox(
-                width: keyWidth,
-                height: faceHeight + PushKey.depth * unit,
-                child: PushKey(
-                  unit: unit,
-                  faceHeight: faceHeight,
-                  night: night ? kAlwaysCompleteAnimation : kAlwaysDismissedAnimation,
-                  child: Center(
-                    child: Icon(
-                      Icons.arrow_back,
-                      size: _backArrowSize * unit,
-                      color: night ? _loginNightInk : _loginInk,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
+      leading: const PushKeyBack(),
       title: Text(title),
     );
   }
@@ -120,6 +131,9 @@ class PushKeyButton extends StatelessWidget {
     this.yellow = false,
   });
 
+  /// ارتفاعه كاملاً بوحدات التصميم، مع هامش اللمس فوقه وتحته.
+  static const outerHeight = _loginFaceHeight + PushKey.depth + _loginTouchMargin * 2;
+
   final String label;
   final VoidCallback onPressed;
   final bool loading;
@@ -127,7 +141,7 @@ class PushKeyButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final unit = _keyUnit(context);
+    final unit = pushKeyUnit(context);
     final night = Theme.of(context).brightness == Brightness.dark;
     final faceHeight = _loginFaceHeight * unit;
     return GestureDetector(

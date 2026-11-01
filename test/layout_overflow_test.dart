@@ -8,6 +8,7 @@ import 'package:jaik/data/models.dart';
 import 'package:jaik/state/app_state.dart';
 import 'package:jaik/ui/admin/admin_shell.dart';
 import 'package:jaik/ui/admin/admin_applications.dart';
+import 'package:jaik/ui/auth/account_type_screen.dart';
 import 'package:jaik/ui/auth/craftsman_screen.dart';
 import 'package:jaik/ui/auth/login_screen.dart';
 import 'package:jaik/ui/auth/register_screen.dart';
@@ -118,6 +119,13 @@ void main() {
           height: h,
           textScale: scale);
       _expectNoOverflow(tester, 'الدخول $label');
+
+      await _pumpAt(tester,
+          screen: () => const AccountTypeScreen(),
+          width: w,
+          height: h,
+          textScale: scale);
+      _expectNoOverflow(tester, 'نوع الحساب $label');
 
       await _pumpAt(tester,
           screen: () => const RegisterScreen(),

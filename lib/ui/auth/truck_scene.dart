@@ -19,9 +19,23 @@ abstract final class TruckSceneMetrics {
 
   static const curveRadiusX = 199.0;
   static const curveRadiusY = 36.0;
+
+  static const hillColor = Color(0xFFE2E255);
+
+  /// الجهة الملونة العليا بحافتها المنحنية من الأسفل.
+  static Path hill(Size size, double scale) {
+    final radiusX = curveRadiusX * size.width / designWidth;
+    final radiusY = curveRadiusY * scale;
+    return Path()
+      ..addRect(Rect.fromLTRB(0, 0, size.width, size.height - radiusY))
+      ..addOval(Rect.fromCenter(
+        center: Offset(size.width / 2, size.height - radiusY),
+        width: radiusX * 2,
+        height: radiusY * 2,
+      ));
+  }
 }
 
-const _background = Color(0xFFE2E255);
 const _ink = Color(0xFF263238);
 const _cabInterior = Color(0xFF2F3E46);
 const _glass = Color(0xFF455A64);
@@ -620,17 +634,10 @@ class TruckScenePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final widthRatio = size.width / TruckSceneMetrics.designWidth;
-    final radiusX = TruckSceneMetrics.curveRadiusX * widthRatio;
-    final radiusY = TruckSceneMetrics.curveRadiusY * scale;
-    final background = Path()
-      ..addRect(Rect.fromLTRB(0, 0, size.width, size.height - radiusY))
-      ..addOval(Rect.fromCenter(
-        center: Offset(size.width / 2, size.height - radiusY),
-        width: radiusX * 2,
-        height: radiusY * 2,
-      ));
-    canvas.drawPath(background, Paint()..color = _background);
+    canvas.drawPath(
+      TruckSceneMetrics.hill(size, scale),
+      Paint()..color = TruckSceneMetrics.hillColor,
+    );
 
     final unit = TruckSceneMetrics.artScale * scale;
     final centerY = size.height * TruckSceneMetrics.artCenterFraction;

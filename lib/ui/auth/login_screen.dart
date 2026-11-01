@@ -4,9 +4,10 @@ import 'package:provider/provider.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../state/app_state.dart';
+import 'account_type_screen.dart';
+import 'auth_route.dart';
 import 'push_key.dart';
 import 'raised_field.dart';
-import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -146,10 +147,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     Text('ليس لديك حساب؟', style: theme.textTheme.bodySmall),
                     TextButton(
-                      onPressed: () => Navigator.pushReplacement(
+                      onPressed: () => openAuthPage(
                         context,
-                        MaterialPageRoute(
-                            builder: (_) => const RegisterScreen()),
+                        const AccountTypeScreen(),
+                        night: theme.brightness == Brightness.dark,
                       ),
                       child: const Text('إنشاء حساب جديد'),
                     ),
