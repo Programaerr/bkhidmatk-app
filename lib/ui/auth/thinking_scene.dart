@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
@@ -22,10 +23,14 @@ const _facePlace = Offset(222, 207);
 const _neck = Offset(218, 262);
 const _wrist = Offset(275, 247);
 
-// أجزاء الوجه المتحركة في رسم رأس السائق.
-const _rightLid = 4, _leftEye = 5, _rightEye = 6, _leftLid = 7, _leftBrow = 10, _rightBrow = 11;
-const _leftEyeCenter = Offset(669.15, 254.25);
-const _rightEyeCenter = Offset(677.95, 255.05);
+// ملامح السائق المبتسمة لا تُرسم هنا: الجفنان والعينان والفم والحاجبان.
+const _driverExpression = {4, 5, 6, 7, 9, 10, 11};
+
+// ملامح التفكير من الرسم الأصلي، بمكانها على وجه السائق.
+const _leftEyeCenter = Offset(222.4, 198);
+const _rightEyeCenter = Offset(243.5, 199.9);
+const _mouthCenter = Offset(231, 218.8);
+const _featureInk = Color(0xFF263238);
 
 // مركز كل ترس وسرعته باللفات في الثانية، والمتجاوران يدوران بعكس بعضهما.
 const _gears = <(Offset, double)>[
@@ -42,17 +47,25 @@ const _cloudCenter = Offset(321, 146);
 const _smallBubbleCenter = Offset(266.86, 192.66);
 const _mediumBubbleCenter = Offset(283.96, 187);
 const _questionCenter = Offset(321, 146);
+const _answerCenter = Offset(321, 149);
 
 const _glassOff = Color(0xFFF5F5F5);
 const _glassOn = Color(0xFFFFFDE7);
 const _filamentOff = Color(0xFFE0E0E0);
 const _filamentOn = Color(0xFFFFA000);
 
+// بعد الضغط على الرسم: يتغير ما في الغيمة، ويبقى الكلام مدة ثم ترجع علامة الاستفهام.
+const _answerTurn = Duration(milliseconds: 450);
+const _answerHold = Duration(milliseconds: 2800);
+
 /// وضع الشخصية في لحظة معينة: تفكر طوال الدورة، ثم تأتيها الفكرة فيضيء المصباح.
 class ThinkingPose {
-  const ThinkingPose(this.time);
+  const ThinkingPose(this.time, {this.answer = 0});
 
   final double time;
+
+  /// تقدّم الجواب بعد الضغط على الرسم: 0 علامة الاستفهام في الغيمة، و1 «ها فكرت».
+  final double answer;
 
   static const cycle = 9.0;
   static const _ideaStart = 6.4;
@@ -71,8 +84,8 @@ class ThinkingPose {
     return 1 - Curves.easeIn.transform((t - rise - hold) / fall);
   }
 
-  /// لحظة الفكرة.
-  double get idea => _pulse(_ideaStart, .3, 1, .7);
+  /// لحظة الفكرة: تأتيه وحدها أثناء الدورة، وعند الضغط على الرسم.
+  double get idea => math.max(_pulse(_ideaStart, .3, 1, .7), Curves.easeOut.transform(answer));
 
   /// ضوء المصباح: يرتجف مرتين قبل الفكرة ثم يضيء معها.
   double get light => [
@@ -90,11 +103,18 @@ class ThinkingPose {
   /// صعود الجسم مع التنفس.
   double get bodyLift => -1.2 * (.5 + .5 * _wave(3)) - 1.5 * idea;
 
-  /// حركة العينين: تنظران إلى الأعلى وتتنقلان وهو يفكر.
-  Offset get eyes => Offset(.25 * _wave(4.5, 1), -.2 + .12 * _wave(3) - .15 * idea);
+  /// حركة العينين: تنظران إلى الغيمة وتتنقلان وهو يفكر.
+  Offset get eyes => Offset(.7 + .5 * _wave(4.5, 1), -.5 + .3 * _wave(3) - .4 * idea);
 
-  double get leftBrowLift => .1 + .15 * _wave(4.5) + .7 * idea;
-  double get rightBrowLift => .35 + .3 * _wave(4.5) + .7 * idea;
+  double get leftBrowLift => .3 * _wave(4.5) + 1.6 * idea;
+  double get rightBrowLift => .3 + .6 * _wave(4.5) + 1.6 * idea;
+
+  /// الفم المزموم يتحرك قليلاً إلى الجانبين وهو يفكر.
+  double get mouthShift => .6 * (1 - idea) * _wave(6);
+  double get mouthTilt => .07 * (1 - idea) * _wave(6, 1);
+
+  /// الفم ينفتح عند الفكرة كأنه يقول «ها».
+  double get mouthOpen => idea;
 
   /// الأصابع تنقر على الذقن فترة من الدورة.
   double get handTap {
@@ -112,6 +132,11 @@ class ThinkingPose {
   double get cloudBob => 2.5 * _wave(4.5);
   double get cloudSize => 1 + .05 * idea;
   double get questionTilt => .05 * _wave(3);
+
+  /// علامة الاستفهام تصغر وتختفي أولاً، ثم يكبر الكلام مكانها.
+  double get questionSize => 1 - Curves.easeIn.transform((answer / .45).clamp(0.0, 1.0));
+  double get answerSize => Curves.easeOutBack.transform(((answer - .45) / .55).clamp(0.0, 1.0));
+
   double get smallBubbleSize => 1 + .16 * _wave(3);
   double get mediumBubbleSize => 1 + .16 * _wave(3, -.9);
 }
@@ -126,38 +151,58 @@ class ThinkingArt {
         smallBubble = _record(thinkingSmallBubble),
         mediumBubble = _record(thinkingMediumBubble),
         question = _record(thinkingQuestion),
+        answer = _recordAnswer(),
         arm = _record(thinkingArm),
         hand = _record(thinkingHand),
         body = _record(thinkingBody),
         table = _record(thinkingTable),
         head = _record([
           for (final (index, shape) in artDriverHead.indexed)
-            if (!const {_rightLid, _leftEye, _rightEye, _leftLid, _leftBrow, _rightBrow}
-                .contains(index))
-              shape,
+            if (!_driverExpression.contains(index)) shape,
         ]),
-        leftEye = _record([artDriverHead[_leftEye]]),
-        rightEye = _record([artDriverHead[_rightEye]]),
-        lids = _record([artDriverHead[_rightLid], artDriverHead[_leftLid]]),
-        leftBrow = _record([artDriverHead[_leftBrow]]),
-        rightBrow = _record([artDriverHead[_rightBrow]]),
+        leftEye = _record(thinkingLeftEye),
+        rightEye = _record(thinkingRightEye),
+        leftBrow = _record(thinkingLeftBrow),
+        rightBrow = _record(thinkingRightBrow),
+        mouth = _record(thinkingMouth),
         bulbGlass = parseSvgPath(thinkingBulbGlass),
         bulbFilament = parseSvgPath(thinkingBulbFilament);
 
   final RasterLayer backdrop;
   final List<ui.Picture> gears;
-  final ui.Picture bulbBase, cloud, smallBubble, mediumBubble, question, arm, hand, body, table;
-  final ui.Picture head, leftEye, rightEye, lids, leftBrow, rightBrow;
+  final ui.Picture bulbBase, cloud, smallBubble, mediumBubble, question, answer, arm, hand, body, table;
+  final ui.Picture head, leftEye, rightEye, leftBrow, rightBrow, mouth;
   final Path bulbGlass, bulbFilament;
 
   void dispose() {
     backdrop.dispose();
     for (final picture in [
-      ...gears, bulbBase, cloud, smallBubble, mediumBubble, question, arm, hand, body, table,
-      head, leftEye, rightEye, lids, leftBrow, rightBrow,
+      ...gears, bulbBase, cloud, smallBubble, mediumBubble, question, answer, arm, hand, body, table,
+      head, leftEye, rightEye, leftBrow, rightBrow, mouth,
     ]) {
       picture.dispose();
     }
+  }
+
+  /// كلام الشخصية في وسط الغيمة، بخط كلام السائق في الشاشة الأولى.
+  static ui.Picture _recordAnswer() {
+    final recorder = ui.PictureRecorder();
+    final text = TextPainter(
+      text: const TextSpan(
+        text: 'ها فكرت',
+        style: TextStyle(
+          fontFamily: 'Cairo',
+          fontSize: 19,
+          fontWeight: FontWeight.w700,
+          color: _featureInk,
+          height: 1,
+        ),
+      ),
+      textDirection: TextDirection.rtl,
+    )..layout();
+    text.paint(Canvas(recorder), _answerCenter - Offset(text.width / 2, text.height / 2));
+    text.dispose();
+    return recorder.endRecording();
   }
 
   static ui.Picture _record(List<ArtShape> shapes) {
@@ -173,6 +218,7 @@ class ThinkingArt {
 }
 
 /// سائق السيارة يفكر: رأسه يميل، ويداه ترتاحان، والتروس تدور، ثم يضيء المصباح عند الفكرة.
+/// والضغط على الرسم يغيّر ما في الغيمة إلى «ها فكرت».
 class ThinkingScene extends StatefulWidget {
   const ThinkingScene({super.key, required this.scale});
 
@@ -182,11 +228,21 @@ class ThinkingScene extends StatefulWidget {
   State<ThinkingScene> createState() => _ThinkingSceneState();
 }
 
-class _ThinkingSceneState extends State<ThinkingScene> with SingleTickerProviderStateMixin {
+class _ThinkingSceneState extends State<ThinkingScene> with TickerProviderStateMixin {
   final _art = ThinkingArt();
   final _time = ValueNotifier<double>(0);
   late final Ticker _ticker = createTicker(_onTick);
+  late final _answer = AnimationController(vsync: this);
+  Timer? _answerTimer;
   Duration _lastTick = Duration.zero;
+
+  Duration get _turn => MediaQuery.disableAnimationsOf(context) ? Duration.zero : _answerTurn;
+
+  void _showAnswer() {
+    _answerTimer?.cancel();
+    _answerTimer = Timer(_answerHold, () => _answer.animateTo(0, duration: _turn));
+    _answer.animateTo(1, duration: _turn);
+  }
 
   void _onTick(Duration elapsed) {
     // لا تقفز الحركة إذا توقفت الإطارات ثم عادت.
@@ -208,6 +264,8 @@ class _ThinkingSceneState extends State<ThinkingScene> with SingleTickerProvider
 
   @override
   void dispose() {
+    _answerTimer?.cancel();
+    _answer.dispose();
     _ticker.dispose();
     _time.dispose();
     _art.dispose();
@@ -217,15 +275,20 @@ class _ThinkingSceneState extends State<ThinkingScene> with SingleTickerProvider
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      image: true,
-      label: 'سائق جايك يفكر ويده على ذقنه',
-      child: RepaintBoundary(
-        child: CustomPaint(
-          painter: ThinkingScenePainter(
-            art: _art,
-            time: _time,
-            scale: widget.scale,
-            pixelRatio: MediaQuery.devicePixelRatioOf(context),
+      button: true,
+      label: 'سائق جايك يفكر ويده على ذقنه، اضغط عليه لتأتيه الفكرة',
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: _showAnswer,
+        child: RepaintBoundary(
+          child: CustomPaint(
+            painter: ThinkingScenePainter(
+              art: _art,
+              time: _time,
+              answer: _answer,
+              scale: widget.scale,
+              pixelRatio: MediaQuery.devicePixelRatioOf(context),
+            ),
           ),
         ),
       ),
@@ -237,12 +300,14 @@ class ThinkingScenePainter extends CustomPainter {
   ThinkingScenePainter({
     required this.art,
     required this.time,
+    required this.answer,
     required this.scale,
     required this.pixelRatio,
-  }) : super(repaint: time);
+  }) : super(repaint: Listenable.merge([time, answer]));
 
   final ThinkingArt art;
   final ValueListenable<double> time;
+  final ValueListenable<double> answer;
   final double scale;
   final double pixelRatio;
 
@@ -253,7 +318,7 @@ class ThinkingScenePainter extends CustomPainter {
       Paint()..color = TruckSceneMetrics.hillColor,
     );
 
-    final pose = ThinkingPose(time.value);
+    final pose = ThinkingPose(time.value, answer: answer.value);
     final unit = _artScale * scale;
     canvas
       ..save()
@@ -347,10 +412,19 @@ class ThinkingScenePainter extends CustomPainter {
       ..translate(0, pose.cloudBob);
     _sizeAround(canvas, _cloudCenter, pose.cloudSize, pose.cloudSize);
     canvas.drawPicture(art.cloud);
-    _turnAround(canvas, _questionCenter, pose.questionTilt);
-    canvas
-      ..drawPicture(art.question)
-      ..restore();
+    if (pose.questionSize > 0) {
+      canvas.save();
+      _turnAround(canvas, _questionCenter, pose.questionTilt);
+      _sizeAround(canvas, _questionCenter, pose.questionSize, pose.questionSize);
+      canvas
+        ..drawPicture(art.question)
+        ..restore();
+    }
+    if (pose.answerSize > 0) {
+      _sizeAround(canvas, _answerCenter, pose.answerSize, pose.answerSize);
+      canvas.drawPicture(art.answer);
+    }
+    canvas.restore();
   }
 
   void _paintCharacter(Canvas canvas, ThinkingPose pose) {
@@ -367,10 +441,12 @@ class ThinkingScenePainter extends CustomPainter {
       ..save();
     _turnAround(canvas, _neck, pose.headTilt);
     canvas
+      ..save()
       ..translate(_facePlace.dx, _facePlace.dy)
       ..scale(_headScale)
       ..translate(-_driverFace.dx, -_driverFace.dy)
-      ..drawPicture(art.head);
+      ..drawPicture(art.head)
+      ..restore();
     _paintFace(canvas, pose);
     canvas
       ..restore()
@@ -394,10 +470,6 @@ class ThinkingScenePainter extends CustomPainter {
     }
     canvas
       ..save()
-      ..translate(0, pose.blink * .9)
-      ..drawPicture(art.lids)
-      ..restore()
-      ..save()
       ..translate(0, -pose.leftBrowLift)
       ..drawPicture(art.leftBrow)
       ..restore()
@@ -405,12 +477,30 @@ class ThinkingScenePainter extends CustomPainter {
       ..translate(0, -pose.rightBrowLift)
       ..drawPicture(art.rightBrow)
       ..restore();
+    final mouthOpen = pose.mouthOpen;
+    if (mouthOpen < 1) {
+      canvas
+        ..save()
+        ..translate(pose.mouthShift, 0);
+      _turnAround(canvas, _mouthCenter, pose.mouthTilt);
+      _sizeAround(canvas, _mouthCenter, 1 - mouthOpen, 1);
+      canvas
+        ..drawPicture(art.mouth)
+        ..restore();
+    }
+    if (mouthOpen > 0) {
+      canvas.drawOval(
+        Rect.fromCenter(center: _mouthCenter, width: 4.6 * mouthOpen, height: 5.6 * mouthOpen),
+        Paint()..color = _featureInk,
+      );
+    }
   }
 
   @override
   bool shouldRepaint(ThinkingScenePainter oldDelegate) =>
       oldDelegate.art != art ||
       oldDelegate.time != time ||
+      oldDelegate.answer != answer ||
       oldDelegate.scale != scale ||
       oldDelegate.pixelRatio != pixelRatio;
 }

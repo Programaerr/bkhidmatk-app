@@ -5,12 +5,15 @@ import 'package:flutter/services.dart';
 
 import 'auth_route.dart';
 import 'craftsman_screen.dart';
+import 'privacy_screen.dart';
 import 'push_key.dart';
 import 'register_screen.dart';
 import 'thinking_scene.dart';
 
 const _cream = Color(0xFFFFFEE2);
 const _nightGround = Colors.black;
+const _privacyInk = Color(0xFF383838);
+const _nightPrivacyInk = Color(0xFFF4F4EE);
 
 /// مقاسات التصميم المعتمد بالبكسل (إطار 391×715).
 abstract final class _Design {
@@ -27,6 +30,13 @@ abstract final class _Design {
 
   static const keyWidth = 121.4;
   static const keyGap = 24.8;
+
+  // «سياسة و الخصوصية» تحت الزرين: مقاس خطها وبُعد وسطها عن حد الزرين.
+  static const privacySize = 10.45;
+  static const privacyLineHeight = 1.2;
+  static const privacyGap = 18.1;
+  static const privacyFaceHeight = 34.0;
+  static const privacyTouchHeight = 48.0;
 }
 
 /// من ينشئ حساباً جديداً يختار هنا: زبون أو حرفي.
@@ -43,12 +53,17 @@ class AccountTypeScreen extends StatelessWidget {
     final ground = night ? _nightGround : _cream;
     final hillBottom = size.height * _Design.hillBottom / _Design.height;
 
-    // الفراغ فوق الزرين مثل الفراغ تحتهما. شريط التنقل بلون الصفحة، فيمتد الفراغ السفلي إلى أيقوناته.
+    // الفراغ فوق الزرين مثل الفراغ تحت «سياسة و الخصوصية». شريط التنقل بلون الصفحة، فيمتد الفراغ
+    // السفلي إلى أيقوناته.
     const navIconsGap = 14.0;
     final keysHeight = PushKeyButton.outerHeight * unit;
-    final freeSpace = size.height - safeArea.bottom - hillBottom - keysHeight;
+    final privacyCenter = keysHeight + _Design.privacyGap * unit;
+    final privacyHeight = _Design.privacySize * _Design.privacyLineHeight * unit;
+    final freeSpace =
+        size.height - safeArea.bottom - hillBottom - privacyCenter - privacyHeight / 2;
     final keysTop = hillBottom + math.max(freeSpace + navIconsGap, 0.0) / 2;
     final keysWidth = (_Design.keyWidth * 2 + _Design.keyGap) * unit;
+    final privacyColor = night ? _nightPrivacyInk : _privacyInk;
 
     // زر الرجوع يبقى في زاوية الشاشة وتحت شريط الحالة في كل الهواتف.
     final barCenter = math.max(
@@ -57,7 +72,10 @@ class AccountTypeScreen extends StatelessWidget {
     );
 
     // الشاشات القصيرة تعرض الباقي بالسحب، والأطول لا تتحرك.
-    final pageHeight = math.max(size.height, keysTop + keysHeight + 12 + safeArea.bottom);
+    final pageHeight = math.max(
+      size.height,
+      keysTop + privacyCenter + _Design.privacyTouchHeight / 2 + safeArea.bottom,
+    );
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
@@ -87,6 +105,32 @@ class AccountTypeScreen extends StatelessWidget {
                   top: barCenter - _Design.backTouchHeight / 2,
                   height: _Design.backTouchHeight,
                   child: const PushKeyBack(),
+                ),
+                // قبل الزرين، فإذا تداخلت مساحتا اللمس يأخذ الزر الضغطة.
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: keysTop + privacyCenter - _Design.privacyTouchHeight / 2,
+                  height: _Design.privacyTouchHeight,
+                  child: Center(
+                    child: TextButton(
+                      style: TextButton.styleFrom(
+                        foregroundColor: privacyColor,
+                        minimumSize: const Size(0, _Design.privacyFaceHeight),
+                      ),
+                      onPressed: () => openAuthPage(context, const PrivacyScreen(), night: night),
+                      child: Text(
+                        'سياسة و الخصوصية',
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontSize: _Design.privacySize * unit,
+                          height: _Design.privacyLineHeight,
+                          fontWeight: FontWeight.w700,
+                          color: privacyColor,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
                 Positioned(
                   left: (size.width - keysWidth) / 2,
