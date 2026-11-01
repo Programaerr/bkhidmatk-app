@@ -574,6 +574,7 @@ class WorkCommentsSheet extends StatefulWidget {
 class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
   final _comment = TextEditingController();
   late Future<List<WorkComment>> _comments;
+  List<WorkComment> _cachedComments = [];
   final List<WorkComment> _postedComments = [];
   WorkComment? _replyTo;
   bool _sending = false;
@@ -584,13 +585,15 @@ class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
     _comments = _loadComments();
   }
 
-  Future<List<WorkComment>> _loadComments() {
+  Future<List<WorkComment>> _loadComments() async {
     final state = context.read<AppState>();
-    return state.repo.workComments(
+    final comments = await state.repo.workComments(
       widget.work.id!,
       viewerId: state.user?.id,
       isAdmin: state.isAdmin,
     );
+    if (mounted) _cachedComments = comments;
+    return comments;
   }
 
   void _reloadComments() {
@@ -803,7 +806,7 @@ class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
               future: _comments,
               builder: (context, snapshot) {
                 final comments = _mergePostedComments(
-                  snapshot.data ?? const <WorkComment>[],
+                  snapshot.data ?? _cachedComments,
                 );
                 if (snapshot.hasError) {
                   if (comments.isEmpty) {
