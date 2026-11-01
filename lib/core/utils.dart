@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:flutter/services.dart';
+
 const _months = [
   'يناير',
   'فبراير',
@@ -179,6 +181,50 @@ String westernDigits(String value) {
 String phoneFromInput(String value) {
   final phone = normalizePhone(westernDigits(value));
   return phone.startsWith('7') ? '0$phone' : phone;
+}
+
+/// خانة أرقام: تحوّل الأرقام العربية وترفض الأحرف وكل ما سواها.
+abstract class _NumberFormatter extends TextInputFormatter {
+  const _NumberFormatter();
+
+  String _limited(String digits);
+
+  @override
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    final digits =
+        _limited(westernDigits(newValue.text).replaceAll(RegExp(r'[^0-9]'), ''));
+    if (digits == newValue.text) return newValue;
+    // ما رُفض كله لا يغيّر الخانة ولا يحرّك المؤشر.
+    if (digits == oldValue.text) return oldValue;
+    return TextEditingValue(
+      text: digits,
+      selection: TextSelection.collapsed(offset: digits.length),
+    );
+  }
+}
+
+/// عدد بحد أقصى من الأرقام، مثل العمر وسنوات الخبرة.
+class MaxDigitsFormatter extends _NumberFormatter {
+  const MaxDigitsFormatter(this.maxDigits);
+
+  final int maxDigits;
+
+  @override
+  String _limited(String digits) =>
+      digits.length > maxDigits ? digits.substring(0, maxDigits) : digits;
+}
+
+/// رقم موبايل عراقي: تُحذف منه +964 عند اللصق، وطوله 11 رقماً بالصفر و10 بدونه.
+class IraqiPhoneFormatter extends _NumberFormatter {
+  const IraqiPhoneFormatter();
+
+  @override
+  String _limited(String digits) {
+    final local = digits.startsWith('964') ? digits.substring(3) : digits;
+    final limit = local.startsWith('0') ? 11 : 10;
+    return local.length > limit ? local.substring(0, limit) : local;
+  }
 }
 
 String phoneForCall(String phone) => normalizePhone(phone);

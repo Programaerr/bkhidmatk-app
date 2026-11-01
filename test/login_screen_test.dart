@@ -88,6 +88,15 @@ void main() {
     expect(key.yellow, isTrue);
   });
 
+  testWidgets('خانة الهاتف تقبل الأرقام فقط، وكلمة المرور تقبل كل شيء', (tester) async {
+    await _pump(tester, _Repo());
+    await tester.enterText(_phone, 'abc0770xyz123456789');
+    expect(tester.widget<TextField>(_phone).controller!.text, '07701234567');
+    await tester.enterText(_password, 'abc123');
+    expect(tester.widget<TextField>(_password).controller!.text, 'abc123');
+    await tester.pumpAndSettle();
+  });
+
   testWidgets('زر العين يظهر كلمة المرور ويخفيها', (tester) async {
     await _pump(tester, _Repo());
     expect(tester.widget<TextField>(_password).obscureText, isTrue);

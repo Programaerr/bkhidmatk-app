@@ -188,40 +188,6 @@ const _english = _Words(
   direction: TextDirection.ltr,
 );
 
-/// أرقام الموبايل فقط: يحوّل الأرقام العربية ويحذف +964 عند اللصق.
-class _IraqiPhoneFormatter extends TextInputFormatter {
-  const _IraqiPhoneFormatter();
-
-  static const _eastern = '٠١٢٣٤٥٦٧٨٩';
-  static const _persian = '۰۱۲۳۴۵۶۷۸۹';
-
-  @override
-  TextEditingValue formatEditUpdate(
-      TextEditingValue oldValue, TextEditingValue newValue) {
-    final buffer = StringBuffer();
-    for (final char in newValue.text.characters) {
-      final eastern = _eastern.indexOf(char);
-      final persian = _persian.indexOf(char);
-      if (eastern >= 0) {
-        buffer.write(eastern);
-      } else if (persian >= 0) {
-        buffer.write(persian);
-      } else if (RegExp(r'\d').hasMatch(char)) {
-        buffer.write(char);
-      }
-    }
-    var digits = buffer.toString();
-    if (digits.startsWith('964')) digits = digits.substring(3);
-    final limit = digits.startsWith('0') ? 11 : 10;
-    if (digits.length > limit) digits = digits.substring(0, limit);
-    if (digits == newValue.text) return newValue;
-    return TextEditingValue(
-      text: digits,
-      selection: TextSelection.collapsed(offset: digits.length),
-    );
-  }
-}
-
 /// انتقال الصفحة المعتاد نفسه، لكنه أسرع منه بأكثر من الضعف.
 class _QuickRoute extends MaterialPageRoute<void> {
   _QuickRoute({required super.builder});
@@ -659,7 +625,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                                         cursorColor: Color.lerp(
                                             _blue, Colors.white, alarm),
                                         inputFormatters: const [
-                                          _IraqiPhoneFormatter()
+                                          IraqiPhoneFormatter()
                                         ],
                                         style: _textStyle(
                                           unit,

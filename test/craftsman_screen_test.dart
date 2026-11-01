@@ -328,6 +328,27 @@ void main() {
     expect(_starShown(tester, 'المحافظة'), isFalse);
   });
 
+  testWidgets('الهاتف والعمر والخبرة تقبل الأرقام فقط', (tester) async {
+    await _pump(tester, _Repo(), const CraftsmanScreen());
+    String typed(String label) => tester.widget<TextField>(_field(label)).controller!.text;
+
+    await tester.enterText(_field('الهاتف'), '0780abc990xyz09901234');
+    expect(typed('الهاتف'), '07809900990');
+    await tester.enterText(_field('العمر'), '2a8b');
+    expect(typed('العمر'), '28');
+    await tester.enterText(_field('العمر'), '٢٨٩');
+    expect(typed('العمر'), '28');
+    await tester.enterText(_field('الخبرة'), 'خمس');
+    expect(typed('الخبرة'), isEmpty);
+    await tester.enterText(_field('الخبرة'), '5x');
+    expect(typed('الخبرة'), '5');
+
+    // باقي الخانات تبقى تقبل الكلام.
+    await tester.enterText(_field('الاسم'), 'كرار 2');
+    expect(typed('الاسم'), 'كرار 2');
+    await tester.pumpAndSettle();
+  });
+
   testWidgets('خانة المحافظة تبدأ فارغة وتأخذ المختار', (tester) async {
     await _pump(tester, _Repo(), const CraftsmanScreen());
     expect(find.text('بغداد'), findsNothing);

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../core/theme.dart';
 import '../widgets/ui.dart';
@@ -121,6 +122,7 @@ class RaisedField extends StatefulWidget {
     this.onTyped,
     this.onSubmitted,
     this.autofocus = false,
+    this.inputFormatters,
   });
 
   final TextEditingController controller;
@@ -144,6 +146,7 @@ class RaisedField extends StatefulWidget {
   final VoidCallback? onTyped;
   final ValueChanged<String>? onSubmitted;
   final bool autofocus;
+  final List<TextInputFormatter>? inputFormatters;
 
   @override
   State<RaisedField> createState() => _RaisedFieldState();
@@ -266,6 +269,7 @@ class _RaisedFieldState extends State<RaisedField> with SingleTickerProviderStat
                 autofocus: widget.autofocus,
                 onSubmitted: widget.onSubmitted,
                 keyboardType: widget.keyboardType,
+                inputFormatters: widget.inputFormatters,
                 textDirection: widget.textDirection,
                 textAlign: widget.textAlign,
                 minLines: widget.minLines,

@@ -417,7 +417,7 @@ void main() {
 
     for (final MapEntry(key: label, value: field) in labels.entries) {
       expect(_starShown(tester, label), isTrue, reason: label);
-      await tester.enterText(_field(field), 'ك');
+      await tester.enterText(_field(field), '5');
       await tester.pump();
       expect(_starShown(tester, label), isFalse, reason: label);
     }
@@ -441,6 +441,17 @@ void main() {
     await _pump(tester, _Repo(), phone: '07711112222');
     expect(_starShown(tester, 'رقم الهاتف'), isFalse);
     expect(_starShown(tester, 'الاسم الكامل'), isTrue);
+  });
+
+  testWidgets('خانة الهاتف تقبل الأرقام فقط، ولا تتجاوز طول الرقم', (tester) async {
+    await _pump(tester, _Repo());
+    String typed() => tester.widget<TextField>(_field('الهاتف')).controller!.text;
+
+    await tester.enterText(_field('الهاتف'), 'abcأحمد');
+    expect(typed(), isEmpty);
+    await tester.enterText(_field('الهاتف'), '0780abc990xyz09901234');
+    expect(typed(), '07809900990');
+    await tester.pumpAndSettle();
   });
 
   testWidgets('زر العين يظهر كلمة المرور ويخفيها، وخانة التأكيد تبقى مخفية', (tester) async {
