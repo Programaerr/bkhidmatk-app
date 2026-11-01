@@ -657,6 +657,52 @@ class LocalRepository implements Repository {
     await db.delete('hires', where: 'id = ?', whereArgs: [id]);
   }
 
+  // ------------------------------------------------------ طلبات الحرفيين
+  @override
+  Future<int> createApplication(CraftsmanApplication application) async {
+    final db = await _db;
+    return db.insert('craftsman_applications', application.toMap());
+  }
+
+  @override
+  Future<List<CraftsmanApplication>> listApplications() async {
+    final db = await _db;
+    final rows = await db.query('craftsman_applications', orderBy: 'created_at DESC');
+    return rows.map(CraftsmanApplication.fromMap).toList();
+  }
+
+  @override
+  Future<bool> hasPendingApplication(String phone) async {
+    final db = await _db;
+    final r = await db.rawQuery(
+      'SELECT COUNT(*) c FROM craftsman_applications WHERE phone = ? AND status = ?',
+      [phone, CraftsmanApplication.pending],
+    );
+    return ((r.first['c'] as int?) ?? 0) > 0;
+  }
+
+  @override
+  Future<void> acceptApplication(CraftsmanApplication application) async {
+    await createHire(
+      Hire(phone: application.phone, note: application.trade, createdAt: DateTime.now()),
+    );
+    await _setApplicationStatus(application.id!, CraftsmanApplication.accepted);
+  }
+
+  @override
+  Future<void> rejectApplication(int id) =>
+      _setApplicationStatus(id, CraftsmanApplication.rejected);
+
+  Future<void> _setApplicationStatus(int id, String status) async {
+    final db = await _db;
+    await db.update(
+      'craftsman_applications',
+      {'status': status},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
   // ------------------------------------------------------------- messages
   @override
   Future<List<ChatMessage>> threadMessages(int customerId) async {

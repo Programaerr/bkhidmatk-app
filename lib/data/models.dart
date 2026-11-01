@@ -663,6 +663,75 @@ class Hire {
       );
 }
 
+/// طلب حرفي للعمل مع الشركة: معلوماته الشخصية وخبرته كما أدخلها بنفسه.
+class CraftsmanApplication {
+  static const pending = 'pending';
+  static const accepted = 'accepted';
+  static const rejected = 'rejected';
+
+  final int? id;
+  final String name;
+  final String phone;
+  final int age;
+  final String city;
+  final String? address;
+  final String trade;
+  final int experienceYears;
+  final String? about;
+  final String status;
+  final DateTime createdAt;
+
+  const CraftsmanApplication({
+    this.id,
+    required this.name,
+    required this.phone,
+    required this.age,
+    required this.city,
+    this.address,
+    required this.trade,
+    required this.experienceYears,
+    this.about,
+    this.status = pending,
+    required this.createdAt,
+  });
+
+  bool get isPending => status == pending;
+
+  String get statusLabel => switch (status) {
+        accepted => 'مقبول',
+        rejected => 'مرفوض',
+        _ => 'قيد المراجعة',
+      };
+
+  Map<String, Object?> toMap() => {
+        if (id != null) 'id': id,
+        'name': name,
+        'phone': phone,
+        'age': age,
+        'city': city,
+        'address': address,
+        'trade': trade,
+        'experience_years': experienceYears,
+        'about': about,
+        'status': status,
+        'created_at': createdAt.toIso8601String(),
+      };
+
+  factory CraftsmanApplication.fromMap(Map<String, Object?> m) => CraftsmanApplication(
+        id: m['id'] as int?,
+        name: m['name'] as String? ?? '',
+        phone: m['phone'] as String? ?? '',
+        age: m['age'] as int? ?? 0,
+        city: m['city'] as String? ?? '',
+        address: m['address'] as String?,
+        trade: m['trade'] as String? ?? '',
+        experienceYears: m['experience_years'] as int? ?? 0,
+        about: m['about'] as String?,
+        status: m['status'] as String? ?? pending,
+        createdAt: _date(m['created_at']) ?? DateTime.now(),
+      );
+}
+
 class ChatMessage {
   final int? id;
   final int threadId; // customer id

@@ -344,8 +344,18 @@ class TruckArt {
     frontWheel = _record(artVanFrontWheel);
     torso = _record(artDriverTorso);
     head = _record(artDriverHead);
-    greetingCloud = _recordWith((canvas) => _paintCloud(canvas, 'جايك بطريق', _greetingLobes, 60));
-    hurryCloud = _recordWith((canvas) => _paintCloud(canvas, 'يلا جايك بطريق', _hurryLobes, 80));
+    greetingCloud = _recordWith(
+      (canvas) => _paintCloud(canvas, 'جايك بطريق', TextDirection.rtl, _greetingLobes, 60),
+    );
+    hurryCloud = _recordWith(
+      (canvas) => _paintCloud(canvas, 'يلا جايك بطريق', TextDirection.rtl, _hurryLobes, 80),
+    );
+    greetingCloudEnglish = _recordWith(
+      (canvas) => _paintCloud(canvas, 'On my way', TextDirection.ltr, _greetingLobes, 60),
+    );
+    hurryCloudEnglish = _recordWith(
+      (canvas) => _paintCloud(canvas, 'Coming fast!', TextDirection.ltr, _hurryLobes, 80),
+    );
     puffNear = _recordWith((canvas) => _paintPuff(canvas, 6));
     puffFar = _recordWith((canvas) => _paintPuff(canvas, 9));
     doorWindow = parseSvgPath(_doorWindow);
@@ -353,7 +363,8 @@ class TruckArt {
 
   late final RasterLayer clouds, buildings, plants, vanBack, vanTop;
   late final ui.Picture vanMiddle, rearWheel, frontWheel, torso, head;
-  late final ui.Picture greetingCloud, hurryCloud, puffNear, puffFar;
+  late final ui.Picture greetingCloud, hurryCloud, greetingCloudEnglish, hurryCloudEnglish;
+  late final ui.Picture puffNear, puffFar;
   late final Path doorWindow;
 
   void dispose() {
@@ -361,7 +372,8 @@ class TruckArt {
       layer.dispose();
     }
     for (final picture in [
-      vanMiddle, rearWheel, frontWheel, torso, head, greetingCloud, hurryCloud, puffNear, puffFar,
+      vanMiddle, rearWheel, frontWheel, torso, head, greetingCloud, hurryCloud,
+      greetingCloudEnglish, hurryCloudEnglish, puffNear, puffFar,
     ]) {
       picture.dispose();
     }
@@ -417,6 +429,7 @@ class TruckArt {
   static void _paintCloud(
     Canvas canvas,
     String line,
+    TextDirection direction,
     List<(double, double, double)> lobes,
     double halfWidth,
   ) {
@@ -445,7 +458,7 @@ class TruckArt {
           height: 1,
         ),
       ),
-      textDirection: TextDirection.rtl,
+      textDirection: direction,
     )..layout();
     text.paint(canvas, Offset(-text.width / 2, -text.height / 2));
     text.dispose();
@@ -474,9 +487,12 @@ Rect _vanArea(Size size, double scale) {
 
 /// المشهد المتحرك: السيارة تسير والغيوم والبنايات تمر خلفها، وتسرع عند الضغط عليها.
 class TruckScene extends StatefulWidget {
-  const TruckScene({super.key, required this.scale});
+  const TruckScene({super.key, required this.scale, this.english = false});
 
   final double scale;
+
+  /// لغة كلام السائق.
+  final bool english;
 
   @override
   State<TruckScene> createState() => _TruckSceneState();
@@ -549,7 +565,9 @@ class _TruckSceneState extends State<TruckScene> with SingleTickerProviderStateM
           Positioned.fill(
             child: Semantics(
               image: true,
-              label: 'سيارة جايك تسير وسائقها يفتح الجامة ويقول: جايك بطريق',
+              label: widget.english
+                  ? 'The Jaik van driving while its driver opens the window and says: On my way'
+                  : 'سيارة جايك تسير وسائقها يفتح الجامة ويقول: جايك بطريق',
               child: RepaintBoundary(
                 child: CustomPaint(
                   painter: TruckScenePainter(
@@ -559,6 +577,7 @@ class _TruckSceneState extends State<TruckScene> with SingleTickerProviderStateM
                     scale: widget.scale,
                     pixelRatio: MediaQuery.devicePixelRatioOf(context),
                     logo: _logo,
+                    english: widget.english,
                   ),
                 ),
               ),
@@ -568,7 +587,7 @@ class _TruckSceneState extends State<TruckScene> with SingleTickerProviderStateM
             rect: _vanArea(constraints.biggest, widget.scale),
             child: Semantics(
               button: true,
-              label: 'السيارة، اضغط عليها لتسرع',
+              label: widget.english ? 'The van, tap it to speed up' : 'السيارة، اضغط عليها لتسرع',
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: _onVanTap,
@@ -589,6 +608,7 @@ class TruckScenePainter extends CustomPainter {
     required this.scale,
     required this.pixelRatio,
     this.logo,
+    this.english = false,
   }) : super(repaint: tick);
 
   final TruckArt art;
@@ -596,6 +616,7 @@ class TruckScenePainter extends CustomPainter {
   final double scale;
   final double pixelRatio;
   final ui.Image? logo;
+  final bool english;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -797,9 +818,9 @@ class TruckScenePainter extends CustomPainter {
     pop(art.puffNear, _puffNear, 0, .35);
     pop(art.puffFar, _puffFar, .15, .5);
     if (director.line == VanLine.hurry) {
-      pop(art.hurryCloud, _hurryCenter, .3, 1);
+      pop(english ? art.hurryCloudEnglish : art.hurryCloud, _hurryCenter, .3, 1);
     } else {
-      pop(art.greetingCloud, _greetingCenter, .3, 1);
+      pop(english ? art.greetingCloudEnglish : art.greetingCloud, _greetingCenter, .3, 1);
     }
   }
 
@@ -809,5 +830,6 @@ class TruckScenePainter extends CustomPainter {
       oldDelegate.pixelRatio != pixelRatio ||
       oldDelegate.director != director ||
       oldDelegate.art != art ||
-      oldDelegate.logo != logo;
+      oldDelegate.logo != logo ||
+      oldDelegate.english != english;
 }
