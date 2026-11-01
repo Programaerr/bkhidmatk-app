@@ -416,6 +416,7 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
                   Flexible(
                     child: Text(
                       '· ${fmtDateShort(_work.createdAt)}',
+                      textDirection: TextDirection.ltr,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style:
