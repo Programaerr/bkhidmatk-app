@@ -1,16 +1,17 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:jaik/data/repository.dart';
+import 'package:jaik/data/models.dart';
 
 void main() {
-  test('نقاط المكافأة: 10 نقاط لكل نجمة تقييم', () {
-    expect(pointsForRating(1), 10);
-    expect(pointsForRating(3), 30);
-    expect(pointsForRating(5), 50);
-  });
+  test('user records no longer include reward-point data', () {
+    final user = AppUser(
+      name: 'Test',
+      phone: '07701234567',
+      passwordHash: 'hash',
+      createdAt: DateTime(2026),
+    );
 
-  test('التقييم خارج النطاق يُحدَّد إلى 1..5', () {
-    expect(pointsForRating(0), 10);
-    expect(pointsForRating(9), 50);
+    expect(user.toMap(), isNot(contains('points')));
+    expect(AppUser.fromMap(user.toMap()).toMap(), isNot(contains('points')));
   });
 }
