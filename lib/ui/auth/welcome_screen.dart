@@ -753,18 +753,18 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
                                 unit: unit,
                                 faceHeight: faceHeight,
                                 night: _night,
+                                yellow: true,
                                 child: Semantics(
                                   button: true,
                                   enabled: !_busy,
                                   child: Center(
                                     child: FittedBox(
                                       fit: BoxFit.scaleDown,
-                                      child: _dayNight(
-                                        (night) => Text(
-                                          words.account,
-                                          style: _textStyle(unit, night ? _nightInk : _ink)
-                                              .copyWith(fontWeight: FontWeight.w800),
-                                        ),
+                                      // الزر أصفر نهاراً وليلاً، فكتابته داكنة دائماً.
+                                      child: Text(
+                                        words.account,
+                                        style: _textStyle(unit, _ink)
+                                            .copyWith(fontWeight: FontWeight.w800),
                                       ),
                                     ),
                                   ),

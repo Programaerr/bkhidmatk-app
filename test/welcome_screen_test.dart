@@ -189,7 +189,6 @@ void main() {
     expect(account.left, craftsman.left);
     expect(account.right, login.right);
     expect(account.height, login.height);
-    expect(tester.widget<PushKey>(find.byType(PushKey).at(4)).yellow, isFalse);
 
     final gapAbove = login.top - number.bottom;
     final gap = account.top - login.bottom;
@@ -221,6 +220,23 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
     final message = tester.getRect(find.text('أدخل رقم موبايل عراقي صحيح يبدأ بـ 07'));
     expect(message.top, greaterThanOrEqualTo(tester.getRect(find.byType(TruckScene)).bottom));
+  });
+
+  testWidgets('زر الحساب وحده أصفر، وكتابته داكنة نهاراً وليلاً', (tester) async {
+    await _pump(tester);
+    expect(
+      tester.widgetList<PushKey>(find.byType(PushKey)).map((key) => key.yellow),
+      [false, false, false, false, true, false, false, false],
+    );
+
+    Color ink() => tester.widget<Text>(find.text('هل لديك حساب')).style!.color!;
+    expect(ink(), const Color(0xFF263238));
+
+    tester.element(find.byType(WelcomeScreen)).read<AppState>().setTheme(true);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(tester.widget<PushKey>(find.byType(PushKey).first).night.value, 1);
+    expect(ink(), const Color(0xFF263238));
   });
 
   testWidgets('زر الحساب يفتح صفحة الدخول بسرعة وبالرقم المكتوب', (tester) async {
