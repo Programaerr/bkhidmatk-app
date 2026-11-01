@@ -241,6 +241,9 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     final controller = _controller;
+    final bottomClearance = MediaQuery.sizeOf(context).width >= 900
+        ? 20.0
+        : MediaQuery.paddingOf(context).bottom + 94;
     return ColoredBox(
       color: Colors.black,
       child: Stack(
@@ -279,13 +282,13 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
           _gradientOverlay(),
           Positioned(
             right: 12,
-            bottom: 20,
+            bottom: bottomClearance,
             child: _actions(),
           ),
           Positioned(
             left: 16,
             right: 82,
-            bottom: 20,
+            bottom: bottomClearance,
             child: _caption(),
           ),
           if (controller != null && controller.value.isInitialized)
@@ -571,6 +574,7 @@ class WorkCommentsSheet extends StatefulWidget {
 class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
   final _comment = TextEditingController();
   late Future<List<WorkComment>> _comments;
+  final List<WorkComment> _postedComments = [];
   WorkComment? _replyTo;
   bool _sending = false;
 
@@ -683,19 +687,32 @@ class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
     if (text.isEmpty || user?.id == null || workId == null || _sending) return;
     setState(() => _sending = true);
     try {
-      await state.repo.addWorkComment(
-        WorkComment(
-          workId: workId,
-          userId: user!.id!,
-          parentCommentId: _replyTo?.id,
-          userName: user.name,
-          body: text,
-          createdAt: DateTime.now(),
-        ),
+      final comment = WorkComment(
+        workId: workId,
+        userId: user!.id!,
+        parentCommentId: _replyTo?.id,
+        userName: user.name,
+        body: text,
+        createdAt: DateTime.now(),
       );
-      _comment.clear();
-      setState(() => _replyTo = null);
-      setState(() => _comments = _loadComments());
+      final commentId = await state.repo.addWorkComment(comment);
+      if (!mounted) return;
+      setState(() {
+        _postedComments.add(
+          WorkComment(
+            id: commentId,
+            workId: comment.workId,
+            userId: comment.userId,
+            parentCommentId: comment.parentCommentId,
+            userName: comment.userName,
+            body: comment.body,
+            createdAt: comment.createdAt,
+          ),
+        );
+        _comment.clear();
+        _replyTo = null;
+        _comments = _loadComments();
+      });
       widget.onCommentAdded();
     } catch (error, stackTrace) {
       debugPrint('Failed to add work comment: $error');
@@ -704,6 +721,48 @@ class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
     } finally {
       if (mounted) setState(() => _sending = false);
     }
+  }
+
+  List<WorkComment> _mergePostedComments(List<WorkComment> comments) {
+    final byId = <int, WorkComment>{
+      for (final comment in comments)
+        if (comment.id != null) comment.id!: comment,
+    };
+    for (final comment in _postedComments) {
+      if (comment.id != null) byId.putIfAbsent(comment.id!, () => comment);
+    }
+    return byId.values.toList()
+      ..sort((first, second) => first.createdAt.compareTo(second.createdAt));
+  }
+
+  Widget _commentList(List<WorkComment> comments, AppState state) {
+    final commentsById = {
+      for (final comment in comments)
+        if (comment.id != null) comment.id!: comment,
+    };
+    final replies = <int, List<WorkComment>>{};
+    for (final comment in comments) {
+      final parentId = comment.parentCommentId;
+      if (parentId != null && commentsById.containsKey(parentId)) {
+        replies.putIfAbsent(parentId, () => []).add(comment);
+      }
+    }
+    final roots = comments
+        .where((comment) =>
+            comment.parentCommentId == null ||
+            !commentsById.containsKey(comment.parentCommentId))
+        .toList();
+    return ListView.separated(
+      padding: const EdgeInsets.all(16),
+      itemCount: roots.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 18),
+      itemBuilder: (context, index) => _commentThread(
+        roots[index],
+        replies,
+        state: state,
+        depth: 0,
+      ),
+    );
   }
 
   @override
@@ -743,47 +802,37 @@ class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
             child: FutureBuilder<List<WorkComment>>(
               future: _comments,
               builder: (context, snapshot) {
+                final comments = _mergePostedComments(
+                  snapshot.data ?? const <WorkComment>[],
+                );
                 if (snapshot.hasError) {
-                  return const Center(child: Text('تعذر تحميل التعليقات'));
+                  if (comments.isEmpty) {
+                    return const Center(child: Text('تعذر تحميل التعليقات'));
+                  }
+                  return Column(
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.all(8),
+                        child: Text('تعذر تحديث بعض التعليقات'),
+                      ),
+                      Expanded(child: _commentList(comments, state)),
+                    ],
+                  );
                 }
                 if (snapshot.connectionState == ConnectionState.waiting) {
+                  if (comments.isNotEmpty) {
+                    return _commentList(comments, state);
+                  }
                   return const Center(
                     child: CircularProgressIndicator(strokeWidth: 2),
                   );
                 }
-                final comments = snapshot.data ?? const <WorkComment>[];
                 if (comments.isEmpty) {
                   return const Center(
                     child: Text('لا توجد تعليقات بعد. كن أول من يعلّق!'),
                   );
                 }
-                final commentsById = {
-                  for (final comment in comments)
-                    if (comment.id != null) comment.id!: comment,
-                };
-                final replies = <int, List<WorkComment>>{};
-                for (final comment in comments) {
-                  final parentId = comment.parentCommentId;
-                  if (parentId != null && commentsById.containsKey(parentId)) {
-                    replies.putIfAbsent(parentId, () => []).add(comment);
-                  }
-                }
-                final roots = comments
-                    .where((comment) =>
-                        comment.parentCommentId == null ||
-                        !commentsById.containsKey(comment.parentCommentId))
-                    .toList();
-                return ListView.separated(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: roots.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 18),
-                  itemBuilder: (context, index) => _commentThread(
-                    roots[index],
-                    replies,
-                    state: state,
-                    depth: 0,
-                  ),
-                );
+                return _commentList(comments, state);
               },
             ),
           ),

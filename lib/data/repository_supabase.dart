@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show debugPrint, debugPrintStack;
 import 'package:path/path.dart' as path;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -882,21 +883,27 @@ class SupabaseRepository implements Repository {
     final rows = await _allRows(
       (from, to) => _client
           .from('work_comments')
-          .select('*,app_profiles!work_comments_user_id_fkey(avatar)')
+          .select()
           .eq('work_id', workId)
           .order('created_at')
           .range(from, to),
     );
     final ids = rows.map((row) => (row['id'] as num).toInt()).toList();
-    final reactions = ids.isEmpty
-        ? <Map<String, dynamic>>[]
-        : await _allRows(
-            (from, to) => _client
-                .from('work_comment_reactions')
-                .select('comment_id,user_id,reaction')
-                .inFilter('comment_id', ids)
-                .range(from, to),
-          );
+    var reactions = <Map<String, dynamic>>[];
+    if (ids.isNotEmpty) {
+      try {
+        reactions = await _allRows(
+          (from, to) => _client
+              .from('work_comment_reactions')
+              .select('comment_id,user_id,reaction')
+              .inFilter('comment_id', ids)
+              .range(from, to),
+        );
+      } catch (error, stackTrace) {
+        debugPrint('Failed to load work comment reactions: $error');
+        debugPrintStack(stackTrace: stackTrace);
+      }
+    }
     final currentUserId = viewerId ?? await _currentProfileId();
     final reactionsByComment = <int, List<Map<String, dynamic>>>{};
     for (final reaction in reactions) {
@@ -904,7 +911,6 @@ class SupabaseRepository implements Repository {
       reactionsByComment.putIfAbsent(commentId, () => []).add(reaction);
     }
     return rows.map((row) {
-      final profile = row['app_profiles'] as Map<String, dynamic>?;
       final id = (row['id'] as num).toInt();
       final commentReactions = reactionsByComment[id] ?? const [];
       final mine = commentReactions.where(
@@ -914,7 +920,6 @@ class SupabaseRepository implements Repository {
           mine.isEmpty ? 0 : (mine.first['reaction'] as num).toInt();
       return WorkComment.fromMap({
         ..._read(row),
-        'avatar': profile?['avatar'],
         'likes_count': commentReactions
             .where((reaction) => (reaction['reaction'] as num).toInt() == 1)
             .length,
