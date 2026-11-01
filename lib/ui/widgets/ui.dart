@@ -354,6 +354,7 @@ class AvatarCircle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cacheSize = (size * MediaQuery.devicePixelRatioOf(context)).round();
     final hasImage = fileExists(imagePath);
     final isNetwork = imagePath != null &&
         (imagePath!.startsWith('http://') || imagePath!.startsWith('https://'));
@@ -364,6 +365,8 @@ class AvatarCircle extends StatelessWidget {
         fit: BoxFit.cover,
         width: size,
         height: size,
+        cacheWidth: cacheSize,
+        cacheHeight: cacheSize,
         errorBuilder: (_, __, ___) => _initials(context),
       );
     } else if (hasImage) {
@@ -372,6 +375,8 @@ class AvatarCircle extends StatelessWidget {
         fit: BoxFit.cover,
         width: size,
         height: size,
+        cacheWidth: cacheSize,
+        cacheHeight: cacheSize,
         errorBuilder: (_, __, ___) => _initials(context),
       );
     }

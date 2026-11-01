@@ -33,6 +33,7 @@ class MediaThumb extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final pixelRatio = MediaQuery.devicePixelRatioOf(context);
     Widget content;
 
     if (type == 'image' && path != null && path!.isNotEmpty) {
@@ -48,6 +49,8 @@ class MediaThumb extends StatelessWidget {
           fit: BoxFit.cover,
           width: double.infinity,
           height: height,
+          cacheWidth: (MediaQuery.sizeOf(context).width * pixelRatio).round(),
+          cacheHeight: (height * pixelRatio).round(),
           errorBuilder: (_, __, ___) => _fallback(theme),
           loadingBuilder: (_, child, progress) => progress == null
               ? child
@@ -69,6 +72,8 @@ class MediaThumb extends StatelessWidget {
             fit: BoxFit.cover,
             width: double.infinity,
             height: height,
+            cacheWidth: (MediaQuery.sizeOf(context).width * pixelRatio).round(),
+            cacheHeight: (height * pixelRatio).round(),
             errorBuilder: (_, __, ___) => _fallback(theme));
       }
     } else if (type == 'video' && path != null && path!.isNotEmpty) {
@@ -104,28 +109,38 @@ class MediaThumb extends StatelessWidget {
                 color: AppColors.gold,
                 shape: BoxShape.circle,
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withValues(alpha: .3), blurRadius: 18, offset: const Offset(0, 6)),
+                  BoxShadow(
+                      color: Colors.black.withValues(alpha: .3),
+                      blurRadius: 18,
+                      offset: const Offset(0, 6)),
                 ],
               ),
-              child: const Icon(Icons.play_arrow_rounded, color: AppColors.ink, size: 34),
+              child: const Icon(Icons.play_arrow_rounded,
+                  color: AppColors.ink, size: 34),
             ),
             if (showBadge)
               Positioned(
                 top: 10,
                 right: 10,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                   decoration: BoxDecoration(
                     color: Colors.black.withValues(alpha: .55),
                     borderRadius: BorderRadius.circular(100),
-                    border: Border.all(color: Colors.white.withValues(alpha: .15)),
+                    border:
+                        Border.all(color: Colors.white.withValues(alpha: .15)),
                   ),
                   child: const Row(
                     children: [
-                      Icon(Icons.videocam_rounded, color: Colors.white, size: 12),
+                      Icon(Icons.videocam_rounded,
+                          color: Colors.white, size: 12),
                       SizedBox(width: 4),
                       Text('فيديو',
-                          style: TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.w800)),
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w800)),
                     ],
                   ),
                 ),
@@ -139,7 +154,10 @@ class MediaThumb extends StatelessWidget {
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(radius),
-      child: GestureDetector(onTap: onTap, child: SizedBox(height: height, width: double.infinity, child: content)),
+      child: GestureDetector(
+          onTap: onTap,
+          child:
+              SizedBox(height: height, width: double.infinity, child: content)),
     );
   }
 
@@ -157,7 +175,8 @@ class MediaThumb extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.handyman_rounded, size: 34, color: AppColors.ink.withValues(alpha: .55)),
+          Icon(Icons.handyman_rounded,
+              size: 34, color: AppColors.ink.withValues(alpha: .55)),
           const SizedBox(height: 6),
           Text('جايك',
               style: TextStyle(
@@ -257,7 +276,8 @@ class _InlineVideoPlayerState extends State<InlineVideoPlayer> {
           child: const SizedBox(
             width: 26,
             height: 26,
-            child: CircularProgressIndicator(strokeWidth: 2.4, color: AppColors.gold),
+            child: CircularProgressIndicator(
+                strokeWidth: 2.4, color: AppColors.gold),
           ),
         ),
       );
@@ -272,7 +292,8 @@ class _InlineVideoPlayerState extends State<InlineVideoPlayer> {
           alignment: Alignment.center,
           children: [
             AspectRatio(
-              aspectRatio: c.value.aspectRatio == 0 ? 16 / 9 : c.value.aspectRatio,
+              aspectRatio:
+                  c.value.aspectRatio == 0 ? 16 / 9 : c.value.aspectRatio,
               child: VideoPlayer(c),
             ),
             GestureDetector(
@@ -283,9 +304,12 @@ class _InlineVideoPlayerState extends State<InlineVideoPlayer> {
                 child: Container(
                   width: 56,
                   height: 56,
-                  decoration: const BoxDecoration(color: AppColors.gold, shape: BoxShape.circle),
+                  decoration: const BoxDecoration(
+                      color: AppColors.gold, shape: BoxShape.circle),
                   child: Icon(
-                    c.value.isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                    c.value.isPlaying
+                        ? Icons.pause_rounded
+                        : Icons.play_arrow_rounded,
                     color: AppColors.ink,
                     size: 32,
                   ),
