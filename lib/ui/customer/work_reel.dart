@@ -573,33 +573,50 @@ class WorkCommentsSheet extends StatefulWidget {
 
 class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
   final _comment = TextEditingController();
-  late Future<List<WorkComment>> _comments;
   List<WorkComment> _cachedComments = [];
   final List<WorkComment> _postedComments = [];
   WorkComment? _replyTo;
+  Object? _loadError;
+  bool _loadingComments = true;
   bool _sending = false;
 
   @override
   void initState() {
     super.initState();
-    _comments = _loadComments();
+    unawaited(_refreshComments());
   }
 
-  Future<List<WorkComment>> _loadComments() async {
+  Future<void> _refreshComments() async {
     final state = context.read<AppState>();
-    final comments = await Future<List<WorkComment>>.microtask(
-      () => state.repo.workComments(
+    try {
+      final comments = await state.repo.workComments(
         widget.work.id!,
         viewerId: state.user?.id,
         isAdmin: state.isAdmin,
-      ),
-    );
-    if (mounted) _cachedComments = comments;
-    return comments;
+      );
+      if (!mounted) return;
+      setState(() {
+        _cachedComments = comments;
+        _loadError = null;
+        _loadingComments = false;
+      });
+    } catch (error, stackTrace) {
+      debugPrint('Failed to load work comments: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      if (!mounted) return;
+      setState(() {
+        _loadError = error;
+        _loadingComments = false;
+      });
+    }
   }
 
   void _reloadComments() {
-    setState(() => _comments = _loadComments());
+    setState(() {
+      _loadError = null;
+      _loadingComments = true;
+    });
+    unawaited(_refreshComments());
   }
 
   Future<void> _setReaction(WorkComment comment, int reaction) async {
@@ -716,8 +733,10 @@ class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
         );
         _comment.clear();
         _replyTo = null;
-        _comments = _loadComments();
+        _loadingComments = true;
+        _loadError = null;
       });
+      unawaited(_refreshComments());
       widget.onCommentAdded();
     } catch (error, stackTrace) {
       debugPrint('Failed to add work comment: $error');
@@ -803,44 +822,7 @@ class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
             ),
           ),
           const Divider(height: 1),
-          Expanded(
-            child: FutureBuilder<List<WorkComment>>(
-              future: _comments,
-              builder: (context, snapshot) {
-                final comments = _mergePostedComments(
-                  snapshot.data ?? _cachedComments,
-                );
-                if (snapshot.hasError) {
-                  if (comments.isEmpty) {
-                    return const Center(child: Text('تعذر تحميل التعليقات'));
-                  }
-                  return Column(
-                    children: [
-                      const Padding(
-                        padding: EdgeInsets.all(8),
-                        child: Text('تعذر تحديث بعض التعليقات'),
-                      ),
-                      Expanded(child: _commentList(comments, state)),
-                    ],
-                  );
-                }
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  if (comments.isNotEmpty) {
-                    return _commentList(comments, state);
-                  }
-                  return const Center(
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  );
-                }
-                if (comments.isEmpty) {
-                  return const Center(
-                    child: Text('لا توجد تعليقات بعد. كن أول من يعلّق!'),
-                  );
-                }
-                return _commentList(comments, state);
-              },
-            ),
-          ),
+          Expanded(child: _commentContent(state)),
           Container(
             padding: const EdgeInsets.fromLTRB(14, 8, 14, 8),
             decoration: BoxDecoration(
@@ -913,6 +895,34 @@ class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
         ],
       ),
     );
+  }
+
+  Widget _commentContent(AppState state) {
+    final comments = _mergePostedComments(_cachedComments);
+    if (_loadingComments && comments.isEmpty) {
+      return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+    }
+    if (_loadError != null && comments.isEmpty) {
+      return const Center(child: Text('تعذر تحميل التعليقات'));
+    }
+    if (_loadError != null) {
+      return Column(
+        children: [
+          const Padding(
+            padding: EdgeInsets.all(8),
+            child: Text('تعذر تحديث بعض التعليقات'),
+          ),
+          Expanded(child: _commentList(comments, state)),
+        ],
+      );
+    }
+    if (_loadingComments) return _commentList(comments, state);
+    if (comments.isEmpty) {
+      return const Center(
+        child: Text('لا توجد تعليقات بعد. كن أول من يعلّق!'),
+      );
+    }
+    return _commentList(comments, state);
   }
 
   Widget _commentThread(

@@ -137,6 +137,7 @@ void main() {
     }
 
     expect(find.text('تعليقي الجديد'), findsOneWidget);
+    expect(find.text('تعليق موجود'), findsOneWidget);
     expect(find.text('تعذر تحديث بعض التعليقات'), findsOneWidget);
   });
 }
