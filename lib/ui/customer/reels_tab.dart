@@ -711,8 +711,9 @@ class _ReelPageState extends State<_ReelPage> {
     if (!mounted) return;
     final seconds = offset.inSeconds.abs();
     final sign = offset.isNegative ? '-' : '+';
+    final unit = widget.english ? 's' : 'ث';
     setState(() {
-      _seekFeedback = widget.english ? '$sign${seconds}s' : '$sign${seconds}ث';
+      _seekFeedback = '$sign$seconds$unit';
     });
     _seekFeedbackTimer?.cancel();
     _seekFeedbackTimer = Timer(const Duration(milliseconds: 700), () {
