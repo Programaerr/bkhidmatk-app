@@ -33,7 +33,8 @@ const _nightShortLine = Color(0xFF5F5F66);
 const _nightError = Color(0xFFF87171);
 
 /// ألوان شريطي النظام في بقية شاشات التطبيق.
-SystemUiOverlayStyle _appSystemBars({required bool night}) => SystemUiOverlayStyle(
+SystemUiOverlayStyle _appSystemBars({required bool night}) =>
+    SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: night ? Brightness.light : Brightness.dark,
       systemNavigationBarColor: Colors.black,
@@ -143,7 +144,11 @@ class _Words {
   final TextDirection direction;
 }
 
-const _socialMarks = [SocialMark.facebook, SocialMark.instagram, SocialMark.tiktok];
+const _socialMarks = [
+  SocialMark.facebook,
+  SocialMark.instagram,
+  SocialMark.tiktok
+];
 
 const _arabic = _Words(
   language: 'AR',
@@ -183,7 +188,8 @@ class _IraqiPhoneFormatter extends TextInputFormatter {
   static const _persian = '۰۱۲۳۴۵۶۷۸۹';
 
   @override
-  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
     final buffer = StringBuffer();
     for (final char in newValue.text.characters) {
       final eastern = _eastern.indexOf(char);
@@ -228,14 +234,16 @@ class WelcomeScreen extends StatefulWidget {
   State<WelcomeScreen> createState() => _WelcomeScreenState();
 }
 
-class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateMixin {
+class _WelcomeScreenState extends State<WelcomeScreen>
+    with TickerProviderStateMixin {
   final _phone = TextEditingController();
   final _focus = FocusNode();
   late final _alarm = AnimationController(vsync: this, duration: _alarmDuration)
     ..addStatusListener(_onAlarmStatus);
-  late final _nightController =
-      AnimationController(vsync: this, duration: const Duration(milliseconds: 500));
-  late final _night = CurvedAnimation(parent: _nightController, curve: Curves.easeInOut);
+  late final _nightController = AnimationController(
+      vsync: this, duration: const Duration(milliseconds: 500));
+  late final _night =
+      CurvedAnimation(parent: _nightController, curve: Curves.easeInOut);
   late final _alarmAndNight = Listenable.merge([_alarm, _night]);
   late final AppState _appState;
   bool _busy = false;
@@ -257,7 +265,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
   }
 
   void _onAlarmStatus(AnimationStatus status) {
-    if (status == AnimationStatus.completed) setState(() => _wrongNumber = false);
+    if (status == AnimationStatus.completed) {
+      setState(() => _wrongNumber = false);
+    }
   }
 
   void _onAppStateChanged() {
@@ -315,7 +325,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
       _QuickRoute(
         builder: (_) => AnnotatedRegion<SystemUiOverlayStyle>(
           value: _appSystemBars(night: _nightMode),
-          child: CraftsmanScreen(initialPhone: validIraqiPhone(phone) ? phone : null),
+          child: CraftsmanScreen(
+              initialPhone: validIraqiPhone(phone) ? phone : null),
         ),
       ),
     );
@@ -336,8 +347,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
       _wrongNumber = false;
     });
     try {
-      final registered =
-          await context.read<AppState>().repo.phoneExists(phone);
+      final registered = await context.read<AppState>().repo.phoneExists(phone);
       if (!mounted) return;
       setState(() => _busy = false);
       _focus.unfocus();
@@ -359,7 +369,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
       setState(() => _busy = false);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('تعذر التحقق من الرقم. تحقق من قاعدة البيانات وحاول مجدداً.'),
+          content: Text(
+              'تعذر التحقق من الرقم. تحقق من قاعدة البيانات وحاول مجدداً.'),
         ),
       );
     }
@@ -374,7 +385,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
     final size = MediaQuery.sizeOf(context);
     final keyboard = MediaQuery.viewInsetsOf(context).bottom;
     final safeArea = MediaQuery.viewPaddingOf(context);
-    final fit = math.min(size.width / _Design.width, size.height / _Design.height);
+    final fit =
+        math.min(size.width / _Design.width, size.height / _Design.height);
     final unit = math.max(fit, _Design.minControlScale);
 
     final blueBottom = size.height * _Design.blueBottom / _Design.height;
@@ -386,8 +398,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
         safeArea.bottom -
         blueBottom -
         (_Design.contentBottom - _Design.rowTop) * unit;
-    final rowTop = blueBottom + math.max(freeSpace, 0.0) * spaceAbove / (spaceAbove + spaceBelow);
-    double x(double design) => size.width / 2 + (design - _Design.width / 2) * unit;
+    final rowTop = blueBottom +
+        math.max(freeSpace, 0.0) * spaceAbove / (spaceAbove + spaceBelow);
+    double x(double design) =>
+        size.width / 2 + (design - _Design.width / 2) * unit;
     double y(double design) => rowTop + (design - _Design.rowTop) * unit;
 
     // زرا اللغة والوضع يبقيان في زاويتي الشاشة وتحت شريط الحالة في كل الهواتف.
@@ -396,7 +410,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
       safeArea.top + _Design.barGap + _Design.switchHeight / 2 * unit,
     );
     final switchWidth = (_Design.switchRight - _Design.switchLeft) * unit;
-    final switchRight = size.width - (_Design.width - _Design.switchRight) * unit;
+    final switchRight =
+        size.width - (_Design.width - _Design.switchRight) * unit;
 
     final contentBottom = y(_Design.buttonBottom) + 12;
     final lift = math.max(0.0, contentBottom - (size.height - keyboard));
@@ -413,7 +428,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
     const languageMargin = 12.0;
     final faceHeight = _Design.faceHeight * unit;
 
-    Widget line(double left, double right, double top, double height, Color day, Color dark) =>
+    Widget line(double left, double right, double top, double height, Color day,
+            Color dark) =>
         Positioned(
           left: x(left),
           width: (right - left) * unit,
@@ -422,7 +438,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
           child: _dayNight((night) => ColoredBox(color: night ? dark : day)),
         );
 
-    Widget caption(String text, double fontSize, double centerX, double centerY) => Positioned(
+    Widget caption(
+            String text, double fontSize, double centerX, double centerY) =>
+        Positioned(
           left: x(centerX) - 120,
           width: 240,
           top: y(centerY) - 15,
@@ -451,8 +469,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
           statusBarColor: Colors.transparent,
           statusBarIconBrightness: Brightness.dark,
           statusBarBrightness: Brightness.light,
-          systemNavigationBarColor: Color.lerp(_cream, _nightGround, _night.value),
-          systemNavigationBarIconBrightness: _night.value < .5 ? Brightness.dark : Brightness.light,
+          systemNavigationBarColor:
+              Color.lerp(_cream, _nightGround, _night.value),
+          systemNavigationBarIconBrightness:
+              _night.value < .5 ? Brightness.dark : Brightness.light,
         ),
         child: child!,
       ),
@@ -460,7 +480,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
         child: Stack(
           fit: StackFit.expand,
           children: [
-            _dayNight((night) => ColoredBox(color: night ? _nightGround : _cream)),
+            _dayNight(
+                (night) => ColoredBox(color: night ? _nightGround : _cream)),
             Directionality(
               textDirection: words.direction,
               child: Scaffold(
@@ -476,8 +497,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
                         tween: Tween<double>(end: lift),
                         duration: const Duration(milliseconds: 200),
                         curve: Curves.easeOut,
-                        builder: (context, value, child) =>
-                            Transform.translate(offset: Offset(0, -value), child: child),
+                        builder: (context, value, child) => Transform.translate(
+                            offset: Offset(0, -value), child: child),
                         child: Stack(
                           clipBehavior: Clip.none,
                           children: [
@@ -486,10 +507,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
                               right: 0,
                               top: 0,
                               height: blueBottom,
-                              child: TruckScene(scale: fit, english: state.english),
+                              child: TruckScene(
+                                  scale: fit, english: state.english),
                             ),
                             Positioned(
-                              left: _Design.languageLeft * unit - languageMargin,
+                              left:
+                                  _Design.languageLeft * unit - languageMargin,
                               top: barCenter - minTouch / 2,
                               height: minTouch,
                               child: Semantics(
@@ -499,7 +522,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
                                   behavior: HitTestBehavior.opaque,
                                   onTap: () => state.setEnglish(!state.english),
                                   child: Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: languageMargin),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: languageMargin),
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       textDirection: TextDirection.ltr,
@@ -511,14 +535,16 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
                                         ),
                                         SizedBox(width: 4 * unit),
                                         AnimatedSwitcher(
-                                          duration: const Duration(milliseconds: 200),
+                                          duration:
+                                              const Duration(milliseconds: 200),
                                           child: Text(
                                             words.language,
                                             key: ValueKey(words.language),
                                             textDirection: TextDirection.ltr,
                                             style: TextStyle(
                                               fontFamily: 'Cairo',
-                                              fontSize: _Design.languageSize * unit,
+                                              fontSize:
+                                                  _Design.languageSize * unit,
                                               height: 1,
                                               letterSpacing: .8 * unit,
                                               fontWeight: FontWeight.w900,
@@ -575,7 +601,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
                                         (night) => Text(
                                           '🇮🇶 +964',
                                           textDirection: TextDirection.ltr,
-                                          style: _textStyle(unit, night ? _nightInk : _ink),
+                                          style: _textStyle(
+                                              unit, night ? _nightInk : _ink),
                                         ),
                                       ),
                                     ),
@@ -593,11 +620,14 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
                               onTap: _focus.requestFocus,
                               child: AnimatedBuilder(
                                 // لون الأرقام المكتوبة وحده يحتاج إعادة البناء مع تدرج الليل.
-                                animation: _phone.text.isEmpty ? _alarm : _alarmAndNight,
+                                animation: _phone.text.isEmpty
+                                    ? _alarm
+                                    : _alarmAndNight,
                                 builder: (context, _) {
                                   final alarm = _alarmLevel;
-                                  final hintStyle = _textStyle(unit, Colors.white)
-                                      .copyWith(fontWeight: FontWeight.w600);
+                                  final hintStyle =
+                                      _textStyle(unit, Colors.white).copyWith(
+                                          fontWeight: FontWeight.w600);
                                   return PushKey(
                                     unit: unit,
                                     faceHeight: faceHeight,
@@ -613,13 +643,18 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
                                         textInputAction: TextInputAction.done,
                                         textDirection: TextDirection.ltr,
                                         textAlign: TextAlign.center,
-                                        textAlignVertical: TextAlignVertical.center,
-                                        cursorColor: Color.lerp(_blue, Colors.white, alarm),
-                                        inputFormatters: const [_IraqiPhoneFormatter()],
+                                        textAlignVertical:
+                                            TextAlignVertical.center,
+                                        cursorColor: Color.lerp(
+                                            _blue, Colors.white, alarm),
+                                        inputFormatters: const [
+                                          _IraqiPhoneFormatter()
+                                        ],
                                         style: _textStyle(
                                           unit,
                                           Color.lerp(
-                                            Color.lerp(_ink, _nightInk, _night.value),
+                                            Color.lerp(
+                                                _ink, _nightInk, _night.value),
                                             Colors.white,
                                             alarm,
                                           )!,
@@ -640,9 +675,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
                                               ? Text(
                                                   '07XX XXX XXXX',
                                                   textAlign: TextAlign.center,
-                                                  textDirection: TextDirection.ltr,
+                                                  textDirection:
+                                                      TextDirection.ltr,
                                                   style: hintStyle.copyWith(
-                                                    color: Colors.white.withValues(
+                                                    color:
+                                                        Colors.white.withValues(
                                                       alpha: (alarm - .5) * 2,
                                                     ),
                                                   ),
@@ -651,10 +688,16 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
                                                   (night) => Text(
                                                     words.mobileNumber,
                                                     textAlign: TextAlign.center,
-                                                    textDirection: words.direction,
+                                                    textDirection:
+                                                        words.direction,
                                                     style: hintStyle.copyWith(
-                                                      color: (night ? _nightHint : _hint)
-                                                          .withValues(alpha: (.5 - alarm) * 2),
+                                                      color: (night
+                                                              ? _nightHint
+                                                              : _hint)
+                                                          .withValues(
+                                                              alpha:
+                                                                  (.5 - alarm) *
+                                                                      2),
                                                     ),
                                                   ),
                                                 ),
@@ -694,7 +737,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
                                         ? SizedBox(
                                             width: 16 * unit,
                                             height: 16 * unit,
-                                            child: const CircularProgressIndicator(
+                                            child:
+                                                const CircularProgressIndicator(
                                               strokeWidth: 2,
                                               color: _blue,
                                             ),
@@ -704,8 +748,14 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
                                             child: _dayNight(
                                               (night) => Text(
                                                 words.login,
-                                                style: _textStyle(unit, night ? _nightInk : _ink)
-                                                    .copyWith(fontWeight: FontWeight.w800),
+                                                style: _textStyle(
+                                                        unit,
+                                                        night
+                                                            ? _nightInk
+                                                            : _ink)
+                                                    .copyWith(
+                                                        fontWeight:
+                                                            FontWeight.w800),
                                               ),
                                             ),
                                           ),
@@ -734,8 +784,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
                                       child: _dayNight(
                                         (night) => Text(
                                           words.craftsman,
-                                          style: _textStyle(unit, night ? _nightInk : _ink)
-                                              .copyWith(fontWeight: FontWeight.w800),
+                                          style: _textStyle(unit,
+                                                  night ? _nightInk : _ink)
+                                              .copyWith(
+                                                  fontWeight: FontWeight.w800),
                                         ),
                                       ),
                                     ),
@@ -768,9 +820,13 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
                             for (final (index, mark) in _socialMarks.indexed)
                               _touchArea(
                                 left: x(_Design.socialCenters[index]) -
-                                    (_Design.socialFaceWidth / 2 + PushKey.faceInset) * unit,
+                                    (_Design.socialFaceWidth / 2 +
+                                            PushKey.faceInset) *
+                                        unit,
                                 right: x(_Design.socialCenters[index]) +
-                                    (_Design.socialFaceWidth / 2 + PushKey.faceInset) * unit,
+                                    (_Design.socialFaceWidth / 2 +
+                                            PushKey.faceInset) *
+                                        unit,
                                 top: y(_Design.socialTop),
                                 bottom: y(_Design.socialBottom),
                                 above: touchMargin,
@@ -785,7 +841,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
                                     label: words.socials[index],
                                     child: Center(
                                       child: SizedBox.square(
-                                        dimension: _Design.socialMarkSize * unit,
+                                        dimension:
+                                            _Design.socialMarkSize * unit,
                                         child: _socialMark(mark),
                                       ),
                                     ),
@@ -810,7 +867,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
                               Positioned(
                                 left: 16,
                                 right: 16,
-                                bottom: pageHeight - y(_Design.rowTop) + 4 * unit,
+                                bottom:
+                                    pageHeight - y(_Design.rowTop) + 4 * unit,
                                 child: AnimatedBuilder(
                                   animation: _alarmAndNight,
                                   builder: (context, _) => Opacity(
@@ -822,8 +880,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
                                         fontFamily: 'Cairo',
                                         fontSize: 12 * unit,
                                         fontWeight: FontWeight.w700,
-                                        color:
-                                            Color.lerp(AppColors.danger, _nightError, _night.value),
+                                        color: Color.lerp(AppColors.danger,
+                                            _nightError, _night.value),
                                       ),
                                     ),
                                   ),
@@ -857,7 +915,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
   }
 
   Widget _socialMark(SocialMark mark) {
-    Widget paint(bool night) => CustomPaint(painter: SocialMarkPainter(mark, night: night));
+    Widget paint(bool night) =>
+        CustomPaint(painter: SocialMarkPainter(mark, night: night));
     return mark == SocialMark.tiktok ? _dayNight(paint) : paint(false);
   }
 
@@ -881,7 +940,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
   }) {
     // بداية الزر على بكسل كامل من الشاشة، فتبقى صورته حادة الحواف.
     final pixelRatio = MediaQuery.devicePixelRatioOf(context);
-    double onPixel(double value) => (value * pixelRatio).roundToDouble() / pixelRatio;
+    double onPixel(double value) =>
+        (value * pixelRatio).roundToDouble() / pixelRatio;
     return Positioned(
       left: onPixel(left),
       width: onPixel(right) - onPixel(left),
