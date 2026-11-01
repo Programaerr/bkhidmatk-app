@@ -118,7 +118,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       Expanded(
                         child: Text(
                           'دخول مباشر بدون رمز SMS: رقم الهاتف + كلمة المرور. '
-                          'الرقم المسجّل في admin_phones يفتح لوحة المدير كاملة تلقائياً.',
+                          'صلاحية المدير تُربط بحساب Auth من لوحة Supabase.',
                           style: theme.textTheme.bodySmall?.copyWith(
                             fontSize: 11.5,
                             height: 1.6,
