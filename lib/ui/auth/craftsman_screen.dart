@@ -49,6 +49,10 @@ class _CraftsmanScreenState extends State<CraftsmanScreen> {
 
   void _backAsCustomer() => Navigator.of(context).popUntil((route) => route.isFirst);
 
+  void _clearSubmitError() {
+    if (_error != null) setState(() => _error = null);
+  }
+
   Future<void> _pickCity() async {
     setState(() => _pickingCity = true);
     final selected = await showAppSheet<String>(
@@ -172,25 +176,26 @@ class _CraftsmanScreenState extends State<CraftsmanScreen> {
               style: theme.textTheme.bodySmall?.copyWith(fontSize: 13),
             ),
             const SizedBox(height: 22),
-            const FieldLabel('الاسم الكامل', required_: true),
+            RequiredFieldLabel('الاسم الكامل', controller: _name),
             RaisedField(
               controller: _name,
               hint: 'مثال: أحمد سعد',
               validator: (v) => v.trim().length < 3 ? 'أدخل الاسم الكامل' : null,
             ),
             const SizedBox(height: 14),
-            const FieldLabel('رقم الهاتف', required_: true),
+            RequiredFieldLabel('رقم الهاتف', controller: _phone),
             RaisedField(
               controller: _phone,
               hint: '07XX XXX XXXX',
               keyboardType: TextInputType.phone,
               textDirection: TextDirection.ltr,
               textAlign: TextAlign.right,
+              onTyped: _clearSubmitError,
               validator: (v) =>
                   validIraqiPhone(phoneFromInput(v)) ? null : 'رقم غير صالح (11 رقم يبدأ بـ 07)',
             ),
             const SizedBox(height: 14),
-            const FieldLabel('العمر', required_: true),
+            RequiredFieldLabel('العمر', controller: _age),
             RaisedField(
               controller: _age,
               hint: 'مثال: 28',
@@ -198,7 +203,7 @@ class _CraftsmanScreenState extends State<CraftsmanScreen> {
               validator: (v) => _checkNumber(v, 16, 80, 'أدخل عمراً صحيحاً'),
             ),
             const SizedBox(height: 14),
-            const FieldLabel('المحافظة', required_: true),
+            FieldLabel('المحافظة', required_: true, filled: _city != null),
             RaisedPicker(
               value: _city,
               hint: 'اختر المحافظة',
@@ -213,14 +218,14 @@ class _CraftsmanScreenState extends State<CraftsmanScreen> {
               hint: 'المنطقة، الشارع، أقرب نقطة دالة',
             ),
             const SizedBox(height: 14),
-            const FieldLabel('المهنة', required_: true),
+            RequiredFieldLabel('المهنة', controller: _trade),
             RaisedField(
               controller: _trade,
               hint: 'مثال: كهربائي، سباك، صباغ',
               validator: (v) => v.trim().length < 2 ? 'أدخل مهنتك' : null,
             ),
             const SizedBox(height: 14),
-            const FieldLabel('سنوات الخبرة', required_: true),
+            RequiredFieldLabel('سنوات الخبرة', controller: _years),
             RaisedField(
               controller: _years,
               hint: 'مثال: 5',

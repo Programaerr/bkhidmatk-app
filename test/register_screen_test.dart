@@ -13,11 +13,18 @@ import 'package:jaik/ui/auth/login_screen.dart';
 import 'package:jaik/ui/auth/push_key.dart';
 import 'package:jaik/ui/auth/raised_field.dart';
 import 'package:jaik/ui/auth/register_screen.dart';
+import 'package:jaik/ui/widgets/ui.dart';
 
 import 'fake_repository.dart';
 
 class _Repo extends FakeRepo {
+  _Repo({this.phoneTaken = false});
+
+  final bool phoneTaken;
   final created = <AppUser>[];
+
+  @override
+  Future<bool> phoneExists(String phone) async => phoneTaken;
 
   @override
   Future<int> createUser(AppUser user) async {
@@ -94,6 +101,21 @@ Future<void> _fill(WidgetTester tester, {String? city = 'بغداد'}) async {
   await tester.enterText(_field('المرور'), 'secret1');
   await tester.enterText(_field('التأكيد'), 'secret1');
   if (city != null) await _chooseCity(tester, city);
+}
+
+/// لون إطار الخانة كما يُرسم: بعد طبقتي العمق والوجه.
+void _expectBorder(WidgetTester tester, Finder field, Color color) {
+  final box = find.descendant(of: field, matching: find.byType(CustomPaint)).first;
+  expect(tester.renderObject(box), paints..rrect()..rrect()..rrect(color: color));
+}
+
+/// هل النقطة الحمراء ظاهرة بجانب هذا العنوان؟
+bool _starShown(WidgetTester tester, String label) {
+  final mark = find.descendant(
+    of: find.widgetWithText(FieldLabel, label),
+    matching: find.byType(Opacity),
+  );
+  return tester.widget<Opacity>(mark).opacity == 1;
 }
 
 bool _hidden(WidgetTester tester, String label) =>
@@ -309,6 +331,116 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text(_mismatch), findsOneWidget);
     expect(tester.getTopLeft(find.text('تأكيد كلمة المرور')), before);
+  });
+
+  testWidgets('الكتابة وإطارها بالأسود، والأحمر للخطأ فقط', (tester) async {
+    await _pump(tester, _Repo());
+    await tester.tap(find.text('إنشاء الحساب').last);
+    await tester.pumpAndSettle();
+    final name = find.byType(RaisedField).at(0);
+    _expectBorder(tester, name, const Color(0xFFFF4D4D));
+
+    await tester.enterText(_field('الاسم'), 'كرار');
+    await tester.pumpAndSettle();
+    _expectBorder(tester, name, AppColors.ink);
+    final field = tester.widget<TextField>(_field('الاسم'));
+    expect(field.style!.color, AppColors.ink);
+    expect(field.cursorColor, AppColors.ink);
+
+    FocusManager.instance.primaryFocus!.unfocus();
+    await tester.pumpAndSettle();
+    _expectBorder(tester, name, const Color(0xFFDDDDDD));
+  });
+
+  testWidgets('المحافظة المختارة والعين والسهم بالأسود', (tester) async {
+    await _pump(tester, _Repo());
+    await _chooseCity(tester, 'البصرة');
+    expect(tester.widget<Text>(find.text('البصرة')).style!.color, AppColors.ink);
+    expect(tester.widget<Icon>(find.byIcon(Icons.expand_more_rounded)).color, AppColors.ink);
+    expect(tester.widget<Icon>(find.byIcon(Icons.visibility_off_rounded)).color, AppColors.ink);
+  });
+
+  testWidgets('رسالة الرقم المستخدم تختفي بتعديل الرقم، لا بتحريك المؤشر', (tester) async {
+    await _pump(tester, _Repo(phoneTaken: true));
+    await _fill(tester);
+    await tester.tap(find.text('إنشاء الحساب').last);
+    await tester.pumpAndSettle();
+    expect(find.text('رقم الهاتف مستخدم مسبقاً'), findsOneWidget);
+
+    tester.widget<TextField>(_field('الهاتف')).controller!.selection =
+        const TextSelection.collapsed(offset: 1);
+    await tester.pumpAndSettle();
+    expect(find.text('رقم الهاتف مستخدم مسبقاً'), findsOneWidget);
+
+    await tester.enterText(_field('الهاتف'), '07701234568');
+    await tester.pumpAndSettle();
+    expect(find.text('رقم الهاتف مستخدم مسبقاً'), findsNothing);
+  });
+
+  testWidgets('كل خانات الكتابة بالأسود لا الاسم فقط، وفي الليل بلون فاتح مقروء', (tester) async {
+    await _pump(tester, _Repo());
+    for (final label in _fieldOrder) {
+      expect(tester.widget<TextField>(_field(label)).style!.color, AppColors.ink, reason: label);
+    }
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<AppState>.value(
+        value: AppState(repository: _Repo()),
+        child: MaterialApp(
+          theme: AppTheme.dark(),
+          builder: (context, child) =>
+              Directionality(textDirection: TextDirection.rtl, child: child!),
+          home: const RegisterScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    for (final label in _fieldOrder) {
+      expect(
+        tester.widget<TextField>(_field(label)).style!.color,
+        const Color(0xFFF4F4EE),
+        reason: label,
+      );
+    }
+  });
+
+  testWidgets('النقطة الحمراء تختفي بملء الخانة وترجع بتفريغها، دون أن تتحرك الصفحة', (tester) async {
+    await _pump(tester, _Repo());
+    const labels = {
+      'الاسم الكامل': 'الاسم',
+      'رقم الهاتف': 'الهاتف',
+      'كلمة المرور': 'المرور',
+      'تأكيد كلمة المرور': 'التأكيد',
+    };
+    final below = find.text('تأكيد كلمة المرور');
+    final top = tester.getTopLeft(below);
+
+    for (final MapEntry(key: label, value: field) in labels.entries) {
+      expect(_starShown(tester, label), isTrue, reason: label);
+      await tester.enterText(_field(field), 'ك');
+      await tester.pump();
+      expect(_starShown(tester, label), isFalse, reason: label);
+    }
+    await tester.pumpAndSettle();
+    expect(tester.getTopLeft(below), top);
+
+    expect(_starShown(tester, 'المحافظة'), isTrue);
+    await _chooseCity(tester, 'البصرة');
+    expect(_starShown(tester, 'المحافظة'), isFalse);
+
+    await tester.enterText(_field('الاسم'), '');
+    await tester.pump();
+    expect(_starShown(tester, 'الاسم الكامل'), isTrue);
+    await tester.enterText(_field('الاسم'), '   ');
+    await tester.pump();
+    expect(_starShown(tester, 'الاسم الكامل'), isTrue);
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('الرقم القادم من الشاشة الأولى يبدأ بلا نقطة حمراء', (tester) async {
+    await _pump(tester, _Repo(), phone: '07711112222');
+    expect(_starShown(tester, 'رقم الهاتف'), isFalse);
+    expect(_starShown(tester, 'الاسم الكامل'), isTrue);
   });
 
   testWidgets('زر العين يظهر كلمة المرور ويخفيها، وخانة التأكيد تبقى مخفية', (tester) async {

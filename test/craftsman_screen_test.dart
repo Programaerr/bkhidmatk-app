@@ -11,6 +11,7 @@ import 'package:jaik/ui/admin/admin_applications.dart';
 import 'package:jaik/ui/auth/craftsman_screen.dart';
 import 'package:jaik/ui/auth/push_key.dart';
 import 'package:jaik/ui/auth/raised_field.dart';
+import 'package:jaik/ui/widgets/ui.dart';
 
 import 'fake_repository.dart';
 
@@ -112,6 +113,21 @@ Future<void> _fill(
   await tester.enterText(_field('الخبرة'), '5');
   await tester.enterText(_field('النبذة'), 'عملت في تأسيس البيوت');
   if (city != null) await _chooseCity(tester, city);
+}
+
+/// لون إطار الخانة كما يُرسم: بعد طبقتي العمق والوجه.
+void _expectBorder(WidgetTester tester, Finder field, Color color) {
+  final box = find.descendant(of: field, matching: find.byType(CustomPaint)).first;
+  expect(tester.renderObject(box), paints..rrect()..rrect()..rrect(color: color));
+}
+
+/// هل النقطة الحمراء ظاهرة بجانب هذا العنوان؟
+bool _starShown(WidgetTester tester, String label) {
+  final mark = find.descendant(
+    of: find.widgetWithText(FieldLabel, label),
+    matching: find.byType(Opacity),
+  );
+  return tester.widget<Opacity>(mark).opacity == 1;
 }
 
 CraftsmanApplication _application({int id = 7, String status = CraftsmanApplication.pending}) =>
@@ -251,6 +267,65 @@ void main() {
     await tester.tap(find.text('إرسال الطلب إلى الشركة'));
     await tester.pumpAndSettle();
     expect(find.text('أدخل الاسم الكامل'), findsOneWidget);
+  });
+
+  testWidgets('الكتابة وإطارها بالأسود، والأحمر للخطأ فقط', (tester) async {
+    await _pump(tester, _Repo(), const CraftsmanScreen());
+    await tester.tap(find.text('إرسال الطلب إلى الشركة'));
+    await tester.pumpAndSettle();
+    final name = find.byType(RaisedField).at(0);
+    _expectBorder(tester, name, const Color(0xFFFF4D4D));
+
+    await tester.enterText(_field('الاسم'), 'كرار');
+    await tester.pumpAndSettle();
+    _expectBorder(tester, name, AppColors.ink);
+    final field = tester.widget<TextField>(_field('الاسم'));
+    expect(field.style!.color, AppColors.ink);
+    expect(field.cursorColor, AppColors.ink);
+    for (final label in _fieldOrder) {
+      expect(tester.widget<TextField>(_field(label)).style!.color, AppColors.ink, reason: label);
+    }
+
+    await _chooseCity(tester, 'البصرة');
+    expect(tester.widget<Text>(find.text('البصرة')).style!.color, AppColors.ink);
+    expect(tester.widget<Icon>(find.byIcon(Icons.expand_more_rounded)).color, AppColors.ink);
+  });
+
+  testWidgets('رسالة الطلب القائم تختفي بتعديل الرقم', (tester) async {
+    await _pump(tester, _Repo(pending: true), const CraftsmanScreen());
+    await _fill(tester);
+    await tester.tap(find.text('إرسال الطلب إلى الشركة'));
+    await tester.pumpAndSettle();
+    expect(find.text('يوجد طلب قيد المراجعة بهذا الرقم'), findsOneWidget);
+
+    await tester.enterText(_field('الهاتف'), '07701234568');
+    await tester.pumpAndSettle();
+    expect(find.text('يوجد طلب قيد المراجعة بهذا الرقم'), findsNothing);
+  });
+
+  testWidgets('النقطة الحمراء تختفي بملء الخانة وترجع بتفريغها', (tester) async {
+    await _pump(tester, _Repo(), const CraftsmanScreen());
+    const labels = {
+      'الاسم الكامل': 'الاسم',
+      'رقم الهاتف': 'الهاتف',
+      'العمر': 'العمر',
+      'المهنة': 'المهنة',
+      'سنوات الخبرة': 'الخبرة',
+    };
+    for (final MapEntry(key: label, value: field) in labels.entries) {
+      expect(_starShown(tester, label), isTrue, reason: label);
+      await tester.enterText(_field(field), '5');
+      await tester.pump();
+      expect(_starShown(tester, label), isFalse, reason: label);
+      await tester.enterText(_field(field), '');
+      await tester.pump();
+      expect(_starShown(tester, label), isTrue, reason: label);
+    }
+    await tester.pumpAndSettle();
+
+    expect(_starShown(tester, 'المحافظة'), isTrue);
+    await _chooseCity(tester, 'البصرة');
+    expect(_starShown(tester, 'المحافظة'), isFalse);
   });
 
   testWidgets('خانة المحافظة تبدأ فارغة وتأخذ المختار', (tester) async {
