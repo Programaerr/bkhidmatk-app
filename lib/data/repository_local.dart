@@ -584,6 +584,11 @@ class LocalRepository implements Repository {
   @override
   Future<void> deleteWork(int id) async {
     final db = await _db;
+    await db.delete(
+      'work_comment_reactions',
+      where: 'comment_id IN (SELECT id FROM work_comments WHERE work_id = ?)',
+      whereArgs: [id],
+    );
     await db.delete('work_comments', where: 'work_id = ?', whereArgs: [id]);
     await db.delete('work_likes', where: 'work_id = ?', whereArgs: [id]);
     await db.delete('our_works', where: 'id = ?', whereArgs: [id]);
@@ -615,13 +620,25 @@ class LocalRepository implements Repository {
   }
 
   @override
-  Future<List<WorkComment>> workComments(int workId) async {
+  Future<List<WorkComment>> workComments(
+    int workId, {
+    int? viewerId,
+    bool isAdmin = false,
+  }) async {
     final db = await _db;
     final rows = await db.rawQuery('''
-      SELECT wc.*, u.avatar AS avatar FROM work_comments wc
+      SELECT wc.*, u.avatar AS avatar,
+        (SELECT COUNT(*) FROM work_comment_reactions r
+          WHERE r.comment_id = wc.id AND r.reaction = 1) AS likes_count,
+        (SELECT COUNT(*) FROM work_comment_reactions r
+          WHERE r.comment_id = wc.id AND r.reaction = -1) AS dislikes_count,
+        COALESCE((SELECT r.reaction FROM work_comment_reactions r
+          WHERE r.comment_id = wc.id AND r.user_id = ?), 0) AS my_reaction,
+        CASE WHEN ? = 1 THEN wc.admin_hearted ELSE 0 END AS admin_hearted
+      FROM work_comments wc
       LEFT JOIN users u ON u.id = wc.user_id
       WHERE wc.work_id = ? ORDER BY wc.created_at ASC
-    ''', [workId]);
+    ''', [viewerId ?? -1, isAdmin ? 1 : 0, workId]);
     return rows.map(WorkComment.fromMap).toList();
   }
 
@@ -629,6 +646,60 @@ class LocalRepository implements Repository {
   Future<int> addWorkComment(WorkComment c) async {
     final db = await _db;
     return db.insert('work_comments', c.toMap());
+  }
+
+  @override
+  Future<void> updateWorkComment(int id, {required String body}) async {
+    final db = await _db;
+    await db.update(
+      'work_comments',
+      {'body': body},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  @override
+  Future<void> setWorkCommentReaction(
+    int commentId, {
+    required int userId,
+    required int reaction,
+  }) async {
+    if (reaction != -1 && reaction != 0 && reaction != 1) {
+      throw ArgumentError.value(reaction, 'reaction');
+    }
+    final db = await _db;
+    if (reaction == 0) {
+      await db.delete(
+        'work_comment_reactions',
+        where: 'comment_id = ? AND user_id = ?',
+        whereArgs: [commentId, userId],
+      );
+      return;
+    }
+    await db.insert(
+      'work_comment_reactions',
+      {
+        'comment_id': commentId,
+        'user_id': userId,
+        'reaction': reaction,
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  @override
+  Future<void> setWorkCommentHeart(
+    int commentId, {
+    required bool hearted,
+  }) async {
+    final db = await _db;
+    await db.update(
+      'work_comments',
+      {'admin_hearted': hearted ? 1 : 0},
+      where: 'id = ?',
+      whereArgs: [commentId],
+    );
   }
 
   @override

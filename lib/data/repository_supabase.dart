@@ -33,6 +33,7 @@ class SupabaseRepository implements Repository {
       'comments',
       'our_works',
       'work_comments',
+      'work_comment_reactions',
       'work_likes',
       'hire_phones',
       'craftsman_applications',
@@ -90,6 +91,7 @@ class SupabaseRepository implements Repository {
       'is_default',
       'paid',
       'liked_by_me',
+      'admin_hearted',
     };
     return {
       for (final entry in source.entries)
@@ -872,7 +874,11 @@ class SupabaseRepository implements Repository {
   }
 
   @override
-  Future<List<WorkComment>> workComments(int workId) async {
+  Future<List<WorkComment>> workComments(
+    int workId, {
+    int? viewerId,
+    bool isAdmin = false,
+  }) async {
     final rows = await _allRows(
       (from, to) => _client
           .from('work_comments')
@@ -881,9 +887,43 @@ class SupabaseRepository implements Repository {
           .order('created_at')
           .range(from, to),
     );
+    final ids = rows.map((row) => (row['id'] as num).toInt()).toList();
+    final reactions = ids.isEmpty
+        ? <Map<String, dynamic>>[]
+        : await _allRows(
+            (from, to) => _client
+                .from('work_comment_reactions')
+                .select('comment_id,user_id,reaction')
+                .inFilter('comment_id', ids)
+                .range(from, to),
+          );
+    final currentUserId = viewerId ?? await _currentProfileId();
+    final reactionsByComment = <int, List<Map<String, dynamic>>>{};
+    for (final reaction in reactions) {
+      final commentId = (reaction['comment_id'] as num).toInt();
+      reactionsByComment.putIfAbsent(commentId, () => []).add(reaction);
+    }
     return rows.map((row) {
       final profile = row['app_profiles'] as Map<String, dynamic>?;
-      return WorkComment.fromMap({...row, 'avatar': profile?['avatar']});
+      final id = (row['id'] as num).toInt();
+      final commentReactions = reactionsByComment[id] ?? const [];
+      final mine = commentReactions.where(
+        (reaction) => (reaction['user_id'] as num).toInt() == currentUserId,
+      );
+      final myReaction =
+          mine.isEmpty ? 0 : (mine.first['reaction'] as num).toInt();
+      return WorkComment.fromMap({
+        ..._read(row),
+        'avatar': profile?['avatar'],
+        'likes_count': commentReactions
+            .where((reaction) => (reaction['reaction'] as num).toInt() == 1)
+            .length,
+        'dislikes_count': commentReactions
+            .where((reaction) => (reaction['reaction'] as num).toInt() == -1)
+            .length,
+        'my_reaction': myReaction,
+        'admin_hearted': isAdmin && row['admin_hearted'] == true,
+      });
     }).toList();
   }
 
@@ -891,6 +931,37 @@ class SupabaseRepository implements Repository {
   Future<int> addWorkComment(WorkComment comment) async {
     final values = comment.toMap()..remove('id');
     return _insert('work_comments', values);
+  }
+
+  @override
+  Future<void> updateWorkComment(int id, {required String body}) async {
+    await _client.from('work_comments').update({'body': body}).eq('id', id);
+  }
+
+  @override
+  Future<void> setWorkCommentReaction(
+    int commentId, {
+    required int userId,
+    required int reaction,
+  }) async {
+    if (reaction != -1 && reaction != 0 && reaction != 1) {
+      throw ArgumentError.value(reaction, 'reaction');
+    }
+    await _client.rpc('set_work_comment_reaction', params: {
+      'p_comment_id': commentId,
+      'p_reaction': reaction,
+    });
+  }
+
+  @override
+  Future<void> setWorkCommentHeart(
+    int commentId, {
+    required bool hearted,
+  }) async {
+    await _client.rpc('set_work_comment_heart', params: {
+      'p_comment_id': commentId,
+      'p_hearted': hearted,
+    });
   }
 
   @override

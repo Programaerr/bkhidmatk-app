@@ -142,9 +142,26 @@ abstract class Repository {
 
   Future<void> setWorkLike(int id, {required int userId, required bool liked});
 
-  Future<List<WorkComment>> workComments(int workId);
+  Future<List<WorkComment>> workComments(
+    int workId, {
+    int? viewerId,
+    bool isAdmin = false,
+  });
 
   Future<int> addWorkComment(WorkComment comment);
+
+  Future<void> updateWorkComment(int id, {required String body});
+
+  Future<void> setWorkCommentReaction(
+    int commentId, {
+    required int userId,
+    required int reaction,
+  });
+
+  Future<void> setWorkCommentHeart(
+    int commentId, {
+    required bool hearted,
+  });
 
   Future<int> workCount();
 

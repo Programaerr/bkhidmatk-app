@@ -376,33 +376,66 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
       children: [
         Row(
           children: [
-            const BrandLogo(size: 30, radius: 10),
-            const SizedBox(width: 8),
-            const Text(
-              'جايك',
-              style: TextStyle(
+            Container(
+              width: 38,
+              height: 38,
+              padding: const EdgeInsets.all(1.5),
+              decoration: const BoxDecoration(
                 color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w900,
+                shape: BoxShape.circle,
+              ),
+              child: ClipOval(
+                child: Image.asset(
+                  'assets/images/logo.jpg',
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const ColoredBox(
+                    color: AppColors.gold,
+                    child: Icon(Icons.handyman_rounded, color: AppColors.ink),
+                  ),
+                ),
               ),
             ),
-            const SizedBox(width: 8),
-            Text(
-              '· ${fmtDateShort(_work.createdAt)}',
-              style: const TextStyle(color: Colors.white70, fontSize: 10),
+            const SizedBox(width: 9),
+            Flexible(
+              child: Row(
+                children: [
+                  const Flexible(
+                    child: Text(
+                      'جايك',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 7),
+                  Flexible(
+                    child: Text(
+                      '· ${fmtDateShort(_work.createdAt)}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style:
+                          const TextStyle(color: Colors.white70, fontSize: 10),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 9),
         Text(
           _work.title,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(
             color: Colors.white,
-            fontSize: 14,
-            fontWeight: FontWeight.w800,
-            height: 1.4,
+            fontSize: 15,
+            fontWeight: FontWeight.w900,
+            height: 1.45,
           ),
         ),
         if (_work.description?.trim().isNotEmpty == true) ...[

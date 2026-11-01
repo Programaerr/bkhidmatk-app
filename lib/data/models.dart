@@ -582,25 +582,36 @@ class WorkComment {
   final int? id;
   final int workId;
   final int userId;
+  final int? parentCommentId;
   final String userName;
   final String body;
   final DateTime createdAt;
   final String? avatarPath;
+  final int likes;
+  final int dislikes;
+  final int reactionByMe;
+  final bool adminHearted;
 
   const WorkComment({
     this.id,
     required this.workId,
     required this.userId,
+    this.parentCommentId,
     required this.userName,
     required this.body,
     required this.createdAt,
     this.avatarPath,
+    this.likes = 0,
+    this.dislikes = 0,
+    this.reactionByMe = 0,
+    this.adminHearted = false,
   });
 
   Map<String, Object?> toMap() => {
         if (id != null) 'id': id,
         'work_id': workId,
         'user_id': userId,
+        'parent_comment_id': parentCommentId,
         'user_name': userName,
         'body': body,
         'created_at': createdAt.toIso8601String(),
@@ -610,10 +621,38 @@ class WorkComment {
         id: m['id'] as int?,
         workId: m['work_id'] as int? ?? 0,
         userId: m['user_id'] as int? ?? 0,
+        parentCommentId: m['parent_comment_id'] as int?,
         userName: m['user_name'] as String? ?? '',
         body: m['body'] as String? ?? '',
         createdAt: _date(m['created_at']) ?? DateTime.now(),
         avatarPath: m['avatar'] as String?,
+        likes: (m['likes_count'] as num?)?.toInt() ?? 0,
+        dislikes: (m['dislikes_count'] as num?)?.toInt() ?? 0,
+        reactionByMe: (m['my_reaction'] as num?)?.toInt() ?? 0,
+        adminHearted: m['admin_hearted'] == true || m['admin_hearted'] == 1,
+      );
+
+  WorkComment copyWith({
+    int? parentCommentId,
+    String? body,
+    int? likes,
+    int? dislikes,
+    int? reactionByMe,
+    bool? adminHearted,
+  }) =>
+      WorkComment(
+        id: id,
+        workId: workId,
+        userId: userId,
+        parentCommentId: parentCommentId ?? this.parentCommentId,
+        userName: userName,
+        body: body ?? this.body,
+        createdAt: createdAt,
+        avatarPath: avatarPath,
+        likes: likes ?? this.likes,
+        dislikes: dislikes ?? this.dislikes,
+        reactionByMe: reactionByMe ?? this.reactionByMe,
+        adminHearted: adminHearted ?? this.adminHearted,
       );
 }
 

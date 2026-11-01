@@ -14,7 +14,7 @@ class AppDatabase {
 
   Database? _db;
   static const _fileName = 'jaik.db';
-  static const _version = 5;
+  static const _version = 6;
 
   Future<Database> get database async {
     if (_db != null && _db!.isOpen) return _db!;
@@ -35,6 +35,7 @@ class AppDatabase {
         if (oldVersion < 3) await _migrateToV3(db);
         if (oldVersion < 4) await db.execute(_applicationsSchema);
         if (oldVersion < 5) await _migrateToV5(db);
+        if (oldVersion < 6) await _migrateToV6(db);
       },
     );
     return _db!;
@@ -71,10 +72,28 @@ class AppDatabase {
     await db.execute('ALTER TABLE users_without_rewards RENAME TO users');
   }
 
+  Future<void> _migrateToV6(Database db) async {
+    final columns = (await db.rawQuery('PRAGMA table_info(work_comments)'))
+        .map((column) => column['name'])
+        .toSet();
+    if (!columns.contains('parent_comment_id')) {
+      await db.execute(
+        'ALTER TABLE work_comments ADD COLUMN parent_comment_id INTEGER',
+      );
+    }
+    if (!columns.contains('admin_hearted')) {
+      await db.execute(
+        'ALTER TABLE work_comments ADD COLUMN admin_hearted INTEGER NOT NULL DEFAULT 0',
+      );
+    }
+    await db.execute(_workCommentReactionsSchema);
+  }
+
   /// v3: قسم «أعمالنا» (فيديوهات المدير) وشاشة «التوظيف» بالرقم.
   Future<void> _migrateToV3(Database db) async {
     await db.execute(_worksSchema);
     await db.execute(_workCommentsSchema);
+    await db.execute(_workCommentReactionsSchema);
     await db.execute(_workLikesSchema);
     await db.execute(_hiresSchema);
   }
@@ -114,7 +133,18 @@ class AppDatabase {
       user_id INTEGER NOT NULL,
       user_name TEXT NOT NULL,
       body TEXT NOT NULL,
-      created_at TEXT NOT NULL
+      created_at TEXT NOT NULL,
+      parent_comment_id INTEGER,
+      admin_hearted INTEGER NOT NULL DEFAULT 0
+    )
+  ''';
+
+  static const _workCommentReactionsSchema = '''
+    CREATE TABLE IF NOT EXISTS work_comment_reactions(
+      comment_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      reaction INTEGER NOT NULL CHECK (reaction IN (-1, 1)),
+      PRIMARY KEY (comment_id, user_id)
     )
   ''';
 
@@ -250,6 +280,7 @@ class AppDatabase {
     ''');
     await db.execute(_worksSchema);
     await db.execute(_workCommentsSchema);
+    await db.execute(_workCommentReactionsSchema);
     await db.execute(_workLikesSchema);
     await db.execute(_hiresSchema);
     await db.execute(_applicationsSchema);

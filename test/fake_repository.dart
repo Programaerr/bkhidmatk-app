@@ -203,10 +203,31 @@ class FakeRepo implements Repository {
       {required int userId, required bool liked}) async {}
 
   @override
-  Future<List<WorkComment>> workComments(int workId) async => const [];
+  Future<List<WorkComment>> workComments(
+    int workId, {
+    int? viewerId,
+    bool isAdmin = false,
+  }) async =>
+      const [];
 
   @override
   Future<int> addWorkComment(WorkComment comment) async => 1;
+
+  @override
+  Future<void> updateWorkComment(int id, {required String body}) async {}
+
+  @override
+  Future<void> setWorkCommentReaction(
+    int commentId, {
+    required int userId,
+    required int reaction,
+  }) async {}
+
+  @override
+  Future<void> setWorkCommentHeart(
+    int commentId, {
+    required bool hearted,
+  }) async {}
 
   @override
   Future<int> workCount() async => 0;
