@@ -32,6 +32,7 @@ class ReelVideoLink {
           'controls': '1',
           'loop': '1',
           'playlist': id,
+          'enablejsapi': '1',
         });
       }
     }

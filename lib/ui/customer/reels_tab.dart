@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -257,6 +259,15 @@ class _ReelPageState extends State<_ReelPage> {
   int _initialization = 0;
   WebViewController? _webController;
   bool _webLoaded = false;
+  bool _isPaused = false;
+  bool _showPlaybackControls = false;
+  double _zoomScale = 1;
+  double _zoomStartScale = 1;
+  String? _seekFeedback;
+  Timer? _controlsTimer;
+  Timer? _seekFeedbackTimer;
+  Timer? _webPositionTimer;
+  int _webPositionSeconds = 0;
 
   @override
   void initState() {
@@ -276,6 +287,8 @@ class _ReelPageState extends State<_ReelPage> {
       _webController = null;
       _webLoaded = false;
       _failed = false;
+      _isPaused = false;
+      _zoomScale = 1;
       if (widget.active) {
         if (_isDirectVideo) {
           _initialize();
@@ -290,16 +303,21 @@ class _ReelPageState extends State<_ReelPage> {
         if (_isDirectVideo) {
           if (_controller == null && !_failed) _initialize();
           _controller?.play();
+          _isPaused = false;
         } else {
           if (_webController == null && !_failed) {
             _initializeWebView();
           } else {
-            _controlEmbeddedVideo('play');
+            _isPaused = false;
+            _controlEmbeddedVideo('playVideo');
+            _startWebPositionTimer();
           }
         }
       } else {
         _controller?.pause();
-        _controlEmbeddedVideo('pause');
+        _controlEmbeddedVideo('pauseVideo');
+        _isPaused = true;
+        _webPositionTimer?.cancel();
       }
     }
   }
@@ -381,8 +399,11 @@ class _ReelPageState extends State<_ReelPage> {
             setState(() {
               _webLoaded = true;
               _loading = false;
+              _isPaused = false;
+              _webPositionSeconds = 0;
             });
-            _controlEmbeddedVideo('play');
+            _controlEmbeddedVideo('playVideo');
+            _startWebPositionTimer();
           },
           onWebResourceError: (error) {
             if (error.isForMainFrame == true &&
@@ -410,7 +431,12 @@ class _ReelPageState extends State<_ReelPage> {
       );
       if (!mounted || token != _initialization || !widget.active) return;
       _webController = controller;
-      await controller.loadRequest(target);
+      final source = Uri.tryParse(widget.work.videoUrl);
+      if (source != null && target.toString() != source.toString()) {
+        await controller.loadHtmlString(_embedPage(target));
+      } else {
+        await controller.loadRequest(target);
+      }
     } catch (error) {
       debugPrint('Failed to load embedded reel: $error');
       if (!mounted || token != _initialization) return;
@@ -421,17 +447,40 @@ class _ReelPageState extends State<_ReelPage> {
     }
   }
 
+  String _embedPage(Uri target) {
+    final escapedUrl = target
+        .toString()
+        .replaceAll('&', '&amp;')
+        .replaceAll('"', '&quot;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;');
+    return '<!doctype html><html><head><meta name="viewport" '
+        'content="width=device-width, initial-scale=1, maximum-scale=1">'
+        '<style>html,body{margin:0;width:100%;height:100%;overflow:hidden;'
+        'background:#000}iframe{border:0;width:100%;height:100%;'
+        'position:absolute;inset:0}</style></head><body>'
+        '<iframe id="reel-player" src="$escapedUrl" '
+        'allow="autoplay; encrypted-media; picture-in-picture; fullscreen" '
+        'allowfullscreen></iframe></body></html>';
+  }
+
   void _controlEmbeddedVideo(String action) {
     final controller = _webController;
     if (controller == null || !_webLoaded) return;
+    final shouldPlay = action.startsWith('play');
     controller
         .runJavaScript(
-          "document.querySelectorAll('video').forEach((video) => { "
-          "video.muted = true; "
-          "if ('$action' === 'play') video.play().catch(() => {}); "
-          "else video.pause(); "
-          '});',
-        )
+      "document.querySelectorAll('video').forEach((video) => { "
+      "video.muted = $_muted; "
+      'if ($shouldPlay) video.play().catch(() => {}); '
+      "else video.pause(); "
+      '});'
+      "document.querySelectorAll('iframe').forEach((frame) => { "
+      "frame.contentWindow?.postMessage(JSON.stringify({"
+      "event:'command',func:'$action',args:[]"
+      "}), '*'); "
+      '});',
+    )
         .catchError((error) {
       debugPrint('Embedded video $action request failed: $error');
     });
@@ -448,6 +497,9 @@ class _ReelPageState extends State<_ReelPage> {
 
   @override
   void dispose() {
+    _controlsTimer?.cancel();
+    _seekFeedbackTimer?.cancel();
+    _webPositionTimer?.cancel();
     _disposeController();
     super.dispose();
   }
@@ -470,6 +522,104 @@ class _ReelPageState extends State<_ReelPage> {
     if (mounted) setState(() => _muted = muted);
   }
 
+  Future<void> _togglePlayback() async {
+    if (_isDirectVideo) {
+      final controller = _controller;
+      if (controller == null || !controller.value.isInitialized) return;
+      if (controller.value.isPlaying) {
+        await controller.pause();
+      } else {
+        await controller.play();
+      }
+      if (!mounted) return;
+      setState(() => _isPaused = !controller.value.isPlaying);
+    } else {
+      final nextPaused = !_isPaused;
+      _controlEmbeddedVideo(nextPaused ? 'pauseVideo' : 'playVideo');
+      if (nextPaused) {
+        _webPositionTimer?.cancel();
+      } else {
+        _startWebPositionTimer();
+      }
+      if (mounted) setState(() => _isPaused = nextPaused);
+    }
+    _revealPlaybackControls();
+  }
+
+  Future<void> _seek(Duration offset) async {
+    if (_isDirectVideo) {
+      final controller = _controller;
+      if (controller == null || !controller.value.isInitialized) return;
+      final target = controller.value.position + offset;
+      final end = controller.value.duration;
+      await controller.seekTo(
+        target < Duration.zero ? Duration.zero : (target > end ? end : target),
+      );
+    } else {
+      final seconds = offset.inSeconds;
+      final controller = _webController;
+      if (controller == null) return;
+      final target = (_webPositionSeconds + seconds).clamp(0, 86400);
+      _webPositionSeconds = target;
+      try {
+        await controller.runJavaScript(
+          "document.querySelectorAll('video').forEach((video) => { "
+          "video.currentTime = Math.max(0, Math.min("
+          "Number.isFinite(video.duration) ? video.duration : Infinity, "
+          "video.currentTime + ($seconds))); "
+          '});'
+          "document.querySelectorAll('iframe').forEach((frame) => { "
+          "frame.contentWindow?.postMessage(JSON.stringify({"
+          "event:'command',func:'seekTo',args:[$target,true]"
+          "}), '*'); "
+          "frame.contentWindow?.postMessage(JSON.stringify({"
+          "method:'setCurrentTime',value:$target"
+          "}), '*'); "
+          '});',
+        );
+      } catch (error) {
+        debugPrint('Embedded video seek request failed: $error');
+      }
+    }
+    if (!mounted) return;
+    setState(() => _seekFeedback = offset.isNegative ? '-10' : '+10');
+    _seekFeedbackTimer?.cancel();
+    _seekFeedbackTimer = Timer(const Duration(milliseconds: 700), () {
+      if (mounted) setState(() => _seekFeedback = null);
+    });
+    _revealPlaybackControls();
+  }
+
+  void _revealPlaybackControls() {
+    _controlsTimer?.cancel();
+    setState(() => _showPlaybackControls = true);
+    if (!_isPaused) {
+      _controlsTimer = Timer(const Duration(seconds: 2), () {
+        if (mounted) setState(() => _showPlaybackControls = false);
+      });
+    }
+  }
+
+  void _startWebPositionTimer() {
+    _webPositionTimer?.cancel();
+    _webPositionTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted && !_isPaused && widget.active) {
+        _webPositionSeconds++;
+      }
+    });
+  }
+
+  void _onScaleStart(ScaleStartDetails details) {
+    _zoomStartScale = _zoomScale;
+  }
+
+  void _onScaleUpdate(ScaleUpdateDetails details) {
+    if (details.pointerCount < 2) return;
+    setState(() {
+      _zoomScale = (_zoomStartScale * details.scale).clamp(1.0, 4.0);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final video = _controller;
@@ -479,40 +629,49 @@ class _ReelPageState extends State<_ReelPage> {
         ColoredBox(
           color: Colors.black,
           child: !_isDirectVideo && _webController != null
-              ? WebViewWidget(
-                  controller: _webController!,
-                  layoutDirection: TextDirection.ltr,
+              ? GestureDetector(
+                  onScaleStart: _onScaleStart,
+                  onScaleUpdate: _onScaleUpdate,
+                  child: ClipRect(
+                    child: Transform.scale(
+                      scale: _zoomScale,
+                      child: WebViewWidget(
+                        controller: _webController!,
+                        layoutDirection: TextDirection.ltr,
+                      ),
+                    ),
+                  ),
                 )
               : video != null && video.value.isInitialized
-              ? GestureDetector(
-                  onDoubleTap: widget.onLike,
-                  onTap: () {
-                    if (video.value.isPlaying) {
-                      video.pause();
-                    } else {
-                      video.play();
-                    }
-                    setState(() {});
-                  },
-                  child: _CoverVideo(controller: video),
-                )
-              : Center(
-                  child: _failed
-                      ? const Padding(
-                          padding: EdgeInsets.all(28),
-                          child: Text(
-                            'تعذر عرض الفيديو من هذا الرابط. جرّب رابط المشاركة العام أو رابط فيديو مباشر.',
-                            textAlign: TextAlign.center,
-                            style:
-                                TextStyle(color: Colors.white70, height: 1.5),
-                          ),
-                        )
-                      : !widget.active
-                          ? const Icon(Icons.play_circle_outline_rounded,
-                              color: Colors.white70, size: 64)
-                          : const CircularProgressIndicator(
-                              color: AppColors.gold),
-                ),
+                  ? GestureDetector(
+                      onDoubleTap: widget.onLike,
+                      onTap: _togglePlayback,
+                      onScaleStart: _onScaleStart,
+                      onScaleUpdate: _onScaleUpdate,
+                      child: ClipRect(
+                        child: Transform.scale(
+                          scale: _zoomScale,
+                          child: _CoverVideo(controller: video),
+                        ),
+                      ),
+                    )
+                  : Center(
+                      child: _failed
+                          ? const Padding(
+                              padding: EdgeInsets.all(28),
+                              child: Text(
+                                'تعذر عرض الفيديو من هذا الرابط. جرّب رابط المشاركة العام أو رابط فيديو مباشر.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                    color: Colors.white70, height: 1.5),
+                              ),
+                            )
+                          : !widget.active
+                              ? const Icon(Icons.play_circle_outline_rounded,
+                                  color: Colors.white70, size: 64)
+                              : const CircularProgressIndicator(
+                                  color: AppColors.gold),
+                    ),
         ),
         const Positioned.fill(
           child: IgnorePointer(
@@ -538,6 +697,25 @@ class _ReelPageState extends State<_ReelPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              _ReelAction(
+                icon:
+                    _isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded,
+                label: _isPaused ? 'تشغيل' : 'إيقاف',
+                onTap: _togglePlayback,
+              ),
+              const SizedBox(height: 14),
+              _ReelAction(
+                icon: Icons.replay_10_rounded,
+                label: '-10',
+                onTap: () => _seek(const Duration(seconds: -10)),
+              ),
+              const SizedBox(height: 14),
+              _ReelAction(
+                icon: Icons.forward_10_rounded,
+                label: '+10',
+                onTap: () => _seek(const Duration(seconds: 10)),
+              ),
+              const SizedBox(height: 14),
               _ReelAction(
                 icon: widget.work.likedByMe
                     ? Icons.favorite_rounded
@@ -653,6 +831,58 @@ class _ReelPageState extends State<_ReelPage> {
               child: CircularProgressIndicator(color: AppColors.gold),
             ),
           ),
+        if (_seekFeedback != null)
+          Center(
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(40),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(18),
+                  child: Text(
+                    _seekFeedback!,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        if (_showPlaybackControls && !_failed)
+          Positioned.fill(
+            child: Center(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _PlaybackButton(
+                    icon: Icons.replay_10_rounded,
+                    tooltip: 'ترجيع 10 ثوانٍ',
+                    onTap: () => _seek(const Duration(seconds: -10)),
+                  ),
+                  const SizedBox(width: 24),
+                  _PlaybackButton(
+                    icon: _isPaused
+                        ? Icons.play_arrow_rounded
+                        : Icons.pause_rounded,
+                    tooltip: _isPaused ? 'تشغيل' : 'إيقاف مؤقت',
+                    onTap: _togglePlayback,
+                    size: 62,
+                  ),
+                  const SizedBox(width: 24),
+                  _PlaybackButton(
+                    icon: Icons.forward_10_rounded,
+                    tooltip: 'تقديم 10 ثوانٍ',
+                    onTap: () => _seek(const Duration(seconds: 10)),
+                  ),
+                ],
+              ),
+            ),
+          ),
         if (_isDirectVideo &&
             video != null &&
             video.value.isInitialized &&
@@ -682,6 +912,33 @@ class _ReelPageState extends State<_ReelPage> {
       ],
     );
   }
+}
+
+class _PlaybackButton extends StatelessWidget {
+  const _PlaybackButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+    this.size = 48,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => IconButton(
+        tooltip: tooltip,
+        onPressed: onTap,
+        iconSize: size * .58,
+        style: IconButton.styleFrom(
+          fixedSize: Size(size, size),
+          backgroundColor: Colors.black54,
+          foregroundColor: Colors.white,
+        ),
+        icon: Icon(icon),
+      );
 }
 
 class _CoverVideo extends StatelessWidget {
