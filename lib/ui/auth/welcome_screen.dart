@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../state/app_state.dart';
 import 'auth_route.dart';
@@ -13,6 +14,7 @@ import 'push_key.dart';
 import 'register_screen.dart';
 import 'social_marks.dart';
 import 'truck_scene.dart';
+import '../widgets/ui.dart';
 
 const _cream = Color(0xFFFFFEE2);
 const _ink = Color(0xFF263238);
@@ -164,6 +166,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   late final AppState _appState;
   bool _nightMode = false;
   bool _reduceMotion = false;
+  List<String?> _socialUrls = List<String?>.filled(_socialMarks.length, null);
 
   void _onAppStateChanged() {
     final night = _appState.themeMode == ThemeMode.dark;
@@ -188,6 +191,52 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     _nightController
       ..value = _nightMode ? 1 : 0
       ..addStatusListener(_onNightStatus);
+    _loadSocialUrls();
+  }
+
+  Future<void> _loadSocialUrls() async {
+    try {
+      final urls = await Future.wait([
+        _appState.repo.getSetting('social_facebook_url'),
+        _appState.repo.getSetting('social_instagram_url'),
+        _appState.repo.getSetting('social_tiktok_url'),
+      ]);
+      if (!mounted) return;
+      setState(() {
+        _socialUrls = [
+          for (final url in urls) url.trim().isEmpty ? null : url.trim(),
+        ];
+      });
+    } catch (error, stackTrace) {
+      debugPrint('Failed to load contact links: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      if (mounted) {
+        AppSnack.show(context, 'تعذر تحميل روابط التواصل', error: true);
+      }
+    }
+  }
+
+  Future<void> _openSocialUrl(String? value) async {
+    if (value == null) return;
+    final uri = Uri.tryParse(value);
+    if (uri == null ||
+        !{'http', 'https'}.contains(uri.scheme.toLowerCase()) ||
+        uri.host.isEmpty) {
+      AppSnack.show(context, 'رابط التواصل غير صالح', error: true);
+      return;
+    }
+    try {
+      if (await launchUrl(uri, mode: LaunchMode.externalApplication)) return;
+      if (mounted) {
+        AppSnack.show(context, 'تعذر فتح رابط التواصل', error: true);
+      }
+    } catch (error, stackTrace) {
+      debugPrint('Failed to open contact link: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      if (mounted) {
+        AppSnack.show(context, 'تعذر فتح رابط التواصل', error: true);
+      }
+    }
   }
 
   @override
@@ -515,7 +564,9 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                             bottom: y(_Design.socialBottom),
                             above: touchMargin,
                             below: touchMargin,
-                            onTap: null,
+                            onTap: _socialUrls[index] == null
+                                ? null
+                                : () => _openSocialUrl(_socialUrls[index]),
                             child: PushKey(
                               unit: unit,
                               faceHeight: _Design.socialFaceHeight * unit,

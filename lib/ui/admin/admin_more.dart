@@ -252,6 +252,13 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
                 child: Column(
                   children: [
                     _Tile(
+                      icon: Icons.link_rounded,
+                      title: 'روابط التواصل',
+                      subtitle: 'تحديد روابط فيسبوك وإنستغرام وتيك توك',
+                      onTap: _editSocialLinks,
+                    ),
+                    const Divider(height: 1),
+                    _Tile(
                       icon: Icons.support_agent_rounded,
                       title: 'بيانات الدعم',
                       subtitle: 'رقم الدعم الظاهر للزبائن في الوصولات',
@@ -399,6 +406,113 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
       if (context.mounted) AppSnack.show(context, 'تم تحديث رقم الدعم');
     }
     controller.dispose();
+  }
+
+  Future<void> _editSocialLinks() async {
+    final repo = context.read<AppState>().repo;
+    final keys = [
+      'social_facebook_url',
+      'social_instagram_url',
+      'social_tiktok_url'
+    ];
+    final urls = await Future.wait([
+      for (final key in keys) repo.getSetting(key),
+    ]);
+    if (!mounted) return;
+
+    final controllers =
+        urls.map((url) => TextEditingController(text: url)).toList();
+    final formKey = GlobalKey<FormState>();
+    final saved = await showAppSheet<bool>(
+      context,
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        child: Form(
+          key: formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SheetHeader(
+                  title: 'روابط التواصل',
+                  subtitle:
+                      'تظهر الأيقونات في صفحة تسجيل الدخول. اترك الرابط فارغاً لإيقافه.',
+                ),
+                const SizedBox(height: 16),
+                for (final (index, label) in [
+                  'فيسبوك',
+                  'إنستغرام',
+                  'تيك توك',
+                ].indexed) ...[
+                  TextFormField(
+                    controller: controllers[index],
+                    keyboardType: TextInputType.url,
+                    textDirection: TextDirection.ltr,
+                    decoration: InputDecoration(
+                      labelText: label,
+                      hintText: 'https://',
+                      prefixIcon: const Icon(Icons.link_rounded, size: 20),
+                    ),
+                    validator: (value) =>
+                        _normalizeSocialUrl(value ?? '') == null
+                            ? 'أدخل رابطاً صحيحاً يبدأ بـ https://'
+                            : null,
+                  ),
+                  if (index < controllers.length - 1)
+                    const SizedBox(height: 12),
+                ],
+                const SizedBox(height: 18),
+                PrimaryButton(
+                  label: 'حفظ الروابط',
+                  icon: Icons.save_outlined,
+                  onPressed: () {
+                    if (formKey.currentState!.validate()) {
+                      Navigator.pop(ctx, true);
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    if (saved == true) {
+      try {
+        for (var i = 0; i < keys.length; i++) {
+          await repo.setSetting(
+            keys[i],
+            _normalizeSocialUrl(controllers[i].text) ?? '',
+          );
+        }
+        if (mounted) AppSnack.show(context, 'تم حفظ روابط التواصل');
+      } catch (error, stackTrace) {
+        debugPrint('Failed to save social links: $error');
+        debugPrintStack(stackTrace: stackTrace);
+        if (mounted) {
+          AppSnack.show(context, 'تعذر حفظ الروابط. حاول مرة أخرى.',
+              error: true);
+        }
+      }
+    }
+    for (final controller in controllers) {
+      controller.dispose();
+    }
+  }
+
+  String? _normalizeSocialUrl(String value) {
+    final text = value.trim();
+    if (text.isEmpty) return '';
+    final withScheme = text.contains('://') ? text : 'https://$text';
+    final uri = Uri.tryParse(withScheme);
+    if (uri == null ||
+        !{'http', 'https'}.contains(uri.scheme.toLowerCase()) ||
+        uri.host.isEmpty) {
+      return null;
+    }
+    return uri.toString();
   }
 }
 
