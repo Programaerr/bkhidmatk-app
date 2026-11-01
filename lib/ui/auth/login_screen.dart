@@ -74,7 +74,7 @@ class _LoginScreenState extends State<LoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const BrandLogo(size: 6, radius: 18),
-              const SizedBox(height: 18),
+              const SizedBox(height: 8),
               Text('أهلاً بعودتك 👋', style: theme.textTheme.headlineSmall),
               const SizedBox(height: 4),
               Text('سجّل دخولك لمتابعة حجوزاتك وخدماتك.',
