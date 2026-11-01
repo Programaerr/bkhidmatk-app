@@ -133,9 +133,41 @@ class _GlassNavigationBar extends StatefulWidget {
 }
 
 class _GlassNavigationBarState extends State<_GlassNavigationBar> {
+  final _navigationBoundsKey = GlobalKey();
   double _dragDistance = 0;
+  bool _isLongPressDragging = false;
+
+  void _selectAt(Offset globalPosition) {
+    final renderObject =
+        _navigationBoundsKey.currentContext?.findRenderObject();
+    if (renderObject is! RenderBox || renderObject.size.width <= 0) return;
+
+    final localPosition = renderObject.globalToLocal(globalPosition);
+    final itemWidth = renderObject.size.width / widget.items.length;
+    final direction = Directionality.of(context);
+    final logicalX = direction == TextDirection.rtl
+        ? renderObject.size.width - localPosition.dx
+        : localPosition.dx;
+    final nextIndex =
+        (logicalX / itemWidth).floor().clamp(0, widget.items.length - 1);
+    if (nextIndex != widget.index) widget.onSelect(nextIndex);
+  }
+
+  void _startLongPressDrag(LongPressStartDetails details) {
+    setState(() => _isLongPressDragging = true);
+    _selectAt(details.globalPosition);
+  }
+
+  void _updateLongPressDrag(LongPressMoveUpdateDetails details) {
+    _selectAt(details.globalPosition);
+  }
+
+  void _endLongPressDrag() {
+    if (mounted) setState(() => _isLongPressDragging = false);
+  }
 
   void _finishSwipe(DragEndDetails details) {
+    if (_isLongPressDragging) return;
     final direction = Directionality.of(context) == TextDirection.rtl ? -1 : 1;
     var distance = _dragDistance * direction;
     if (distance.abs() < 24) {
@@ -186,6 +218,10 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar> {
                       return GestureDetector(
                         key: const ValueKey('glass-navigation-bar'),
                         behavior: HitTestBehavior.opaque,
+                        onLongPressStart: _startLongPressDrag,
+                        onLongPressMoveUpdate: _updateLongPressDrag,
+                        onLongPressEnd: (_) => _endLongPressDrag(),
+                        onLongPressCancel: _endLongPressDrag,
                         onHorizontalDragStart: (_) => _dragDistance = 0,
                         onHorizontalDragUpdate: (details) {
                           _dragDistance += details.delta.dx;
@@ -210,6 +246,7 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar> {
                             ),
                           ),
                           child: Stack(
+                            key: _navigationBoundsKey,
                             children: [
                               AnimatedPositionedDirectional(
                                 duration: const Duration(milliseconds: 480),
@@ -218,29 +255,34 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar> {
                                 top: 4,
                                 bottom: 4,
                                 width: itemWidth - 8,
-                                child: DecoratedBox(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(32),
-                                    gradient: LinearGradient(
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                      colors: [
-                                        widget.accent.withValues(alpha: .30),
-                                        widget.accent.withValues(alpha: .13),
+                                child: AnimatedScale(
+                                  scale: _isLongPressDragging ? 1.06 : 1,
+                                  duration: const Duration(milliseconds: 180),
+                                  curve: Curves.easeOutCubic,
+                                  child: DecoratedBox(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(32),
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: [
+                                          widget.accent.withValues(alpha: .30),
+                                          widget.accent.withValues(alpha: .13),
+                                        ],
+                                      ),
+                                      border: Border.all(
+                                        color: widget.accent
+                                            .withValues(alpha: .28),
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: widget.accent
+                                              .withValues(alpha: .13),
+                                          blurRadius: 12,
+                                          spreadRadius: 1,
+                                        ),
                                       ],
                                     ),
-                                    border: Border.all(
-                                      color:
-                                          widget.accent.withValues(alpha: .28),
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: widget.accent
-                                            .withValues(alpha: .13),
-                                        blurRadius: 12,
-                                        spreadRadius: 1,
-                                      ),
-                                    ],
                                   ),
                                 ),
                               ),

@@ -50,5 +50,21 @@ void main() {
     await tester.pumpAndSettle();
     expect(selectedIndex, 2);
     expect(find.text('page 2'), findsOneWidget);
+
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.text('حسابي')),
+    );
+    await tester.pump(const Duration(milliseconds: 600));
+    await gesture.moveTo(tester.getCenter(find.text('الخدمات')));
+    await tester.pumpAndSettle();
+    expect(selectedIndex, 1);
+    expect(find.text('page 1'), findsOneWidget);
+
+    await gesture.moveTo(tester.getCenter(find.text('الرئيسية')));
+    await tester.pumpAndSettle();
+    expect(selectedIndex, 0);
+    expect(find.text('page 0'), findsOneWidget);
+    await gesture.up();
+    await tester.pumpAndSettle();
   });
 }
