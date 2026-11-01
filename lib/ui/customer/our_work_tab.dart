@@ -65,26 +65,10 @@ class _OurWorkTabState extends State<OurWorkTab> with RealtimeRefresh<OurWorkTab
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return SafeArea(
       bottom: false,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(18, 14, 18, 4),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('أعمالنا', style: theme.textTheme.headlineSmall),
-                const SizedBox(height: 2),
-                Text(
-                  'اسحب للأعلى لمشاهدة أحدث أعمال فريق جايك',
-                  style: theme.textTheme.bodySmall,
-                ),
-              ],
-            ),
-          ),
           Expanded(
             child: FutureBuilder<List<OurWork>>(
               future: _future,
