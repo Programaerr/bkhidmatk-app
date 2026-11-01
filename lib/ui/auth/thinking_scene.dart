@@ -49,6 +49,9 @@ const _mediumBubbleCenter = Offset(283.96, 187);
 const _questionCenter = Offset(321, 146);
 const _answerCenter = Offset(321, 149);
 
+// الكلام يكبر قليلاً وهو يظهر، فتُحفظ صورته بدقة أعلى حتى يبقى حاداً.
+const _answerSharpness = 1.25;
+
 const _glassOff = Color(0xFFF5F5F5);
 const _glassOn = Color(0xFFFFFDE7);
 const _filamentOff = Color(0xFFE0E0E0);
@@ -151,7 +154,10 @@ class ThinkingArt {
         smallBubble = _record(thinkingSmallBubble),
         mediumBubble = _record(thinkingMediumBubble),
         question = _record(thinkingQuestion),
-        answer = _recordAnswer(),
+        answer = RasterLayer(
+          _recordAnswer(),
+          Rect.fromCenter(center: _answerCenter, width: 90, height: 44),
+        ),
         arm = _record(thinkingArm),
         hand = _record(thinkingHand),
         body = _record(thinkingBody),
@@ -168,16 +174,17 @@ class ThinkingArt {
         bulbGlass = parseSvgPath(thinkingBulbGlass),
         bulbFilament = parseSvgPath(thinkingBulbFilament);
 
-  final RasterLayer backdrop;
+  final RasterLayer backdrop, answer;
   final List<ui.Picture> gears;
-  final ui.Picture bulbBase, cloud, smallBubble, mediumBubble, question, answer, arm, hand, body, table;
+  final ui.Picture bulbBase, cloud, smallBubble, mediumBubble, question, arm, hand, body, table;
   final ui.Picture head, leftEye, rightEye, leftBrow, rightBrow, mouth;
   final Path bulbGlass, bulbFilament;
 
   void dispose() {
     backdrop.dispose();
+    answer.dispose();
     for (final picture in [
-      ...gears, bulbBase, cloud, smallBubble, mediumBubble, question, answer, arm, hand, body, table,
+      ...gears, bulbBase, cloud, smallBubble, mediumBubble, question, arm, hand, body, table,
       head, leftEye, rightEye, leftBrow, rightBrow, mouth,
     ]) {
       picture.dispose();
@@ -320,6 +327,8 @@ class ThinkingScenePainter extends CustomPainter {
 
     final pose = ThinkingPose(time.value, answer: answer.value);
     final unit = _artScale * scale;
+    final resolution = unit * pixelRatio;
+    art.answer.prepare(resolution * _answerSharpness);
     canvas
       ..save()
       ..translate(
@@ -327,10 +336,10 @@ class ThinkingScenePainter extends CustomPainter {
         size.height * _artCenterFraction - _artCenterY * unit,
       )
       ..scale(unit);
-    art.backdrop.paint(canvas, unit * pixelRatio);
+    art.backdrop.paint(canvas, resolution);
     _paintGears(canvas, pose);
     _paintBulb(canvas, pose);
-    _paintCloud(canvas, pose);
+    _paintCloud(canvas, pose, resolution);
     _paintCharacter(canvas, pose);
     canvas
       ..drawPicture(art.table)
@@ -394,7 +403,7 @@ class ThinkingScenePainter extends CustomPainter {
       ..drawPath(art.bulbFilament, Paint()..color = Color.lerp(_filamentOff, _filamentOn, light)!);
   }
 
-  void _paintCloud(Canvas canvas, ThinkingPose pose) {
+  void _paintCloud(Canvas canvas, ThinkingPose pose, double resolution) {
     canvas
       ..save()
       ..translate(0, pose.cloudBob * .4);
@@ -422,7 +431,7 @@ class ThinkingScenePainter extends CustomPainter {
     }
     if (pose.answerSize > 0) {
       _sizeAround(canvas, _answerCenter, pose.answerSize, pose.answerSize);
-      canvas.drawPicture(art.answer);
+      art.answer.paint(canvas, resolution * _answerSharpness);
     }
     canvas.restore();
   }
