@@ -346,27 +346,27 @@ void main() {
   });
 
   group('حركة الشخصية', () {
-    test('تفكر أولاً، ثم تأتيها الفكرة فيضيء المصباح ويرجع', () {
-      expect(const ThinkingPose(3).idea, 0);
-      expect(const ThinkingPose(3).light, 0);
-      expect(const ThinkingPose(7).idea, 1);
-      expect(const ThinkingPose(7).light, 1);
-      expect(const ThinkingPose(8.8).idea, 0);
-      expect(const ThinkingPose(8.8).light, 0);
+    test('بلا ضغط تبقى تفكر طوال الوقت: المصباح مطفأ والوجه والغيمة لا يتغيران', () {
+      for (var time = 0.0; time < ThinkingPose.cycle * 3; time += .05) {
+        final pose = ThinkingPose(time);
+        expect(pose.idea, 0);
+        expect(pose.mouthOpen, 0);
+        expect(pose.questionSize, 1);
+        expect(pose.answerSize, 0);
+        expect(pose.cloudSize, 1);
+        // الحاجبان يتحركان قليلاً وهو يفكر، ولا يرتفعان ارتفاع الفكرة.
+        expect(pose.leftBrowLift.abs(), lessThanOrEqualTo(.3));
+        expect(pose.rightBrowLift, lessThanOrEqualTo(.9));
+      }
     });
 
     test('الضغط يأتي بالفكرة: يضيء المصباح وينفتح الفم وتتبدل الغيمة', () {
-      const thinking = ThinkingPose(3);
-      expect(thinking.questionSize, 1);
-      expect(thinking.answerSize, 0);
-      expect(thinking.mouthOpen, 0);
-
       const answered = ThinkingPose(3, answer: 1);
       expect(answered.questionSize, 0);
       expect(answered.answerSize, 1);
       expect(answered.idea, 1);
-      expect(answered.light, 1);
       expect(answered.mouthOpen, 1);
+      expect(answered.rightBrowLift, greaterThan(const ThinkingPose(3).rightBrowLift));
     });
 
     test('علامة الاستفهام تختفي أولاً ثم يظهر الكلام، فلا يتراكبان', () {
@@ -374,19 +374,6 @@ void main() {
       expect(const ThinkingPose(3, answer: .3).answerSize, 0);
       expect(const ThinkingPose(3, answer: .6).questionSize, 0);
       expect(const ThinkingPose(3, answer: .6).answerSize, greaterThan(0));
-    });
-
-    test('الفكرة التلقائية تضيء المصباح وتبقي علامة الاستفهام في الغيمة', () {
-      expect(const ThinkingPose(7).light, 1);
-      expect(const ThinkingPose(7).questionSize, 1);
-      expect(const ThinkingPose(7).answerSize, 0);
-    });
-
-    test('المصباح يرتجف قبل أن يضيء', () {
-      expect(const ThinkingPose(5.76).light, closeTo(.35, .01));
-      expect(const ThinkingPose(5.95).light, 0);
-      expect(const ThinkingPose(6.08).light, closeTo(.6, .01));
-      expect(const ThinkingPose(6.35).light, 0);
     });
 
     test('ترمش ثم تفتح عينيها', () {
@@ -404,19 +391,11 @@ void main() {
     test('لا تقفز أي حركة عند بداية الدورة التالية', () {
       const before = ThinkingPose(ThinkingPose.cycle - .001);
       const after = ThinkingPose(ThinkingPose.cycle + .001);
-      expect(after.gearTime - before.gearTime, closeTo(.002, .001));
       expect(after.headTilt, closeTo(before.headTilt, .001));
       expect(after.bodyLift, closeTo(before.bodyLift, .01));
-      expect(after.light, closeTo(before.light, .001));
+      expect(after.blink, closeTo(before.blink, .001));
+      expect(after.handTap, closeTo(before.handTap, .001));
       expect(after.eyes.dy, closeTo(before.eyes.dy, .01));
-    });
-
-    test('التروس تتسارع عند الفكرة ثم ترجع إلى سرعتها', () {
-      double speed(double time) =>
-          (ThinkingPose(time + .01).gearTime - ThinkingPose(time).gearTime) / .01;
-      expect(speed(3), closeTo(1, .001));
-      expect(speed(7), greaterThan(1.5));
-      expect(speed(8.5), closeTo(1, .001));
     });
   });
 }

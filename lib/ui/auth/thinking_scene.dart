@@ -61,7 +61,7 @@ const _filamentOn = Color(0xFFFFA000);
 const _answerTurn = Duration(milliseconds: 450);
 const _answerHold = Duration(milliseconds: 2800);
 
-/// وضع الشخصية في لحظة معينة: تفكر طوال الدورة، ثم تأتيها الفكرة فيضيء المصباح.
+/// وضع الشخصية في لحظة معينة: تبقى تفكر، ولا تأتيها الفكرة إلا عند الضغط على الرسم.
 class ThinkingPose {
   const ThinkingPose(this.time, {this.answer = 0});
 
@@ -71,7 +71,6 @@ class ThinkingPose {
   final double answer;
 
   static const cycle = 9.0;
-  static const _ideaStart = 6.4;
 
   double get _phase => time % cycle;
 
@@ -87,18 +86,15 @@ class ThinkingPose {
     return 1 - Curves.easeIn.transform((t - rise - hold) / fall);
   }
 
-  /// لحظة الفكرة: تأتيه وحدها أثناء الدورة، وعند الضغط على الرسم.
-  double get idea => math.max(_pulse(_ideaStart, .3, 1, .7), Curves.easeOut.transform(answer));
-
-  /// ضوء المصباح: يرتجف مرتين قبل الفكرة ثم يضيء معها.
-  double get light => [
-        _pulse(5.7, .06, .04, .1) * .35,
-        _pulse(6, .06, .06, .12) * .6,
-        idea,
-      ].reduce(math.max);
+  /// الفكرة بعد الضغط على الرسم: يضيء المصباح ويتغير الوجه.
+  double get idea => Curves.easeOut.transform(answer);
 
   /// إغماض العينين: 1 مغمضتان.
-  double get blink => math.max(_pulse(1.6, .07, .02, .09), _pulse(4.3, .07, .02, .09));
+  double get blink => [
+        _pulse(1.6, .07, .02, .09),
+        _pulse(4.3, .07, .02, .09),
+        _pulse(7.2, .07, .02, .09),
+      ].reduce(math.max);
 
   /// ميلان الرأس، ويرتفع الرأس عند الفكرة.
   double get headTilt => .03 * _wave(4.5) - .05 * idea;
@@ -124,12 +120,6 @@ class ThinkingPose {
     final t = _phase - 2.4;
     if (t <= 0 || t >= 1.6) return 0;
     return .035 * math.sin(math.pi * t / 1.6) * math.sin(2 * math.pi * 2.4 * t);
-  }
-
-  /// زمن التروس: تتسارع قليلاً عند الفكرة ثم ترجع إلى سرعتها.
-  double get gearTime {
-    final spin = ((_phase - _ideaStart) / 1.4).clamp(0.0, 1.0);
-    return time + 1.5 * ((time / cycle).floorToDouble() + Curves.easeInOut.transform(spin));
   }
 
   double get cloudBob => 2.5 * _wave(4.5);
@@ -224,8 +214,8 @@ class ThinkingArt {
   }
 }
 
-/// سائق السيارة يفكر: رأسه يميل، ويداه ترتاحان، والتروس تدور، ثم يضيء المصباح عند الفكرة.
-/// والضغط على الرسم يغيّر ما في الغيمة إلى «ها فكرت».
+/// سائق السيارة يفكر: رأسه يميل، ويداه ترتاحان، والتروس تدور.
+/// والضغط على الرسم يضيء المصباح، ويغيّر وجهه، ويبدّل ما في الغيمة إلى «ها فكرت».
 class ThinkingScene extends StatefulWidget {
   const ThinkingScene({super.key, required this.scale});
 
@@ -363,7 +353,7 @@ class ThinkingScenePainter extends CustomPainter {
   void _paintGears(Canvas canvas, ThinkingPose pose) {
     for (final (index, (center, speed)) in _gears.indexed) {
       canvas.save();
-      _turnAround(canvas, center, 2 * math.pi * speed * pose.gearTime);
+      _turnAround(canvas, center, 2 * math.pi * speed * pose.time);
       canvas
         ..drawPicture(art.gears[index])
         ..restore();
@@ -371,7 +361,7 @@ class ThinkingScenePainter extends CustomPainter {
   }
 
   void _paintBulb(Canvas canvas, ThinkingPose pose) {
-    final light = pose.light;
+    final light = pose.idea;
     if (light > 0) {
       canvas.drawCircle(
         _bulbCenter,
