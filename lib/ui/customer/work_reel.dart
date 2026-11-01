@@ -62,7 +62,8 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
     VideoPlayerController? controller;
     try {
       if (isAssetMedia(path)) {
-        controller = VideoPlayerController.asset(path.replaceFirst('asset:', ''));
+        controller =
+            VideoPlayerController.asset(path.replaceFirst('asset:', ''));
       } else if (isNetworkMedia(path)) {
         controller = VideoPlayerController.networkUrl(Uri.parse(path));
       } else {
@@ -241,9 +242,9 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
             bottom: 20,
             child: _actions(),
           ),
-          PositionedDirectional(
-            start: 16,
-            end: 82,
+          Positioned(
+            left: 16,
+            right: 82,
             bottom: 20,
             child: _caption(),
           ),
@@ -584,6 +585,7 @@ class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
 
   Future<void> _editComment(WorkComment comment) async {
     if (comment.id == null) return;
+    final repository = context.read<AppState>().repo;
     final controller = TextEditingController(text: comment.body);
     final body = await showDialog<String>(
       context: context,
@@ -603,8 +605,7 @@ class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
             child: const Text('إلغاء'),
           ),
           FilledButton(
-            onPressed: () =>
-                Navigator.pop(context, controller.text.trim()),
+            onPressed: () => Navigator.pop(context, controller.text.trim()),
             child: const Text('حفظ'),
           ),
         ],
@@ -612,14 +613,13 @@ class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
     );
     controller.dispose();
     final updatedBody = body?.trim();
-    if (updatedBody == null || updatedBody.isEmpty || updatedBody == comment.body) {
+    if (updatedBody == null ||
+        updatedBody.isEmpty ||
+        updatedBody == comment.body) {
       return;
     }
     try {
-      await context
-          .read<AppState>()
-          .repo
-          .updateWorkComment(comment.id!, body: updatedBody);
+      await repository.updateWorkComment(comment.id!, body: updatedBody);
       if (mounted) _reloadComments();
     } catch (error, stackTrace) {
       debugPrint('Failed to edit work comment: $error');
@@ -774,8 +774,8 @@ class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
                                   visualDensity: VisualDensity.compact,
                                   onPressed: () =>
                                       setState(() => _replyTo = null),
-                                  icon: const Icon(Icons.close_rounded,
-                                      size: 18),
+                                  icon:
+                                      const Icon(Icons.close_rounded, size: 18),
                                 ),
                               ],
                             ),
@@ -785,8 +785,9 @@ class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
                           minLines: 1,
                           maxLines: 3,
                           decoration: InputDecoration(
-                            hintText:
-                                _replyTo == null ? 'اكتب تعليقاً...' : 'اكتب ردك...',
+                            hintText: _replyTo == null
+                                ? 'اكتب تعليقاً...'
+                                : 'اكتب ردك...',
                             isDense: true,
                           ),
                           onSubmitted: (_) => _send(),
@@ -805,7 +806,8 @@ class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
                           )
                         : const Icon(Icons.send_rounded),
                     color: AppColors.ink,
-                    style: IconButton.styleFrom(backgroundColor: AppColors.gold),
+                    style:
+                        IconButton.styleFrom(backgroundColor: AppColors.gold),
                   ),
                 ],
               ),
