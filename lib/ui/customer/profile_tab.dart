@@ -279,56 +279,6 @@ class _ProfileTabState extends State<ProfileTab>
               ],
             ),
           ),
-          if (!widget.workerMode) ...[
-            const SizedBox(height: 16),
-            // ------------------------------------------------ بطاقة النقاط
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(AppRadius.lg),
-                gradient: const LinearGradient(
-                  begin: Alignment.topRight,
-                  end: Alignment.bottomLeft,
-                  colors: [AppColors.gold, AppColors.goldDeep],
-                ),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 52,
-                    height: 52,
-                    decoration: BoxDecoration(
-                      color: AppColors.ink.withValues(alpha: .12),
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                    ),
-                    child: const Icon(Icons.emoji_events_rounded,
-                        color: AppColors.ink, size: 28),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('${user.points} نقطة',
-                            style: const TextStyle(
-                                color: AppColors.ink,
-                                fontSize: 22,
-                                fontWeight: FontWeight.w900,
-                                height: 1.1)),
-                        const SizedBox(height: 2),
-                        Text(
-                          'رصيد مكافآتك — اجمعها بتقييم الفنيين',
-                          style: TextStyle(
-                              color: AppColors.ink.withValues(alpha: .7),
-                              fontSize: 10.5),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
           const SizedBox(height: 16),
           SoftCard(
             padding: EdgeInsets.zero,

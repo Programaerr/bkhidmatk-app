@@ -330,13 +330,7 @@ class LocalRepository implements Repository {
         );
       }
 
-      // إضافة نقاط المكافأة إلى رصيد العميل.
-      final points = pointsForRating(stars);
-      await tx.rawUpdate(
-        'UPDATE users SET points = COALESCE(points,0) + ? WHERE id = ?',
-        [points, b['customer_id'] as int?],
-      );
-      return points;
+      return 1;
     });
   }
 

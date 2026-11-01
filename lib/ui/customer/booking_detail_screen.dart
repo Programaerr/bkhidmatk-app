@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
-import '../../data/repository.dart' show pointsPerStar;
 import '../../state/app_state.dart';
 import '../common/receipt_document.dart';
 import '../widgets/realtime_refresh.dart';
@@ -81,24 +80,22 @@ class _BookingDetailScreenState extends State<BookingDetailScreen>
     }
     setState(() => _ratingBusy = true);
     final repo = context.read<AppState>().repo;
-    final points = await repo.rateBooking(
+    final saved = await repo.rateBooking(
       bookingId: _booking!.id!,
       rating: _rating,
       review: _review.text.trim().isEmpty ? null : _review.text.trim(),
     );
     if (!mounted) return;
     setState(() => _ratingBusy = false);
-    if (points > 0) {
-      await context.read<AppState>().refreshUser();
-      if (!mounted) return;
-      AppSnack.show(context, 'شكراً لتقييمك! أضفنا $points نقطة إلى رصيدك 🎉');
+    if (saved > 0) {
+      AppSnack.show(context, 'شكراً لمشاركة تقييمك');
       _load();
     } else {
-      AppSnack.show(context, 'لم يتم إضافة نقاط — تحقق من حالة الحجز', error: true);
+      AppSnack.show(context, 'تعذر حفظ التقييم، تحقق من حالة الحجز', error: true);
     }
   }
 
-  /// بطاقة تقييم الفني — تظهر للحجز المكتمل وتمنح نقاطاً مقابل التقييم.
+  /// بطاقة تقييم الفني للحجوزات المكتملة.
   Widget _ratingCard(ThemeData theme, Booking b) {
     final alreadyRated = b.rating != null;
     return SoftCard(
@@ -121,7 +118,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen>
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  alreadyRated ? 'تقييمك لهذا الحجز' : 'قيّم الفني واربح نقاطاً',
+                  alreadyRated ? 'تقييمك لهذا الحجز' : 'قيّم الخدمة',
                   style: theme.textTheme.titleSmall?.copyWith(fontSize: 13.5),
                 ),
               ),
@@ -135,11 +132,6 @@ class _BookingDetailScreenState extends State<BookingDetailScreen>
               Text(b.review!, style: theme.textTheme.bodySmall),
             ],
           ] else ...[
-            Text(
-              'كل نجمة = $pointsPerStar نقطة تُضاف إلى رصيدك مباشرة.',
-              style: theme.textTheme.bodySmall?.copyWith(fontSize: 11),
-            ),
-            const SizedBox(height: 10),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(5, (i) {

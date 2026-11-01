@@ -42,7 +42,13 @@ class AppState extends ChangeNotifier {
 
     if (cloudServices != null) {
       if (cloudServices!.isSignedIn) {
-        user = await cloudServices!.currentProfile();
+        try {
+          user = await cloudServices!.currentProfile();
+        } catch (error) {
+          debugPrint('Failed to restore the Supabase session: $error');
+          await cloudServices!.signOut();
+          user = null;
+        }
       }
       booting = false;
       notifyListeners();

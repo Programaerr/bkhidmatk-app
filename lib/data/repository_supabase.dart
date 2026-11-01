@@ -123,6 +123,17 @@ class SupabaseRepository implements Repository {
     return (row['id'] as num).toInt();
   }
 
+  Future<bool> _isAdmin() async {
+    final authUser = _client.auth.currentUser;
+    if (authUser == null) return false;
+    final row = await _client
+        .from('app_profiles')
+        .select('role')
+        .eq('auth_user_id', authUser.id)
+        .maybeSingle();
+    return row?['role'] == 'admin';
+  }
+
   Future<AppUser?> _profileBy(String column, Object value) async {
     final rows = _maps(
       await _client.from('app_profiles').select().eq(column, value).limit(1),
@@ -309,22 +320,48 @@ class SupabaseRepository implements Repository {
     int? categoryId,
     bool onlyAvailable = false,
   }) async {
-    final rows = await _allRows(
-      (from, to) {
-        dynamic query = _client.from('workers').select();
+    final isAdmin = await _isAdmin();
+    final rows = isAdmin
+        ? _maps(await _client.rpc('list_admin_workers'))
+        : await _allRows((from, to) {
+        dynamic query = _client.from('workers').select(
+          'id,name,specialty,category_id,rating,jobs_done,bio,avatar,available',
+        );
         if (categoryId != null) query = query.eq('category_id', categoryId);
         if (onlyAvailable) query = query.eq('available', true);
         return query.order('rating', ascending: false).range(from, to);
-      },
-    );
-    return rows.map((row) => Worker.fromMap(_read(row))).toList();
+      });
+    final workers = rows
+        .where(
+          (row) =>
+              (categoryId == null || row['category_id'] == categoryId) &&
+              (!onlyAvailable || row['available'] == true),
+        )
+        .map((row) => Worker.fromMap(_read(row)))
+        .toList()
+      ..sort((a, b) => b.rating.compareTo(a.rating));
+    return workers;
   }
 
   @override
   Future<Worker?> workerById(int id) async {
-    final rows = _maps(
-      await _client.from('workers').select().eq('id', id).limit(1),
-    );
+    final isAdmin = await _isAdmin();
+    final rows = isAdmin
+        ? _maps(
+            await _client.rpc(
+              'list_admin_workers',
+              params: {'p_worker_id': id},
+            ),
+          )
+        : _maps(
+            await _client
+                .from('workers')
+                .select(
+                  'id,name,specialty,category_id,rating,jobs_done,bio,avatar,available',
+                )
+                .eq('id', id)
+                .limit(1),
+          );
     return rows.isEmpty ? null : Worker.fromMap(_read(rows.first));
   }
 
@@ -364,7 +401,7 @@ class SupabaseRepository implements Repository {
     final rows = await _allRows((from, to) {
       dynamic builder = _client
           .from('services')
-          .select('*,categories(name,color,icon),workers(name,phone)');
+          .select('*,categories(name,color,icon),workers(name)');
       if (onlyActive) builder = builder.eq('active', true);
       if (categoryId != null) builder = builder.eq('category_id', categoryId);
       return builder.order('created_at', ascending: false).range(from, to);
@@ -399,7 +436,7 @@ class SupabaseRepository implements Repository {
     final rows = _maps(
       await _client
           .from('services')
-          .select('*,categories(name,color,icon),workers(name,phone)')
+          .select('*,categories(name,color,icon),workers(name)')
           .eq('id', id)
           .limit(1),
     );
@@ -413,7 +450,6 @@ class SupabaseRepository implements Repository {
       'category_color': category?['color'],
       'category_icon': category?['icon'],
       'worker_name': worker?['name'],
-      'worker_phone': worker?['phone'],
     });
   }
 
@@ -441,14 +477,17 @@ class SupabaseRepository implements Repository {
   }
 
   // Bookings.
-  Future<List<Map<String, dynamic>>> _bookingRows() => _allRows(
-        (from, to) => _client
-            .from('bookings')
-            .select(
-              '*,services(title),workers(name,phone),app_profiles!bookings_customer_id_fkey(name,phone)',
-            )
-            .range(from, to),
-      );
+  Future<List<Map<String, dynamic>>> _bookingRows() async {
+    final workerColumns = await _isAdmin() ? 'name,phone' : 'name';
+    return _allRows(
+      (from, to) => _client
+          .from('bookings')
+          .select(
+            '*,services(title),workers($workerColumns),app_profiles!bookings_customer_id_fkey(name,phone)',
+          )
+          .range(from, to),
+    );
+  }
 
   Booking _bookingFrom(Map<String, dynamic> row) {
     final service = row['services'] as Map<String, dynamic>?;
@@ -471,7 +510,7 @@ class SupabaseRepository implements Repository {
       dynamic query = _client
           .from('bookings')
           .select(
-              '*,services(title),workers(name,phone),app_profiles!bookings_customer_id_fkey(name,phone)')
+              '*,services(title),workers(name),app_profiles!bookings_customer_id_fkey(name,phone)')
           .eq('customer_id', customerId);
       if (status != null) query = query.eq('status', status);
       return query.order('scheduled_at', ascending: false).range(from, to);
@@ -502,11 +541,12 @@ class SupabaseRepository implements Repository {
 
   @override
   Future<Booking?> bookingById(int id) async {
+    final workerColumns = await _isAdmin() ? 'name,phone' : 'name';
     final rows = _maps(
       await _client
           .from('bookings')
           .select(
-              '*,services(title),workers(name,phone),app_profiles!bookings_customer_id_fkey(name,phone)')
+              '*,services(title),workers($workerColumns),app_profiles!bookings_customer_id_fkey(name,phone)')
           .eq('id', id)
           .limit(1),
     );

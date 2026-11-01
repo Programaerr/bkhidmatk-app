@@ -92,7 +92,12 @@ class SupabaseServices {
       token: token.trim(),
       type: OtpType.sms,
     );
-    return currentProfile();
+    try {
+      return await currentProfile();
+    } catch (_) {
+      await client.auth.signOut();
+      rethrow;
+    }
   }
 
   Future<AppUser> currentProfile() async {
@@ -102,7 +107,12 @@ class SupabaseServices {
         .from('app_profiles')
         .select()
         .eq('auth_user_id', authUser.id)
-        .single();
+        .maybeSingle();
+    if (row == null) {
+      throw StateError(
+        'تعذر العثور على ملف الحساب. تحقق من تشغيل ملف setup.sql في Supabase.',
+      );
+    }
     return AppUser(
       id: row['id'] as int,
       name: row['name'] as String? ?? '',
@@ -112,7 +122,6 @@ class SupabaseServices {
       city: row['city'] as String?,
       address: row['address'] as String?,
       avatarPath: row['avatar'] as String?,
-      points: row['points'] as int? ?? 0,
       createdAt: DateTime.parse(row['created_at'] as String).toLocal(),
     );
   }

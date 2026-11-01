@@ -14,7 +14,7 @@ class AppDatabase {
 
   Database? _db;
   static const _fileName = 'jaik.db';
-  static const _version = 4;
+  static const _version = 5;
 
   Future<Database> get database async {
     if (_db != null && _db!.isOpen) return _db!;
@@ -34,12 +34,15 @@ class AppDatabase {
         if (oldVersion < 2) await _migrateToV2(db);
         if (oldVersion < 3) await _migrateToV3(db);
         if (oldVersion < 4) await db.execute(_applicationsSchema);
+        if (oldVersion < 5) {
+          await db.execute('ALTER TABLE users DROP COLUMN points');
+        }
       },
     );
     return _db!;
   }
 
-  /// v2: نظام النقاط — أعمدة `points` للمستخدم و`rating`/`review` للحجز.
+  /// v2: أعمدة النقاط القديمة و`rating`/`review` للحجز.
   Future<void> _migrateToV2(Database db) async {
     await db.execute(
         "ALTER TABLE users ADD COLUMN points INTEGER NOT NULL DEFAULT 0");
@@ -140,7 +143,6 @@ class AppDatabase {
         city TEXT,
         address TEXT,
         avatar TEXT,
-        points INTEGER NOT NULL DEFAULT 0,
         created_at TEXT NOT NULL
       )
     ''');
@@ -409,7 +411,6 @@ class AppDatabase {
       'role': 'customer',
       'city': 'بغداد',
       'address': 'بغداد - حي الجامعة، شارع 20',
-      'points': 100,
       'created_at': today.subtract(const Duration(days: 60)).toIso8601String(),
     });
 
