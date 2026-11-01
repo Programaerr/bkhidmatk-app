@@ -1,6 +1,9 @@
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+
+import '../../core/theme.dart';
 
 const _faceCenter = Colors.white;
 const _faceEdge = Color(0xFFF1F0E9);
@@ -30,6 +33,93 @@ const _nightSideInnerShadow = Color(0x4D000000);
 const _nightSideShine = Color(0x14FFFFFF);
 const _nightSideGlow = Color(0x26FFFFFF);
 
+// الزر الأصفر بلون التطبيق، نهاراً وليلاً.
+const _yellowFaceCenter = AppColors.gold;
+const _yellowFaceEdge = Color(0xFFF1C800);
+const _yellowSide = AppColors.goldDeep;
+
+// مقاسات زر تسجيل الدخول في الشاشة الأولى وألوانه.
+const _loginDesignWidth = 391.0;
+const _loginDesignHeight = 715.0;
+const _loginMinScale = .95;
+const _loginFaceHeight = 32.74;
+const _loginTextSize = 13.0;
+const _loginTouchMargin = 3.0;
+const _loginInk = Color(0xFF263238);
+const _loginNightInk = Color(0xFFF4F4EE);
+const _loginSpinner = Color(0xFF416F9E);
+
+/// زر بشكل زر تسجيل الدخول ومقاساته، ويأخذ عرض المكان الذي يوضع فيه.
+class PushKeyButton extends StatelessWidget {
+  const PushKeyButton({
+    super.key,
+    required this.label,
+    required this.onPressed,
+    this.loading = false,
+    this.yellow = false,
+  });
+
+  final String label;
+  final VoidCallback onPressed;
+  final bool loading;
+  final bool yellow;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final fit = math.min(size.width / _loginDesignWidth, size.height / _loginDesignHeight);
+    final unit = math.max(fit, _loginMinScale);
+    final night = Theme.of(context).brightness == Brightness.dark;
+    final faceHeight = _loginFaceHeight * unit;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: loading ? null : onPressed,
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: _loginTouchMargin * unit),
+        child: SizedBox(
+          width: double.infinity,
+          height: faceHeight + PushKey.depth * unit,
+          child: PushKey(
+            unit: unit,
+            faceHeight: faceHeight,
+            held: loading,
+            yellow: yellow,
+            night: night ? kAlwaysCompleteAnimation : kAlwaysDismissedAnimation,
+            child: Semantics(
+              button: true,
+              enabled: !loading,
+              child: Center(
+                child: loading
+                    ? SizedBox(
+                        width: 16 * unit,
+                        height: 16 * unit,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: yellow ? _loginInk : _loginSpinner,
+                        ),
+                      )
+                    : FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          label,
+                          style: TextStyle(
+                            fontFamily: 'Cairo',
+                            fontSize: _loginTextSize * unit,
+                            height: 1.2,
+                            fontWeight: FontWeight.w800,
+                            color: night && !yellow ? _loginNightInk : _loginInk,
+                          ),
+                        ),
+                      ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// زر ثلاثي الأبعاد باللون الأبيض: وجهه ينخفض عند اللمس فوق جانب وقاعدة ثابتين.
 class PushKey extends StatefulWidget {
   const PushKey({
@@ -41,6 +131,7 @@ class PushKey extends StatefulWidget {
     this.held = false,
     this.alarm = 0,
     this.night = kAlwaysDismissedAnimation,
+    this.yellow = false,
   });
 
   /// ارتفاع الجانب الظاهر تحت وجه الزر، بوحدات التصميم.
@@ -63,6 +154,9 @@ class PushKey extends StatefulWidget {
   /// 0 نهار، و1 ليل. الزر الساكن يتدرج بطبقتين، فلا يُعاد بناؤه ولا رسمه مع كل إطار.
   final Animation<double> night;
 
+  /// وجه الزر وجانبه باللون الأصفر بدل الأبيض.
+  final bool yellow;
+
   @override
   State<PushKey> createState() => _PushKeyState();
 }
@@ -81,6 +175,7 @@ class _PushKeyState extends State<PushKey> {
       borderColor: widget.borderColor,
       alarm: widget.alarm,
       night: widget.night,
+      yellow: widget.yellow,
     );
     if (pressed > 0 || widget.alarm > 0) {
       return RepaintBoundary(child: CustomPaint(painter: shape));
@@ -92,6 +187,7 @@ class _PushKeyState extends State<PushKey> {
             pixelRatio: pixelRatio,
             unit: widget.unit,
             faceHeight: widget.faceHeight,
+            yellow: widget.yellow,
           ),
         );
     return Stack(
@@ -152,6 +248,7 @@ class _RestingImages {
   double _pixelRatio = 0;
   double _unit = 0;
   double _faceHeight = 0;
+  bool _yellow = false;
 
   void paint(
     Canvas canvas, {
@@ -160,16 +257,19 @@ class _RestingImages {
     required double unit,
     required double faceHeight,
     required bool night,
+    required bool yellow,
   }) {
     if (size != _size ||
         pixelRatio != _pixelRatio ||
         unit != _unit ||
-        faceHeight != _faceHeight) {
+        faceHeight != _faceHeight ||
+        yellow != _yellow) {
       dispose();
       _size = size;
       _pixelRatio = pixelRatio;
       _unit = unit;
       _faceHeight = faceHeight;
+      _yellow = yellow;
       _day = _snapshot(0);
       _night = _snapshot(1);
     }
@@ -201,6 +301,7 @@ class _RestingImages {
       faceHeight: _faceHeight,
       alarm: 0,
       night: AlwaysStoppedAnimation(night),
+      yellow: _yellow,
     ).paint(canvas, _size);
     final picture = recorder.endRecording();
     final image = picture.toImageSync(
@@ -226,6 +327,7 @@ class _RestingPainter extends CustomPainter {
     required this.pixelRatio,
     required this.unit,
     required this.faceHeight,
+    required this.yellow,
   });
 
   final _RestingImages images;
@@ -233,6 +335,7 @@ class _RestingPainter extends CustomPainter {
   final double pixelRatio;
   final double unit;
   final double faceHeight;
+  final bool yellow;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -243,6 +346,7 @@ class _RestingPainter extends CustomPainter {
       unit: unit,
       faceHeight: faceHeight,
       night: night,
+      yellow: yellow,
     );
   }
 
@@ -251,7 +355,8 @@ class _RestingPainter extends CustomPainter {
       oldDelegate.night != night ||
       oldDelegate.pixelRatio != pixelRatio ||
       oldDelegate.unit != unit ||
-      oldDelegate.faceHeight != faceHeight;
+      oldDelegate.faceHeight != faceHeight ||
+      oldDelegate.yellow != yellow;
 }
 
 /// إطار الخانة عند الكتابة فيها، فوق صورة الزر الساكن.
@@ -280,6 +385,7 @@ class _KeyPainter extends CustomPainter {
     required this.alarm,
     required this.night,
     this.borderColor,
+    this.yellow = false,
   }) : super(repaint: night);
 
   final double pressed;
@@ -288,10 +394,13 @@ class _KeyPainter extends CustomPainter {
   final double alarm;
   final Animation<double> night;
   final Color? borderColor;
+  final bool yellow;
 
   double _mix(double up, double down) => (up + (down - up) * pressed) * unit;
 
   Color _tone(Color day, Color dark) => Color.lerp(day, dark, night.value)!;
+
+  Color _keyTone(Color inYellow, Color day, Color dark) => yellow ? inYellow : _tone(day, dark);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -340,7 +449,10 @@ class _KeyPainter extends CustomPainter {
           ..color = _tone(_sideShadow, _nightSideShadow)
           ..maskFilter = MaskFilter.blur(BlurStyle.normal, 1.5 * unit),
       )
-      ..drawRRect(side, Paint()..color = Color.lerp(_tone(_side, _nightSide), _alarmSide, alarm)!)
+      ..drawRRect(
+        side,
+        Paint()..color = Color.lerp(_keyTone(_yellowSide, _side, _nightSide), _alarmSide, alarm)!,
+      )
       ..save()
       ..clipRRect(side);
     final lowCorner = side.bottom - 8 * unit;
@@ -394,8 +506,12 @@ class _KeyPainter extends CustomPainter {
           face.center,
           face.width * .62,
           [
-            Color.lerp(_tone(_faceCenter, _nightFaceCenter), _alarmFaceCenter, alarm)!,
-            Color.lerp(_tone(_faceEdge, _nightFaceEdge), _alarmFaceEdge, alarm)!,
+            Color.lerp(
+              _keyTone(_yellowFaceCenter, _faceCenter, _nightFaceCenter),
+              _alarmFaceCenter,
+              alarm,
+            )!,
+            Color.lerp(_keyTone(_yellowFaceEdge, _faceEdge, _nightFaceEdge), _alarmFaceEdge, alarm)!,
           ],
         ),
     );
@@ -451,5 +567,6 @@ class _KeyPainter extends CustomPainter {
       oldDelegate.faceHeight != faceHeight ||
       oldDelegate.alarm != alarm ||
       oldDelegate.night != night ||
-      oldDelegate.borderColor != borderColor;
+      oldDelegate.borderColor != borderColor ||
+      oldDelegate.yellow != yellow;
 }

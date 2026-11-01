@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -7,6 +9,7 @@ import 'package:jaik/data/models.dart';
 import 'package:jaik/state/app_state.dart';
 import 'package:jaik/ui/admin/admin_applications.dart';
 import 'package:jaik/ui/auth/craftsman_screen.dart';
+import 'package:jaik/ui/auth/push_key.dart';
 
 import 'fake_repository.dart';
 
@@ -38,6 +41,13 @@ class _Repo extends FakeRepo {
 
   @override
   Future<void> rejectApplication(int id) async => rejectedIds.add(id);
+}
+
+class _SlowRepo extends _Repo {
+  final answer = Completer<bool>();
+
+  @override
+  Future<bool> hasPendingApplication(String phone) => answer.future;
 }
 
 Future<void> _pump(WidgetTester tester, _Repo repo, Widget screen) async {
@@ -228,6 +238,32 @@ void main() {
     await tester.tap(find.text('البصرة'));
     await tester.pumpAndSettle();
     expect(find.text('البصرة'), findsOneWidget);
+  });
+
+  testWidgets('زر الإرسال وحده أصفر', (tester) async {
+    await _pump(tester, _Repo(), const CraftsmanScreen());
+    PushKey key(String label) =>
+        tester.widget<PushKey>(find.ancestor(of: find.text(label), matching: find.byType(PushKey)));
+    expect(key('إرسال الطلب إلى الشركة').yellow, isTrue);
+    expect(key('عودة كزبون').yellow, isFalse);
+  });
+
+  testWidgets('زر الإرسال يبقى منخفضاً أثناء الانتظار ولا يرسل مرتين', (tester) async {
+    final repo = _SlowRepo();
+    await _pump(tester, repo, const CraftsmanScreen());
+    await _fill(tester);
+    await tester.tap(find.text('إرسال الطلب إلى الشركة'));
+    await tester.pump();
+
+    final send = find.byType(PushKey).first;
+    expect(tester.widget<PushKey>(send).held, isTrue);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    await tester.tap(send);
+    await tester.pump();
+
+    repo.answer.complete(false);
+    await tester.pumpAndSettle();
+    expect(repo.created, hasLength(1));
   });
 
   testWidgets('الإدارة تقرأ الطلب وتقبله', (tester) async {

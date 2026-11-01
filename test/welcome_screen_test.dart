@@ -222,6 +222,32 @@ void main() {
     expect(find.text('حرفي'), findsOneWidget);
   });
 
+  testWidgets('زرا صفحة الحرفي بنفس ارتفاع زر الدخول وخطه ولونه', (tester) async {
+    await _pump(tester);
+    final loginKey = find.byType(PushKey).at(2);
+    final loginHeight = tester.getSize(loginKey).height;
+    final loginUnit = tester.widget<PushKey>(loginKey).unit;
+    final loginFace = tester.widget<PushKey>(loginKey).faceHeight;
+    final loginText = tester.widget<Text>(find.text('تسجيل الدخول')).style!;
+
+    await tester.tap(find.text('حرفي'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump();
+    for (final label in ['إرسال الطلب إلى الشركة', 'عودة كزبون']) {
+      final key = find.ancestor(of: find.text(label), matching: find.byType(PushKey));
+      expect(tester.getSize(key).height, closeTo(loginHeight, .01));
+      expect(tester.widget<PushKey>(key).unit, loginUnit);
+      expect(tester.widget<PushKey>(key).faceHeight, loginFace);
+      final text = tester.widget<Text>(find.text(label)).style!;
+      expect(text.fontFamily, loginText.fontFamily);
+      expect(text.fontSize, loginText.fontSize);
+      expect(text.height, loginText.height);
+      expect(text.fontWeight, loginText.fontWeight);
+      expect(text.color, loginText.color);
+    }
+  });
+
   testWidgets('الكرة الأرضية بجانب رمز اللغة، والضغط عليها يبدّل اللغة', (tester) async {
     await _pump(tester);
     final globe = find.byIcon(Icons.public);

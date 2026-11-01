@@ -6,6 +6,7 @@ import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
 import '../widgets/ui.dart';
+import 'push_key.dart';
 import 'raised_field.dart';
 
 const _easternDigits = '٠١٢٣٤٥٦٧٨٩';
@@ -150,15 +151,7 @@ class _CraftsmanScreenState extends State<CraftsmanScreen> {
     return number == null || number < min || number > max ? message : null;
   }
 
-  Widget _backButton() {
-    return SizedBox(
-      width: double.infinity,
-      child: OutlinedButton(
-        onPressed: _backAsCustomer,
-        child: const Text('عودة كزبون'),
-      ),
-    );
-  }
+  Widget _backButton() => PushKeyButton(label: 'عودة كزبون', onPressed: _backAsCustomer);
 
   Widget _sentMessage(ThemeData theme) {
     return Center(
@@ -260,9 +253,14 @@ class _CraftsmanScreenState extends State<CraftsmanScreen> {
               const SizedBox(height: 12),
               Text(_error!, style: const TextStyle(color: AppColors.danger, fontSize: 12.5)),
             ],
-            const SizedBox(height: 22),
-            PrimaryButton(label: 'إرسال الطلب إلى الشركة', onPressed: _submit, loading: _loading),
-            const SizedBox(height: 10),
+            const SizedBox(height: 19),
+            PushKeyButton(
+              label: 'إرسال الطلب إلى الشركة',
+              onPressed: _submit,
+              loading: _loading,
+              yellow: true,
+            ),
+            const SizedBox(height: 4),
             _backButton(),
           ],
         ),
