@@ -10,12 +10,11 @@
             "flutterMode": "debug",
             "toolArgs": [
                 "--no-pub",
-                "--dart-define=SUPABASE_URL=${env:SUPABASE_URL}",
-                "--dart-define=SUPABASE_PUBLISHABLE_KEY=${env:SUPABASE_PUBLISHABLE_KEY}"
+                "--dart-define=DEV_ADMIN_PREVIEW=true"
             ]
         },
         {
-            "name": "Flutter: Local app preview",
+            "name": "Flutter: Supabase (OTP)",
             "type": "dart",
             "request": "launch",
             "program": "lib/main.dart",
@@ -23,7 +22,8 @@
             "flutterMode": "debug",
             "toolArgs": [
                 "--no-pub",
-                "--dart-define=DEV_ADMIN_PREVIEW=true"
+                "--dart-define=SUPABASE_URL=${env:SUPABASE_URL}",
+                "--dart-define=SUPABASE_PUBLISHABLE_KEY=${env:SUPABASE_PUBLISHABLE_KEY}"
             ]
         }
     ]
