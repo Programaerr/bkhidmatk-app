@@ -112,9 +112,6 @@ abstract final class _Design {
   static const contactLineTop = 713.18;
   static const contentBottom = contactLineTop + 1;
 
-  /// الأزرار قريبة من المنحني كما في الصورة، فيذهب أغلب الفراغ الزائد تحت المحتوى.
-  static const spaceBelow = 46.0;
-
   /// لا تصغر الخانات عن هذا الحد في الهواتف الضيقة حتى تبقى مقروءة.
   static const minControlScale = .95;
 }
@@ -381,14 +378,13 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
 
     final blueBottom = size.height * _Design.blueBottom / _Design.height;
 
-    // الهواتف الأطول توزع مساحتها الزائدة فوق الأزرار وتحتها بنسب التصميم.
-    final spaceAbove = _Design.rowTop - _Design.blueBottom;
+    // الفراغ فوق الأزرار مثل الفراغ تحتها. شريط التنقل بلون الصفحة، فيمتد الفراغ السفلي إلى أيقوناته.
+    const navIconsGap = 14.0;
     final freeSpace = size.height -
         safeArea.bottom -
         blueBottom -
         (_Design.contentBottom - _Design.rowTop) * unit;
-    final rowTop =
-        blueBottom + math.max(freeSpace, 0.0) * spaceAbove / (spaceAbove + _Design.spaceBelow);
+    final rowTop = blueBottom + math.max(freeSpace + navIconsGap, 0.0) / 2;
     double x(double design) => size.width / 2 + (design - _Design.width / 2) * unit;
     double y(double design) => rowTop + (design - _Design.rowTop) * unit;
 
@@ -842,7 +838,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
                               Positioned(
                                 left: 16,
                                 right: 16,
-                                bottom: pageHeight - y(_Design.rowTop) + unit,
+                                bottom: pageHeight - y(_Design.rowTop) + 4 * unit,
                                 child: AnimatedBuilder(
                                   animation: _alarmAndNight,
                                   builder: (context, _) => Opacity(

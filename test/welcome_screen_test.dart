@@ -198,6 +198,31 @@ void main() {
     expect(tester.getRect(find.text('سياسة و الخصوصية')).top, greaterThan(account.bottom));
   });
 
+  for (final size in const [Size(392, 825), Size(360, 780), Size(412, 915)]) {
+    testWidgets('الفراغ فوق الأزرار مثل الفراغ تحتها في هاتف $size', (tester) async {
+      _useScreen(tester, size);
+      await _pump(tester);
+      final curve = tester.getRect(find.byType(TruckScene)).bottom;
+      final firstRow = tester.getRect(find.byType(PushKey).at(0)).top;
+      final lastLine = tester.getRect(
+        find.byWidgetPredicate((w) => w is ColoredBox && w.color == const Color(0xFFBEB9B3)).last,
+      );
+
+      // الفراغ السفلي يمتد إلى أيقونات شريط التنقل، وهي تحت حافة التطبيق بنحو 14.
+      expect(firstRow - curve, closeTo(size.height + 14 - lastLine.bottom, 1));
+    });
+  }
+
+  testWidgets('رسالة الرقم الخطأ لا تصل إلى المنحني', (tester) async {
+    _useScreen(tester, const Size(392, 825));
+    await _pump(tester);
+    await tester.tap(find.text('تسجيل الدخول'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    final message = tester.getRect(find.text('أدخل رقم موبايل عراقي صحيح يبدأ بـ 07'));
+    expect(message.top, greaterThanOrEqualTo(tester.getRect(find.byType(TruckScene)).bottom));
+  });
+
   testWidgets('زر الحساب يفتح صفحة الدخول بسرعة وبالرقم المكتوب', (tester) async {
     final repo = await _pump(tester, registered: true);
     await tester.enterText(find.byType(TextField), '7701234567');
