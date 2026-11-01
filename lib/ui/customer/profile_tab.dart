@@ -284,12 +284,16 @@ class _ProfileTabState extends State<ProfileTab>
             padding: EdgeInsets.zero,
             child: Column(
               children: [
-                if (state.developmentAdminPreview) ...[
+                if (state.developmentAdminPreview || state.hasAdminAccess) ...[
                   _MenuTile(
                     icon: Icons.admin_panel_settings_outlined,
                     title: 'لوحة التحكم',
-                    subtitle: 'إدارة التطبيق والريلز (وضع التطوير المحلي)',
-                    onTap: state.openDevelopmentAdmin,
+                    subtitle: state.hasAdminAccess
+                        ? 'العودة إلى لوحة إدارة التطبيق'
+                        : 'إدارة التطبيق والريلز (وضع التطوير المحلي)',
+                    onTap: state.hasAdminAccess
+                        ? state.returnToAdminDashboard
+                        : state.openDevelopmentAdmin,
                   ),
                   const Divider(height: 1),
                 ],

@@ -34,10 +34,14 @@ class AppState extends ChangeNotifier {
   bool english = false;
 
   bool get isLoggedIn => user != null;
-  bool get isAdmin => user?.isAdmin ?? false;
+  bool get hasAdminAccess => user?.isAdmin ?? false;
+  bool get isViewingAsCustomer => _isViewingAsCustomer;
+  bool get isAdmin => hasAdminAccess && !_isViewingAsCustomer;
 
   /// موظف بالتوضيف: يظهر له فقط ما تسمح به الإدارة (أعمالنا + حسابه).
   bool get isWorker => user?.isWorker ?? false;
+
+  bool _isViewingAsCustomer = false;
 
   Future<void> boot() async {
     final prefs = await SharedPreferences.getInstance();
@@ -204,6 +208,18 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  void viewAsCustomer() {
+    if (!hasAdminAccess) return;
+    _isViewingAsCustomer = true;
+    notifyListeners();
+  }
+
+  void returnToAdminDashboard() {
+    if (!hasAdminAccess) return;
+    _isViewingAsCustomer = false;
+    notifyListeners();
+  }
+
   Future<void> setTheme(bool dark) async {
     themeMode = dark ? ThemeMode.dark : ThemeMode.light;
     final prefs = await SharedPreferences.getInstance();
@@ -221,6 +237,7 @@ class AppState extends ChangeNotifier {
   Future<void> logout() async {
     await cloudServices?.signOut();
     user = null;
+    _isViewingAsCustomer = false;
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('user_id');

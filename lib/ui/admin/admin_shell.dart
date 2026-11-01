@@ -58,9 +58,9 @@ class _AdminShellState extends State<AdminShell> {
       items: _items,
       pages: pages,
       onSelect: _go,
-      floatingActionButton: context.read<AppState>().developmentAdminPreview
+      floatingActionButton: context.read<AppState>().hasAdminAccess
           ? FloatingActionButton.extended(
-              onPressed: context.read<AppState>().returnToDevelopmentCustomer,
+              onPressed: context.read<AppState>().viewAsCustomer,
               icon: const Icon(Icons.storefront_outlined),
               label: const Text('واجهة الزبون'),
             )

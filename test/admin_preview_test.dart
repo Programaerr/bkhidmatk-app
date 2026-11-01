@@ -105,6 +105,12 @@ void main() {
     await tester.tap(find.text('ريلز'));
     await tester.pumpAndSettle();
     expect(find.text('فيديو جديد'), findsOneWidget);
+    await tester.tap(find.text('حسابي'));
+    await tester.pumpAndSettle();
+    expect(find.text('العودة إلى لوحة إدارة التطبيق'), findsOneWidget);
+    await tester.tap(find.text('لوحة التحكم'));
+    await tester.pumpAndSettle();
+    expect(find.byType(AdminShell), findsOneWidget);
     state.dispose();
   });
 }
