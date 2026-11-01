@@ -429,6 +429,8 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
                 child: Image.asset(
                   'assets/images/logo.jpg',
                   fit: BoxFit.cover,
+                  cacheWidth: 76,
+                  cacheHeight: 76,
                   errorBuilder: (_, __, ___) => const ColoredBox(
                     color: AppColors.gold,
                     child: Icon(Icons.handyman_rounded, color: AppColors.ink),

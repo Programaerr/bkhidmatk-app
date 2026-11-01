@@ -39,7 +39,7 @@ class AppShellLayout extends StatelessWidget {
     final theme = Theme.of(context);
     final wide = MediaQuery.sizeOf(context).width >= 900;
 
-    final body = IndexedStack(index: index, children: pages);
+    final body = pages[index];
 
     if (!wide) {
       return Scaffold(
@@ -92,7 +92,7 @@ class AppShellLayout extends StatelessWidget {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(14),
                     child: Image.asset('assets/images/logo.jpg',
-                        width: 44, height: 44),
+                        width: 44, height: 44, cacheWidth: 88, cacheHeight: 88),
                   ),
                 ),
                 destinations: [

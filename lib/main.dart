@@ -12,6 +12,10 @@ import 'ui/auth/supabase_setup_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  final imageCache = PaintingBinding.instance.imageCache;
+  imageCache.maximumSize = 100;
+  imageCache.maximumSizeBytes = 32 * 1024 * 1024;
+
   if (kIsWeb) {
     databaseFactory = databaseFactoryFfiWeb;
   }

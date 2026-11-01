@@ -377,6 +377,8 @@ class _HeroBanner extends StatelessWidget {
                   opacity: .9,
                   child: Image.asset('assets/images/logo.jpg',
                       fit: BoxFit.contain,
+                      cacheWidth: 280,
+                      cacheHeight: 280,
                       errorBuilder: (_, __, ___) => const SizedBox()),
                 ),
               ),

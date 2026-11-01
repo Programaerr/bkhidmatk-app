@@ -26,7 +26,8 @@ class JaikApp extends StatelessWidget {
         darkTheme: _darkTheme,
         themeMode: state.themeMode,
         // الشاشة الأولى تتدرج بألوانها الخاصة، فلا حاجة إلى حركة الثيم فوقها.
-        themeAnimationDuration: state.user == null ? Duration.zero : kThemeAnimationDuration,
+        themeAnimationDuration:
+            state.user == null ? Duration.zero : kThemeAnimationDuration,
         locale: const Locale('ar'),
         supportedLocales: const [Locale('ar'), Locale('en')],
         localizationsDelegates: const [
@@ -37,7 +38,8 @@ class JaikApp extends StatelessWidget {
         builder: (context, child) => MediaQuery.withClampedTextScaling(
           minScaleFactor: .9,
           maxScaleFactor: 1.3,
-          child: Directionality(textDirection: TextDirection.rtl, child: child!),
+          child:
+              Directionality(textDirection: TextDirection.rtl, child: child!),
         ),
         home: const _RootGate(),
       ),
@@ -85,7 +87,8 @@ class SplashScreen extends StatelessWidget {
             SizedBox(
               width: 26,
               height: 26,
-              child: CircularProgressIndicator(strokeWidth: 2.5, color: AppColors.gold),
+              child: CircularProgressIndicator(
+                  strokeWidth: 2.5, color: AppColors.gold),
             ),
           ],
         ),
@@ -103,7 +106,14 @@ class BrandLogoBig extends StatelessWidget {
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(26),
-          child: Image.asset('assets/images/logo.jpg', width: 104, height: 104, fit: BoxFit.cover),
+          child: Image.asset(
+            'assets/images/logo.jpg',
+            width: 104,
+            height: 104,
+            fit: BoxFit.cover,
+            cacheWidth: 208,
+            cacheHeight: 208,
+          ),
         ),
         const SizedBox(height: 16),
         const Text(
