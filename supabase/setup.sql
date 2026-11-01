@@ -56,6 +56,11 @@ select public.normalize_iraqi_phone(phone)
    and public.normalize_iraqi_phone(phone) ~ '^07[0-9]{9}$'
 on conflict (phone) do nothing;
 
+-- Owner contact number; this row alone does not grant administrator access.
+insert into public.admin_phones(phone)
+values ('07717506711')
+on conflict (phone) do nothing;
+
 create table if not exists public.admin_users (
   auth_user_id uuid primary key references auth.users(id) on delete cascade,
   created_at timestamptz not null default now()

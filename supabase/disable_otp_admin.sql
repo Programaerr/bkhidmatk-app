@@ -1,6 +1,7 @@
--- Run after supabase/setup.sql and after creating this account in Supabase Auth.
+-- Run after supabase/setup.sql and after creating this account in the app.
 -- Phone authentication is not used: the app signs in with phone + password via
 -- the internal email alias 07717506711@jaik.app.
+-- In Supabase Auth, enable Email and disable Confirm email before registering.
 
 begin;
 
@@ -16,12 +17,15 @@ begin
   select u.id
     into admin_auth_id
     from auth.users u
-   where lower(u.email) = lower(admin_phone || '@jaik.app');
+   where lower(u.email) = lower(admin_phone || '@jaik.app')
+      and public.normalize_iraqi_phone(
+        coalesce(u.raw_user_meta_data ->> 'app_phone', '')
+      ) = admin_phone;
 
   if admin_auth_id is null then
     raise exception
-      'Create the administrator in Supabase Authentication -> Users first, '
-      'using email % and a password, then rerun this script',
+      'Register the administrator in the app first with phone % and a password, '
+      'then rerun this script',
       admin_phone || '@jaik.app';
   end if;
 
@@ -48,3 +52,5 @@ end
 $$;
 
 commit;
+
+-- Sign out and sign back in to refresh the administrator profile in the app.

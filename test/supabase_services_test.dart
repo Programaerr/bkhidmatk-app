@@ -15,4 +15,20 @@ void main() {
       );
     });
   });
+
+  group('SupabaseServices.emailForPhone', () {
+    test('uses the internal password-login alias for Iraqi numbers', () {
+      expect(
+        SupabaseServices.emailForPhone('07717506711'),
+        '07717506711@jaik.app',
+      );
+    });
+
+    test('rejects invalid numbers before generating an account alias', () {
+      expect(
+        () => SupabaseServices.emailForPhone('12345'),
+        throwsFormatException,
+      );
+    });
+  });
 }
