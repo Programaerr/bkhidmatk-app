@@ -177,7 +177,7 @@ String westernDigits(String value) {
 }
 
 /// الرقم كما يُحفظ مهما كُتب: بأرقام غربية وبالصفر في أوله،
-/// فالشاشة الأولى تقبله بدون الصفر لأن +964 تسبقه، وقد يُكتب في الاستمارة كذلك.
+/// فقد يُكتب في الاستمارة بدون الصفر.
 String phoneFromInput(String value) {
   final phone = normalizePhone(westernDigits(value));
   return phone.startsWith('7') ? '0$phone' : phone;

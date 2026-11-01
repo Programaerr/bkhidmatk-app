@@ -4,8 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/theme.dart';
-import '../../core/utils.dart';
 import '../../state/app_state.dart';
 import 'craftsman_screen.dart';
 import 'day_night_switch.dart';
@@ -16,10 +14,7 @@ import 'social_marks.dart';
 import 'truck_scene.dart';
 
 const _cream = Color(0xFFFFFEE2);
-const _blue = Color(0xFF416F9E);
 const _ink = Color(0xFF263238);
-const _hint = Color(0xFF6B7378);
-const _divider = Color(0xFFD3D0C2);
 const _label = Color(0xFF383838);
 const _wideLine = Color(0xFFDEDBCA);
 const _shortLine = Color(0xFFBEB9B3);
@@ -27,10 +22,8 @@ const _shortLine = Color(0xFFBEB9B3);
 // الألوان نفسها في الوضع الليلي: جهة السيارة تبقى صفراء، والخانة تحتها سوداء.
 const _nightGround = Colors.black;
 const _nightInk = Color(0xFFF4F4EE);
-const _nightHint = Color(0xFF9B9BA3);
 const _nightDivider = Color(0xFF3A3A40);
 const _nightShortLine = Color(0xFF5F5F66);
-const _nightError = Color(0xFFF87171);
 
 /// ألوان شريطي النظام في بقية شاشات التطبيق.
 SystemUiOverlayStyle _appSystemBars({required bool night}) =>
@@ -56,23 +49,10 @@ abstract final class _Design {
   static const switchRight = 371.1;
   static const switchHeight = 27.25;
 
-  // طرفا الصف على طرفي الصف الذي تحته، فيبدوان عموداً واحداً.
-  static const codeLeft = craftsmanLeft;
-  static const codeRight = 146.1;
-  static const dividerLeft = 150.65;
-  static const dividerRight = 152.15;
-  static const numberLeft = 160.6;
-  static const numberRight = buttonRight;
-
-  // الصف أعلى من الصورة بقليل: عمق الأزرار لا يظهر في الرسم، وبدون هذا تلتصق بزر الدخول.
-  static const rowTop = buttonTop - 6 - keyHeight;
-  static const dividerTop = rowTop + 1.57;
-  static const dividerBottom = dividerTop + 31.1;
   static const faceHeight = 32.74;
   static const keyHeight = faceHeight + PushKey.depth;
-  static const rowBottom = rowTop + keyHeight;
 
-  // زرا الحرفي والدخول في صف واحد، والصف في منتصف الشاشة.
+  // زرا الحرفي والزبون في صف واحد، والصف في منتصف الشاشة.
   static const craftsmanLeft = 67.2;
   static const craftsmanRight = 188.6;
   static const buttonLeft = 202.4;
@@ -80,7 +60,7 @@ abstract final class _Design {
   static const buttonTop = 483.14;
   static const buttonBottom = buttonTop + keyHeight;
 
-  // زر الحساب صف كامل تحتهما، والمسافة فوقه 80% من مسافة الصفين الأولين كما في الصورة.
+  // زر الحساب صف كامل تحتهما.
   static const accountTop = buttonBottom + 4.8;
   static const accountBottom = accountTop + keyHeight;
 
@@ -123,12 +103,9 @@ class _Words {
     required this.language,
     required this.changeLanguage,
     required this.nightMode,
-    required this.iraqCode,
-    required this.mobileNumber,
-    required this.login,
+    required this.customer,
     required this.craftsman,
     required this.account,
-    required this.wrongNumber,
     required this.privacy,
     required this.contact,
     required this.socials,
@@ -138,12 +115,9 @@ class _Words {
   final String language;
   final String changeLanguage;
   final String nightMode;
-  final String iraqCode;
-  final String mobileNumber;
-  final String login;
+  final String customer;
   final String craftsman;
   final String account;
-  final String wrongNumber;
   final String privacy;
   final String contact;
   final List<String> socials;
@@ -160,12 +134,9 @@ const _arabic = _Words(
   language: 'AR',
   changeLanguage: 'تغيير اللغة إلى الإنجليزية',
   nightMode: 'الوضع الليلي',
-  iraqCode: 'رمز العراق',
-  mobileNumber: 'رقم الموبايل',
-  login: 'تسجيل الدخول',
+  customer: 'كزبون',
   craftsman: 'حرفي',
   account: 'هل لديك حساب',
-  wrongNumber: 'أدخل رقم موبايل عراقي صحيح يبدأ بـ 07',
   privacy: 'سياسة و الخصوصية',
   contact: 'تواصلوا معنى',
   socials: ['فيسبوك', 'انستغرام', 'تيك توك'],
@@ -176,12 +147,9 @@ const _english = _Words(
   language: 'EN',
   changeLanguage: 'Change language to Arabic',
   nightMode: 'Night mode',
-  iraqCode: 'Iraq code',
-  mobileNumber: 'Mobile number',
-  login: 'Log in',
+  customer: 'Customer',
   craftsman: 'Craftsman',
   account: 'Have an account?',
-  wrongNumber: 'Enter a valid Iraqi mobile number starting with 07',
   privacy: 'Privacy Policy',
   contact: 'Contact us',
   socials: ['Facebook', 'Instagram', 'TikTok'],
@@ -209,40 +177,14 @@ class WelcomeScreen extends StatefulWidget {
 }
 
 class _WelcomeScreenState extends State<WelcomeScreen>
-    with TickerProviderStateMixin {
-  final _phone = TextEditingController();
-  final _focus = FocusNode();
-  late final _alarm = AnimationController(vsync: this, duration: _alarmDuration)
-    ..addStatusListener(_onAlarmStatus);
+    with SingleTickerProviderStateMixin {
   late final _nightController = AnimationController(
       vsync: this, duration: const Duration(milliseconds: 500));
   late final _night =
       CurvedAnimation(parent: _nightController, curve: Curves.easeInOut);
-  late final _alarmAndNight = Listenable.merge([_alarm, _night]);
   late final AppState _appState;
-  bool _busy = false;
-  bool _wrongNumber = false;
   bool _nightMode = false;
   bool _reduceMotion = false;
-
-  static const _alarmDuration = Duration(milliseconds: 2800);
-  static const _alarmHoldSeconds = .4;
-
-  /// الخانة تصير حمراء بالكامل لحظة الخطأ، ثم ترجع ببطء إلى لونها الطبيعي.
-  double get _alarmLevel {
-    if (!_alarm.isAnimating) return 0;
-    final total = _alarmDuration.inMilliseconds / 1000;
-    final seconds = _alarm.value * total;
-    if (seconds < _alarmHoldSeconds) return 1;
-    final fade = (seconds - _alarmHoldSeconds) / (total - _alarmHoldSeconds);
-    return 1 - Curves.easeInOut.transform(fade);
-  }
-
-  void _onAlarmStatus(AnimationStatus status) {
-    if (status == AnimationStatus.completed) {
-      setState(() => _wrongNumber = false);
-    }
-  }
 
   void _onAppStateChanged() {
     final night = _appState.themeMode == ThemeMode.dark;
@@ -262,7 +204,6 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   @override
   void initState() {
     super.initState();
-    _focus.addListener(_onFocusChanged);
     _appState = context.read<AppState>()..addListener(_onAppStateChanged);
     _nightMode = _appState.themeMode == ThemeMode.dark;
     _nightController
@@ -275,84 +216,20 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     _appState.removeListener(_onAppStateChanged);
     _night.dispose();
     _nightController.dispose();
-    _alarm.dispose();
-    _focus
-      ..removeListener(_onFocusChanged)
-      ..dispose();
-    _phone.dispose();
     SystemChrome.setSystemUIOverlayStyle(_appSystemBars(night: _nightMode));
     super.dispose();
   }
 
-  void _onFocusChanged() => setState(() {});
-
-  String get _typedPhone {
-    final digits = _phone.text;
-    return digits.startsWith('0') ? digits : '0$digits';
-  }
-
-  void _openCraftsman() =>
-      _openWithPhone((phone) => CraftsmanScreen(initialPhone: phone));
-
-  void _openLogin() =>
-      _openWithPhone((phone) => LoginScreen(initialPhone: phone));
-
-  void _openWithPhone(Widget Function(String? phone) page) {
-    final phone = _typedPhone;
-    _focus.unfocus();
+  void _open(Widget page) {
     Navigator.push(
       context,
       _QuickRoute(
         builder: (_) => AnnotatedRegion<SystemUiOverlayStyle>(
           value: _appSystemBars(night: _nightMode),
-          child: page(validIraqiPhone(phone) ? phone : null),
+          child: page,
         ),
       ),
     );
-  }
-
-  /// لا يوجد تحقق برسالة SMS في التطبيق، لذلك لا يكفي الرقم وحده للدخول:
-  /// الرقم المسجل يكمل بكلمة المرور، والرقم الجديد يكمل بإنشاء حساب.
-  Future<void> _submit() async {
-    final phone = _typedPhone;
-    if (!validIraqiPhone(phone)) {
-      setState(() => _wrongNumber = true);
-      _alarm.forward(from: 0);
-      return;
-    }
-    _alarm.reset();
-    setState(() {
-      _busy = true;
-      _wrongNumber = false;
-    });
-    try {
-      final registered = await context.read<AppState>().repo.phoneExists(phone);
-      if (!mounted) return;
-      setState(() => _busy = false);
-      _focus.unfocus();
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => AnnotatedRegion<SystemUiOverlayStyle>(
-            value: _appSystemBars(night: _nightMode),
-            child: registered
-                ? LoginScreen(initialPhone: phone)
-                : RegisterScreen(initialPhone: phone),
-          ),
-        ),
-      );
-    } catch (error, stackTrace) {
-      debugPrint('Failed to check whether the phone is registered: $error');
-      debugPrintStack(stackTrace: stackTrace);
-      if (!mounted) return;
-      setState(() => _busy = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-              'تعذر التحقق من الرقم. تحقق من قاعدة البيانات وحاول مجدداً.'),
-        ),
-      );
-    }
   }
 
   @override
@@ -362,7 +239,6 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     final words = state.english ? _english : _arabic;
 
     final size = MediaQuery.sizeOf(context);
-    final keyboard = MediaQuery.viewInsetsOf(context).bottom;
     final safeArea = MediaQuery.viewPaddingOf(context);
     final fit =
         math.min(size.width / _Design.width, size.height / _Design.height);
@@ -375,11 +251,11 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     final freeSpace = size.height -
         safeArea.bottom -
         blueBottom -
-        (_Design.contentBottom - _Design.rowTop) * unit;
+        (_Design.contentBottom - _Design.buttonTop) * unit;
     final rowTop = blueBottom + math.max(freeSpace + navIconsGap, 0.0) / 2;
     double x(double design) =>
         size.width / 2 + (design - _Design.width / 2) * unit;
-    double y(double design) => rowTop + (design - _Design.rowTop) * unit;
+    double y(double design) => rowTop + (design - _Design.buttonTop) * unit;
 
     // زرا اللغة والوضع يبقيان في زاويتي الشاشة وتحت شريط الحالة في كل الهواتف.
     final barCenter = math.max(
@@ -389,9 +265,6 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     final switchWidth = (_Design.switchRight - _Design.switchLeft) * unit;
     final switchRight =
         size.width - (_Design.width - _Design.switchRight) * unit;
-
-    final contentBottom = y(_Design.buttonBottom) + 12;
-    final lift = math.max(0.0, contentBottom - (size.height - keyboard));
 
     // الشاشات القصيرة تعرض الباقي بالسحب، والأطول لا تتحرك.
     final pageHeight = math.max(
@@ -464,439 +337,247 @@ class _WelcomeScreenState extends State<WelcomeScreen>
               child: Scaffold(
                 backgroundColor: Colors.transparent,
                 resizeToAvoidBottomInset: false,
-                body: GestureDetector(
-                  behavior: HitTestBehavior.translucent,
-                  onTap: _focus.unfocus,
-                  child: SingleChildScrollView(
-                    child: SizedBox(
-                      height: pageHeight,
-                      child: TweenAnimationBuilder<double>(
-                        tween: Tween<double>(end: lift),
-                        duration: const Duration(milliseconds: 200),
-                        curve: Curves.easeOut,
-                        builder: (context, value, child) => Transform.translate(
-                            offset: Offset(0, -value), child: child),
-                        child: Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            Positioned(
-                              left: 0,
-                              right: 0,
-                              top: 0,
-                              height: blueBottom,
-                              child: TruckScene(
-                                  scale: fit, english: state.english),
-                            ),
-                            Positioned(
-                              left:
-                                  _Design.languageLeft * unit - languageMargin,
-                              top: barCenter - minTouch / 2,
-                              height: minTouch,
-                              child: Semantics(
-                                button: true,
-                                label: words.changeLanguage,
-                                child: GestureDetector(
-                                  behavior: HitTestBehavior.opaque,
-                                  onTap: () => state.setEnglish(!state.english),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: languageMargin),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      textDirection: TextDirection.ltr,
-                                      children: [
-                                        Icon(
-                                          Icons.public,
-                                          size: _Design.globeSize * unit,
+                body: SingleChildScrollView(
+                  child: SizedBox(
+                    height: pageHeight,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          top: 0,
+                          height: blueBottom,
+                          child: TruckScene(scale: fit, english: state.english),
+                        ),
+                        Positioned(
+                          left: _Design.languageLeft * unit - languageMargin,
+                          top: barCenter - minTouch / 2,
+                          height: minTouch,
+                          child: Semantics(
+                            button: true,
+                            label: words.changeLanguage,
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () => state.setEnglish(!state.english),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: languageMargin),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  textDirection: TextDirection.ltr,
+                                  children: [
+                                    Icon(
+                                      Icons.public,
+                                      size: _Design.globeSize * unit,
+                                      color: _label,
+                                    ),
+                                    SizedBox(width: 4 * unit),
+                                    AnimatedSwitcher(
+                                      duration:
+                                          const Duration(milliseconds: 200),
+                                      child: Text(
+                                        words.language,
+                                        key: ValueKey(words.language),
+                                        textDirection: TextDirection.ltr,
+                                        style: TextStyle(
+                                          fontFamily: 'Cairo',
+                                          fontSize: _Design.languageSize * unit,
+                                          height: 1,
+                                          letterSpacing: .8 * unit,
+                                          fontWeight: FontWeight.w900,
                                           color: _label,
                                         ),
-                                        SizedBox(width: 4 * unit),
-                                        AnimatedSwitcher(
-                                          duration:
-                                              const Duration(milliseconds: 200),
-                                          child: Text(
-                                            words.language,
-                                            key: ValueKey(words.language),
-                                            textDirection: TextDirection.ltr,
-                                            style: TextStyle(
-                                              fontFamily: 'Cairo',
-                                              fontSize:
-                                                  _Design.languageSize * unit,
-                                              height: 1,
-                                              letterSpacing: .8 * unit,
-                                              fontWeight: FontWeight.w900,
-                                              color: _label,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          left: switchRight - switchWidth,
+                          width: switchWidth,
+                          top: barCenter - minTouch / 2,
+                          height: minTouch,
+                          child: Semantics(
+                            button: true,
+                            toggled: _nightMode,
+                            label: words.nightMode,
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () => state.setTheme(!_nightMode),
+                              child: Center(
+                                child: SizedBox(
+                                  width: double.infinity,
+                                  height: _Design.switchHeight * unit,
+                                  child: DayNightSwitch(night: _nightMode),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        _touchArea(
+                          left: x(_Design.buttonLeft),
+                          right: x(_Design.buttonRight),
+                          top: y(_Design.buttonTop),
+                          bottom: y(_Design.buttonBottom),
+                          above: touchMargin,
+                          below: touchMargin,
+                          // لمن ليس له حساب، وصاحب الحساب يدخل من زر الحساب.
+                          onTap: () => _open(const RegisterScreen()),
+                          child: PushKey(
+                            unit: unit,
+                            faceHeight: faceHeight,
+                            night: _night,
+                            child: Semantics(
+                              button: true,
+                              child: Center(
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: _dayNight(
+                                    (night) => Text(
+                                      words.customer,
+                                      style: _textStyle(
+                                              unit, night ? _nightInk : _ink)
+                                          .copyWith(
+                                              fontWeight: FontWeight.w800),
                                     ),
                                   ),
                                 ),
                               ),
                             ),
-                            Positioned(
-                              left: switchRight - switchWidth,
-                              width: switchWidth,
-                              top: barCenter - minTouch / 2,
-                              height: minTouch,
+                          ),
+                        ),
+                        _touchArea(
+                          left: x(_Design.craftsmanLeft),
+                          right: x(_Design.craftsmanRight),
+                          top: y(_Design.buttonTop),
+                          bottom: y(_Design.buttonBottom),
+                          above: touchMargin,
+                          below: touchMargin,
+                          onTap: () => _open(const CraftsmanScreen()),
+                          child: PushKey(
+                            unit: unit,
+                            faceHeight: faceHeight,
+                            night: _night,
+                            child: Semantics(
+                              button: true,
+                              child: Center(
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: _dayNight(
+                                    (night) => Text(
+                                      words.craftsman,
+                                      style: _textStyle(
+                                              unit, night ? _nightInk : _ink)
+                                          .copyWith(
+                                              fontWeight: FontWeight.w800),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        _touchArea(
+                          left: x(_Design.craftsmanLeft),
+                          right: x(_Design.buttonRight),
+                          top: y(_Design.accountTop),
+                          bottom: y(_Design.accountBottom),
+                          above: touchMargin,
+                          below: touchMargin,
+                          onTap: () => _open(const LoginScreen()),
+                          child: PushKey(
+                            unit: unit,
+                            faceHeight: faceHeight,
+                            night: _night,
+                            yellow: true,
+                            child: Semantics(
+                              button: true,
+                              child: Center(
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  // الزر أصفر نهاراً وليلاً، فكتابته داكنة دائماً.
+                                  child: Text(
+                                    words.account,
+                                    style: _textStyle(unit, _ink)
+                                        .copyWith(fontWeight: FontWeight.w800),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        line(
+                          _Design.wideLineLeft,
+                          _Design.wideLineRight,
+                          _Design.wideLineTop,
+                          _Design.wideLineHeight,
+                          _wideLine,
+                          _nightDivider,
+                        ),
+                        caption(
+                          words.privacy,
+                          _Design.privacySize,
+                          _Design.privacyCenterX,
+                          _Design.privacyCenterY,
+                        ),
+                        line(
+                          _Design.shortLineLeft,
+                          _Design.shortLineRight,
+                          _Design.privacyLineTop,
+                          1,
+                          _shortLine,
+                          _nightShortLine,
+                        ),
+                        for (final (index, mark) in _socialMarks.indexed)
+                          _touchArea(
+                            left: x(_Design.socialCenters[index]) -
+                                (_Design.socialFaceWidth / 2 +
+                                        PushKey.faceInset) *
+                                    unit,
+                            right: x(_Design.socialCenters[index]) +
+                                (_Design.socialFaceWidth / 2 +
+                                        PushKey.faceInset) *
+                                    unit,
+                            top: y(_Design.socialTop),
+                            bottom: y(_Design.socialBottom),
+                            above: touchMargin,
+                            below: touchMargin,
+                            onTap: null,
+                            child: PushKey(
+                              unit: unit,
+                              faceHeight: _Design.socialFaceHeight * unit,
+                              night: _night,
                               child: Semantics(
                                 button: true,
-                                toggled: _nightMode,
-                                label: words.nightMode,
-                                child: GestureDetector(
-                                  behavior: HitTestBehavior.opaque,
-                                  onTap: () => state.setTheme(!_nightMode),
-                                  child: Center(
-                                    child: SizedBox(
-                                      width: double.infinity,
-                                      height: _Design.switchHeight * unit,
-                                      child: DayNightSwitch(night: _nightMode),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            _touchArea(
-                              left: x(_Design.codeLeft),
-                              right: x(_Design.codeRight),
-                              top: y(_Design.rowTop),
-                              bottom: y(_Design.rowBottom),
-                              above: touchMargin,
-                              below: touchMargin,
-                              onTap: _focus.requestFocus,
-                              child: PushKey(
-                                unit: unit,
-                                faceHeight: faceHeight,
-                                night: _night,
+                                label: words.socials[index],
                                 child: Center(
-                                  child: Semantics(
-                                    label: words.iraqCode,
-                                    child: FittedBox(
-                                      fit: BoxFit.scaleDown,
-                                      child: _dayNight(
-                                        (night) => Text(
-                                          '🇮🇶 +964',
-                                          textDirection: TextDirection.ltr,
-                                          style: _textStyle(
-                                              unit, night ? _nightInk : _ink),
-                                        ),
-                                      ),
-                                    ),
+                                  child: SizedBox.square(
+                                    dimension: _Design.socialMarkSize * unit,
+                                    child: _socialMark(mark),
                                   ),
                                 ),
                               ),
                             ),
-                            _touchArea(
-                              left: x(_Design.numberLeft),
-                              right: x(_Design.numberRight),
-                              top: y(_Design.rowTop),
-                              bottom: y(_Design.rowBottom),
-                              above: touchMargin,
-                              below: touchMargin,
-                              onTap: _focus.requestFocus,
-                              child: AnimatedBuilder(
-                                // لون الأرقام المكتوبة وحده يحتاج إعادة البناء مع تدرج الليل.
-                                animation: _phone.text.isEmpty
-                                    ? _alarm
-                                    : _alarmAndNight,
-                                builder: (context, _) {
-                                  final alarm = _alarmLevel;
-                                  final hintStyle =
-                                      _textStyle(unit, Colors.white).copyWith(
-                                          fontWeight: FontWeight.w600);
-                                  return PushKey(
-                                    unit: unit,
-                                    faceHeight: faceHeight,
-                                    alarm: alarm,
-                                    night: _night,
-                                    borderColor: _focus.hasFocus ? _blue : null,
-                                    child: Center(
-                                      child: TextField(
-                                        controller: _phone,
-                                        focusNode: _focus,
-                                        enabled: !_busy,
-                                        keyboardType: TextInputType.phone,
-                                        textInputAction: TextInputAction.done,
-                                        textDirection: TextDirection.ltr,
-                                        textAlign: TextAlign.center,
-                                        textAlignVertical:
-                                            TextAlignVertical.center,
-                                        cursorColor: Color.lerp(
-                                            _blue, Colors.white, alarm),
-                                        inputFormatters: const [
-                                          IraqiPhoneFormatter()
-                                        ],
-                                        style: _textStyle(
-                                          unit,
-                                          Color.lerp(
-                                            Color.lerp(
-                                                _ink, _nightInk, _night.value),
-                                            Colors.white,
-                                            alarm,
-                                          )!,
-                                        ),
-                                        onSubmitted: (_) => _submit(),
-                                        decoration: InputDecoration(
-                                          isCollapsed: true,
-                                          filled: false,
-                                          contentPadding: EdgeInsets.zero,
-                                          border: InputBorder.none,
-                                          enabledBorder: InputBorder.none,
-                                          focusedBorder: InputBorder.none,
-                                          disabledBorder: InputBorder.none,
-                                          errorBorder: InputBorder.none,
-                                          focusedErrorBorder: InputBorder.none,
-                                          // صيغة الرقم تذوب أولاً ثم يظهر نص الخانة، فلا يتداخلان ولا يقفزان.
-                                          hint: alarm >= .5
-                                              ? Text(
-                                                  '07XX XXX XXXX',
-                                                  textAlign: TextAlign.center,
-                                                  textDirection:
-                                                      TextDirection.ltr,
-                                                  style: hintStyle.copyWith(
-                                                    color:
-                                                        Colors.white.withValues(
-                                                      alpha: (alarm - .5) * 2,
-                                                    ),
-                                                  ),
-                                                )
-                                              : _dayNight(
-                                                  (night) => Text(
-                                                    words.mobileNumber,
-                                                    textAlign: TextAlign.center,
-                                                    textDirection:
-                                                        words.direction,
-                                                    style: hintStyle.copyWith(
-                                                      color: (night
-                                                              ? _nightHint
-                                                              : _hint)
-                                                          .withValues(
-                                                              alpha:
-                                                                  (.5 - alarm) *
-                                                                      2),
-                                                    ),
-                                                  ),
-                                                ),
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                            line(
-                              _Design.dividerLeft,
-                              _Design.dividerRight,
-                              _Design.dividerTop,
-                              _Design.dividerBottom - _Design.dividerTop,
-                              _divider,
-                              _nightDivider,
-                            ),
-                            _touchArea(
-                              left: x(_Design.buttonLeft),
-                              right: x(_Design.buttonRight),
-                              top: y(_Design.buttonTop),
-                              bottom: y(_Design.buttonBottom),
-                              above: touchMargin,
-                              below: touchMargin,
-                              onTap: _busy ? null : _submit,
-                              child: PushKey(
-                                unit: unit,
-                                faceHeight: faceHeight,
-                                held: _busy,
-                                night: _night,
-                                child: Semantics(
-                                  button: true,
-                                  enabled: !_busy,
-                                  child: Center(
-                                    child: _busy
-                                        ? SizedBox(
-                                            width: 16 * unit,
-                                            height: 16 * unit,
-                                            child:
-                                                const CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                              color: _blue,
-                                            ),
-                                          )
-                                        : FittedBox(
-                                            fit: BoxFit.scaleDown,
-                                            child: _dayNight(
-                                              (night) => Text(
-                                                words.login,
-                                                style: _textStyle(
-                                                        unit,
-                                                        night
-                                                            ? _nightInk
-                                                            : _ink)
-                                                    .copyWith(
-                                                        fontWeight:
-                                                            FontWeight.w800),
-                                              ),
-                                            ),
-                                          ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            _touchArea(
-                              left: x(_Design.craftsmanLeft),
-                              right: x(_Design.craftsmanRight),
-                              top: y(_Design.buttonTop),
-                              bottom: y(_Design.buttonBottom),
-                              above: touchMargin,
-                              below: touchMargin,
-                              onTap: _busy ? null : _openCraftsman,
-                              child: PushKey(
-                                unit: unit,
-                                faceHeight: faceHeight,
-                                night: _night,
-                                child: Semantics(
-                                  button: true,
-                                  enabled: !_busy,
-                                  child: Center(
-                                    child: FittedBox(
-                                      fit: BoxFit.scaleDown,
-                                      child: _dayNight(
-                                        (night) => Text(
-                                          words.craftsman,
-                                          style: _textStyle(unit,
-                                                  night ? _nightInk : _ink)
-                                              .copyWith(
-                                                  fontWeight: FontWeight.w800),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            _touchArea(
-                              left: x(_Design.craftsmanLeft),
-                              right: x(_Design.buttonRight),
-                              top: y(_Design.accountTop),
-                              bottom: y(_Design.accountBottom),
-                              above: touchMargin,
-                              below: touchMargin,
-                              onTap: _busy ? null : _openLogin,
-                              child: PushKey(
-                                unit: unit,
-                                faceHeight: faceHeight,
-                                night: _night,
-                                yellow: true,
-                                child: Semantics(
-                                  button: true,
-                                  enabled: !_busy,
-                                  child: Center(
-                                    child: FittedBox(
-                                      fit: BoxFit.scaleDown,
-                                      // الزر أصفر نهاراً وليلاً، فكتابته داكنة دائماً.
-                                      child: Text(
-                                        words.account,
-                                        style: _textStyle(unit, _ink).copyWith(
-                                            fontWeight: FontWeight.w800),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            line(
-                              _Design.wideLineLeft,
-                              _Design.wideLineRight,
-                              _Design.wideLineTop,
-                              _Design.wideLineHeight,
-                              _wideLine,
-                              _nightDivider,
-                            ),
-                            caption(
-                              words.privacy,
-                              _Design.privacySize,
-                              _Design.privacyCenterX,
-                              _Design.privacyCenterY,
-                            ),
-                            line(
-                              _Design.shortLineLeft,
-                              _Design.shortLineRight,
-                              _Design.privacyLineTop,
-                              1,
-                              _shortLine,
-                              _nightShortLine,
-                            ),
-                            for (final (index, mark) in _socialMarks.indexed)
-                              _touchArea(
-                                left: x(_Design.socialCenters[index]) -
-                                    (_Design.socialFaceWidth / 2 +
-                                            PushKey.faceInset) *
-                                        unit,
-                                right: x(_Design.socialCenters[index]) +
-                                    (_Design.socialFaceWidth / 2 +
-                                            PushKey.faceInset) *
-                                        unit,
-                                top: y(_Design.socialTop),
-                                bottom: y(_Design.socialBottom),
-                                above: touchMargin,
-                                below: touchMargin,
-                                onTap: null,
-                                child: PushKey(
-                                  unit: unit,
-                                  faceHeight: _Design.socialFaceHeight * unit,
-                                  night: _night,
-                                  child: Semantics(
-                                    button: true,
-                                    label: words.socials[index],
-                                    child: Center(
-                                      child: SizedBox.square(
-                                        dimension:
-                                            _Design.socialMarkSize * unit,
-                                        child: _socialMark(mark),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            caption(
-                              words.contact,
-                              _Design.contactSize,
-                              _Design.contactCenterX,
-                              _Design.contactCenterY,
-                            ),
-                            line(
-                              _Design.shortLineLeft,
-                              _Design.shortLineRight,
-                              _Design.contactLineTop,
-                              1,
-                              _shortLine,
-                              _nightShortLine,
-                            ),
-                            if (_wrongNumber)
-                              Positioned(
-                                left: 16,
-                                right: 16,
-                                bottom:
-                                    pageHeight - y(_Design.rowTop) + 4 * unit,
-                                child: AnimatedBuilder(
-                                  animation: _alarmAndNight,
-                                  builder: (context, _) => Opacity(
-                                    opacity: (_alarmLevel * 2).clamp(0.0, 1.0),
-                                    child: Text(
-                                      words.wrongNumber,
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        fontFamily: 'Cairo',
-                                        fontSize: 12 * unit,
-                                        fontWeight: FontWeight.w700,
-                                        color: Color.lerp(AppColors.danger,
-                                            _nightError, _night.value),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          ],
+                          ),
+                        caption(
+                          words.contact,
+                          _Design.contactSize,
+                          _Design.contactCenterX,
+                          _Design.contactCenterY,
                         ),
-                      ),
+                        line(
+                          _Design.shortLineLeft,
+                          _Design.shortLineRight,
+                          _Design.contactLineTop,
+                          1,
+                          _shortLine,
+                          _nightShortLine,
+                        ),
+                      ],
                     ),
                   ),
                 ),

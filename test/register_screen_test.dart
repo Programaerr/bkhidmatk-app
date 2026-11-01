@@ -43,7 +43,6 @@ class _SlowRepo extends _Repo {
 Future<void> _pump(
   WidgetTester tester,
   _Repo repo, {
-  String? phone,
   Size size = const Size(412, 1600),
 }) async {
   SharedPreferences.setMockInitialValues({});
@@ -64,7 +63,7 @@ Future<void> _pump(
               child: TextButton(
                 onPressed: () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => RegisterScreen(initialPhone: phone)),
+                  MaterialPageRoute(builder: (_) => const RegisterScreen()),
                 ),
                 child: const Text('الشاشة الأولى'),
               ),
@@ -163,11 +162,6 @@ void main() {
     expect(user.passwordHash, hashPassword('secret1'));
     expect(find.byType(RegisterScreen), findsNothing);
     expect(find.text('الشاشة الأولى'), findsOneWidget);
-  });
-
-  testWidgets('الرقم القادم من الشاشة الأولى يظهر في خانته', (tester) async {
-    await _pump(tester, _Repo(), phone: '07711112222');
-    expect(tester.widget<TextField>(_field('الهاتف')).controller!.text, '07711112222');
   });
 
   testWidgets('المعلومات الناقصة والخطأ تظهر رسائلها ولا تنشئ حساباً', (tester) async {
@@ -441,12 +435,6 @@ void main() {
     await tester.pump();
     expect(_starShown(tester, 'الاسم الكامل'), isTrue);
     await tester.pumpAndSettle();
-  });
-
-  testWidgets('الرقم القادم من الشاشة الأولى يبدأ بلا نقطة حمراء', (tester) async {
-    await _pump(tester, _Repo(), phone: '07711112222');
-    expect(_starShown(tester, 'رقم الهاتف'), isFalse);
-    expect(_starShown(tester, 'الاسم الكامل'), isTrue);
   });
 
   testWidgets('خانة الهاتف تقبل الأرقام فقط، ولا تتجاوز طول الرقم', (tester) async {

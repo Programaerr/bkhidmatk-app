@@ -11,10 +11,7 @@ import 'raised_field.dart';
 
 /// صفحة الحرفي: يملأ معلوماته الشخصية وخبرته ويرسلها إلى الشركة.
 class CraftsmanScreen extends StatefulWidget {
-  const CraftsmanScreen({super.key, this.initialPhone});
-
-  /// الرقم المُدخل في الشاشة الأولى حتى لا يُعاد كتابته.
-  final String? initialPhone;
+  const CraftsmanScreen({super.key});
 
   @override
   State<CraftsmanScreen> createState() => _CraftsmanScreenState();
@@ -23,7 +20,7 @@ class CraftsmanScreen extends StatefulWidget {
 class _CraftsmanScreenState extends State<CraftsmanScreen> {
   final _formKey = GlobalKey<FormState>();
   final _name = TextEditingController();
-  late final _phone = TextEditingController(text: widget.initialPhone);
+  final _phone = TextEditingController();
   final _age = TextEditingController();
   final _address = TextEditingController();
   final _trade = TextEditingController();

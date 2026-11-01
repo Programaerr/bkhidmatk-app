@@ -121,7 +121,6 @@ class RaisedField extends StatefulWidget {
     this.clearErrorWith,
     this.onTyped,
     this.onSubmitted,
-    this.autofocus = false,
     this.inputFormatters,
   });
 
@@ -145,7 +144,6 @@ class RaisedField extends StatefulWidget {
   /// عند تغيّر النص بالكتابة، لا عند تحريك المؤشر.
   final VoidCallback? onTyped;
   final ValueChanged<String>? onSubmitted;
-  final bool autofocus;
   final List<TextInputFormatter>? inputFormatters;
 
   @override
@@ -266,7 +264,6 @@ class _RaisedFieldState extends State<RaisedField> with SingleTickerProviderStat
               child: TextField(
                 controller: widget.controller,
                 focusNode: _focus,
-                autofocus: widget.autofocus,
                 onSubmitted: widget.onSubmitted,
                 keyboardType: widget.keyboardType,
                 inputFormatters: widget.inputFormatters,

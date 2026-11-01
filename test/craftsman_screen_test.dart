@@ -202,11 +202,6 @@ void main() {
     expect(tester.getTopLeft(find.text('الاسم الكامل')).dy - barBottom, lessThan(16));
   });
 
-  testWidgets('الرقم من الشاشة الأولى جاهز في الحقل', (tester) async {
-    await _pump(tester, _Repo(), const CraftsmanScreen(initialPhone: '07701234567'));
-    expect(find.text('07701234567'), findsOneWidget);
-  });
-
   testWidgets('زر عودة كزبون يرجع إلى الشاشة الأولى', (tester) async {
     await _pump(tester, _Repo(), const CraftsmanScreen());
     expect(find.text('الشاشة الأولى'), findsNothing);

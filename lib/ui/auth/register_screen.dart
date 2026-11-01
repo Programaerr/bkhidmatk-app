@@ -10,10 +10,7 @@ import 'push_key.dart';
 import 'raised_field.dart';
 
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key, this.initialPhone});
-
-  /// الرقم المُدخل في الشاشة الأولى حتى لا يُعاد كتابته.
-  final String? initialPhone;
+  const RegisterScreen({super.key});
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -22,7 +19,7 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _name = TextEditingController();
-  late final _phone = TextEditingController(text: widget.initialPhone);
+  final _phone = TextEditingController();
   final _address = TextEditingController();
   final _password = TextEditingController();
   final _confirm = TextEditingController();

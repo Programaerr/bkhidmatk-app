@@ -37,7 +37,7 @@ AppUser _customer() => AppUser(
       createdAt: DateTime(2026, 11, 1),
     );
 
-Future<void> _pump(WidgetTester tester, _Repo repo, {String? phone}) async {
+Future<void> _pump(WidgetTester tester, _Repo repo) async {
   SharedPreferences.setMockInitialValues({});
   tester.view
     ..physicalSize = const Size(412, 1600)
@@ -56,7 +56,7 @@ Future<void> _pump(WidgetTester tester, _Repo repo, {String? phone}) async {
               child: TextButton(
                 onPressed: () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => LoginScreen(initialPhone: phone)),
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
                 ),
                 child: const Text('الشاشة الأولى'),
               ),
@@ -110,12 +110,6 @@ void main() {
     await tester.pump();
     expect(tester.widget<TextField>(_password).obscureText, isFalse);
     await tester.pumpAndSettle();
-  });
-
-  testWidgets('الرقم القادم من الشاشة الأولى يظهر، والكتابة تبدأ في كلمة المرور', (tester) async {
-    await _pump(tester, _Repo(), phone: '07701234567');
-    expect(tester.widget<TextField>(_phone).controller!.text, '07701234567');
-    expect(tester.widget<TextField>(_password).focusNode!.hasFocus, isTrue);
   });
 
   testWidgets('زر الإدخال في لوحة المفاتيح يسجل الدخول', (tester) async {

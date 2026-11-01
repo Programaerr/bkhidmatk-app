@@ -16,34 +16,13 @@ import 'package:jaik/ui/auth/welcome_screen.dart';
 
 import 'fake_repository.dart';
 
-class _Repo extends FakeRepo {
-  _Repo({required this.registered, this.failPhoneLookup = false});
-
-  final bool registered;
-  final bool failPhoneLookup;
-  final asked = <String>[];
-
-  @override
-  Future<bool> phoneExists(String phone) async {
-    asked.add(phone);
-    if (failPhoneLookup) throw StateError('database unavailable');
-    return registered;
-  }
-}
-
-Future<_Repo> _pump(
+Future<void> _pump(
   WidgetTester tester, {
-  bool registered = false,
   bool disableAnimations = false,
-  bool failPhoneLookup = false,
 }) async {
-  final repo = _Repo(
-    registered: registered,
-    failPhoneLookup: failPhoneLookup,
-  );
   await tester.pumpWidget(
     ChangeNotifierProvider<AppState>.value(
-      value: AppState(repository: repo),
+      value: AppState(repository: FakeRepo()),
       child: MaterialApp(
         theme: AppTheme.light(),
         locale: const Locale('ar'),
@@ -58,25 +37,15 @@ Future<_Repo> _pump(
     ),
   );
   await tester.pump();
-  return repo;
-}
-
-Future<void> _submit(WidgetTester tester, String phone) async {
-  await tester.enterText(find.byType(TextField), phone);
-  await tester.tap(find.text('تسجيل الدخول'));
-  await tester.pump();
-  await tester.pump(const Duration(milliseconds: 400));
 }
 
 /// يضبط مقاس الشاشة ويرجعه بعد انتهاء الاختبار.
-void _useScreen(WidgetTester tester, Size size,
-    {double statusBar = 0, double keyboard = 0}) {
+void _useScreen(WidgetTester tester, Size size, {double statusBar = 0}) {
   tester.view
     ..physicalSize = size
     ..devicePixelRatio = 1
     ..padding = FakeViewPadding(top: statusBar)
-    ..viewPadding = FakeViewPadding(top: statusBar)
-    ..viewInsets = FakeViewPadding(bottom: keyboard);
+    ..viewPadding = FakeViewPadding(top: statusBar);
   addTearDown(tester.view.reset);
 }
 
@@ -100,20 +69,19 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
     expect(find.text('EN'), findsOneWidget);
     expect(find.text('AR'), findsNothing);
-    expect(find.text('Log in'), findsOneWidget);
+    expect(find.text('Customer'), findsOneWidget);
     expect(find.text('Craftsman'), findsOneWidget);
     expect(find.text('Have an account?'), findsOneWidget);
-    expect(find.text('Mobile number'), findsOneWidget);
     expect(find.text('Privacy Policy'), findsOneWidget);
     expect(find.text('Contact us'), findsOneWidget);
-    expect(find.text('تسجيل الدخول'), findsNothing);
+    expect(find.text('كزبون'), findsNothing);
     expect(scene().english, isTrue);
 
     await tester.tap(find.text('EN'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
     expect(find.text('AR'), findsOneWidget);
-    expect(find.text('تسجيل الدخول'), findsOneWidget);
+    expect(find.text('كزبون'), findsOneWidget);
     expect(scene().english, isFalse);
   });
 
@@ -170,17 +138,17 @@ void main() {
     expect(next.themeMode, ThemeMode.dark);
   });
 
-  testWidgets('الخصوصية والتواصل وأزرار المنصات تحت زر الدخول بترتيب التصميم',
+  testWidgets('الخصوصية والتواصل وأزرار المنصات تحت زر الزبون بترتيب التصميم',
       (tester) async {
     await _pump(tester);
-    final login = tester.getRect(find.byType(PushKey).at(2));
+    final customer = tester.getRect(find.byType(PushKey).at(0));
     final privacy = tester.getRect(find.text('سياسة و الخصوصية'));
-    final facebook = tester.getRect(find.byType(PushKey).at(5));
-    final instagram = tester.getRect(find.byType(PushKey).at(6));
-    final tiktok = tester.getRect(find.byType(PushKey).at(7));
+    final facebook = tester.getRect(find.byType(PushKey).at(3));
+    final instagram = tester.getRect(find.byType(PushKey).at(4));
+    final tiktok = tester.getRect(find.byType(PushKey).at(5));
     final contact = tester.getRect(find.text('تواصلوا معنى'));
 
-    expect(privacy.top, greaterThan(login.bottom));
+    expect(privacy.top, greaterThan(customer.bottom));
     expect(facebook.top, greaterThan(privacy.bottom));
     expect(contact.top, greaterThan(facebook.bottom));
     expect(facebook.left, greaterThan(instagram.right));
@@ -197,27 +165,36 @@ void main() {
     }
   });
 
-  testWidgets('زر الحساب صف كامل تحت زري الدخول والحرفي، وفوق خط الخصوصية',
+  testWidgets('زر الحساب صف كامل تحت زري الزبون والحرفي، وفوق خط الخصوصية',
       (tester) async {
     await _pump(tester);
-    final number = tester.getRect(find.byType(PushKey).at(1));
-    final login = tester.getRect(find.byType(PushKey).at(2));
-    final craftsman = tester.getRect(find.byType(PushKey).at(3));
+    final customer = tester.getRect(find.byType(PushKey).at(0));
+    final craftsman = tester.getRect(find.byType(PushKey).at(1));
     final account = tester.getRect(
       find.ancestor(
           of: find.text('هل لديك حساب'), matching: find.byType(PushKey)),
     );
 
     expect(account.left, craftsman.left);
-    expect(account.right, login.right);
-    expect(account.height, login.height);
-
-    final gapAbove = login.top - number.bottom;
-    final gap = account.top - login.bottom;
-    expect(gap, greaterThan(0));
-    expect(gap / gapAbove, closeTo(.8, .05));
+    expect(account.right, customer.right);
+    expect(account.height, customer.height);
+    expect(account.top, greaterThan(customer.bottom));
     expect(tester.getRect(find.text('سياسة و الخصوصية')).top,
         greaterThan(account.bottom));
+  });
+
+  testWidgets('لا رمز عراق ولا خانة رقم ولا خط بينهما في الشاشة الأولى',
+      (tester) async {
+    await _pump(tester);
+    expect(find.text('🇮🇶 +964'), findsNothing);
+    expect(find.text('رقم الموبايل'), findsNothing);
+    expect(find.byType(TextField), findsNothing);
+    expect(find.byType(PushKey), findsNWidgets(6));
+    expect(
+      find.byWidgetPredicate(
+          (w) => w is ColoredBox && w.color == const Color(0xFFD3D0C2)),
+      findsNothing,
+    );
   });
 
   for (final size in const [Size(392, 825), Size(360, 780), Size(412, 915)]) {
@@ -239,24 +216,12 @@ void main() {
     });
   }
 
-  testWidgets('رسالة الرقم الخطأ لا تصل إلى المنحني', (tester) async {
-    _useScreen(tester, const Size(392, 825));
-    await _pump(tester);
-    await tester.tap(find.text('تسجيل الدخول'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
-    final message =
-        tester.getRect(find.text('أدخل رقم موبايل عراقي صحيح يبدأ بـ 07'));
-    expect(message.top,
-        greaterThanOrEqualTo(tester.getRect(find.byType(TruckScene)).bottom));
-  });
-
   testWidgets('زر الحساب وحده أصفر، وكتابته داكنة نهاراً وليلاً',
       (tester) async {
     await _pump(tester);
     expect(
       tester.widgetList<PushKey>(find.byType(PushKey)).map((key) => key.yellow),
-      [false, false, false, false, true, false, false, false],
+      [false, false, true, false, false, false],
     );
 
     Color ink() => tester.widget<Text>(find.text('هل لديك حساب')).style!.color!;
@@ -269,58 +234,27 @@ void main() {
     expect(ink(), const Color(0xFF263238));
   });
 
-  testWidgets('زر الحساب يفتح صفحة الدخول بسرعة وبالرقم المكتوب',
-      (tester) async {
-    final repo = await _pump(tester, registered: true);
-    await tester.enterText(find.byType(TextField), '7701234567');
+  testWidgets('زر الحساب يفتح صفحة الدخول بسرعة', (tester) async {
+    await _pump(tester);
     await tester.tap(find.text('هل لديك حساب'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
     final page = tester.element(find.byType(LoginScreen));
     expect(ModalRoute.of(page)!.animation!.value, 1);
-    expect(
-      tester
-          .widget<TextField>(
-            find
-                .descendant(
-                    of: find.byType(LoginScreen),
-                    matching: find.byType(TextField))
-                .first,
-          )
-          .controller!
-          .text,
-      '07701234567',
-    );
-    expect(repo.asked, isEmpty);
   });
 
-  testWidgets('زر الحساب بدون رقم يفتح صفحة الدخول فارغة، ولا يعرض خطأ',
-      (tester) async {
+  testWidgets('زر كزبون يفتح صفحة إنشاء الحساب بسرعة', (tester) async {
     await _pump(tester);
-    await tester.tap(find.text('هل لديك حساب'));
+    await tester.tap(find.text('كزبون'));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 201));
+    await tester.pump(const Duration(milliseconds: 200));
 
-    expect(find.byType(LoginScreen), findsOneWidget);
-    expect(find.text('أدخل رقم موبايل عراقي صحيح يبدأ بـ 07'), findsNothing);
-    expect(
-      tester
-          .widget<TextField>(
-            find
-                .descendant(
-                    of: find.byType(LoginScreen),
-                    matching: find.byType(TextField))
-                .first,
-          )
-          .controller!
-          .text,
-      isEmpty,
-    );
+    final page = tester.element(find.byType(RegisterScreen));
+    expect(ModalRoute.of(page)!.animation!.value, 1);
   });
 
-  testWidgets(
-      'في أصغر هاتف تظهر الأزرار ويُسحب الباقي، وزرا الأعلى تحت شريط الحالة',
+  testWidgets('في أصغر هاتف يظهر كل شيء، وزرا الأعلى تحت شريط الحالة',
       (tester) async {
     _useScreen(tester, const Size(320, 568), statusBar: 24);
     await _pump(tester);
@@ -331,38 +265,22 @@ void main() {
     expect(language.top, greaterThan(24));
     expect(dayNight.right, lessThan(320));
     expect(dayNight.top, greaterThanOrEqualTo(24 + 20));
-    expect(tester.getRect(find.text('هل لديك حساب')).bottom, lessThan(568));
-
-    await tester.drag(
-        find.byType(SingleChildScrollView), const Offset(0, -300));
-    await tester.pump();
     expect(tester.getRect(find.text('تواصلوا معنى')).bottom, lessThan(568));
   });
 
-  testWidgets(
-      'زر حرفي يسار زر الدخول بنفس مقاسه، ويفتح صفحة الحرفي بالرقم المكتوب',
+  testWidgets('زر حرفي يسار زر الزبون بنفس مقاسه، ويفتح صفحة الحرفي',
       (tester) async {
     await _pump(tester);
-    final login = tester.getRect(find.byType(PushKey).at(2));
-    final craftsman = tester.getRect(find.byType(PushKey).at(3));
-    expect(craftsman.top, login.top);
-    expect(craftsman.width, closeTo(login.width, .5));
-    expect(craftsman.right, lessThan(login.left));
+    final customer = tester.getRect(find.byType(PushKey).at(0));
+    final craftsman = tester.getRect(find.byType(PushKey).at(1));
+    expect(craftsman.top, customer.top);
+    expect(craftsman.width, closeTo(customer.width, .5));
+    expect(craftsman.right, lessThan(customer.left));
 
-    // طرفا صف الرقم على طرفي الصف الذي تحته تماماً.
-    expect(tester.getRect(find.byType(PushKey).at(1)).right, login.right);
-    expect(tester.getRect(find.byType(PushKey).at(0)).left, craftsman.left);
-
-    await tester.enterText(find.byType(TextField), '7701234567');
     await tester.tap(find.text('حرفي'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
     expect(find.byType(CraftsmanScreen), findsOneWidget);
-    expect(
-      find.descendant(
-          of: find.byType(CraftsmanScreen), matching: find.text('07701234567')),
-      findsOneWidget,
-    );
 
     await tester.ensureVisible(find.text('عودة كزبون'));
     await tester.pump();
@@ -389,14 +307,14 @@ void main() {
     expect(find.byType(CraftsmanScreen), findsNothing);
   });
 
-  testWidgets('زرا صفحة الحرفي بنفس ارتفاع زر الدخول وخطه ولونه',
+  testWidgets('زرا صفحة الحرفي بنفس ارتفاع زر الزبون وخطه ولونه',
       (tester) async {
     await _pump(tester);
-    final loginKey = find.byType(PushKey).at(2);
-    final loginHeight = tester.getSize(loginKey).height;
-    final loginUnit = tester.widget<PushKey>(loginKey).unit;
-    final loginFace = tester.widget<PushKey>(loginKey).faceHeight;
-    final loginText = tester.widget<Text>(find.text('تسجيل الدخول')).style!;
+    final customerKey = find.byType(PushKey).at(0);
+    final customerHeight = tester.getSize(customerKey).height;
+    final customerUnit = tester.widget<PushKey>(customerKey).unit;
+    final customerFace = tester.widget<PushKey>(customerKey).faceHeight;
+    final customerText = tester.widget<Text>(find.text('كزبون')).style!;
 
     await tester.tap(find.text('حرفي'));
     await tester.pump();
@@ -405,15 +323,15 @@ void main() {
     for (final label in ['إرسال الطلب إلى الشركة', 'عودة كزبون']) {
       final key =
           find.ancestor(of: find.text(label), matching: find.byType(PushKey));
-      expect(tester.getSize(key).height, closeTo(loginHeight, .01));
-      expect(tester.widget<PushKey>(key).unit, loginUnit);
-      expect(tester.widget<PushKey>(key).faceHeight, loginFace);
+      expect(tester.getSize(key).height, closeTo(customerHeight, .01));
+      expect(tester.widget<PushKey>(key).unit, customerUnit);
+      expect(tester.widget<PushKey>(key).faceHeight, customerFace);
       final text = tester.widget<Text>(find.text(label)).style!;
-      expect(text.fontFamily, loginText.fontFamily);
-      expect(text.fontSize, loginText.fontSize);
-      expect(text.height, loginText.height);
-      expect(text.fontWeight, loginText.fontWeight);
-      expect(text.color, loginText.color);
+      expect(text.fontFamily, customerText.fontFamily);
+      expect(text.fontSize, customerText.fontSize);
+      expect(text.height, customerText.height);
+      expect(text.fontWeight, customerText.fontWeight);
+      expect(text.color, customerText.color);
     }
   });
 
@@ -431,31 +349,6 @@ void main() {
     expect(find.text('EN'), findsOneWidget);
   });
 
-  testWidgets('صيغة الرقم تذوب ثم يظهر نص الخانة بالتدريج دون قفزة',
-      (tester) async {
-    await _pump(tester);
-    double level(String text) =>
-        tester.widget<Text>(find.text(text)).style!.color!.a;
-
-    await tester.tap(find.text('تسجيل الدخول'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
-    expect(level('07XX XXX XXXX'), 1);
-    expect(find.text('رقم الموبايل'), findsNothing);
-
-    await tester.pump(const Duration(milliseconds: 1300));
-    expect(level('07XX XXX XXXX'), inExclusiveRange(0, 1));
-    expect(find.text('رقم الموبايل'), findsNothing);
-
-    await tester.pump(const Duration(milliseconds: 500));
-    expect(find.text('07XX XXX XXXX'), findsNothing);
-    expect(level('رقم الموبايل'), inExclusiveRange(0, 1));
-
-    await tester.pump(const Duration(milliseconds: 1000));
-    await tester.pump();
-    expect(level('رقم الموبايل'), 1);
-  });
-
   testWidgets('الشاشة القصيرة تعرض بقية العناصر بالسحب', (tester) async {
     _useScreen(tester, const Size(800, 360));
     await _pump(tester);
@@ -466,111 +359,6 @@ void main() {
         find.byType(SingleChildScrollView), const Offset(0, -300));
     await tester.pump();
     expect(tester.getRect(contact).bottom, lessThan(360));
-  });
-
-  testWidgets('لوحة المفاتيح لا تغطي زر الدخول', (tester) async {
-    _useScreen(tester, const Size(392, 872), keyboard: 330);
-    await _pump(tester);
-    await tester.pump(const Duration(milliseconds: 300));
-    expect(tester.getRect(find.byType(PushKey).at(2)).bottom,
-        lessThanOrEqualTo(872 - 330));
-  });
-
-  for (final size in const [Size(360, 640), Size(392, 872)]) {
-    testWidgets('رسالة الخطأ فوق خانة الرقم ولا تغطيها في هاتف $size',
-        (tester) async {
-      _useScreen(tester, size);
-      await _pump(tester);
-      await tester.tap(find.text('تسجيل الدخول'));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
-      final message =
-          tester.getRect(find.text('أدخل رقم موبايل عراقي صحيح يبدأ بـ 07'));
-      expect(message.bottom,
-          lessThanOrEqualTo(tester.getRect(find.byType(PushKey).at(1)).top));
-    });
-  }
-
-  testWidgets('الرقم غير العراقي لا ينتقل لشاشة أخرى ويعرض خطأ',
-      (tester) async {
-    final repo = await _pump(tester);
-    await _submit(tester, '1234567890');
-
-    expect(find.text('أدخل رقم موبايل عراقي صحيح يبدأ بـ 07'), findsOneWidget);
-    expect(repo.asked, isEmpty);
-    expect(find.byType(LoginScreen), findsNothing);
-    expect(find.byType(RegisterScreen), findsNothing);
-  });
-
-  testWidgets(
-      'الخطأ يجعل الخانة حمراء بالكامل ثم تعود ببطء ويختفي الأحمر والرسالة',
-      (tester) async {
-    await _pump(tester);
-    double alarm() => tester.widget<PushKey>(find.byType(PushKey).at(1)).alarm;
-    const message = 'أدخل رقم موبايل عراقي صحيح يبدأ بـ 07';
-    expect(alarm(), 0);
-
-    await tester.tap(find.text('تسجيل الدخول'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
-    expect(alarm(), 1);
-    expect(find.text(message), findsOneWidget);
-    expect(find.text('07XX XXX XXXX'), findsOneWidget);
-
-    await tester.pump(const Duration(milliseconds: 1400));
-    expect(alarm(), inExclusiveRange(0, 1));
-
-    await tester.pump(const Duration(milliseconds: 1400));
-    await tester.pump();
-    expect(alarm(), 0);
-    expect(find.text(message), findsNothing);
-    expect(find.text('07XX XXX XXXX'), findsNothing);
-    expect(find.text('رقم الموبايل'), findsOneWidget);
-  });
-
-  testWidgets('الرقم المسجل يكمل بكلمة المرور ولا يدخل بدونها', (tester) async {
-    final repo = await _pump(tester, registered: true);
-    await _submit(tester, '7701234567');
-
-    expect(repo.asked, ['07701234567']);
-    expect(find.byType(LoginScreen), findsOneWidget);
-    expect(find.text('07701234567'), findsOneWidget);
-    final state = tester.element(find.byType(LoginScreen)).read<AppState>();
-    expect(state.user, isNull);
-  });
-
-  testWidgets('الرقم الجديد يكمل بإنشاء حساب', (tester) async {
-    final repo = await _pump(tester);
-    await _submit(tester, '07711112222');
-
-    expect(repo.asked, ['07711112222']);
-    expect(
-      find.descendant(
-          of: find.byType(RegisterScreen), matching: find.text('07711112222')),
-      findsOneWidget,
-    );
-  });
-
-  testWidgets('فشل فحص الرقم يعرض خطأ ولا يوقف التطبيق', (tester) async {
-    final repo = await _pump(tester, failPhoneLookup: true);
-    await _submit(tester, '07711112222');
-    await tester.pump();
-    await tester.pump(const Duration(seconds: 1));
-
-    expect(repo.asked, ['07711112222']);
-    expect(
-      find.text('تعذر التحقق من الرقم. تحقق من قاعدة البيانات وحاول مجدداً.'),
-      findsOneWidget,
-    );
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('الأرقام العربية و+964 تتحول إلى رقم موبايل فقط', (tester) async {
-    await _pump(tester);
-    await tester.enterText(find.byType(TextField), '+٩٦٤ ٧٧٠ ١٢٣ ٤٥٦٧ ٩٩');
-
-    final field = tester.widget<TextField>(find.byType(TextField));
-    expect(field.controller!.text, '7701234567');
   });
 
   testWidgets('المشهد يتحرك في الوضع العادي', (tester) async {
@@ -584,12 +372,10 @@ void main() {
     expect(tester.hasRunningAnimations, isFalse);
   });
 
-  testWidgets('علم العراق بجانب الرمز، والزر ينخفض عند اللمس ويعود',
+  testWidgets('الزر ينخفض عند اللمس، ويكون مرتفعاً عند الرجوع إلى الشاشة',
       (tester) async {
     await _pump(tester);
-    expect(find.text('🇮🇶 +964'), findsOneWidget);
-
-    final label = find.text('تسجيل الدخول');
+    final label = find.text('كزبون');
     final up = tester.getTopLeft(label).dy;
 
     final finger = await tester.startGesture(tester.getCenter(label));
@@ -599,6 +385,10 @@ void main() {
 
     await finger.up();
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
+    Navigator.of(tester.element(find.byType(RegisterScreen))).pop();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
     await tester.pump(const Duration(milliseconds: 250));
     expect(tester.getTopLeft(label).dy, closeTo(up, .5));
   });
