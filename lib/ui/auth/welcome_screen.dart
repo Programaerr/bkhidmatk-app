@@ -335,21 +335,34 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
       _busy = true;
       _wrongNumber = false;
     });
-    final repo = context.read<AppState>().repo;
-    final registered = await repo.phoneExists(phone);
-    if (!mounted) return;
-    setState(() => _busy = false);
-    _focus.unfocus();
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => AnnotatedRegion<SystemUiOverlayStyle>(
-          value: _appSystemBars(night: _nightMode),
-          child:
-              registered ? LoginScreen(initialPhone: phone) : RegisterScreen(initialPhone: phone),
+    try {
+      final registered =
+          await context.read<AppState>().repo.phoneExists(phone);
+      if (!mounted) return;
+      setState(() => _busy = false);
+      _focus.unfocus();
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => AnnotatedRegion<SystemUiOverlayStyle>(
+            value: _appSystemBars(night: _nightMode),
+            child: registered
+                ? LoginScreen(initialPhone: phone)
+                : RegisterScreen(initialPhone: phone),
+          ),
         ),
-      ),
-    );
+      );
+    } catch (error, stackTrace) {
+      debugPrint('Failed to check whether the phone is registered: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      if (!mounted) return;
+      setState(() => _busy = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('تعذر التحقق من الرقم. تحقق من قاعدة البيانات وحاول مجدداً.'),
+        ),
+      );
+    }
   }
 
   @override
