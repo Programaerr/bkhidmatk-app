@@ -60,7 +60,9 @@ class _AdminDashboardState extends State<AdminDashboard>
       children: [
         AdminHeader(
           title: 'لوحة التحكم',
-          subtitle: 'مرحباً ${user.name} · إدارة كاملة للتطبيق',
+          subtitle: context.read<AppState>().developmentAdminPreview
+              ? 'معاينة مدير محلية · البيانات لا تُحفظ ولا تتصل بـ Supabase'
+              : 'مرحباً ${user.name} · إدارة كاملة للتطبيق',
           actions: [
             AppIconButton(
               icon: Icons.chat_bubble_outline_rounded,
@@ -77,10 +79,11 @@ class _AdminDashboardState extends State<AdminDashboard>
             future: _future,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+                return const Center(
+                    child: CircularProgressIndicator(strokeWidth: 2.4));
               }
-              final stats = snapshot.data?.$1 ??
-                  const AppStats(weekly: <RevenuePoint>[]);
+              final stats =
+                  snapshot.data?.$1 ?? const AppStats(weekly: <RevenuePoint>[]);
               final bookings = snapshot.data?.$2 ?? const <Booking>[];
               final works = snapshot.data?.$3 ?? 0;
               return RefreshIndicator(
@@ -107,12 +110,13 @@ class _AdminDashboardState extends State<AdminDashboard>
                                 child: Text('إيرادات آخر 7 أيام',
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(color: Colors.white60, fontSize: 10.5)),
+                                    style: const TextStyle(
+                                        color: Colors.white60, fontSize: 10.5)),
                               ),
                               const Spacer(),
                               Container(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 3),
                                 decoration: BoxDecoration(
                                   color: AppColors.gold.withValues(alpha: .16),
                                   borderRadius: BorderRadius.circular(100),
@@ -124,7 +128,8 @@ class _AdminDashboardState extends State<AdminDashboard>
                                     SizedBox(width: 3),
                                     Text('نشط',
                                         style: TextStyle(
-                                            color: AppColors.gold, fontSize: 8.5)),
+                                            color: AppColors.gold,
+                                            fontSize: 8.5)),
                                   ],
                                 ),
                               ),
@@ -191,7 +196,8 @@ class _AdminDashboardState extends State<AdminDashboard>
                     if (bookings.isEmpty)
                       const SoftCard(
                         child: Text('لا توجد حجوزات بعد.',
-                            style: TextStyle(fontSize: 12), textAlign: TextAlign.center),
+                            style: TextStyle(fontSize: 12),
+                            textAlign: TextAlign.center),
                       )
                     else
                       for (final b in bookings)
@@ -202,11 +208,13 @@ class _AdminDashboardState extends State<AdminDashboard>
                             onTap: widget.onOpenBookings,
                             child: Row(
                               children: [
-                                AvatarCircle(name: b.customerName ?? 'زبون', size: 38),
+                                AvatarCircle(
+                                    name: b.customerName ?? 'زبون', size: 38),
                                 const SizedBox(width: 9),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(b.customerName ?? 'زبون',
                                           maxLines: 1,
@@ -227,10 +235,12 @@ class _AdminDashboardState extends State<AdminDashboard>
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
                                     Text(fmtMoney(b.total),
-                                        style: theme.textTheme.bodySmall?.copyWith(
-                                            fontWeight: FontWeight.w800,
-                                            fontSize: 10.5,
-                                            color: theme.colorScheme.onSurface)),
+                                        style: theme.textTheme.bodySmall
+                                            ?.copyWith(
+                                                fontWeight: FontWeight.w800,
+                                                fontSize: 10.5,
+                                                color: theme
+                                                    .colorScheme.onSurface)),
                                     const SizedBox(height: 3),
                                     StatusPill(status: b.status, dense: true),
                                   ],
@@ -287,7 +297,8 @@ class _WeeklyChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (points.isEmpty) return const SizedBox();
-    final max = points.map((e) => e.value).fold<double>(1000, (a, b) => a > b ? a : b);
+    final max =
+        points.map((e) => e.value).fold<double>(1000, (a, b) => a > b ? a : b);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
@@ -305,7 +316,10 @@ class _WeeklyChart extends StatelessWidget {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: p.value > 0
-                            ? [AppColors.gold, AppColors.gold.withValues(alpha: .35)]
+                            ? [
+                                AppColors.gold,
+                                AppColors.gold.withValues(alpha: .35)
+                              ]
                             : [Colors.white24, Colors.white10],
                       ),
                       borderRadius: BorderRadius.circular(6),
@@ -313,8 +327,17 @@ class _WeeklyChart extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    ['إث', 'ثل', 'أر', 'خم', 'جم', 'سب', 'أح'][p.day.weekday % 7],
-                    style: const TextStyle(color: Colors.white38, fontSize: 8.5),
+                    [
+                      'إث',
+                      'ثل',
+                      'أر',
+                      'خم',
+                      'جم',
+                      'سب',
+                      'أح'
+                    ][p.day.weekday % 7],
+                    style:
+                        const TextStyle(color: Colors.white38, fontSize: 8.5),
                   ),
                 ],
               ),
@@ -326,7 +349,8 @@ class _WeeklyChart extends StatelessWidget {
 }
 
 class _QuickAction extends StatelessWidget {
-  const _QuickAction({required this.icon, required this.label, required this.onTap});
+  const _QuickAction(
+      {required this.icon, required this.label, required this.onTap});
 
   final IconData icon;
   final String label;
@@ -350,7 +374,8 @@ class _QuickAction extends StatelessWidget {
           ),
           const SizedBox(height: 7),
           Text(label,
-              style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800)),
+              style:
+                  const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800)),
         ],
       ),
     );

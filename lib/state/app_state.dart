@@ -10,14 +10,18 @@ import '../data/supabase_services.dart';
 
 /// جلسة التطبيق والإعدادات؛ مصادقة الهاتف اختيارية عبر Supabase.
 class AppState extends ChangeNotifier {
-  AppState({Repository? repository, this.cloudServices})
-      : repo = repository ??
+  AppState({
+    Repository? repository,
+    this.cloudServices,
+    this.developmentAdminPreview = false,
+  }) : repo = repository ??
             (cloudServices == null
                 ? LocalRepository()
                 : SupabaseRepository(cloudServices.client));
 
   final Repository repo;
   final SupabaseServices? cloudServices;
+  final bool developmentAdminPreview;
 
   bool get usesCloudAuth => cloudServices != null;
 
@@ -39,6 +43,21 @@ class AppState extends ChangeNotifier {
     final savedTheme = prefs.getString('theme');
     themeMode = savedTheme == 'dark' ? ThemeMode.dark : ThemeMode.light;
     english = prefs.getBool('english') ?? false;
+
+    if (developmentAdminPreview) {
+      user = AppUser(
+        id: 1,
+        name: 'مدير جايك',
+        phone: '07700000000',
+        passwordHash: '',
+        role: 'admin',
+        city: 'بغداد',
+        createdAt: DateTime.utc(2026),
+      );
+      booting = false;
+      notifyListeners();
+      return;
+    }
 
     if (cloudServices != null) {
       if (cloudServices!.isSignedIn) {
