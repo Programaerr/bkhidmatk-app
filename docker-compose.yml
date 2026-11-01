@@ -1,0 +1,31 @@
+version: "3.8"
+
+services:
+  jaik-dev:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: jaik-dev
+    tty: true
+    stdin_open: true
+    working_dir: /workspace
+    volumes:
+      - ..:/workspace:cached
+      - jaik-pub-cache:/home/vscode/.pub-cache
+      - jaik-gradle-cache:/home/vscode/.gradle
+      - jaik-android-sdk:/opt/android-sdk
+    environment:
+      - FLUTTER_VERSION=3.47.8
+      - CHROME_BIN=/usr/bin/google-chrome
+      - SUPABASE_URL=${SUPABASE_URL:-}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY:-}
+    # شريكتك تشغل الأمر ده وبس:
+    # docker compose up -d && docker compose exec jaik-dev bash
+    #然后 داخل التيرمنال:
+    #   flutter pub get
+    #   flutter run -d chrome --web-port=8080 --dart-define=SUPABASE_URL=... --dart-define=SUPABASE_PUBLISHABLE_KEY=...
+
+volumes:
+  jaik-pub-cache:
+  jaik-gradle-cache:
+  jaik-android-sdk:
