@@ -17,15 +17,24 @@ begin
   select u.id
     into admin_auth_id
     from auth.users u
-   where lower(u.email) = lower(admin_phone || '@jaik.app')
-      and public.normalize_iraqi_phone(
-        coalesce(u.raw_user_meta_data ->> 'app_phone', '')
-      ) = admin_phone;
+   where lower(u.email) = lower(admin_phone || '@jaik.app');
 
   if admin_auth_id is null then
     raise exception
-      'Register the administrator in the app first with phone % and a password, '
-      'then rerun this script',
+      'No Supabase Auth account exists for %. Register in the app using the same Supabase project, choose "Create account", then rerun this script.',
+      admin_phone || '@jaik.app';
+  end if;
+
+  if not exists (
+    select 1
+      from auth.users u
+     where u.id = admin_auth_id
+       and public.normalize_iraqi_phone(
+         coalesce(u.raw_user_meta_data ->> 'app_phone', '')
+       ) = admin_phone
+  ) then
+    raise exception
+      'Auth account % exists, but its app_phone metadata does not match. Register it through the app in the same Supabase project.',
       admin_phone || '@jaik.app';
   end if;
 
