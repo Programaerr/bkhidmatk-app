@@ -208,6 +208,19 @@ class _IraqiPhoneFormatter extends TextInputFormatter {
   }
 }
 
+/// انتقال الصفحة المعتاد نفسه، لكنه أسرع منه بأكثر من الضعف.
+class _QuickRoute extends MaterialPageRoute<void> {
+  _QuickRoute({required super.builder});
+
+  static const _duration = Duration(milliseconds: 200);
+
+  @override
+  Duration get transitionDuration => _duration;
+
+  @override
+  Duration get reverseTransitionDuration => _duration;
+}
+
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
 
@@ -299,7 +312,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
     _focus.unfocus();
     Navigator.push(
       context,
-      MaterialPageRoute(
+      _QuickRoute(
         builder: (_) => AnnotatedRegion<SystemUiOverlayStyle>(
           value: _appSystemBars(night: _nightMode),
           child: CraftsmanScreen(initialPhone: validIraqiPhone(phone) ? phone : null),

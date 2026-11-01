@@ -222,6 +222,21 @@ void main() {
     expect(find.text('حرفي'), findsOneWidget);
   });
 
+  testWidgets('صفحة الحرفي تفتح وترجع خلال 200 مللي ثانية', (tester) async {
+    await _pump(tester);
+    await tester.tap(find.text('حرفي'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    final page = tester.element(find.byType(CraftsmanScreen));
+    expect(ModalRoute.of(page)!.animation!.value, 1);
+
+    Navigator.of(page).pop();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 201));
+    await tester.pump();
+    expect(find.byType(CraftsmanScreen), findsNothing);
+  });
+
   testWidgets('زرا صفحة الحرفي بنفس ارتفاع زر الدخول وخطه ولونه', (tester) async {
     await _pump(tester);
     final loginKey = find.byType(PushKey).at(2);
