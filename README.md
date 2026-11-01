@@ -18,18 +18,25 @@ flutter run --dart-define=SUPABASE_URL=https://YOUR_PROJECT.supabase.co --dart-d
 
 ## إعداد Supabase
 
-1. افتح **Supabase → SQL Editor**، والصق الملف [`supabase/setup.sql`](./supabase/setup.sql) ونفّذه. ينشئ الجداول والعلاقات والفهارس وسياسات RLS ودوال العمليات وStorage وبيانات الكتالوج.
-2. إذا كان المشروع مُعدّاً مسبقاً، أعد تشغيل نسخة `setup.sql` الحالية أولاً لتطبيق قيد المدير المرتبط بحساب Auth.
-3. أنشئ حساب المدير من **Authentication → Users** وحدد رقم الهاتف وكلمة المرور. لا تعتمد على رقم الهاتف وحده لإنشاء صلاحية المدير.
-4. في **Authentication → Sign In / Providers → Phone** فعّل مزوّد **Phone** وأوقف **Phone confirmations** إذا أردت الدخول بكلمة مرور دون SMS. هذا لا يتحقق من ملكية أرقام الحسابات الجديدة؛ لا تضع دور المدير في جدول الهواتف وحده.
-5. بعد إنشاء حساب Auth للمدير، افتح [`supabase/disable_otp_admin.sql`](./supabase/disable_otp_admin.sql)، واستبدل `07XXXXXXXXX` برقم المدير، ثم نفّذه في SQL Editor. يربط السكربت دور المدير بمعرّف حساب Auth المحدد، ويحتفظ بالرقم في `admin_phones` كمرجع فقط. لا يستطيع التطبيق إضافة مديرين أو تعديل جداول الإدارة.
-6. شغّل التطبيق باستخدام **Project URL** و **Publishable key** (أو المفتاح العام القديم `anon`) من إعدادات المشروع:
+1. افتح **Supabase → SQL Editor**، والصق الملف [`supabase/setup.sql`](./supabase/setup.sql) ونفّذه. ينشئ الجداول والعلاقات والفهارس وسياسات RLS ودوال العمليات وStorage وبيانات الكتالوج، بما فيها دالة `claim_admin_phone()` التي تمنح المدير صلاحياته.
+2. في **Authentication → Sign In / Providers → Email** تأكد أن مزوّد **Email** مفعّل، ثم أوقف **Confirm email**. هذا هو إلغاء OTP/التأكيد نهائياً: لا يُرسل بريد ولا رمز SMS. التطبيق يستخدم بريداً داخلياً مشتقاً من رقم الهاتف (`07...@jaik.app`) لا يراه المستخدم، لذلك لا تحتاج إلى مزوّد SMS.
+3. أضف رقم هاتف المدير بصيغته المحلية العراقية إلى جدول `admin_phones` في SQL Editor:
+
+   ```sql
+   insert into public.admin_phones(phone) values ('07XXXXXXXXX')
+     on conflict (phone) do nothing;
+   ```
+
+   استبدل الرقم برقمك. أي حساب مسجّل بهذا الرقم يصبح مديراً كاملاً تلقائياً، سواء أُضيف الرقم قبل التسجيل أو بعده. إذا كان رقمك محفوظاً في `settings.admin_phone` فسيُضاف تلقائياً عند أول دخول.
+4. إن كان رقمك مسجّلاً سابقاً بحساب OTP قديم (بلا كلمة مرور)، احذف ذلك المستخدم من **Authentication → Users** أولاً.
+5. شغّل التطبيق باستخدام **Project URL** و **Publishable key** (أو المفتاح العام القديم `anon`) من إعدادات المشروع:
 
    ```powershell
    flutter run --dart-define=SUPABASE_URL=https://YOUR_PROJECT.supabase.co --dart-define=SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY
    ```
 
-   في VS Code اختر **Flutter: Supabase (كلمة المرور)**، ثم سجّل الدخول برقم المدير وكلمة المرور التي أنشأتها في Supabase. سيعمل التطبيق بجلسة Auth حقيقية وتطبّق قاعدة البيانات صلاحيات المدير عبر RLS، دون OTP عند تسجيل الدخول. لا تستخدم `service_role` داخل تطبيق الهاتف أو تشاركه؛ صلاحياته تتجاوز سياسات قاعدة البيانات.
+   في VS Code اختر **Flutter: Supabase (كلمة المرور)**. أول مرة اضغط «إنشاء حساب» برقمك وكلمة مرور من اختيارك، وبعدها سجّل الدخول بالرقم نفسه وكلمة المرور — بدون أي رمز SMS. ستفتح لوحة المدير تلقائياً لأن رقمك في `admin_phones`. لا تستخدم `service_role` داخل تطبيق الهاتف أو تشاركه؛ صلاحياته تتجاوز سياسات قاعدة البيانات.
+6. إذا كان مشروعك مُعدّاً بنسخة أقدم ولم تُنفّذ `setup.sql` المحدّث، نفّذ [`supabase/disable_otp_admin.sql`](./supabase/disable_otp_admin.sql) بعد وضع رقمك مكان `07XXXXXXXXX`؛ يضيف دالة `claim_admin_phone()` ويوسّع `is_app_admin()` دون حذف البيانات.
 
    ### المعاينة المحلية دون قاعدة بيانات
 

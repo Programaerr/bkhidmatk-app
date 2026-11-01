@@ -1,5 +1,5 @@
 -- Jaik: phone/password accounts (no SMS OTP), worker phone enrollment,
--- administrator access bound to Auth user IDs, and in-app notifications.
+-- administrator access by phone or bound Auth user ID, and in-app notifications.
 -- Run this file in Supabase SQL Editor. Never put the service_role key in the app.
 
 begin;
@@ -128,8 +128,11 @@ begin
   end if;
 
   if exists (
-    select 1 from public.admin_users a where a.auth_user_id = new.id
-  ) then
+       select 1 from public.admin_phones a where a.phone = local_phone
+     )
+     or exists (
+       select 1 from public.admin_users a where a.auth_user_id = new.id
+     ) then
     assigned_role := 'admin';
   elsif exists (
     select 1 from public.hire_phones h
@@ -160,8 +163,24 @@ create trigger on_auth_user_created_jaik
   after insert on auth.users
   for each row execute function public.create_app_profile();
 
+create or replace function public.promote_admin_phone()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  update public.app_profiles
+     set role = 'admin'
+   where phone = new.phone;
+  return new;
+end
+$$;
+
 drop trigger if exists on_admin_phone_added_jaik on public.admin_phones;
-drop function if exists public.promote_admin_phone();
+create trigger on_admin_phone_added_jaik
+  after insert on public.admin_phones
+  for each row execute function public.promote_admin_phone();
 
 create or replace function public.promote_admin_user()
 returns trigger
@@ -204,13 +223,19 @@ create trigger on_admin_user_deleted_jaik
 update public.app_profiles p
    set role = 'admin'
  where exists (
-   select 1 from public.admin_users a where a.auth_user_id = p.auth_user_id
- );
+     select 1 from public.admin_users a where a.auth_user_id = p.auth_user_id
+   )
+   or exists (
+     select 1 from public.admin_phones a where a.phone = p.phone
+   );
 update public.app_profiles p
    set role = 'customer'
  where role = 'admin'
    and not exists (
      select 1 from public.admin_users a where a.auth_user_id = p.auth_user_id
+   )
+   and not exists (
+     select 1 from public.admin_phones a where a.phone = p.phone
    );
 
 insert into public.app_profiles (
@@ -222,6 +247,8 @@ select
   p.phone,
   case
     when exists (
+      select 1 from public.admin_phones a where a.phone = p.phone
+    ) or exists (
       select 1 from public.admin_users a where a.auth_user_id = u.id
     ) then 'admin'
     when exists (
@@ -301,8 +328,18 @@ security definer
 set search_path = ''
 as $$
   select exists (
-    select 1 from public.admin_users a
-     where a.auth_user_id = auth.uid()
+    select 1
+      from public.app_profiles p
+     where p.auth_user_id = auth.uid()
+       and (
+         exists (
+           select 1 from public.admin_phones a where a.phone = p.phone
+         )
+         or exists (
+           select 1 from public.admin_users a
+            where a.auth_user_id = p.auth_user_id
+         )
+       )
   )
 $$;
 
@@ -1364,20 +1401,70 @@ create policy "jaik_media_owner_delete" on storage.objects
     )
   );
 
-drop function if exists public.claim_admin_phone();
+-- Called by the app after every login/signup. If the account phone is listed in
+-- admin_phones (or equals settings.admin_phone), the account is promoted to admin
+-- immediately, so the full dashboard opens without any OTP or manual Auth binding.
+create or replace function public.claim_admin_phone()
+returns text
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  me public.app_profiles%rowtype;
+  admin_phone text;
+begin
+  if auth.uid() is null then
+    return null;
+  end if;
+
+  select * into me
+    from public.app_profiles
+   where auth_user_id = auth.uid();
+
+  if not found then
+    return null;
+  end if;
+
+  select public.normalize_iraqi_phone(value)
+    into admin_phone
+    from public.settings
+   where key = 'admin_phone'
+   limit 1;
+
+  if admin_phone is not null and admin_phone ~ '^07[0-9]{9}$' then
+    insert into public.admin_phones(phone)
+    values (admin_phone)
+    on conflict (phone) do nothing;
+  end if;
+
+  if exists (
+    select 1 from public.admin_phones a where a.phone = me.phone
+  ) then
+    update public.app_profiles
+       set role = 'admin'
+     where id = me.id
+       and role <> 'admin';
+    return 'admin';
+  end if;
+
+  return me.role;
+end
+$$;
+
+revoke all on function public.claim_admin_phone() from public, anon;
+grant execute on function public.claim_admin_phone() to authenticated;
 
 commit;
 
--- First create the administrator's Auth user in Supabase Dashboard -> Authentication -> Users.
--- Then run the following in the SQL Editor, replacing the phone number:
+-- Add your administrator phone(s) here, then register/login from the app with
+-- the same number and a password (no SMS OTP):
 --   insert into public.admin_phones(phone) values ('07XXXXXXXXX')
 --     on conflict (phone) do nothing;
---   insert into public.admin_users(auth_user_id)
---   select id from auth.users
---    where public.normalize_iraqi_phone(phone) = '07XXXXXXXXX'
---   on conflict (auth_user_id) do nothing;
--- Admin membership is bound to the Auth user ID, not merely a phone number.
--- Both tables are inaccessible to application clients.
+-- The app calls claim_admin_phone() after each login and promotes the account
+-- automatically. Both admin tables are inaccessible to application clients.
 --
--- Login is phone + password (no SMS OTP). Enable the Phone provider and disable
--- phone confirmations in Supabase. Never put the service_role key in the app.
+-- Login is phone + password (no SMS OTP). The app derives a hidden internal
+-- email (07...@jaik.app) so no SMS provider is needed. In Supabase enable
+-- Authentication -> Sign In / Providers -> Email and disable "Confirm email".
+-- Never put the service_role key in the app.
