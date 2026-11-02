@@ -38,6 +38,7 @@ abstract final class _Design {
   static const messagesCenterX = 91.1;
   static const notificationsCenterX = 38.1;
   static const smallIconSize = 18.0;
+  static const smallTouchMargin = 3.0;
   static const badgeSize = 9.0;
 
   // لا يختفي الزر تحت شريط الحالة في الهواتف التي شريطها أطول من حافة التصميم.
@@ -48,7 +49,7 @@ abstract final class _Design {
   static const titleSize = 18.0;
   static const allSize = 13.4;
   static const titleHeight = 32.0;
-  static const allHeight = 34.0;
+  static const allHeight = 44.0;
   static const allPadding = 8.0;
   static const allArrowSize = 15.0;
   static const allArrowGap = 3.0;
@@ -204,6 +205,7 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
     final profileFace = _Design.profileFace * unit;
     final smallFace = _Design.smallFace * unit;
     final profileRight = left + _Design.profileRight * unit;
+    final touchMargin = _Design.smallTouchMargin * unit;
 
     Widget small({
       required double centerX,
@@ -213,11 +215,12 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
       required Widget page,
     }) {
       return Positioned(
-        left: left + centerX * unit - smallFace / 2 - inset,
-        top: top + _Design.smallCenter * unit - smallFace / 2,
+        left: left + centerX * unit - smallFace / 2 - inset - touchMargin,
+        top: top + _Design.smallCenter * unit - smallFace / 2 - touchMargin,
         child: PushKeyCircle(
           diameter: smallFace,
           unit: chrome,
+          touchMargin: touchMargin,
           label: label,
           onPressed: () => _open(page),
           child: SizedBox.expand(
@@ -336,7 +339,7 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
               style: TextButton.styleFrom(
                 foregroundColor: ink,
                 padding: EdgeInsets.symmetric(horizontal: _Design.allPadding * unit),
-                minimumSize: Size.zero,
+                minimumSize: Size(0, _Design.allHeight * unit),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
               onPressed: () => _open(page),

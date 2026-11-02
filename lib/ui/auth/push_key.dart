@@ -210,6 +210,7 @@ class PushKeyCircle extends StatelessWidget {
     required this.label,
     required this.onPressed,
     required this.child,
+    this.touchMargin = 0,
   });
 
   final double diameter;
@@ -217,6 +218,9 @@ class PushKeyCircle extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
   final Widget child;
+
+  /// مساحة لمس إضافية حول الزر الصغير.
+  final double touchMargin;
 
   @override
   Widget build(BuildContext context) {
@@ -228,15 +232,18 @@ class PushKeyCircle extends StatelessWidget {
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onPressed,
-        child: SizedBox(
-          width: diameter + PushKey.faceInset * 2 * unit,
-          height: diameter + PushKey.depth * unit,
-          child: PushKey(
-            unit: unit,
-            faceHeight: diameter,
-            round: true,
-            night: night ? kAlwaysCompleteAnimation : kAlwaysDismissedAnimation,
-            child: Center(child: child),
+        child: Padding(
+          padding: EdgeInsets.all(touchMargin),
+          child: SizedBox(
+            width: diameter + PushKey.faceInset * 2 * unit,
+            height: diameter + PushKey.depth * unit,
+            child: PushKey(
+              unit: unit,
+              faceHeight: diameter,
+              round: true,
+              night: night ? kAlwaysCompleteAnimation : kAlwaysDismissedAnimation,
+              child: Center(child: child),
+            ),
           ),
         ),
       ),
@@ -391,6 +398,18 @@ class _PushKeyState extends State<PushKey> {
   }
 }
 
+/// صورة زر ساكن، تتشاركها الأزرار المتشابهة فلا تُرسم مرة لكل زر.
+class _SharedImage {
+  _SharedImage(this.image);
+
+  final ui.Image image;
+  int users = 1;
+}
+
+typedef _RestingLook = (Size, double, double, double, _KeyStyle, double);
+
+final _sharedImages = <_RestingLook, _SharedImage>{};
+
 /// صورتا الزر وهو ساكن نهاراً وليلاً، حتى لا تُعاد ظلاله مع كل إطار.
 class _RestingImages {
   ui.Image? _day;
@@ -424,8 +443,8 @@ class _RestingImages {
       _style = style;
     }
     // الزر الذي يتدرج بين النهار والليل يحتاج الصورتين، وغيره يحتاج واحدة.
-    if (both || !night) _day ??= _snapshot(0);
-    if (both || night) _night ??= _snapshot(1);
+    if (both || !night) _day ??= _acquire(0);
+    if (both || night) _night ??= _acquire(1);
     final image = night ? _night! : _day!;
     canvas.drawImageRect(
       image,
@@ -442,6 +461,28 @@ class _RestingImages {
 
   // الحافة المضيئة تحت الزر تخرج قليلاً عن حدوده.
   double get _margin => 4 * _unit;
+
+  _RestingLook _look(double night) => (_size, _pixelRatio, _unit, _faceHeight, _style!, night);
+
+  ui.Image _acquire(double night) {
+    final look = _look(night);
+    final shared = _sharedImages[look];
+    if (shared != null) {
+      shared.users++;
+      return shared.image;
+    }
+    final image = _snapshot(night);
+    _sharedImages[look] = _SharedImage(image);
+    return image;
+  }
+
+  void _release(double night) {
+    final look = _look(night);
+    final shared = _sharedImages[look]!;
+    if (--shared.users > 0) return;
+    shared.image.dispose();
+    _sharedImages.remove(look);
+  }
 
   ui.Image _snapshot(double night) {
     final recorder = ui.PictureRecorder();
@@ -465,8 +506,8 @@ class _RestingImages {
   }
 
   void dispose() {
-    _day?.dispose();
-    _night?.dispose();
+    if (_day != null) _release(0);
+    if (_night != null) _release(1);
     _day = null;
     _night = null;
   }

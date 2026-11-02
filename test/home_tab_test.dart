@@ -183,6 +183,27 @@ void main() {
       expect(craftsman.round, isFalse);
     });
 
+    testWidgets('الزران الصغيران مساحة لمسهما كافية ولا تتداخلان', (tester) async {
+      await _pumpHome(tester);
+      final messages = tester.getRect(_circle('الرسائل'));
+      final notifications = tester.getRect(_circle('الإشعارات'));
+      expect(messages.width, greaterThanOrEqualTo(48));
+      expect(messages.height, greaterThanOrEqualTo(47));
+      expect(messages.overlaps(notifications), isFalse);
+    });
+
+    testWidgets('الأزرار المتشابهة تتشارك صورتها، وتبقى صحيحة بعد غلق صفحة فوقها', (tester) async {
+      await _pumpHome(tester);
+      await _tapAndOpen(tester, find.text('عرض الكل').first);
+      await tester.pump();
+      Navigator.of(tester.element(find.byType(AllSectionsScreen))).pop();
+      await tester.pump();
+      await pumpRouteFrames(tester);
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(tester.takeException(), isNull);
+      expect(_circle(_sectionNames[0]), findsOneWidget);
+    });
+
     testWidgets('زر الرسائل قبل زر الإشعارات من اليمين، وعليه عدد غير المقروء', (tester) async {
       await _pumpHome(tester, repo: _HomeRepo(unread: 3));
       expect(
