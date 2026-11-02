@@ -12,7 +12,7 @@ class NavItem {
   final IconData activeIcon;
 }
 
-class AppShellLayout extends StatelessWidget {
+class AppShellLayout extends StatefulWidget {
   const AppShellLayout({
     super.key,
     required this.index,
@@ -35,11 +35,38 @@ class AppShellLayout extends StatelessWidget {
   final Widget? topBanner;
 
   @override
+  State<AppShellLayout> createState() => _AppShellLayoutState();
+}
+
+class _AppShellLayoutState extends State<AppShellLayout> {
+  // التبويب لا يُبنى ولا يجلب بياناته قبل أول فتح له.
+  final _opened = <int>{};
+
+  @override
   Widget build(BuildContext context) {
+    final AppShellLayout(
+      :index,
+      :items,
+      :pages,
+      :onSelect,
+      :floatingActionButton,
+      :topBanner,
+    ) = widget;
     final theme = Theme.of(context);
     final wide = MediaQuery.sizeOf(context).width >= 900;
 
-    final body = IndexedStack(index: index, children: pages);
+    _opened.add(index);
+    final body = IndexedStack(
+      index: index,
+      children: [
+        for (final (i, page) in pages.indexed)
+          // ما خلف التبويب الظاهر لا يتحرك ولا يجلب شيئاً.
+          TickerMode(
+            enabled: i == index,
+            child: _opened.contains(i) ? page : const SizedBox.shrink(),
+          ),
+      ],
+    );
 
     if (!wide) {
       return Scaffold(
@@ -47,7 +74,7 @@ class AppShellLayout extends StatelessWidget {
             ? body
             : Column(
                 children: [
-                  topBanner!,
+                  topBanner,
                   Expanded(child: body),
                 ],
               ),
@@ -111,7 +138,7 @@ class AppShellLayout extends StatelessWidget {
                 ? body
                 : Column(
                     children: [
-                      topBanner!,
+                      topBanner,
                       Expanded(child: body),
                     ],
                   ),

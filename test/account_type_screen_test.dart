@@ -16,6 +16,7 @@ import 'package:jaik/ui/auth/thinking_scene.dart';
 import 'package:jaik/ui/auth/truck_scene.dart';
 
 import 'fake_repository.dart';
+import 'route_frames.dart';
 
 Future<void> _pumpApp(
   WidgetTester tester,
@@ -104,7 +105,7 @@ void main() {
     await tester.pump();
     await tester.tap(find.text('إنشاء حساب جديد'));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 200));
+    await pumpRouteFrames(tester);
     final page = tester.element(find.byType(AccountTypeScreen));
     expect(ModalRoute.of(page)!.animation!.value, 1);
     await tester.pump(const Duration(milliseconds: 1));
@@ -112,7 +113,7 @@ void main() {
 
     await tester.tap(_backKey);
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 201));
+    await pumpRouteFrames(tester);
     await tester.pump();
     expect(find.byType(AccountTypeScreen), findsNothing);
     expect(find.text('إنشاء حساب جديد'), findsOneWidget);
@@ -143,7 +144,7 @@ void main() {
     await _pump(tester);
     await tester.tap(find.text('زبون'));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 200));
+    await pumpRouteFrames(tester);
     final page = tester.element(find.byType(RegisterScreen));
     expect(ModalRoute.of(page)!.animation!.value, 1);
   });
@@ -152,7 +153,7 @@ void main() {
     await _pump(tester);
     await tester.tap(find.text('حرفي'));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 200));
+    await pumpRouteFrames(tester);
     final page = tester.element(find.byType(CraftsmanScreen));
     expect(ModalRoute.of(page)!.animation!.value, 1);
   });
@@ -206,7 +207,7 @@ void main() {
     await _pump(tester);
     await tester.tap(find.text(_privacy));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 200));
+    await pumpRouteFrames(tester);
     final page = tester.element(find.byType(PrivacyScreen));
     expect(ModalRoute.of(page)!.animation!.value, 1);
     await tester.pump(const Duration(milliseconds: 1));
@@ -216,7 +217,7 @@ void main() {
       find.descendant(of: find.byType(PrivacyScreen), matching: find.byType(PushKey)),
     );
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 201));
+    await pumpRouteFrames(tester);
     await tester.pump();
     expect(find.byType(PrivacyScreen), findsNothing);
     expect(find.text(_privacy), findsOneWidget);
@@ -230,7 +231,7 @@ void main() {
     final key = tester.getRect(_key('زبون'));
     await tester.tapAt(Offset(key.left + 10, key.bottom - 1));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 201));
+    await pumpRouteFrames(tester);
     expect(find.byType(RegisterScreen), findsOneWidget);
     expect(find.byType(PrivacyScreen), findsNothing);
   });

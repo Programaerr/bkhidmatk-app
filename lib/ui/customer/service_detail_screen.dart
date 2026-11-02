@@ -5,6 +5,7 @@ import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
+import '../widgets/quick_route.dart';
 import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
 import 'booking_screen.dart';
@@ -30,14 +31,14 @@ class ServiceDetailScreen extends StatelessWidget {
     if (profileIncomplete) {
       final completed = await Navigator.push<bool>(
         context,
-        MaterialPageRoute(builder: (_) => const ProfileCompletionScreen()),
+        QuickRoute(builder: (_) => const ProfileCompletionScreen()),
       );
       if (completed != true || !context.mounted) return;
     }
     if (!context.mounted) return;
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => BookingScreen(service: service)),
+      QuickRoute(builder: (_) => BookingScreen(service: service)),
     );
   }
 
@@ -240,7 +241,7 @@ class ServiceDetailScreen extends StatelessWidget {
                           tooltip: 'مراسلة جايك',
                           onTap: () => Navigator.push(
                             context,
-                            MaterialPageRoute(
+                            QuickRoute(
                                 builder: (_) => const MessagesScreen()),
                           ),
                         ),

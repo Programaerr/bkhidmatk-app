@@ -6,6 +6,7 @@ import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
 import '../common/receipt_document.dart';
+import '../widgets/quick_route.dart';
 import '../widgets/realtime_refresh.dart';
 import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
@@ -56,7 +57,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen>
         child: FutureBuilder<List<Receipt>>(
           future: _future,
           builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
+            if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
               return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
             }
             final receipts = snapshot.data ?? const <Receipt>[];
@@ -129,7 +130,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen>
                       padding: const EdgeInsets.all(12),
                       onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => ReceiptPreviewScreen(receipt: r)),
+                        QuickRoute(builder: (_) => ReceiptPreviewScreen(receipt: r)),
                       ),
                       child: Column(
                         children: [
@@ -199,7 +200,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen>
                               TextButton.icon(
                                 onPressed: () => Navigator.push(
                                   context,
-                                  MaterialPageRoute(
+                                  QuickRoute(
                                       builder: (_) => ReceiptPreviewScreen(receipt: r)),
                                 ),
                                 icon: const Icon(Icons.visibility_outlined, size: 15),

@@ -23,7 +23,32 @@ class CustomerShell extends StatefulWidget {
 
 class _CustomerShellState extends State<CustomerShell> {
   int _index = 0;
-  final int _tick = 0;
+
+  void _go(int index) => setState(() => _index = index);
+
+  // تبقى هي نفسها بين البناءات، فتبديل التبويب لا يعيد بناء التبويبات كلها.
+  late final _home = HomeTab(
+    onBrowseServices: () => _go(1),
+    onOpenWorks: () => _go(3),
+    onOpenBookings: () => _go(2),
+  );
+  late final _services = SafeArea(
+    bottom: false,
+    child: Column(
+      children: [
+        CustomerHeader(
+          title: 'كل الخدمات',
+          subtitle: 'اختر الخدمة المناسبة واحجز خلال دقيقة',
+        ),
+        const Expanded(child: ServicesTab()),
+      ],
+    ),
+  );
+  late final _bookings = BookingsTab(onBrowse: () => _go(1));
+  late final _profile = ProfileTab(
+    onOpenBookings: () => _go(2),
+    onOpenAdminDashboard: widget.onOpenAdminDashboard,
+  );
 
   static const _items = [
     NavItem('الرئيسية', Icons.home_outlined, Icons.home_rounded),
@@ -36,37 +61,17 @@ class _CustomerShellState extends State<CustomerShell> {
 
   @override
   Widget build(BuildContext context) {
-    final pages = [
-      HomeTab(
-        onBrowseServices: () => setState(() => _index = 1),
-        onOpenWorks: () => setState(() => _index = 3),
-        onOpenBookings: () => setState(() => _index = 2),
-      ),
-      SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
-            CustomerHeader(
-              title: 'كل الخدمات',
-              subtitle: 'اختر الخدمة المناسبة واحجز خلال دقيقة',
-            ),
-            const Expanded(child: ServicesTab()),
-          ],
-        ),
-      ),
-      BookingsTab(onBrowse: () => setState(() => _index = 1)),
-      OurWorkTab(refreshTick: _tick, isActive: _index == 3),
-      ProfileTab(
-        onOpenBookings: () => setState(() => _index = 2),
-        onOpenAdminDashboard: widget.onOpenAdminDashboard,
-      ),
-    ];
-
     return AppShellLayout(
       index: _index,
       items: _items,
-      pages: pages,
-      onSelect: (i) => setState(() => _index = i),
+      pages: [
+        _home,
+        _services,
+        _bookings,
+        _index == 3 ? const OurWorkTab() : const OurWorkTab(isActive: false),
+        _profile,
+      ],
+      onSelect: _go,
       topBanner: widget.adminPreview
           ? Material(
               color: const Color(0xFFFFF3B0),

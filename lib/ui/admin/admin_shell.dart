@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme.dart';
+import '../widgets/quick_route.dart';
 import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
 import 'admin_bookings.dart';
@@ -21,7 +22,6 @@ class AdminShell extends StatefulWidget {
 
 class _AdminShellState extends State<AdminShell> {
   int _index = 0;
-  int _tick = 0;
 
   static const _items = [
     NavItem('الرئيسية', Icons.space_dashboard_outlined,
@@ -33,40 +33,36 @@ class _AdminShellState extends State<AdminShell> {
     NavItem('المزيد', Icons.more_horiz_rounded, Icons.more_horiz_rounded),
   ];
 
-  void _go(int index) {
-    setState(() {
-      _index = index;
-      _tick++;
-    });
-  }
+  void _go(int index) => setState(() => _index = index);
 
-  @override
-  Widget build(BuildContext context) {
-    final pages = [
-      AdminDashboard(
-        onOpenBookings: () => _go(1),
-        onOpenMessages: () => _go(4),
-        onOpenWorks: () => _go(3),
-        onPreviewApp: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => CustomerShell(
-              adminPreview: true,
-              onOpenAdminDashboard: () => Navigator.pop(context),
-            ),
+  // تبقى هي نفسها بين البناءات، فتبديل التبويب لا يعيد بناء التبويبات كلها.
+  late final _pages = [
+    AdminDashboard(
+      onOpenBookings: () => _go(1),
+      onOpenMessages: () => _go(4),
+      onOpenWorks: () => _go(3),
+      onPreviewApp: () => Navigator.push(
+        context,
+        QuickRoute(
+          builder: (_) => CustomerShell(
+            adminPreview: true,
+            onOpenAdminDashboard: () => Navigator.pop(context),
           ),
         ),
       ),
-      AdminBookings(initialFilter: null, refreshTick: _tick),
-      AdminServices(refreshTick: _tick),
-      AdminWorks(refreshTick: _tick),
-      AdminMore(onNavigate: _go),
-    ];
+    ),
+    const AdminBookings(),
+    const AdminServices(),
+    const AdminWorks(),
+    AdminMore(onNavigate: _go),
+  ];
 
+  @override
+  Widget build(BuildContext context) {
     return AppShellLayout(
       index: _index,
       items: _items,
-      pages: pages,
+      pages: _pages,
       onSelect: _go,
       topBanner: widget.showBackToApp
           ? Material(

@@ -248,10 +248,13 @@ class _PushKeyState extends State<PushKey> {
         ),
       );
     }
+    final changesTheme = !identical(widget.night, kAlwaysDismissedAnimation) &&
+        !identical(widget.night, kAlwaysCompleteAnimation);
     Widget image(bool night) => CustomPaint(
           painter: _RestingPainter(
             images: _resting,
             night: night,
+            both: changesTheme,
             pixelRatio: pixelRatio,
             unit: widget.unit,
             faceHeight: widget.faceHeight,
@@ -324,6 +327,7 @@ class _RestingImages {
     required double unit,
     required double faceHeight,
     required bool night,
+    required bool both,
     required bool yellow,
   }) {
     if (size != _size ||
@@ -337,9 +341,10 @@ class _RestingImages {
       _unit = unit;
       _faceHeight = faceHeight;
       _yellow = yellow;
-      _day = _snapshot(0);
-      _night = _snapshot(1);
     }
+    // الزر الذي يتدرج بين النهار والليل يحتاج الصورتين، وغيره يحتاج واحدة.
+    if (both || !night) _day ??= _snapshot(0);
+    if (both || night) _night ??= _snapshot(1);
     final image = night ? _night! : _day!;
     canvas.drawImageRect(
       image,
@@ -390,6 +395,7 @@ class _RestingPainter extends CustomPainter {
   _RestingPainter({
     required this.images,
     required this.night,
+    required this.both,
     required this.pixelRatio,
     required this.unit,
     required this.faceHeight,
@@ -398,6 +404,7 @@ class _RestingPainter extends CustomPainter {
 
   final _RestingImages images;
   final bool night;
+  final bool both;
   final double pixelRatio;
   final double unit;
   final double faceHeight;
@@ -412,6 +419,7 @@ class _RestingPainter extends CustomPainter {
       unit: unit,
       faceHeight: faceHeight,
       night: night,
+      both: both,
       yellow: yellow,
     );
   }
@@ -419,6 +427,7 @@ class _RestingPainter extends CustomPainter {
   @override
   bool shouldRepaint(_RestingPainter oldDelegate) =>
       oldDelegate.night != night ||
+      oldDelegate.both != both ||
       oldDelegate.pixelRatio != pixelRatio ||
       oldDelegate.unit != unit ||
       oldDelegate.faceHeight != faceHeight ||

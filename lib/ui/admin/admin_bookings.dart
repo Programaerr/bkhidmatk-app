@@ -8,16 +8,16 @@ import '../../data/models.dart';
 import '../../data/repository.dart';
 import '../../state/app_state.dart';
 import '../common/receipt_document.dart';
+import '../widgets/quick_route.dart';
 import '../widgets/realtime_refresh.dart';
 import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
 import 'admin_shell.dart';
 
 class AdminBookings extends StatefulWidget {
-  const AdminBookings({super.key, this.initialFilter, required this.refreshTick});
+  const AdminBookings({super.key, this.initialFilter});
 
   final String? initialFilter;
-  final int refreshTick;
 
   @override
   State<AdminBookings> createState() => _AdminBookingsState();
@@ -38,12 +38,6 @@ class _AdminBookingsState extends State<AdminBookings>
     super.initState();
     _status = widget.initialFilter;
     _load();
-  }
-
-  @override
-  void didUpdateWidget(covariant AdminBookings oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.refreshTick != widget.refreshTick) _load();
   }
 
   @override
@@ -141,7 +135,7 @@ class _AdminBookingsState extends State<AdminBookings>
           child: FutureBuilder<List<Booking>>(
             future: _future,
             builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
+              if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
                 return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
               }
               final bookings = snapshot.data ?? const <Booking>[];
@@ -431,7 +425,7 @@ class _BookingSheetState extends State<_BookingSheet> {
                       padding: const EdgeInsets.all(12),
                       onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(
+                        QuickRoute(
                             builder: (_) => ReceiptPreviewScreen(receipt: _receipt!)),
                       ),
                       child: Row(

@@ -5,6 +5,7 @@ import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
+import '../widgets/quick_route.dart';
 import '../widgets/realtime_refresh.dart';
 import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
@@ -56,14 +57,19 @@ class _ServicesTabState extends State<ServicesTab>
   late final TextEditingController _search = TextEditingController(text: widget.initialQuery);
   int? _categoryId;
   Future<List<Service>>? _future;
+  late Future<List<Category>> _categories;
 
   @override
-  void onRealtimeChange() => _load();
+  void onRealtimeChange() {
+    _categories = context.read<AppState>().repo.listCategories();
+    _load();
+  }
 
   @override
   void initState() {
     super.initState();
     _categoryId = widget.initialCategoryId;
+    _categories = context.read<AppState>().repo.listCategories();
     _load();
   }
 
@@ -82,7 +88,6 @@ class _ServicesTabState extends State<ServicesTab>
 
   @override
   Widget build(BuildContext context) {
-    final state = context.read<AppState>();
     return Column(
       children: [
         Padding(
@@ -108,7 +113,7 @@ class _ServicesTabState extends State<ServicesTab>
         SizedBox(
           height: 38,
           child: FutureBuilder<List<Category>>(
-            future: state.repo.listCategories(),
+            future: _categories,
             builder: (context, snapshot) {
               final categories = snapshot.data ?? const <Category>[];
               return ListView(
@@ -144,7 +149,7 @@ class _ServicesTabState extends State<ServicesTab>
           child: FutureBuilder<List<Service>>(
             future: _future,
             builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
+              if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
                 return const Center(
                   child: SizedBox(
                     width: 26,
@@ -222,7 +227,7 @@ class ServiceTile extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       onTap: () => Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => ServiceDetailScreen(service: service)),
+        QuickRoute(builder: (_) => ServiceDetailScreen(service: service)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,

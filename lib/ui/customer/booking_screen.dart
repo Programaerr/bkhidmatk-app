@@ -5,6 +5,7 @@ import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
+import '../widgets/quick_route.dart';
 import '../widgets/ui.dart';
 import 'booking_success_screen.dart';
 import 'payment_screen.dart';
@@ -135,7 +136,7 @@ class _BookingScreenState extends State<BookingScreen> {
     if (_method == 'card' && _card == null) {
       final result = await Navigator.push<CardResult>(
         context,
-        MaterialPageRoute(
+        QuickRoute(
             builder: (_) => PaymentScreen(amount: widget.service.price)),
       );
       if (result == null || !mounted) return;
@@ -172,7 +173,7 @@ class _BookingScreenState extends State<BookingScreen> {
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
+        QuickRoute(
           builder: (_) =>
               BookingSuccessScreen(booking: booking!, receipt: receipt),
         ),
@@ -440,7 +441,7 @@ class _BookingScreenState extends State<BookingScreen> {
                         onPressed: () async {
                           final result = await Navigator.push<CardResult>(
                             context,
-                            MaterialPageRoute(
+                            QuickRoute(
                                 builder: (_) => PaymentScreen(
                                     amount: widget.service.price)),
                           );

@@ -12,9 +12,7 @@ import '../widgets/ui.dart';
 import 'admin_shell.dart';
 
 class AdminServices extends StatefulWidget {
-  const AdminServices({super.key, required this.refreshTick});
-
-  final int refreshTick;
+  const AdminServices({super.key});
 
   @override
   State<AdminServices> createState() => _AdminServicesState();
@@ -34,12 +32,6 @@ class _AdminServicesState extends State<AdminServices>
   void initState() {
     super.initState();
     _load();
-  }
-
-  @override
-  void didUpdateWidget(covariant AdminServices oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.refreshTick != widget.refreshTick) _load();
   }
 
   void _load() {
@@ -165,7 +157,7 @@ class _AdminServicesState extends State<AdminServices>
     return FutureBuilder<List<Service>>(
       future: _services,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+        if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
           return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
         }
         final services = snapshot.data ?? const <Service>[];
@@ -255,7 +247,7 @@ class _AdminServicesState extends State<AdminServices>
     return FutureBuilder<List<Worker>>(
       future: _workers,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+        if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
           return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
         }
         final workers = snapshot.data ?? const <Worker>[];
@@ -344,7 +336,7 @@ class _AdminServicesState extends State<AdminServices>
     return FutureBuilder<List<Category>>(
       future: _categories,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+        if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
           return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
         }
         final categories = snapshot.data ?? const <Category>[];

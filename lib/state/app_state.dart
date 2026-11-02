@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -42,13 +44,9 @@ class AppState extends ChangeNotifier {
 
     if (cloudServices != null) {
       if (cloudServices!.isSignedIn) {
-        try {
-          user = await cloudServices!.currentProfile();
-        } catch (error, stackTrace) {
-          debugPrint('Failed to restore Supabase session: $error');
-          debugPrintStack(stackTrace: stackTrace);
-          await cloudServices!.signOut();
-        }
+        // انتظار السيرفر لا يؤخر فتح التطبيق: تظهر شاشة البداية حتى يصل الحساب.
+        unawaited(_restoreCloudSession());
+        return;
       }
       booting = false;
       notifyListeners();
@@ -64,6 +62,19 @@ class AppState extends ChangeNotifier {
 
     booting = false;
     notifyListeners();
+  }
+
+  Future<void> _restoreCloudSession() async {
+    try {
+      user = await cloudServices!.currentProfile();
+    } catch (error, stackTrace) {
+      debugPrint('Failed to restore Supabase session: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      await cloudServices!.signOut();
+    } finally {
+      booting = false;
+      notifyListeners();
+    }
   }
 
   Future<String?> login(String phone, String password) async {

@@ -6,6 +6,7 @@ import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
 import '../common/receipt_document.dart';
+import '../widgets/quick_route.dart';
 import '../widgets/realtime_refresh.dart';
 import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
@@ -319,7 +320,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen>
               SoftCard(
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(
+                  QuickRoute(
                       builder: (_) => ReceiptPreviewScreen(receipt: _receipt!)),
                 ),
                 child: Row(

@@ -26,6 +26,32 @@
                 "--no-pub",
                 "--dart-define=DEV_ADMIN_PREVIEW=true"
             ]
+        },
+        {
+            "name": "Flutter: تجربة السلاسة مع Supabase (Release)",
+            "type": "dart",
+            "request": "launch",
+            "program": "lib/main.dart",
+            "cwd": "${workspaceFolder}",
+            "flutterMode": "release",
+            "preLaunchTask": "Prepare Supabase defines from .env",
+            "toolArgs": [
+                "--no-pub",
+                "--dart-define=DEV_ADMIN_PREVIEW=false",
+                "--dart-define-from-file=.dart-defines.json"
+            ]
+        },
+        {
+            "name": "Flutter: تجربة السلاسة محلياً (Release)",
+            "type": "dart",
+            "request": "launch",
+            "program": "lib/main.dart",
+            "cwd": "${workspaceFolder}",
+            "flutterMode": "release",
+            "toolArgs": [
+                "--no-pub",
+                "--dart-define=DEV_ADMIN_PREVIEW=true"
+            ]
         }
     ]
 }

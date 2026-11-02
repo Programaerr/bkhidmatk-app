@@ -5,6 +5,7 @@ import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
+import '../widgets/quick_route.dart';
 import '../widgets/realtime_refresh.dart';
 import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
@@ -130,7 +131,7 @@ class _BookingsTabState extends State<BookingsTab>
             child: FutureBuilder<List<Booking>>(
               future: _future,
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
+                if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
                   return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
                 }
                 final bookings = _apply(snapshot.data ?? const []);
@@ -178,7 +179,7 @@ class _BookingCard extends StatelessWidget {
       onTap: () async {
         await Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => BookingDetailScreen(bookingId: booking.id!)),
+          QuickRoute(builder: (_) => BookingDetailScreen(bookingId: booking.id!)),
         );
         onChanged();
       },

@@ -6,6 +6,7 @@ import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../../data/repository.dart';
 import '../../state/app_state.dart';
+import '../widgets/quick_route.dart';
 import '../widgets/realtime_refresh.dart';
 import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
@@ -118,7 +119,7 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
                       onTap: () async {
                         await Navigator.push(
                           context,
-                          MaterialPageRoute(
+                          QuickRoute(
                               builder: (_) => const MessagesScreen()),
                         );
                         _load();
@@ -130,7 +131,7 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
                 GestureDetector(
                   onTap: () => Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const ServicesPage()),
+                    QuickRoute(builder: (_) => const ServicesPage()),
                   ),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
@@ -190,7 +191,7 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
                           color: Color(c.color),
                           onTap: () => Navigator.push(
                             context,
-                            MaterialPageRoute(
+                            QuickRoute(
                               builder: (_) =>
                                   ServicesPage(initialCategoryId: c.id),
                             ),
@@ -208,7 +209,7 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
                   SoftCard(
                     onTap: () => Navigator.push(
                       context,
-                      MaterialPageRoute(
+                      QuickRoute(
                         builder: (_) =>
                             BookingDetailScreen(bookingId: data.upcoming!.id!),
                       ),
@@ -297,7 +298,7 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
                         work: work,
                         onOpen: () => Navigator.push(
                           context,
-                          MaterialPageRoute(
+                          QuickRoute(
                             builder: (_) =>
                                 OurWorkDetailScreen(workId: work.id!),
                           ),
@@ -472,7 +473,7 @@ class _ServiceMiniCard extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         onTap: () => Navigator.push(
           context,
-          MaterialPageRoute(
+          QuickRoute(
               builder: (_) => ServiceDetailScreen(service: service)),
         ),
         child: Column(

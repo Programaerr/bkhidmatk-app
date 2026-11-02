@@ -135,7 +135,7 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen>
         child: FutureBuilder<List<CraftsmanApplication>>(
           future: _future,
           builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
+            if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
               return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
             }
             final applications = snapshot.data ?? const <CraftsmanApplication>[];

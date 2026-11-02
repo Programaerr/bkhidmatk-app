@@ -35,6 +35,10 @@ class _MessagesScreenState extends State<MessagesScreen>
   @override
   void onRealtimeChange() => _load();
 
+  // الرسالة الجديدة تصل والمحادثة مفتوحة.
+  @override
+  bool get listensLive => true;
+
   @override
   void initState() {
     super.initState();

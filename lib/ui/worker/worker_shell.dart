@@ -15,34 +15,28 @@ class WorkerShell extends StatefulWidget {
 
 class _WorkerShellState extends State<WorkerShell> {
   int _index = 0;
-  int _tick = 0;
+
+  void _go(int index) => setState(() => _index = index);
+
+  late final _profile = ProfileTab(
+    workerMode: true,
+    onOpenBookings: () => _go(0),
+  );
 
   static const _items = [
     NavItem('أعمالنا', Icons.video_library_outlined, Icons.video_library_rounded),
     NavItem('حسابي', Icons.person_outline_rounded, Icons.person_rounded),
   ];
 
-  void _go(int index) {
-    setState(() {
-      _index = index;
-      _tick++;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    final pages = [
-      OurWorkTab(refreshTick: _tick, isActive: _index == 0),
-      ProfileTab(
-        workerMode: true,
-        onOpenBookings: () => _go(0),
-      ),
-    ];
-
     return AppShellLayout(
       index: _index,
       items: _items,
-      pages: pages,
+      pages: [
+        _index == 0 ? const OurWorkTab() : const OurWorkTab(isActive: false),
+        _profile,
+      ],
       onSelect: _go,
     );
   }

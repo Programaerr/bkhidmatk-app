@@ -187,7 +187,7 @@ class _AdminHiresScreenState extends State<AdminHiresScreen>
               child: FutureBuilder<List<Hire>>(
                 future: _future,
                 builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
+                  if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
                     return const Center(
                         child: CircularProgressIndicator(strokeWidth: 2.4));
                   }

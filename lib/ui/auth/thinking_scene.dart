@@ -244,10 +244,8 @@ class _ThinkingSceneState extends State<ThinkingScene> with TickerProviderStateM
   }
 
   void _onTick(Duration elapsed) {
-    // لا تقفز الحركة إذا توقفت الإطارات ثم عادت.
-    final step = (elapsed - _lastTick).inMicroseconds / Duration.microsecondsPerSecond;
+    _time.value += steadyStep(elapsed - _lastTick);
     _lastTick = elapsed;
-    _time.value += math.min(step, .1);
   }
 
   @override

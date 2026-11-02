@@ -6,6 +6,7 @@ import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
 import '../customer/messages_screen.dart';
+import '../widgets/quick_route.dart';
 import '../widgets/realtime_refresh.dart';
 import '../widgets/ui.dart';
 
@@ -52,7 +53,7 @@ class _AdminThreadsScreenState extends State<AdminThreadsScreen>
         child: FutureBuilder<List<ChatThread>>(
           future: _future,
           builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
+            if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
               return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
             }
             final threads = snapshot.data ?? const <ChatThread>[];
@@ -74,7 +75,7 @@ class _AdminThreadsScreenState extends State<AdminThreadsScreen>
                   onTap: () async {
                     await Navigator.push(
                       context,
-                      MaterialPageRoute(
+                      QuickRoute(
                         builder: (_) => MessagesScreen(
                           threadId: t.customerId,
                           threadName: t.customerName,

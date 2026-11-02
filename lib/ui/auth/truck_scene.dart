@@ -93,6 +93,12 @@ const _windTravel = 260.0;
 
 enum VanLine { greeting, hurry }
 
+/// زمن الإطار في حركة المشهد: الإطار المتأخر يُحسب خطوة عادية، فيتوقف المشهد لحظة بدل أن يقفز.
+double steadyStep(Duration sinceLastFrame) {
+  final seconds = sinceLastFrame.inMicroseconds / Duration.microsecondsPerSecond;
+  return seconds > .05 ? 1 / 60 : seconds;
+}
+
 /// مخرج المشهد: السائق يقول «جايك بطريق» مرة واحدة عند فتح الشاشة، ثم كل ضغطة
 /// على السيارة تجعله يفتح الجامة ويقول «يلا جايك بطريق» وتسرع السيارة ثم تهدأ.
 class VanDirector {
@@ -526,7 +532,7 @@ class _TruckSceneState extends State<TruckScene> with SingleTickerProviderStateM
   ui.Image? _logo;
 
   void _onTick(Duration elapsed) {
-    _director!.advance((elapsed - _lastTick).inMicroseconds / Duration.microsecondsPerSecond);
+    _director!.advance(steadyStep(elapsed - _lastTick));
     _lastTick = elapsed;
     _tick.value++;
   }
