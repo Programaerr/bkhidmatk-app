@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../auth/push_key.dart';
+import '../auth/truck_scene.dart';
 import '../widgets/quick_route.dart';
 import '../widgets/ui.dart';
 import 'craftsman_info_screen.dart';
@@ -24,6 +25,23 @@ double homeUnit(double width) => math.min(width / homeDesignWidth, 1.25);
 
 /// مقياس جانب الزر وقاعدته: أرفع من الشاشة الأولى حتى لا تتلامس أزرار هذه الصفحة.
 const homeKeyChrome = .75;
+
+// الجهة الصفراء: مستطيل ينتهي بقطع ناقص مركزه أقرب إلى اليسار، فحافتها اليسرى أوطأ من اليمنى.
+const _hillCenterX = 189.0;
+const _hillCenterY = 79.2;
+const _hillRadiusX = 203.0;
+const _hillRadiusY = 35.0;
+
+// لا يدخل أول زر تحت شريط الحالة في الهواتف التي شريطها أطول من حافة التصميم.
+const _statusBarGap = 10.0;
+const _firstKeyTop = 30.85;
+
+/// نزول الصفحة تحت شريط الحالة.
+double homePageTop(double safeTop, double unit) =>
+    math.max(0.0, safeTop + _statusBarGap - _firstKeyTop * unit);
+
+/// أسفل الجهة الصفراء.
+double homeHillBottom(double top, double unit) => top + (_hillCenterY + _hillRadiusY) * unit;
 
 // الأقسام: أربعة في الصف، ومراكزها من يمين الإطار إلى يساره، وهي في وسط الشاشة.
 const homeSectionRightCenter = 333.5;
@@ -53,6 +71,62 @@ const _ratingBottom = 5.0;
 const _ratingRoom = 30.0;
 const _ratingSize = 9.5;
 const _ratingStarSize = 11.0;
+
+/// الجهة الصفراء العليا بحافتها المنحنية من الأسفل.
+class HomeHill extends StatelessWidget {
+  const HomeHill({super.key, required this.width, required this.unit, required this.top});
+
+  final double width;
+  final double unit;
+  final double top;
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: _HillPainter(
+        bottom: top + _hillCenterY * unit,
+        centerX: _hillCenterX * width / homeDesignWidth,
+        radiusX: _hillRadiusX * width / homeDesignWidth,
+        radiusY: _hillRadiusY * unit,
+      ),
+    );
+  }
+}
+
+class _HillPainter extends CustomPainter {
+  const _HillPainter({
+    required this.bottom,
+    required this.centerX,
+    required this.radiusX,
+    required this.radiusY,
+  });
+
+  final double bottom;
+  final double centerX;
+  final double radiusX;
+  final double radiusY;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.drawPath(
+      Path()
+        ..addRect(Rect.fromLTRB(0, 0, size.width, bottom))
+        ..addOval(Rect.fromCenter(
+          center: Offset(centerX, bottom),
+          width: radiusX * 2,
+          height: radiusY * 2,
+        )),
+      Paint()..color = TruckSceneMetrics.hillColor,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_HillPainter oldDelegate) =>
+      oldDelegate.bottom != bottom ||
+      oldDelegate.centerX != centerX ||
+      oldDelegate.radiusX != radiusX ||
+      oldDelegate.radiusY != radiusY;
+}
 
 /// صورة الشخص، ورمز شخص إن لم تكن له صورة.
 class PersonFace extends StatelessWidget {
@@ -309,11 +383,20 @@ class CraftsmanKey extends StatelessWidget {
 
 /// الحرفيون في صفوف، كل صف زران. بلا قائمة تظهر [placeholders] أزرار فارغة.
 class CraftsmanGrid extends StatelessWidget {
-  const CraftsmanGrid({super.key, required this.unit, this.workers, this.placeholders = 6});
+  const CraftsmanGrid({
+    super.key,
+    required this.unit,
+    this.workers,
+    this.placeholders = 6,
+    this.lefts = _craftsmanLefts,
+  });
 
   final double unit;
   final List<Worker>? workers;
   final int placeholders;
+
+  /// مكان وجه الزر في كل عمود من يسار الإطار.
+  final List<double> lefts;
 
   static double heightOf(int count, double unit) =>
       (count / 2).ceil() * _craftsmanRowPitch * unit;
@@ -331,7 +414,7 @@ class CraftsmanGrid extends StatelessWidget {
         children: [
           for (var i = 0; i < count; i++)
             Positioned(
-              left: _craftsmanLefts[i % 2] * unit - chromeInset,
+              left: lefts[i % 2] * unit - chromeInset,
               top: (i ~/ 2) * _craftsmanRowPitch * unit,
               child: CraftsmanKey(unit: unit, worker: workers?[i]),
             ),

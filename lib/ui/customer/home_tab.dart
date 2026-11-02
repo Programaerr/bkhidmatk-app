@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -10,7 +8,6 @@ import '../../data/sections.dart';
 import '../../state/app_state.dart';
 import '../auth/auth_route.dart';
 import '../auth/push_key.dart';
-import '../auth/truck_scene.dart';
 import '../widgets/quick_route.dart';
 import '../widgets/realtime_refresh.dart';
 import 'home_keys.dart';
@@ -21,12 +18,6 @@ import 'workers_scene.dart';
 
 /// مقاسات التصميم المعتمد بالبكسل (إطار عرضه 391).
 abstract final class _Design {
-  // الجهة الصفراء: مستطيل ينتهي بقطع ناقص مركزه أقرب إلى اليسار، فحافتها اليسرى أوطأ من اليمنى.
-  static const hillCenterX = 189.0;
-  static const hillCenterY = 79.2;
-  static const hillRadiusX = 203.0;
-  static const hillRadiusY = 35.0;
-
   static const profileFace = 42.9;
   static const profileRight = 22.7;
   static const profileCenter = 52.3;
@@ -41,9 +32,6 @@ abstract final class _Design {
   static const smallIconSize = 18.0;
   static const smallTouchMargin = 3.0;
   static const badgeSize = 9.0;
-
-  // لا يختفي الزر تحت شريط الحالة في الهواتف التي شريطها أطول من حافة التصميم.
-  static const statusBarGap = 10.0;
 
   static const sceneTop = 128.2;
 
@@ -73,9 +61,12 @@ const _homeSections = 8;
 const _homeCraftsmen = 6;
 
 class HomeTab extends StatefulWidget {
-  const HomeTab({super.key, required this.onOpenProfile});
+  const HomeTab({super.key, required this.onOpenProfile, this.onLoaded});
 
   final VoidCallback onOpenProfile;
+
+  /// يأخذ الأقسام والحرفيين بعد كل جلب، فيفتح منهما تبويب الفنيين فوراً.
+  final void Function(List<Category> sections, List<Worker> craftsmen)? onLoaded;
 
   @override
   State<HomeTab> createState() => _HomeTabState();
@@ -108,9 +99,12 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
       repo.unreadForCustomer(userId),
       _unreadNotifications(state),
     ]);
+    final sections = customerSections(results[0] as List<Category>);
+    final craftsmen = results[1] as List<Worker>;
+    widget.onLoaded?.call(sections, craftsmen);
     return _HomeData(
-      sections: customerSections(results[0] as List<Category>),
-      craftsmen: results[1] as List<Worker>,
+      sections: sections,
+      craftsmen: craftsmen,
       unreadMessages: results[2] as int,
       unreadNotifications: results[3] as int,
     );
@@ -148,13 +142,8 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
             final width = constraints.maxWidth;
             final unit = homeUnit(width);
             final left = (width - homeDesignWidth * unit) / 2;
-            final top = math.max(
-              0.0,
-              safeTop +
-                  _Design.statusBarGap -
-                  (_Design.profileCenter - _Design.profileFace / 2) * unit,
-            );
-            final hillBottom = top + (_Design.hillCenterY + _Design.hillRadiusY) * unit;
+            final top = homePageTop(safeTop, unit);
+            final hillBottom = homeHillBottom(top, unit);
             return FutureBuilder<_HomeData>(
               future: _future,
               builder: (context, snapshot) {
@@ -245,14 +234,7 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
     return Stack(
       fit: StackFit.expand,
       children: [
-        CustomPaint(
-          painter: _HillPainter(
-            bottom: top + _Design.hillCenterY * unit,
-            centerX: _Design.hillCenterX * width / homeDesignWidth,
-            radiusX: _Design.hillRadiusX * width / homeDesignWidth,
-            radiusY: _Design.hillRadiusY * unit,
-          ),
-        ),
+        HomeHill(width: width, unit: unit, top: top),
         Positioned(
           right: profileRight - inset,
           top: top + _Design.profileCenter * unit - profileFace / 2,
@@ -490,40 +472,4 @@ class _CountBadge extends StatelessWidget {
       ),
     );
   }
-}
-
-/// الجهة الصفراء العليا بحافتها المنحنية من الأسفل.
-class _HillPainter extends CustomPainter {
-  const _HillPainter({
-    required this.bottom,
-    required this.centerX,
-    required this.radiusX,
-    required this.radiusY,
-  });
-
-  final double bottom;
-  final double centerX;
-  final double radiusX;
-  final double radiusY;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    canvas.drawPath(
-      Path()
-        ..addRect(Rect.fromLTRB(0, 0, size.width, bottom))
-        ..addOval(Rect.fromCenter(
-          center: Offset(centerX, bottom),
-          width: radiusX * 2,
-          height: radiusY * 2,
-        )),
-      Paint()..color = TruckSceneMetrics.hillColor,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_HillPainter oldDelegate) =>
-      oldDelegate.bottom != bottom ||
-      oldDelegate.centerX != centerX ||
-      oldDelegate.radiusX != radiusX ||
-      oldDelegate.radiusY != radiusY;
 }

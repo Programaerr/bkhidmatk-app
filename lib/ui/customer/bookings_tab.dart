@@ -140,7 +140,7 @@ class _BookingsTabState extends State<BookingsTab>
                     icon: Icons.event_note_rounded,
                     title: 'لا توجد حجوزات هنا',
                     subtitle: 'احجز خدمتك الأولى واستمتع بفنيين موثوقين.',
-                    actionLabel: 'تصفح الخدمات',
+                    actionLabel: 'تصفح الفنيين',
                     onAction: widget.onBrowse,
                   );
                 }

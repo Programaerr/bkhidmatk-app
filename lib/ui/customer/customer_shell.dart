@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../../data/models.dart';
 import '../widgets/shell_layout.dart';
 import 'bookings_tab.dart';
 import 'home_tab.dart';
 import 'our_work_tab.dart';
 import 'profile_tab.dart';
-import 'services_tab.dart';
+import 'technicians_tab.dart';
 
 class CustomerShell extends StatefulWidget {
   const CustomerShell({
@@ -24,21 +25,27 @@ class CustomerShell extends StatefulWidget {
 class _CustomerShellState extends State<CustomerShell> {
   int _index = 0;
 
-  void _go(int index) => setState(() => _index = index);
+  // آخر ما جلبته الرئيسية، فيفتح منه تبويب الفنيين فوراً دون انتظار السيرفر.
+  List<Category>? _loadedSections;
+  List<Worker>? _loadedWorkers;
+
+  void _go(int index) {
+    // لوحة المفاتيح لا تبقى مفتوحة فوق تبويب آخر.
+    FocusManager.instance.primaryFocus?.unfocus();
+    setState(() => _index = index);
+  }
 
   // تبقى هي نفسها بين البناءات، فتبديل التبويب لا يعيد بناء التبويبات كلها.
-  late final _home = HomeTab(onOpenProfile: () => _go(4));
-  late final _services = SafeArea(
-    bottom: false,
-    child: Column(
-      children: [
-        CustomerHeader(
-          title: 'كل الخدمات',
-          subtitle: 'اختر الخدمة المناسبة واحجز خلال دقيقة',
-        ),
-        const Expanded(child: ServicesTab()),
-      ],
-    ),
+  late final _home = HomeTab(
+    onOpenProfile: () => _go(4),
+    onLoaded: (sections, craftsmen) {
+      _loadedSections = sections;
+      _loadedWorkers = craftsmen;
+    },
+  );
+  late final _technicians = TechniciansTab(
+    loadedSections: () => _loadedSections,
+    loadedWorkers: () => _loadedWorkers,
   );
   late final _bookings = BookingsTab(onBrowse: () => _go(1));
   late final _profile = ProfileTab(
@@ -48,7 +55,7 @@ class _CustomerShellState extends State<CustomerShell> {
 
   static const _items = [
     NavItem('الرئيسية', Icons.home_outlined, Icons.home_rounded),
-    NavItem('الخدمات', Icons.grid_view_outlined, Icons.grid_view_rounded),
+    NavItem('الفنيين', Icons.grid_view_outlined, Icons.grid_view_rounded),
     NavItem('حجوزاتي', Icons.event_note_outlined, Icons.event_note_rounded),
     NavItem(
         'أعمالنا', Icons.video_library_outlined, Icons.video_library_rounded),
@@ -62,7 +69,7 @@ class _CustomerShellState extends State<CustomerShell> {
       items: _items,
       pages: [
         _home,
-        _services,
+        _technicians,
         _bookings,
         _index == 3 ? const OurWorkTab() : const OurWorkTab(isActive: false),
         _profile,

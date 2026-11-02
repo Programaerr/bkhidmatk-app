@@ -17,7 +17,7 @@ import 'package:jaik/ui/customer/home_tab.dart';
 import 'package:jaik/ui/customer/messages_screen.dart';
 import 'package:jaik/ui/customer/our_work_tab.dart';
 import 'package:jaik/ui/customer/profile_tab.dart';
-import 'package:jaik/ui/customer/services_tab.dart';
+import 'package:jaik/ui/customer/technicians_tab.dart';
 import 'package:jaik/ui/widgets/quick_route.dart';
 import 'package:jaik/ui/widgets/realtime_refresh.dart';
 
@@ -104,10 +104,10 @@ void main() {
     testWidgets('عند الدخول يُبنى التبويب الأول فقط', (tester) async {
       await _pumpApp(tester, const CustomerShell(), _WatchedRepo());
       expect(find.byType(HomeTab), findsOneWidget);
-      expect(_anyState<ServicesTab>(), findsNothing);
       expect(_anyState<BookingsTab>(), findsNothing);
       expect(_anyState<OurWorkTab>(), findsNothing);
       expect(_anyState<ProfileTab>(), findsNothing);
+      expect(_anyState<TechniciansTab>(), findsNothing);
     });
 
     testWidgets('التبويب يُبنى عند فتحه ويبقى بعد مغادرته', (tester) async {
@@ -118,7 +118,7 @@ void main() {
       await tester.tap(find.text('الرئيسية').last);
       await tester.pump();
       expect(_anyState<BookingsTab>(), findsOneWidget);
-      expect(_anyState<ServicesTab>(), findsNothing);
+      expect(_anyState<TechniciansTab>(), findsNothing);
     });
 
     testWidgets('تبديل التبويب لا يعيد بناء التبويبات الأخرى', (tester) async {
@@ -137,27 +137,27 @@ void main() {
       await _pumpApp(tester, const CustomerShell(), _WatchedRepo());
       bool moves<T>() => TickerMode.valuesOf(tester.element(_anyState<T>())).enabled;
       expect(moves<HomeTab>(), isTrue);
-      await tester.tap(find.text('الخدمات').last);
+      await tester.tap(find.text('الفنيين').last);
       await tester.pump();
       expect(moves<HomeTab>(), isFalse);
-      expect(moves<ServicesTab>(), isTrue);
+      expect(moves<TechniciansTab>(), isTrue);
     });
 
     testWidgets('الرجوع إلى تبويب يحدّث بياناته', (tester) async {
       final repo = _CountingCategoriesRepo();
       await _pumpApp(tester, const CustomerShell(), repo);
-      await tester.tap(find.text('الخدمات').last);
+      await tester.tap(find.text('الفنيين').last);
       await tester.pump();
-      final opened = repo.serviceLists;
+      final opened = repo.workerLists;
       await tester.tap(find.text('حسابي'));
       await tester.pump(const Duration(seconds: 1));
-      expect(repo.serviceLists, opened);
+      expect(repo.workerLists, opened);
 
-      await tester.tap(find.text('الخدمات').last);
+      await tester.tap(find.text('الفنيين').last);
       await tester.pump();
-      expect(repo.serviceLists, opened);
+      expect(repo.workerLists, opened);
       await tester.pump(const Duration(milliseconds: 400));
-      expect(repo.serviceLists, opened + 1);
+      expect(repo.workerLists, opened + 1);
     });
   });
 
@@ -261,21 +261,11 @@ void main() {
 }
 
 class _CountingCategoriesRepo extends _WatchedRepo {
-  int serviceLists = 0;
+  int workerLists = 0;
 
   @override
-  Future<List<Service>> listServices({
-    int? categoryId,
-    String query = '',
-    bool onlyActive = true,
-    int? limit,
-  }) {
-    if (limit == null) serviceLists++;
-    return super.listServices(
-      categoryId: categoryId,
-      query: query,
-      onlyActive: onlyActive,
-      limit: limit,
-    );
+  Future<List<Worker>> listWorkers({int? categoryId, bool onlyAvailable = false}) {
+    workerLists++;
+    return super.listWorkers(categoryId: categoryId, onlyAvailable: onlyAvailable);
   }
 }
