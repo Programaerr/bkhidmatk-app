@@ -61,9 +61,12 @@ const _homeSections = 8;
 const _homeCraftsmen = 6;
 
 class HomeTab extends StatefulWidget {
-  const HomeTab({super.key, required this.onOpenProfile, this.onLoaded});
+  const HomeTab({super.key, required this.onOpenProfile, this.onOpenSection, this.onLoaded});
 
   final VoidCallback onOpenProfile;
+
+  /// يفتح تبويب الفنيين على نوع الشغل المضغوط عليه.
+  final ValueChanged<String>? onOpenSection;
 
   /// يأخذ الأقسام والحرفيين بعد كل جلب، فيفتح منهما تبويب الفنيين فوراً.
   final void Function(List<Category> sections, List<Worker> craftsmen)? onLoaded;
@@ -384,11 +387,19 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
               ),
             ),
           ),
-          showAll(_Design.sectionsAllCenter, AllSectionsScreen(sections: data?.sections)),
+          showAll(
+            _Design.sectionsAllCenter,
+            AllSectionsScreen(sections: data?.sections, onOpenSection: widget.onOpenSection),
+          ),
           Positioned(
             left: left,
             top: top + _Design.sectionsTop * unit,
-            child: SectionGrid(unit: unit, sections: sections, placeholders: _homeSections),
+            child: SectionGrid(
+              unit: unit,
+              sections: sections,
+              placeholders: _homeSections,
+              onOpen: (section) => widget.onOpenSection?.call(section.name),
+            ),
           ),
           Positioned(
             right: right + _Design.craftsmenTitleRight * unit,

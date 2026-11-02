@@ -270,6 +270,76 @@ void main() {
       expect(find.byType(CraftsmanKey), findsNothing);
     });
 
+    group('من أقسام الرئيسية', () {
+      Finder circle(String label) => find.byWidgetPredicate(
+            (widget) => widget is PushKeyCircle && widget.label == label,
+          );
+
+      testWidgets('الضغط على قسم يفتح التبويب على حرفييه والزر المختار ظاهر في الشاشة', (tester) async {
+        await _pumpShell(tester);
+        await tester.tap(circle('كهرباء'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 16));
+
+        expect(find.byType(TechniciansTab), findsOneWidget);
+        expect(tester.widget<PushKey>(_choice('كهرباء')).lemon, isTrue);
+        expect(_names, findsOneWidget);
+        expect(
+          find.descendant(of: find.byType(TechniciansTab), matching: find.text('أحمد الجبوري')),
+          findsOneWidget,
+        );
+        final chip = tester.getRect(_choice('كهرباء'));
+        expect(chip.left, greaterThanOrEqualTo(0));
+        expect(chip.right, lessThanOrEqualTo(392));
+      });
+
+      testWidgets('القسم البعيد في الشريط يصل إليه الشريط وحده', (tester) async {
+        await _pumpShell(tester);
+        await tester.tap(circle('نجار'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 16));
+        final chip = tester.getRect(_choice('نجار'));
+        expect(chip.left, greaterThanOrEqualTo(0));
+        expect(chip.right, lessThanOrEqualTo(392));
+      });
+
+      testWidgets('الضغط على القسم نفسه مرة ثانية يرجع إليه، ويمسح البحث القديم', (tester) async {
+        await _pumpShell(tester);
+        await tester.tap(circle('كهرباء'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 16));
+
+        await tester.tap(_choice('الكل'));
+        await tester.pump();
+        await tester.enterText(find.byType(TextField), 'لا يوجد');
+        await tester.pump();
+        expect(_names, findsNothing);
+
+        await tester.tap(find.text('الرئيسية').last);
+        await tester.pump();
+        await tester.tap(circle('كهرباء'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 16));
+        expect(tester.widget<PushKey>(_choice('كهرباء')).lemon, isTrue);
+        expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, isEmpty);
+        expect(_names, findsOneWidget);
+      });
+
+      testWidgets('زر رجوع الهاتف يرجع من التبويب إلى الرئيسية', (tester) async {
+        await _pumpShell(tester);
+        await tester.tap(circle('كهرباء'));
+        await tester.pump();
+        expect(TickerMode.valuesOf(tester.element(find.byType(TechniciansTab))).enabled, isTrue);
+
+        await tester.binding.handlePopRoute();
+        await tester.pump();
+        expect(
+          TickerMode.valuesOf(tester.element(find.byType(TechniciansTab, skipOffstage: false))).enabled,
+          isFalse,
+        );
+      });
+    });
+
     testWidgets('لوحة المفاتيح لا تبقى مفتوحة عند الانتقال إلى تبويب آخر', (tester) async {
       await _pumpShell(tester);
       await _openTab(tester);

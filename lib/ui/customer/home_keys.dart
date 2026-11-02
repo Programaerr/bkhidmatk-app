@@ -9,7 +9,6 @@ import '../auth/truck_scene.dart';
 import '../widgets/quick_route.dart';
 import '../widgets/ui.dart';
 import 'craftsman_info_screen.dart';
-import 'services_tab.dart';
 
 const homeCream = Color(0xFFFFFEE2);
 const homeNightGround = Colors.black;
@@ -154,10 +153,11 @@ class PersonFace extends StatelessWidget {
 
 /// زر قسم: دائرة بأيقونة القسم، واسمه تحتها. بلا قسم تظهر الدائرة فارغة إلى أن تصل البيانات.
 class SectionKey extends StatelessWidget {
-  const SectionKey({super.key, required this.unit, this.section});
+  const SectionKey({super.key, required this.unit, this.section, this.onOpen});
 
   final double unit;
   final Category? section;
+  final ValueChanged<Category>? onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -171,12 +171,7 @@ class SectionKey extends StatelessWidget {
           diameter: _sectionFace * unit,
           unit: chrome,
           label: section?.name ?? '',
-          onPressed: section == null
-              ? null
-              : () => Navigator.push(
-                    context,
-                    QuickRoute(builder: (_) => ServicesPage(initialCategoryId: section.id)),
-                  ),
+          onPressed: section == null || onOpen == null ? null : () => onOpen!(section),
           child: section == null
               ? const SizedBox.shrink()
               : Icon(
@@ -209,11 +204,18 @@ class SectionKey extends StatelessWidget {
 
 /// الأقسام في صفوف، كل صف أربعة. بلا قائمة تظهر [placeholders] دوائر فارغة.
 class SectionGrid extends StatelessWidget {
-  const SectionGrid({super.key, required this.unit, this.sections, this.placeholders = 8});
+  const SectionGrid({
+    super.key,
+    required this.unit,
+    this.sections,
+    this.placeholders = 8,
+    this.onOpen,
+  });
 
   final double unit;
   final List<Category>? sections;
   final int placeholders;
+  final ValueChanged<Category>? onOpen;
 
   static double heightOf(int count, double unit) =>
       (count / 4).ceil() * _sectionRowPitch * unit;
@@ -233,7 +235,7 @@ class SectionGrid extends StatelessWidget {
               left: (_sectionCenters[i % 4] - _sectionLabelWidth / 2) * unit,
               width: _sectionLabelWidth * unit,
               top: (i ~/ 4) * _sectionRowPitch * unit,
-              child: SectionKey(unit: unit, section: sections?[i]),
+              child: SectionKey(unit: unit, section: sections?[i], onOpen: onOpen),
             ),
         ],
       ),

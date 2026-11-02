@@ -28,6 +28,18 @@ class _CustomerShellState extends State<CustomerShell> {
   // آخر ما جلبته الرئيسية، فيفتح منه تبويب الفنيين فوراً دون انتظار السيرفر.
   List<Category>? _loadedSections;
   List<Worker>? _loadedWorkers;
+  final _technicianChoice = TechniciansChoice();
+
+  @override
+  void dispose() {
+    _technicianChoice.dispose();
+    super.dispose();
+  }
+
+  void _openSection(String name) {
+    _technicianChoice.choose(name);
+    _go(1);
+  }
 
   void _go(int index) {
     // لوحة المفاتيح لا تبقى مفتوحة فوق تبويب آخر.
@@ -38,6 +50,7 @@ class _CustomerShellState extends State<CustomerShell> {
   // تبقى هي نفسها بين البناءات، فتبديل التبويب لا يعيد بناء التبويبات كلها.
   late final _home = HomeTab(
     onOpenProfile: () => _go(4),
+    onOpenSection: _openSection,
     onLoaded: (sections, craftsmen) {
       _loadedSections = sections;
       _loadedWorkers = craftsmen;
@@ -46,6 +59,7 @@ class _CustomerShellState extends State<CustomerShell> {
   late final _technicians = TechniciansTab(
     loadedSections: () => _loadedSections,
     loadedWorkers: () => _loadedWorkers,
+    choice: _technicianChoice,
   );
   late final _bookings = BookingsTab(onBrowse: () => _go(1));
   late final _profile = ProfileTab(
@@ -64,34 +78,41 @@ class _CustomerShellState extends State<CustomerShell> {
 
   @override
   Widget build(BuildContext context) {
-    return AppShellLayout(
-      index: _index,
-      items: _items,
-      pages: [
-        _home,
-        _technicians,
-        _bookings,
-        _index == 3 ? const OurWorkTab() : const OurWorkTab(isActive: false),
-        _profile,
-      ],
-      onSelect: _go,
-      topBanner: widget.adminPreview
-          ? Material(
-              color: const Color(0xFFFFF3B0),
-              child: SafeArea(
-                bottom: false,
-                child: SizedBox(
-                  height: 44,
-                  width: double.infinity,
-                  child: TextButton.icon(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-                    label: const Text('العودة إلى لوحة المدير'),
+    // زر رجوع الهاتف يرجع من أي تبويب إلى الرئيسية، ومنها يخرج.
+    return PopScope(
+      canPop: _index == 0,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _go(0);
+      },
+      child: AppShellLayout(
+        index: _index,
+        items: _items,
+        pages: [
+          _home,
+          _technicians,
+          _bookings,
+          _index == 3 ? const OurWorkTab() : const OurWorkTab(isActive: false),
+          _profile,
+        ],
+        onSelect: _go,
+        topBanner: widget.adminPreview
+            ? Material(
+                color: const Color(0xFFFFF3B0),
+                child: SafeArea(
+                  bottom: false,
+                  child: SizedBox(
+                    height: 44,
+                    width: double.infinity,
+                    child: TextButton.icon(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                      label: const Text('العودة إلى لوحة المدير'),
+                    ),
                   ),
                 ),
-              ),
-            )
-          : null,
+              )
+            : null,
+      ),
     );
   }
 }

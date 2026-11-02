@@ -41,6 +41,7 @@ abstract final class _Design {
   static const choiceTextSize = 11.0;
   static const choicePadding = 10.0;
   static const choiceTouchMargin = 6.0;
+  static const choiceScroll = Duration(milliseconds: 250);
 
   // عرض الزر يُقرَّب إلى هذا الحد، فتتشارك الأزرار المتقاربة صورة واحدة.
   static const choiceWidthStep = 8.0;
@@ -63,9 +64,22 @@ String _searchable(String text) => text
     .replaceAll('ة', 'ه')
     .replaceAll(RegExp('[ً-ْـ]'), '');
 
+/// يفتح تبويب الفنيين على نوع شغل معين، ولو كان هو نفسه آخر ما فُتح.
+class TechniciansChoice extends ChangeNotifier {
+  String? section;
+
+  void choose(String name) {
+    section = name;
+    notifyListeners();
+  }
+}
+
 /// تبويب الفنيين: البحث عن حرفي أو الاختيار حسب نوع الشغل، وتحتهما مجموعة الحرفيين.
 class TechniciansTab extends StatefulWidget {
-  const TechniciansTab({super.key, this.loadedSections, this.loadedWorkers});
+  const TechniciansTab({super.key, this.loadedSections, this.loadedWorkers, this.choice});
+
+  /// نوع الشغل المضغوط عليه في الصفحة الرئيسية.
+  final TechniciansChoice? choice;
 
   /// ما جلبته الصفحة الرئيسية، فيفتح التبويب منه فوراً دون انتظار السيرفر.
   final List<Category>? Function()? loadedSections;
@@ -78,6 +92,8 @@ class TechniciansTab extends StatefulWidget {
 class _TechniciansTabState extends State<TechniciansTab> with RealtimeRefresh<TechniciansTab> {
   final _search = TextEditingController();
   final _searchFocus = FocusNode();
+  final _choicesScroll = ScrollController();
+  final _choiceKeys = <String?, GlobalKey>{};
   List<Category> _sections = customerSections(const []);
   List<Worker>? _workers;
   String? _chosen;
@@ -97,13 +113,44 @@ class _TechniciansTabState extends State<TechniciansTab> with RealtimeRefresh<Te
     } else {
       _load();
     }
+    widget.choice?.addListener(_onChosenOutside);
+    _chosen = widget.choice?.section;
+    _showChosen(animate: false);
   }
 
   @override
   void dispose() {
+    widget.choice?.removeListener(_onChosenOutside);
+    _choicesScroll.dispose();
     _search.dispose();
     _searchFocus.dispose();
     super.dispose();
+  }
+
+  // البحث القديم لا يخفي حرفيي النوع الذي ضُغط عليه.
+  void _onChosenOutside() {
+    _search.clear();
+    setState(() => _chosen = widget.choice!.section);
+    _showChosen(animate: false);
+  }
+
+  void _choose(String? name) {
+    setState(() => _chosen = name);
+    _showChosen(animate: true);
+  }
+
+  /// يحرّك شريط الاختيارات حتى يظهر الزر المختار في وسطه.
+  void _showChosen({required bool animate}) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final chip = _choiceKeys[_chosen]?.currentContext?.findRenderObject();
+      if (chip == null || !_choicesScroll.hasClients) return;
+      _choicesScroll.position.ensureVisible(
+        chip,
+        alignment: .5,
+        duration: animate ? _Design.choiceScroll : Duration.zero,
+        curve: Curves.easeOut,
+      );
+    });
   }
 
   Future<void> _load() async {
@@ -236,19 +283,26 @@ class _TechniciansTabState extends State<TechniciansTab> with RealtimeRefresh<Te
         ),
         SizedBox(
           height: choicesHeight * unit,
-          child: ListView.separated(
+          // كلها مبنية، حتى يتحرك الشريط إلى الزر المختار ولو كان بعيداً.
+          child: SingleChildScrollView(
+            controller: _choicesScroll,
             scrollDirection: Axis.horizontal,
             padding: EdgeInsets.symmetric(
               horizontal: left + _Design.choiceRight * unit - chromeInset,
             ),
-            itemCount: choices.length,
-            separatorBuilder: (_, __) =>
-                SizedBox(width: _Design.choiceGap * unit - chromeInset * 2),
-            itemBuilder: (context, i) => _ChoiceKey(
-              label: choices[i] ?? 'الكل',
-              selected: choices[i] == _chosen,
-              unit: unit,
-              onPressed: () => setState(() => _chosen = choices[i]),
+            child: Row(
+              children: [
+                for (final (i, name) in choices.indexed) ...[
+                  if (i > 0) SizedBox(width: _Design.choiceGap * unit - chromeInset * 2),
+                  _ChoiceKey(
+                    key: _choiceKeys.putIfAbsent(name, GlobalKey.new),
+                    label: name ?? 'الكل',
+                    selected: name == _chosen,
+                    unit: unit,
+                    onPressed: () => _choose(name),
+                  ),
+                ],
+              ],
             ),
           ),
         ),
@@ -360,6 +414,7 @@ class _TechniciansTabState extends State<TechniciansTab> with RealtimeRefresh<Te
 /// زر اختيار نوع الشغل: أبيض، والمختار منها بلون أزرار الحرفيين.
 class _ChoiceKey extends StatelessWidget {
   const _ChoiceKey({
+    super.key,
     required this.label,
     required this.selected,
     required this.unit,

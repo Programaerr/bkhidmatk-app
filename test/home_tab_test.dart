@@ -14,7 +14,7 @@ import 'package:jaik/ui/customer/home_lists_screens.dart';
 import 'package:jaik/ui/customer/messages_screen.dart';
 import 'package:jaik/ui/customer/notifications_screen.dart';
 import 'package:jaik/ui/customer/profile_tab.dart';
-import 'package:jaik/ui/customer/services_tab.dart';
+import 'package:jaik/ui/customer/technicians_tab.dart';
 import 'package:jaik/ui/customer/workers_scene.dart';
 import 'package:jaik/ui/widgets/quick_route.dart';
 
@@ -77,6 +77,15 @@ class _HomeRepo extends FakeRepo {
 
 /// ما في السيرفر اليوم: الأقسام الثمانية القديمة.
 class _OldServerRepo extends _HomeRepo {
+  @override
+  Future<List<Worker>> listWorkers({int? categoryId, bool onlyAvailable = false}) async {
+    await super.listWorkers(categoryId: categoryId, onlyAvailable: onlyAvailable);
+    return [
+      Worker(id: 6, name: 'حرفي 6', phone: '', specialty: 'فني مكيفات', categoryId: 6, rating: 4.5),
+      Worker(id: 1, name: 'حرفي 1', phone: '', specialty: 'كهرباء', categoryId: 1, rating: 4.5),
+    ];
+  }
+
   @override
   Future<List<Category>> listCategories() async => [
         for (final (id, name) in const [
@@ -269,10 +278,18 @@ void main() {
       expect(find.text('لا توجد إشعارات'), findsOneWidget);
     });
 
-    testWidgets('زر القسم يفتح خدماته', (tester) async {
+    testWidgets('زر القسم يفتح تبويب الفنيين على نوع الشغل نفسه، لا الخدمات', (tester) async {
       await _pumpHome(tester);
-      await _tapAndOpen(tester, _circle(_sectionNames[1]));
-      expect(tester.widget<ServicesPage>(find.byType(ServicesPage)).initialCategoryId, 2);
+      await tester.tap(_circle(_sectionNames[1]));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 16));
+      expect(find.byType(TechniciansTab), findsOneWidget);
+      expect(find.text('كل الخدمات'), findsNothing);
+      final chosen = tester.widget<PushKey>(find.descendant(
+        of: find.byType(TechniciansTab),
+        matching: find.widgetWithText(PushKey, _sectionNames[1]),
+      ));
+      expect(chosen.lemon, isTrue);
     });
 
     testWidgets('زر الحرفي يفتح معلوماته', (tester) async {
@@ -371,20 +388,26 @@ void main() {
         expect(_circle(name), findsWidgets, reason: name);
       }
 
-      // القسم القديم تحت اسمه الجديد يفتح خدماته برقمه.
+      // الضغط يرجع من الصفحة إلى تبويب الفنيين، والقسم القديم يجد حرفييه برقمه.
       await _tapAndOpen(tester, _circle('سبالت').last);
-      expect(tester.widget<ServicesPage>(find.byType(ServicesPage)).initialCategoryId, 6);
-      Navigator.of(tester.element(find.byType(ServicesPage))).pop();
-      await tester.pump();
-      await pumpRouteFrames(tester);
+      expect(find.byType(AllSectionsScreen), findsNothing);
+      Finder inTab(Type type) =>
+          find.descendant(of: find.byType(TechniciansTab), matching: find.byType(type));
+      expect(inTab(CraftsmanKey), findsNWidgets(1));
+      expect(
+        find.descendant(of: find.byType(TechniciansTab), matching: find.text('حرفي 6')),
+        findsOneWidget,
+      );
 
-      // القسم الجديد لا يعرض كل الخدمات، بل صفحة فارغة.
-      await _tapAndOpen(tester, _circle('حداد').last);
-      final page = tester.widget<ServicesPage>(find.byType(ServicesPage));
-      expect(page.initialCategoryId, isNotNull);
-      expect(page.initialCategoryId!, isNegative);
+      // القسم الذي ليس له حرفيون لا يعرض كل الحرفيين، بل رسالة.
+      await tester.tap(find.text('الرئيسية').last);
       await tester.pump();
-      expect(find.text('لا توجد خدمات مطابقة'), findsOneWidget);
+      await tester.pump(const Duration(milliseconds: 500));
+      await _tapAndOpen(tester, find.text('عرض الكل').first);
+      await tester.pump();
+      await _tapAndOpen(tester, _circle('حداد').last);
+      expect(inTab(CraftsmanKey), findsNothing);
+      expect(find.text('لا يوجد فنيون مطابقون'), findsOneWidget);
     });
 
     testWidgets('بلا حرفيين متاحين تظهر رسالة بدل الأزرار', (tester) async {
@@ -415,7 +438,7 @@ void main() {
 
       await gesture.up();
       await tester.pump();
-      expect(find.byType(ServicesPage), findsNothing);
+      expect(find.byType(TechniciansTab), findsNothing);
     });
 
     for (final (size, scale) in const [

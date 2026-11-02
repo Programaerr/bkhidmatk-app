@@ -16,10 +16,13 @@ Color _ground(BuildContext context) =>
 
 /// كل الأقسام، بشكل أزرارها نفسه في الصفحة الرئيسية.
 class AllSectionsScreen extends StatefulWidget {
-  const AllSectionsScreen({super.key, this.sections});
+  const AllSectionsScreen({super.key, this.sections, this.onOpenSection});
 
   /// ما جلبته الصفحة الرئيسية، فتظهر الصفحة فوراً دون انتظار السيرفر.
   final List<Category>? sections;
+
+  /// يفتح تبويب الفنيين على نوع الشغل المضغوط عليه.
+  final ValueChanged<String>? onOpenSection;
 
   @override
   State<AllSectionsScreen> createState() => _AllSectionsScreenState();
@@ -45,7 +48,17 @@ class _AllSectionsScreenState extends State<AllSectionsScreen> {
             builder: (context, snapshot) => ListView(
               padding: EdgeInsets.fromLTRB(0, _listTop * unit, 0, _listBottom * unit),
               children: [
-                Center(child: SectionGrid(unit: unit, sections: snapshot.data, placeholders: 18)),
+                Center(
+                  child: SectionGrid(
+                    unit: unit,
+                    sections: snapshot.data,
+                    placeholders: 18,
+                    onOpen: (section) {
+                      Navigator.pop(context);
+                      widget.onOpenSection?.call(section.name);
+                    },
+                  ),
+                ),
               ],
             ),
           );
