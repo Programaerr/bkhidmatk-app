@@ -817,7 +817,8 @@ from (values
 where section.name = v.old_name
   and not exists (select 1 from public.categories c where c.name = v.new_name);
 
-insert into public.categories(name, icon, color, sort_order) values
+-- The eighteen sections in their order. Sections an administrator added stay after them.
+with sections(name, icon, color, sort_order) as (values
   ('سبالت', 'ac_unit', 4282339765, 0),
   ('كهرباء', 'electrical_services', 4294902023, 1),
   ('سباكة', 'plumbing', 4278236368, 2),
@@ -836,8 +837,16 @@ insert into public.categories(name, icon, color, sort_order) values
   ('نقل الاثاث', 'local_shipping', 4294924066, 15),
   ('شد و تركيب الاثاث', 'handyman', 4288776319, 16),
   ('غسيل سيارات', 'local_car_wash', 4280391411, 17)
-on conflict (name) do update
-  set icon = excluded.icon, sort_order = excluded.sort_order;
+), saved as (
+  insert into public.categories(name, icon, color, sort_order)
+  select name, icon, color, sort_order from sections
+  on conflict (name) do update
+    set icon = excluded.icon, sort_order = excluded.sort_order
+  returning id
+)
+update public.categories
+set sort_order = greatest(sort_order, 18)
+where id not in (select id from saved);
 
 insert into public.workers(name, phone, specialty, category_id, rating, jobs_done, bio)
 select v.name, v.phone, v.specialty, c.id, v.rating, v.jobs_done, v.bio

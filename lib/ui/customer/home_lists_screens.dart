@@ -15,14 +15,18 @@ Color _ground(BuildContext context) =>
 
 /// كل الأقسام، بشكل أزرارها نفسه في الصفحة الرئيسية.
 class AllSectionsScreen extends StatefulWidget {
-  const AllSectionsScreen({super.key});
+  const AllSectionsScreen({super.key, this.sections});
+
+  /// ما جلبته الصفحة الرئيسية، فتظهر الصفحة فوراً دون انتظار السيرفر.
+  final List<Category>? sections;
 
   @override
   State<AllSectionsScreen> createState() => _AllSectionsScreenState();
 }
 
 class _AllSectionsScreenState extends State<AllSectionsScreen> {
-  late final Future<List<Category>> _sections = context.read<AppState>().repo.listCategories();
+  late final Future<List<Category>>? _sections =
+      widget.sections == null ? context.read<AppState>().repo.listCategories() : null;
 
   @override
   Widget build(BuildContext context) {
@@ -35,6 +39,7 @@ class _AllSectionsScreenState extends State<AllSectionsScreen> {
           final unit = homeUnit(constraints.maxWidth);
           return FutureBuilder<List<Category>>(
             future: _sections,
+            initialData: widget.sections,
             builder: (context, snapshot) => ListView(
               padding: EdgeInsets.fromLTRB(0, _listTop * unit, 0, _listBottom * unit),
               children: [
@@ -50,15 +55,19 @@ class _AllSectionsScreenState extends State<AllSectionsScreen> {
 
 /// كل الحرفيين المتاحين، بشكل أزرارهم نفسه في الصفحة الرئيسية.
 class AllCraftsmenScreen extends StatefulWidget {
-  const AllCraftsmenScreen({super.key});
+  const AllCraftsmenScreen({super.key, this.workers});
+
+  /// ما جلبته الصفحة الرئيسية، فتظهر الصفحة فوراً دون انتظار السيرفر.
+  final List<Worker>? workers;
 
   @override
   State<AllCraftsmenScreen> createState() => _AllCraftsmenScreenState();
 }
 
 class _AllCraftsmenScreenState extends State<AllCraftsmenScreen> {
-  late final Future<List<Worker>> _workers =
-      context.read<AppState>().repo.listWorkers(onlyAvailable: true);
+  late final Future<List<Worker>>? _workers = widget.workers == null
+      ? context.read<AppState>().repo.listWorkers(onlyAvailable: true)
+      : null;
 
   @override
   Widget build(BuildContext context) {
@@ -71,6 +80,7 @@ class _AllCraftsmenScreenState extends State<AllCraftsmenScreen> {
           final unit = homeUnit(constraints.maxWidth);
           return FutureBuilder<List<Worker>>(
             future: _workers,
+            initialData: widget.workers,
             builder: (context, snapshot) {
               final workers = snapshot.data;
               if (workers != null && workers.isEmpty) {

@@ -127,9 +127,9 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
     }
   }
 
-  Future<void> _open(Widget page) async {
-    await Navigator.push(context, QuickRoute(builder: (_) => page));
-    if (mounted) _load();
+  // عند الرجوع تعيد الصفحة تحميل بياناتها وحدها بعد انتهاء الانتقال.
+  void _open(Widget page) {
+    Navigator.push(context, QuickRoute(builder: (_) => page));
   }
 
   @override
@@ -401,7 +401,7 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
               ),
             ),
           ),
-          showAll(_Design.sectionsAllCenter, const AllSectionsScreen()),
+          showAll(_Design.sectionsAllCenter, AllSectionsScreen(sections: data?.sections)),
           Positioned(
             left: left,
             top: top + _Design.sectionsTop * unit,
@@ -420,7 +420,7 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
               ),
             ),
           ),
-          showAll(_Design.craftsmenAllCenter, const AllCraftsmenScreen()),
+          showAll(_Design.craftsmenAllCenter, AllCraftsmenScreen(workers: data?.craftsmen)),
           Positioned(
             left: left,
             top: top + _Design.craftsmenTop * unit,

@@ -52,15 +52,21 @@ class _HomeRepo extends FakeRepo {
   final int craftsmen;
   final int unread;
   bool? askedOnlyAvailable;
+  int sectionFetches = 0;
+  int workerFetches = 0;
 
   @override
-  Future<List<Category>> listCategories() async => [
-        for (final (i, name) in _sectionNames.indexed)
-          Category(id: i + 1, name: name, icon: 'build', color: 0xFF000000, sortOrder: i),
-      ];
+  Future<List<Category>> listCategories() async {
+    sectionFetches++;
+    return [
+      for (final (i, name) in _sectionNames.indexed)
+        Category(id: i + 1, name: name, icon: 'build', color: 0xFF000000, sortOrder: i),
+    ];
+  }
 
   @override
   Future<List<Worker>> listWorkers({int? categoryId, bool onlyAvailable = false}) async {
+    workerFetches++;
     askedOnlyAvailable = onlyAvailable;
     return [for (var i = 1; i <= craftsmen; i++) _worker(i)];
   }
@@ -276,6 +282,64 @@ void main() {
       expect(find.byType(AllCraftsmenScreen), findsOneWidget);
       await tester.pump();
       expect(find.text('حرفي 8'), findsOneWidget);
+    });
+
+    testWidgets('عرض الكل يظهر فوراً مما جلبته الصفحة، بلا طلب جديد من السيرفر', (tester) async {
+      final repo = _HomeRepo();
+      await _pumpHome(tester, repo: repo);
+      final sections = repo.sectionFetches;
+
+      // الإطار الأول بعد الفتح مخفي عند كل انتقال، والمحتوى كامل في أول إطار ظاهر.
+      await tester.tap(find.text('عرض الكل').first);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 16));
+      expect(_circle(_sectionNames.last), findsOneWidget);
+      await pumpRouteFrames(tester);
+      expect(repo.sectionFetches, sections);
+      Navigator.of(tester.element(find.byType(AllSectionsScreen))).pop();
+      await tester.pump();
+      await pumpRouteFrames(tester);
+
+      // بعد الرجوع تحدّث الصفحة الرئيسية بياناتها، والعدّ يبدأ بعدها.
+      await tester.pump(const Duration(milliseconds: 500));
+      final workers = repo.workerFetches;
+
+      await tester.tap(find.text('عرض الكل').last);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 16));
+      expect(find.text('حرفي 8'), findsOneWidget);
+      await pumpRouteFrames(tester);
+      expect(repo.workerFetches, workers);
+    });
+
+    testWidgets('إذا لم تصل البيانات بعد تجلبها صفحة عرض الكل بنفسها', (tester) async {
+      final repo = _HomeRepo();
+      await _pumpHome(tester, repo: repo);
+      Navigator.of(tester.element(find.byType(CraftsmanKey).first)).push(
+        QuickRoute<void>(builder: (_) => const AllSectionsScreen()),
+      );
+      await tester.pump();
+      final sections = repo.sectionFetches;
+      await tester.pump();
+      await pumpRouteFrames(tester);
+      expect(sections, greaterThanOrEqualTo(2));
+      expect(_circle(_sectionNames.last), findsOneWidget);
+    });
+
+    testWidgets('الرجوع من صفحة يعيد التحميل مرة واحدة بعد انتهاء الانتقال', (tester) async {
+      final repo = _HomeRepo();
+      await _pumpHome(tester, repo: repo);
+      await _tapAndOpen(tester, _circle('الإشعارات'));
+      await tester.pump();
+      final before = repo.sectionFetches;
+
+      Navigator.of(tester.element(find.byType(NotificationsScreen))).pop();
+      await tester.pump();
+      await pumpRouteFrames(tester);
+      expect(repo.sectionFetches, before);
+
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(repo.sectionFetches, before + 1);
     });
 
     testWidgets('بلا حرفيين متاحين تظهر رسالة بدل الأزرار', (tester) async {
