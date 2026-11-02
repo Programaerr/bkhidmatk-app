@@ -183,6 +183,14 @@ void main() {
       expect(craftsman.round, isFalse);
     });
 
+    testWidgets('الاسم في وسط دائرة الملف الشخصي وبعيد عنها', (tester) async {
+      await _pumpHome(tester);
+      final circle = tester.getRect(_circle('الملف الشخصي'));
+      final name = tester.getRect(find.text('زبون تجريبي'));
+      expect(name.center.dy, closeTo(circle.center.dy, .5));
+      expect(circle.left - name.right, closeTo(10, .5));
+    });
+
     testWidgets('الزران الصغيران مساحة لمسهما كافية ولا تتداخلان', (tester) async {
       await _pumpHome(tester);
       final messages = tester.getRect(_circle('الرسائل'));

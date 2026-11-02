@@ -29,7 +29,7 @@ abstract final class _Design {
   static const profileFace = 42.9;
   static const profileRight = 22.7;
   static const profileCenter = 52.3;
-  static const nameGap = 8.0;
+  static const nameGap = 10.0;
   static const nameSize = 13.0;
   static const nameMargin = 8.0;
 
@@ -268,11 +268,14 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
             ),
           ),
         ),
+        // الاسم في وسط الدائرة كلها، بوجهها وحلقتها، وبعيد عن حلقتها.
         Positioned(
-          right: profileRight + profileFace + _Design.nameGap * unit,
-          left: left + (_Design.messagesCenterX + _Design.smallFace / 2 + _Design.nameMargin) * unit,
+          right: profileRight + profileFace + inset + _Design.nameGap * unit,
+          left: left +
+              (_Design.messagesCenterX + _Design.smallFace / 2 + _Design.nameMargin) * unit +
+              inset,
           top: top + _Design.profileCenter * unit - profileFace / 2,
-          height: profileFace,
+          height: profileFace + PushKey.depth * chrome,
           child: Align(
             alignment: AlignmentDirectional.centerStart,
             child: Text(
