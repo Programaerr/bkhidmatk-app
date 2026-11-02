@@ -44,6 +44,18 @@ IconData appIcon(String key) {
       return Icons.garage_rounded;
     case 'pest_control':
       return Icons.pest_control_rounded;
+    case 'hardware':
+      return Icons.hardware_rounded;
+    case 'videocam':
+      return Icons.videocam_rounded;
+    case 'yard':
+      return Icons.yard_rounded;
+    case 'engineering':
+      return Icons.engineering_rounded;
+    case 'local_shipping':
+      return Icons.local_shipping_rounded;
+    case 'local_car_wash':
+      return Icons.local_car_wash_rounded;
     default:
       return Icons.build_rounded;
   }
@@ -68,6 +80,12 @@ const categoryIconKeys = [
   'window',
   'garage',
   'pest_control',
+  'hardware',
+  'videocam',
+  'yard',
+  'engineering',
+  'local_shipping',
+  'local_car_wash',
   'build',
 ];
 

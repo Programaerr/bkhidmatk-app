@@ -1,33 +1,79 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/theme.dart';
-import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../../data/repository.dart';
 import '../../state/app_state.dart';
+import '../auth/auth_route.dart';
+import '../auth/push_key.dart';
+import '../auth/truck_scene.dart';
 import '../widgets/quick_route.dart';
 import '../widgets/realtime_refresh.dart';
-import '../widgets/shell_layout.dart';
-import '../widgets/ui.dart';
-import '../widgets/work_card.dart';
-import 'booking_detail_screen.dart';
+import 'home_keys.dart';
+import 'home_lists_screens.dart';
 import 'messages_screen.dart';
-import 'our_work_detail_screen.dart';
-import 'service_detail_screen.dart';
-import 'services_tab.dart';
+import 'notifications_screen.dart';
+import 'workers_scene.dart';
+
+/// مقاسات التصميم المعتمد بالبكسل (إطار عرضه 391).
+abstract final class _Design {
+  // الجهة الصفراء: مستطيل ينتهي بقطع ناقص مركزه أقرب إلى اليسار، فحافتها اليسرى أوطأ من اليمنى.
+  static const hillCenterX = 189.0;
+  static const hillCenterY = 79.2;
+  static const hillRadiusX = 203.0;
+  static const hillRadiusY = 35.0;
+
+  static const profileFace = 42.9;
+  static const profileRight = 22.7;
+  static const profileCenter = 52.3;
+  static const nameGap = 8.0;
+  static const nameSize = 13.0;
+  static const nameMargin = 8.0;
+
+  static const smallFace = 32.7;
+  static const smallCenter = 52.9;
+  static const messagesCenterX = 91.1;
+  static const notificationsCenterX = 38.1;
+  static const smallIconSize = 18.0;
+  static const badgeSize = 9.0;
+
+  // لا يختفي الزر تحت شريط الحالة في الهواتف التي شريطها أطول من حافة التصميم.
+  static const statusBarGap = 10.0;
+
+  static const sceneTop = 128.2;
+
+  static const titleSize = 18.0;
+  static const allSize = 13.4;
+  static const titleHeight = 32.0;
+  static const allHeight = 34.0;
+  static const allPadding = 8.0;
+  static const allArrowSize = 15.0;
+  static const allArrowGap = 3.0;
+  static const allWidth = 110.0;
+  static const titleRoom = 125.0;
+  static const sectionsTitleWidth = 150.0;
+
+  static const sectionsTitleCenter = 350.4;
+  static const sectionsAllCenter = 352.4;
+  static const sectionsTop = 383.6;
+
+  static const craftsmenTitleCenter = 592.5;
+  static const craftsmenTitleRight = 15.2;
+  static const craftsmenAllCenter = 592.5;
+  static const craftsmenTop = 636.1;
+  static const pageBottom = 19.6;
+}
+
+const _homeSections = 8;
+const _homeCraftsmen = 6;
 
 class HomeTab extends StatefulWidget {
-  const HomeTab({
-    super.key,
-    required this.onBrowseServices,
-    required this.onOpenWorks,
-    required this.onOpenBookings,
-  });
+  const HomeTab({super.key, required this.onOpenProfile});
 
-  final VoidCallback onBrowseServices;
-  final VoidCallback onOpenWorks;
-  final VoidCallback onOpenBookings;
+  final VoidCallback onOpenProfile;
 
   @override
   State<HomeTab> createState() => _HomeTabState();
@@ -49,266 +95,347 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
     final state = context.read<AppState>();
     final user = state.user!;
     setState(() {
-      _future = _fetch(state.repo, user.id!);
+      _future = _fetch(state, state.repo, user.id!);
     });
   }
 
-  Future<_HomeData> _fetch(Repository repo, int userId) async {
+  Future<_HomeData> _fetch(AppState state, Repository repo, int userId) async {
     final results = await Future.wait([
       repo.listCategories(),
-      repo.listServices(limit: 6),
-      repo.listWorks(onlyActive: true, limit: 3, viewerId: userId),
-      repo.bookingsForCustomer(userId),
+      repo.listWorkers(onlyAvailable: true),
       repo.unreadForCustomer(userId),
-      // البانر الرئيسي أصبح خياراً يتحكم به المدير من لوحة التحكم.
-      repo.getSetting('show_hero_banner', fallback: '0'),
+      _unreadNotifications(state),
     ]);
-    final bookings = results[3] as List<Booking>;
-    final upcoming = bookings
-        .where((b) =>
-            b.status == BookingStatus.pending ||
-            b.status == BookingStatus.confirmed ||
-            b.status == BookingStatus.inProgress)
-        .toList();
-    upcoming.sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
     return _HomeData(
-      categories: results[0] as List<Category>,
-      services: results[1] as List<Service>,
-      works: results[2] as List<OurWork>,
-      upcoming: upcoming.isEmpty ? null : upcoming.first,
-      unread: results[4] as int,
-      showHero: results[5] == '1',
+      sections: results[0] as List<Category>,
+      craftsmen: results[1] as List<Worker>,
+      unreadMessages: results[2] as int,
+      unreadNotifications: results[3] as int,
     );
+  }
+
+  /// فشل جلب العدد لا يوقف الصفحة، فالإشعارات نفسها تُجلب عند فتحها.
+  Future<int> _unreadNotifications(AppState state) async {
+    final services = state.cloudServices;
+    if (services == null) return 0;
+    try {
+      final notifications = await services.notifications();
+      return notifications.where((n) => !n.isRead).length;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  Future<void> _open(Widget page) async {
+    await Navigator.push(context, QuickRoute(builder: (_) => page));
+    if (mounted) _load();
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final night = Theme.of(context).brightness == Brightness.dark;
     final user = context.watch<AppState>().user!;
-    return SafeArea(
-      bottom: false,
-      child: FutureBuilder<_HomeData>(
-        future: _future,
-        builder: (context, snapshot) {
-          final data = snapshot.data;
-          return RefreshIndicator(
-            onRefresh: () async => _load(),
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(18, 12, 18, 30),
-              children: [
-                Row(
+    final safeTop = MediaQuery.viewPaddingOf(context).top;
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      // شريط الحالة فوق الجهة الصفراء دائماً، نهاراً وليلاً.
+      value: appSystemBars(night: false),
+      child: ColoredBox(
+        color: night ? homeNightGround : homeCream,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final width = constraints.maxWidth;
+            final unit = homeUnit(width);
+            final left = (width - homeDesignWidth * unit) / 2;
+            final top = math.max(
+              0.0,
+              safeTop +
+                  _Design.statusBarGap -
+                  (_Design.profileCenter - _Design.profileFace / 2) * unit,
+            );
+            final hillBottom = top + (_Design.hillCenterY + _Design.hillRadiusY) * unit;
+            return FutureBuilder<_HomeData>(
+              future: _future,
+              builder: (context, snapshot) {
+                final data = snapshot.data;
+                return Stack(
                   children: [
-                    const BrandLogo(size: 44, radius: 13),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('أهلاً، ${user.name.split(' ').first} ',
-                              style: theme.textTheme.titleMedium
-                                  ?.copyWith(fontSize: 16)),
-                          Text('كيف نقدر نخدمك اليوم؟',
-                              style: theme.textTheme.bodySmall
-                                  ?.copyWith(fontSize: 11)),
-                        ],
+                    Positioned.fill(
+                      child: RefreshIndicator(
+                        edgeOffset: hillBottom,
+                        onRefresh: () async => _load(),
+                        child: ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: EdgeInsets.zero,
+                          children: [
+                            _page(data, width, unit, left, top, night),
+                          ],
+                        ),
                       ),
                     ),
-                    AppIconButton(
-                      icon: Icons.chat_bubble_outline_rounded,
-                      badge: data?.unread ?? 0,
-                      onTap: () async {
-                        await Navigator.push(
-                          context,
-                          QuickRoute(
-                              builder: (_) => const MessagesScreen()),
-                        );
-                        _load();
-                      },
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      top: 0,
+                      height: hillBottom,
+                      child: _header(user, data, width, unit, left, top, night),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _header(
+    AppUser user,
+    _HomeData? data,
+    double width,
+    double unit,
+    double left,
+    double top,
+    bool night,
+  ) {
+    final ink = night ? homeNightInk : homeInk;
+    final chrome = unit * homeKeyChrome;
+    final inset = PushKey.faceInset * chrome;
+    final profileFace = _Design.profileFace * unit;
+    final smallFace = _Design.smallFace * unit;
+    final profileRight = left + _Design.profileRight * unit;
+
+    Widget small({
+      required double centerX,
+      required String label,
+      required IconData icon,
+      required int badge,
+      required Widget page,
+    }) {
+      return Positioned(
+        left: left + centerX * unit - smallFace / 2 - inset,
+        top: top + _Design.smallCenter * unit - smallFace / 2,
+        child: PushKeyCircle(
+          diameter: smallFace,
+          unit: chrome,
+          label: label,
+          onPressed: () => _open(page),
+          child: SizedBox.expand(
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Icon(icon, size: _Design.smallIconSize * unit, color: ink),
+                if (badge > 0)
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    child: _CountBadge(count: badge, unit: unit),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        CustomPaint(
+          painter: _HillPainter(
+            bottom: top + _Design.hillCenterY * unit,
+            centerX: _Design.hillCenterX * width / homeDesignWidth,
+            radiusX: _Design.hillRadiusX * width / homeDesignWidth,
+            radiusY: _Design.hillRadiusY * unit,
+          ),
+        ),
+        Positioned(
+          right: profileRight - inset,
+          top: top + _Design.profileCenter * unit - profileFace / 2,
+          child: PushKeyCircle(
+            diameter: profileFace,
+            unit: chrome,
+            label: 'الملف الشخصي',
+            onPressed: widget.onOpenProfile,
+            child: PersonFace(
+              name: user.name,
+              imagePath: user.avatarPath,
+              size: profileFace,
+              color: ink,
+            ),
+          ),
+        ),
+        Positioned(
+          right: profileRight + profileFace + _Design.nameGap * unit,
+          left: left + (_Design.messagesCenterX + _Design.smallFace / 2 + _Design.nameMargin) * unit,
+          top: top + _Design.profileCenter * unit - profileFace / 2,
+          height: profileFace,
+          child: Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: Text(
+              user.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                fontSize: _Design.nameSize * unit,
+                height: 1.2,
+                fontWeight: FontWeight.w700,
+                color: homeInk,
+              ),
+            ),
+          ),
+        ),
+        small(
+          centerX: _Design.messagesCenterX,
+          label: 'الرسائل',
+          icon: Icons.chat_bubble_outline_rounded,
+          badge: data?.unreadMessages ?? 0,
+          page: const MessagesScreen(),
+        ),
+        small(
+          centerX: _Design.notificationsCenterX,
+          label: 'الإشعارات',
+          icon: Icons.notifications_none_rounded,
+          badge: data?.unreadNotifications ?? 0,
+          page: const NotificationsScreen(),
+        ),
+      ],
+    );
+  }
+
+  Widget _page(
+    _HomeData? data,
+    double width,
+    double unit,
+    double left,
+    double top,
+    bool night,
+  ) {
+    final ink = night ? homeNightInk : homeLabel;
+    final sections = data?.sections.take(_homeSections).toList();
+    final craftsmen = data?.craftsmen.take(_homeCraftsmen).toList();
+    final craftsmenRows = CraftsmanGrid.heightOf(craftsmen?.length ?? _homeCraftsmen, unit);
+    final right = width - left - homeDesignWidth * unit;
+    final titleStyle = TextStyle(
+      fontFamily: 'Cairo',
+      fontSize: _Design.titleSize * unit,
+      height: 1.2,
+      fontWeight: FontWeight.w800,
+      color: ink,
+    );
+
+    // «عرض الكل» وسهمه في وسط الدائرة اليسرى.
+    Widget showAll(double center, Widget page) => Positioned(
+          left: left + (homeSectionLeftCenter - _Design.allWidth / 2) * unit,
+          width: _Design.allWidth * unit,
+          top: top + (center - _Design.allHeight / 2) * unit,
+          height: _Design.allHeight * unit,
+          child: Center(
+            child: TextButton(
+              style: TextButton.styleFrom(
+                foregroundColor: ink,
+                padding: EdgeInsets.symmetric(horizontal: _Design.allPadding * unit),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              onPressed: () => _open(page),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'عرض الكل',
+                      maxLines: 1,
+                      style: TextStyle(
+                        fontFamily: 'Cairo',
+                        fontSize: _Design.allSize * unit,
+                        height: 1.2,
+                        fontWeight: FontWeight.w800,
+                        color: ink,
+                      ),
+                    ),
+                    SizedBox(width: _Design.allArrowGap * unit),
+                    // يتجه إلى اليسار دائماً، فلا ينعكس مع اتجاه الكتابة.
+                    Icon(
+                      Icons.arrow_back,
+                      size: _Design.allArrowSize * unit,
+                      color: ink,
+                      textDirection: TextDirection.ltr,
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
-                GestureDetector(
-                  onTap: () => Navigator.push(
-                    context,
-                    QuickRoute(builder: (_) => const ServicesPage()),
-                  ),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 14),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surface,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: theme.colorScheme.outline),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.search_rounded,
-                            size: 22,
-                            color: theme.colorScheme.onSurface
-                                .withValues(alpha: .5)),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text('ابحث عن كهربائي، صباغ، تصليح غسالات...',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.bodySmall
-                                  ?.copyWith(fontSize: 11.5)),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                if (data?.showHero ?? false) ...[
-                  const SizedBox(height: 16),
-                  _HeroBanner(onTap: widget.onBrowseServices),
-                ],
-                const SizedBox(height: 20),
-                SectionHeader(
-                  title: 'الأقسام',
-                  actionLabel: 'عرض الكل',
-                  onAction: widget.onBrowseServices,
-                ),
-                if (data == null)
-                  const SizedBox(
-                    height: 160,
-                    child: Center(
-                        child: CircularProgressIndicator(strokeWidth: 2.4)),
-                  )
-                else
-                  GridView.count(
-                    crossAxisCount: 4,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    mainAxisSpacing: 14,
-                    crossAxisSpacing: 6,
-                    childAspectRatio: .78,
-                    children: [
-                      for (final c in data.categories.take(8))
-                        IconTile(
-                          icon: appIcon(c.icon),
-                          label: c.name,
-                          color: Color(c.color),
-                          onTap: () => Navigator.push(
-                            context,
-                            QuickRoute(
-                              builder: (_) =>
-                                  ServicesPage(initialCategoryId: c.id),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                if (data?.upcoming != null) ...[
-                  const SizedBox(height: 20),
-                  SectionHeader(
-                    title: 'حجزك القادم',
-                    actionLabel: 'كل الحجوزات',
-                    onAction: widget.onOpenBookings,
-                  ),
-                  SoftCard(
-                    onTap: () => Navigator.push(
-                      context,
-                      QuickRoute(
-                        builder: (_) =>
-                            BookingDetailScreen(bookingId: data.upcoming!.id!),
-                      ),
-                    ).then((_) => _load()),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 46,
-                          height: 46,
-                          decoration: BoxDecoration(
-                            color: AppColors.gold.withValues(alpha: .18),
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: const Icon(Icons.event_available_rounded,
-                              size: 22),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(data!.upcoming!.serviceTitle ?? 'خدمة',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: theme.textTheme.titleSmall
-                                      ?.copyWith(fontSize: 13.5)),
-                              Text(
-                                '${fmtDate(data.upcoming!.scheduledAt)} · ${fmtSlot(data.upcoming!.slot)}',
-                                style: theme.textTheme.bodySmall
-                                    ?.copyWith(fontSize: 10.5),
-                              ),
-                            ],
-                          ),
-                        ),
-                        StatusPill(status: data.upcoming!.status, dense: true),
-                      ],
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 22),
-                SectionHeader(
-                  title: 'الأكثر طلباً',
-                  subtitle: 'خدمات مختارة بعناية',
-                  actionLabel: 'عرض الكل',
-                  onAction: widget.onBrowseServices,
-                ),
-                if (data == null)
-                  const SizedBox(height: 180)
-                else
-                  SizedBox(
-                    height: 196,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: data.services.length,
-                      separatorBuilder: (_, __) => const SizedBox(width: 10),
-                      itemBuilder: (context, i) =>
-                          _ServiceMiniCard(service: data.services[i]),
-                    ),
-                  ),
-                const SizedBox(height: 22),
-                SectionHeader(
-                  title: 'أحدث أعمالنا',
-                  subtitle: 'فيديوهات موثّقة من فريق جايك',
-                  actionLabel: 'عرض الكل',
-                  onAction: widget.onOpenWorks,
-                ),
-                if (data == null)
-                  const SizedBox(height: 100)
-                else if (data.works.isEmpty)
-                  SoftCard(
-                    child: Column(
-                      children: [
-                        const Icon(Icons.video_library_outlined, size: 26),
-                        const SizedBox(height: 6),
-                        Text('لا توجد أعمال منشورة بعد',
-                            style: theme.textTheme.bodySmall
-                                ?.copyWith(fontSize: 11)),
-                      ],
-                    ),
-                  )
-                else
-                  for (final work in data.works)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: WorkCard(
-                        work: work,
-                        onOpen: () => Navigator.push(
-                          context,
-                          QuickRoute(
-                            builder: (_) =>
-                                OurWorkDetailScreen(workId: work.id!),
-                          ),
-                        ).then((_) => _load()),
-                      ),
-                    ),
-              ],
+              ),
             ),
-          );
-        },
+          ),
+        );
+
+    return SizedBox(
+      height: top + (_Design.craftsmenTop + _Design.pageBottom) * unit + craftsmenRows,
+      child: Stack(
+        children: [
+          Positioned(
+            left: 0,
+            right: 0,
+            top: top + _Design.sceneTop * unit,
+            height: workersSceneHeight * unit,
+            child: WorkersScene(scale: unit, left: left),
+          ),
+          // «الأقسام» في وسط الدائرة اليمنى.
+          Positioned(
+            left: left + (homeSectionRightCenter - _Design.sectionsTitleWidth / 2) * unit,
+            width: _Design.sectionsTitleWidth * unit,
+            top: top + (_Design.sectionsTitleCenter - _Design.titleHeight / 2) * unit,
+            height: _Design.titleHeight * unit,
+            child: Center(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text('الأقسام', maxLines: 1, style: titleStyle),
+              ),
+            ),
+          ),
+          showAll(_Design.sectionsAllCenter, const AllSectionsScreen()),
+          Positioned(
+            left: left,
+            top: top + _Design.sectionsTop * unit,
+            child: SectionGrid(unit: unit, sections: sections, placeholders: _homeSections),
+          ),
+          Positioned(
+            right: right + _Design.craftsmenTitleRight * unit,
+            left: left + _Design.titleRoom * unit,
+            top: top + (_Design.craftsmenTitleCenter - _Design.titleHeight / 2) * unit,
+            height: _Design.titleHeight * unit,
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text('حرفي بالقرب منك', maxLines: 1, style: titleStyle),
+              ),
+            ),
+          ),
+          showAll(_Design.craftsmenAllCenter, const AllCraftsmenScreen()),
+          Positioned(
+            left: left,
+            top: top + _Design.craftsmenTop * unit,
+            child: craftsmen != null && craftsmen.isEmpty
+                ? SizedBox(
+                    width: homeDesignWidth * unit,
+                    child: Text(
+                      'لا يوجد حرفيون متاحون الآن',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: 'Cairo',
+                        fontSize: _Design.allSize * unit,
+                        height: 1.2,
+                        fontWeight: FontWeight.w600,
+                        color: ink,
+                      ),
+                    ),
+                  )
+                : CraftsmanGrid(unit: unit, workers: craftsmen, placeholders: _homeCraftsmen),
+          ),
+        ],
       ),
     );
   }
@@ -316,207 +443,80 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
 
 class _HomeData {
   const _HomeData({
-    required this.categories,
-    required this.services,
-    required this.works,
-    required this.upcoming,
-    required this.unread,
-    required this.showHero,
+    required this.sections,
+    required this.craftsmen,
+    required this.unreadMessages,
+    required this.unreadNotifications,
   });
 
-  final List<Category> categories;
-  final List<Service> services;
-  final List<OurWork> works;
-  final Booking? upcoming;
-  final int unread;
-
-  /// هل البانر الرئيسي مفعّل من لوحة التحكم؟
-  final bool showHero;
+  final List<Category> sections;
+  final List<Worker> craftsmen;
+  final int unreadMessages;
+  final int unreadNotifications;
 }
 
-class _HeroBanner extends StatelessWidget {
-  const _HeroBanner({required this.onTap});
+class _CountBadge extends StatelessWidget {
+  const _CountBadge({required this.count, required this.unit});
 
-  final VoidCallback onTap;
+  final int count;
+  final double unit;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 158,
-        clipBehavior: Clip.antiAlias,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(22),
-          gradient: const LinearGradient(
-            begin: Alignment.topRight,
-            end: Alignment.bottomLeft,
-            colors: [Color(0xFF0C0C0E), Color(0xFF3B3408)],
-          ),
-        ),
-        child: Stack(
-          children: [
-            Positioned(
-              left: -30,
-              top: -50,
-              child: Container(
-                width: 190,
-                height: 190,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.gold.withValues(alpha: .12),
-                ),
-              ),
-            ),
-            Positioned(
-              left: 16,
-              bottom: 18,
-              child: SizedBox(
-                width: 140,
-                height: 140,
-                child: Opacity(
-                  opacity: .9,
-                  child: Image.asset('assets/images/logo.jpg',
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => const SizedBox()),
-                ),
-              ),
-            ),
-            Positioned(
-              top: 18,
-              right: 18,
-              left: 150,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: AppColors.gold,
-                      borderRadius: BorderRadius.circular(100),
-                    ),
-                    child: const Text('عرض هذا الأسبوع',
-                        style: TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w900,
-                            color: AppColors.ink)),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'خصم 15% على\nتصليح الغسالات',
-                    style: TextStyle(
-                      fontFamily: 'Cairo',
-                      fontSize: 19,
-                      fontWeight: FontWeight.w900,
-                      height: 1.35,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: AlignmentDirectional.centerStart,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(100),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text('احجز الآن',
-                                  style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w800,
-                                      color: AppColors.ink)),
-                              SizedBox(width: 2),
-                              Icon(Icons.chevron_left_rounded,
-                                  size: 14, color: AppColors.ink),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        const Text('لفترة محدودة',
-                            style: TextStyle(
-                                color: Colors.white54, fontSize: 8.5)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+    return Container(
+      constraints: BoxConstraints(minWidth: 14 * unit),
+      padding: EdgeInsets.symmetric(horizontal: 3 * unit),
+      decoration: BoxDecoration(
+        color: const Color(0xFFD92D20),
+        borderRadius: BorderRadius.circular(100),
+      ),
+      child: Text(
+        count > 9 ? '9+' : '$count',
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontFamily: 'Cairo',
+          fontSize: _Design.badgeSize * unit,
+          height: 1.3,
+          fontWeight: FontWeight.w700,
+          color: Colors.white,
         ),
       ),
     );
   }
 }
 
-class _ServiceMiniCard extends StatelessWidget {
-  const _ServiceMiniCard({required this.service});
+/// الجهة الصفراء العليا بحافتها المنحنية من الأسفل.
+class _HillPainter extends CustomPainter {
+  const _HillPainter({
+    required this.bottom,
+    required this.centerX,
+    required this.radiusX,
+    required this.radiusY,
+  });
 
-  final Service service;
+  final double bottom;
+  final double centerX;
+  final double radiusX;
+  final double radiusY;
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final color = Color(service.categoryColor ?? 0xFFFFD400);
-    return SizedBox(
-      width: 168,
-      child: SoftCard(
-        padding: const EdgeInsets.all(12),
-        onTap: () => Navigator.push(
-          context,
-          QuickRoute(
-              builder: (_) => ServiceDetailScreen(service: service)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              height: 62,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    color.withValues(alpha: .28),
-                    color.withValues(alpha: .08)
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(Icons.handyman_rounded, color: color, size: 26),
-            ),
-            const SizedBox(height: 9),
-            Text(service.title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.titleSmall
-                    ?.copyWith(fontSize: 12.5, height: 1.4)),
-            const Spacer(),
-            Row(
-              children: [
-                Text(fmtMoney(service.price),
-                    style:
-                        theme.textTheme.titleSmall?.copyWith(fontSize: 11.5)),
-                const Spacer(),
-                const Icon(Icons.star_rounded,
-                    size: 12, color: Color(0xFFF5A623)),
-                Text(service.rating.toStringAsFixed(1),
-                    style: theme.textTheme.bodySmall?.copyWith(fontSize: 9.5)),
-              ],
-            ),
-          ],
-        ),
-      ),
+  void paint(Canvas canvas, Size size) {
+    canvas.drawPath(
+      Path()
+        ..addRect(Rect.fromLTRB(0, 0, size.width, bottom))
+        ..addOval(Rect.fromCenter(
+          center: Offset(centerX, bottom),
+          width: radiusX * 2,
+          height: radiusY * 2,
+        )),
+      Paint()..color = TruckSceneMetrics.hillColor,
     );
   }
+
+  @override
+  bool shouldRepaint(_HillPainter oldDelegate) =>
+      oldDelegate.bottom != bottom ||
+      oldDelegate.centerX != centerX ||
+      oldDelegate.radiusX != radiusX ||
+      oldDelegate.radiusY != radiusY;
 }

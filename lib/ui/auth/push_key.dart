@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/theme.dart';
@@ -34,6 +35,11 @@ const _nightSideGlow = Color(0x26FFFFFF);
 const _yellowFaceCenter = AppColors.gold;
 const _yellowFaceEdge = Color(0xFFF1C800);
 const _yellowSide = AppColors.goldDeep;
+
+// الزر بلون الجهة الصفراء في الصفحة الرئيسية.
+const _lemonFaceCenter = Color(0xFFE2E255);
+const _lemonFaceEdge = Color(0xFFDFDF53);
+const _lemonSide = Color(0xFFCDCD4D);
 
 // مقاسات أزرار الشاشة الأولى وألوانها.
 const _loginDesignWidth = 391.0;
@@ -103,9 +109,10 @@ class PushKeyBack extends StatelessWidget {
 
 /// شريط صفحة تُفتح من الشاشة الأولى: عنوانها وزر الرجوع.
 class PushKeyAppBar extends StatelessWidget implements PreferredSizeWidget {
-  const PushKeyAppBar({super.key, required this.title});
+  const PushKeyAppBar({super.key, required this.title, this.backgroundColor});
 
   final String title;
+  final Color? backgroundColor;
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
@@ -113,6 +120,7 @@ class PushKeyAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
+      backgroundColor: backgroundColor,
       leadingWidth: _pageMargin + PushKeyBack.width * pushKeyUnit(context),
       titleSpacing: _backTitleGap,
       leading: const PushKeyBack(),
@@ -193,6 +201,49 @@ class PushKeyButton extends StatelessWidget {
   }
 }
 
+/// زر دائري بشكل أزرار الشاشة الأولى. [diameter] قطر وجهه، و[unit] مقياس جانبه وقاعدته.
+class PushKeyCircle extends StatelessWidget {
+  const PushKeyCircle({
+    super.key,
+    required this.diameter,
+    required this.unit,
+    required this.label,
+    required this.onPressed,
+    required this.child,
+  });
+
+  final double diameter;
+  final double unit;
+  final String label;
+  final VoidCallback? onPressed;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final night = Theme.of(context).brightness == Brightness.dark;
+    return Semantics(
+      button: true,
+      enabled: onPressed != null,
+      label: label,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onPressed,
+        child: SizedBox(
+          width: diameter + PushKey.faceInset * 2 * unit,
+          height: diameter + PushKey.depth * unit,
+          child: PushKey(
+            unit: unit,
+            faceHeight: diameter,
+            round: true,
+            night: night ? kAlwaysCompleteAnimation : kAlwaysDismissedAnimation,
+            child: Center(child: child),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// زر ثلاثي الأبعاد باللون الأبيض: وجهه ينخفض عند اللمس فوق جانب وقاعدة ثابتين.
 class PushKey extends StatefulWidget {
   const PushKey({
@@ -203,6 +254,9 @@ class PushKey extends StatefulWidget {
     this.held = false,
     this.night = kAlwaysDismissedAnimation,
     this.yellow = false,
+    this.lemon = false,
+    this.round = false,
+    this.faceRadius = 4,
   });
 
   /// ارتفاع الجانب الظاهر تحت وجه الزر، بوحدات التصميم.
@@ -224,15 +278,35 @@ class PushKey extends StatefulWidget {
   /// وجه الزر وجانبه باللون الأصفر بدل الأبيض.
   final bool yellow;
 
+  /// وجه الزر وجانبه بلون الجهة الصفراء في الصفحة الرئيسية.
+  final bool lemon;
+
+  /// وجه الزر دائرة، وجانبه وقاعدته حولها.
+  final bool round;
+
+  /// استدارة زوايا الوجه بوحدات التصميم.
+  final double faceRadius;
+
   @override
   State<PushKey> createState() => _PushKeyState();
 }
 
+/// ما يميز شكل الزر ولونه.
+typedef _KeyStyle = ({bool yellow, bool lemon, bool round, double faceRadius});
+
 class _PushKeyState extends State<PushKey> {
   final _resting = _RestingImages();
   bool _down = false;
+  Offset _downAt = Offset.zero;
 
   void _setDown(bool down) => setState(() => _down = down);
+
+  _KeyStyle get _style => (
+        yellow: widget.yellow,
+        lemon: widget.lemon,
+        round: widget.round,
+        faceRadius: widget.faceRadius,
+      );
 
   Widget _chrome(double pressed, double pixelRatio) {
     if (pressed > 0) {
@@ -243,7 +317,7 @@ class _PushKeyState extends State<PushKey> {
             unit: widget.unit,
             faceHeight: widget.faceHeight,
             night: widget.night,
-            yellow: widget.yellow,
+            style: _style,
           ),
         ),
       );
@@ -258,7 +332,7 @@ class _PushKeyState extends State<PushKey> {
             pixelRatio: pixelRatio,
             unit: widget.unit,
             faceHeight: widget.faceHeight,
-            yellow: widget.yellow,
+            style: _style,
           ),
         );
     return Stack(
@@ -282,7 +356,14 @@ class _PushKeyState extends State<PushKey> {
     final pixelRatio = MediaQuery.devicePixelRatioOf(context);
     return Listener(
       behavior: HitTestBehavior.opaque,
-      onPointerDown: (_) => _setDown(true),
+      onPointerDown: (event) {
+        _downAt = event.position;
+        _setDown(true);
+      },
+      // السحب فوق الزر لتحريك الصفحة لا يبقيه منضغطاً.
+      onPointerMove: (event) {
+        if (_down && (event.position - _downAt).distance > kTouchSlop) _setDown(false);
+      },
       onPointerUp: (_) => _setDown(false),
       onPointerCancel: (_) => _setDown(false),
       child: TweenAnimationBuilder<double>(
@@ -318,7 +399,7 @@ class _RestingImages {
   double _pixelRatio = 0;
   double _unit = 0;
   double _faceHeight = 0;
-  bool _yellow = false;
+  _KeyStyle? _style;
 
   void paint(
     Canvas canvas, {
@@ -328,19 +409,19 @@ class _RestingImages {
     required double faceHeight,
     required bool night,
     required bool both,
-    required bool yellow,
+    required _KeyStyle style,
   }) {
     if (size != _size ||
         pixelRatio != _pixelRatio ||
         unit != _unit ||
         faceHeight != _faceHeight ||
-        yellow != _yellow) {
+        style != _style) {
       dispose();
       _size = size;
       _pixelRatio = pixelRatio;
       _unit = unit;
       _faceHeight = faceHeight;
-      _yellow = yellow;
+      _style = style;
     }
     // الزر الذي يتدرج بين النهار والليل يحتاج الصورتين، وغيره يحتاج واحدة.
     if (both || !night) _day ??= _snapshot(0);
@@ -372,7 +453,7 @@ class _RestingImages {
       unit: _unit,
       faceHeight: _faceHeight,
       night: AlwaysStoppedAnimation(night),
-      yellow: _yellow,
+      style: _style!,
     ).paint(canvas, _size);
     final picture = recorder.endRecording();
     final image = picture.toImageSync(
@@ -399,7 +480,7 @@ class _RestingPainter extends CustomPainter {
     required this.pixelRatio,
     required this.unit,
     required this.faceHeight,
-    required this.yellow,
+    required this.style,
   });
 
   final _RestingImages images;
@@ -408,7 +489,7 @@ class _RestingPainter extends CustomPainter {
   final double pixelRatio;
   final double unit;
   final double faceHeight;
-  final bool yellow;
+  final _KeyStyle style;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -420,7 +501,7 @@ class _RestingPainter extends CustomPainter {
       faceHeight: faceHeight,
       night: night,
       both: both,
-      yellow: yellow,
+      style: style,
     );
   }
 
@@ -431,7 +512,7 @@ class _RestingPainter extends CustomPainter {
       oldDelegate.pixelRatio != pixelRatio ||
       oldDelegate.unit != unit ||
       oldDelegate.faceHeight != faceHeight ||
-      oldDelegate.yellow != yellow;
+      oldDelegate.style != style;
 }
 
 class _KeyPainter extends CustomPainter {
@@ -440,20 +521,24 @@ class _KeyPainter extends CustomPainter {
     required this.unit,
     required this.faceHeight,
     required this.night,
-    this.yellow = false,
+    required this.style,
   }) : super(repaint: night);
 
   final double pressed;
   final double unit;
   final double faceHeight;
   final Animation<double> night;
-  final bool yellow;
+  final _KeyStyle style;
 
   double _mix(double up, double down) => (up + (down - up) * pressed) * unit;
 
   Color _tone(Color day, Color dark) => Color.lerp(day, dark, night.value)!;
 
-  Color _keyTone(Color inYellow, Color day, Color dark) => yellow ? inYellow : _tone(day, dark);
+  Color _keyTone(Color inYellow, Color inLemon, Color day, Color dark) => style.yellow
+      ? inYellow
+      : style.lemon
+          ? inLemon
+          : _tone(day, dark);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -463,7 +548,8 @@ class _KeyPainter extends CustomPainter {
   }
 
   void _paintBase(Canvas canvas, Size size) {
-    final base = RRect.fromLTRBR(0, 4 * unit, size.width, size.height, Radius.circular(12 * unit));
+    final baseCorner = style.round ? (size.height - 4 * unit) / 2 : 12 * unit;
+    final base = RRect.fromLTRBR(0, 4 * unit, size.width, size.height, Radius.circular(baseCorner));
     canvas
       ..drawRRect(
         base.shift(Offset(0, unit)),
@@ -483,8 +569,9 @@ class _KeyPainter extends CustomPainter {
   }
 
   void _paintSide(Canvas canvas, Size size) {
-    final top = Radius.elliptical(_mix(8, 10), _mix(16, 8));
-    final bottom = Radius.circular(8 * unit);
+    final roundCorner = Radius.circular((size.height - 4 * unit - _mix(0, 6)) / 2);
+    final top = style.round ? roundCorner : Radius.elliptical(_mix(8, 10), _mix(16, 8));
+    final bottom = style.round ? roundCorner : Radius.circular(8 * unit);
     final side = RRect.fromLTRBAndCorners(
       4 * unit,
       _mix(0, 6),
@@ -504,7 +591,7 @@ class _KeyPainter extends CustomPainter {
       )
       ..drawRRect(
         side,
-        Paint()..color = _keyTone(_yellowSide, _side, _nightSide),
+        Paint()..color = _keyTone(_yellowSide, _lemonSide, _side, _nightSide),
       )
       ..save()
       ..clipRRect(side);
@@ -535,7 +622,9 @@ class _KeyPainter extends CustomPainter {
       offset,
       size.width - inset + grow,
       faceHeight + offset,
-      Radius.circular(_mix(4, 6)),
+      style.round
+          ? Radius.circular(faceHeight / 2)
+          : Radius.circular(_mix(style.faceRadius, style.faceRadius + 2)),
     );
   }
 
@@ -558,8 +647,8 @@ class _KeyPainter extends CustomPainter {
           face.center,
           face.width * .62,
           [
-            _keyTone(_yellowFaceCenter, _faceCenter, _nightFaceCenter),
-            _keyTone(_yellowFaceEdge, _faceEdge, _nightFaceEdge),
+            _keyTone(_yellowFaceCenter, _lemonFaceCenter, _faceCenter, _nightFaceCenter),
+            _keyTone(_yellowFaceEdge, _lemonFaceEdge, _faceEdge, _nightFaceEdge),
           ],
         ),
     );
@@ -614,5 +703,5 @@ class _KeyPainter extends CustomPainter {
       oldDelegate.unit != unit ||
       oldDelegate.faceHeight != faceHeight ||
       oldDelegate.night != night ||
-      oldDelegate.yellow != yellow;
+      oldDelegate.style != style;
 }

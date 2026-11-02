@@ -27,11 +27,7 @@ class _CustomerShellState extends State<CustomerShell> {
   void _go(int index) => setState(() => _index = index);
 
   // تبقى هي نفسها بين البناءات، فتبديل التبويب لا يعيد بناء التبويبات كلها.
-  late final _home = HomeTab(
-    onBrowseServices: () => _go(1),
-    onOpenWorks: () => _go(3),
-    onOpenBookings: () => _go(2),
-  );
+  late final _home = HomeTab(onOpenProfile: () => _go(4));
   late final _services = SafeArea(
     bottom: false,
     child: Column(

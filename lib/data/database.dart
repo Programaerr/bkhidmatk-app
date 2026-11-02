@@ -8,13 +8,44 @@ import 'package:sqflite/sqflite.dart';
 String hashPassword(String password, {String salt = 'jaik_v1'}) =>
     sha256.convert(utf8.encode('$salt::$password')).toString();
 
+/// أقسام الخدمات بترتيب عرضها: الاسم، والأيقونة، واللون.
+const _sections = <(String, String, int)>[
+  ('سبالت', 'ac_unit', 0xFF3F51B5),
+  ('كهرباء', 'electrical_services', 0xFFFFC107),
+  ('سباكة', 'plumbing', 0xFF00BCD4),
+  ('صباغ', 'format_paint', 0xFF8BC34A),
+  ('التنظيف', 'cleaning_services', 0xFF9C27B0),
+  ('اجهزة المنزل', 'kitchen', 0xFF03A9F4),
+  ('مجاري', 'water_damage', 0xFF607D8B),
+  ('نجار', 'carpenter', 0xFF795548),
+  ('حداد', 'hardware', 0xFF546E7A),
+  ('ديكورات', 'chair_alt', 0xFFE91E63),
+  ('تركيب كامرات', 'videocam', 0xFF673AB7),
+  ('حدائق', 'yard', 0xFF4CAF50),
+  ('طاقة شمسية', 'solar_power', 0xFFFF9800),
+  ('عامل', 'engineering', 0xFF9E9D24),
+  ('ابواب و شبابيك', 'window', 0xFF009688),
+  ('نقل الاثاث', 'local_shipping', 0xFFFF5722),
+  ('شد و تركيب الاثاث', 'handyman', 0xFFA1887F),
+  ('غسيل سيارات', 'local_car_wash', 0xFF2196F3),
+];
+
+/// الأقسام القديمة تأخذ اسمها الجديد، فتبقى خدماتها وحرفيوها معها.
+const _renamedSections = {
+  'تكييف': 'سبالت',
+  'صباغة': 'صباغ',
+  'تنظيف': 'التنظيف',
+  'تصليح غسالات': 'اجهزة المنزل',
+  'نجارة': 'نجار',
+};
+
 class AppDatabase {
   AppDatabase._();
   static final AppDatabase instance = AppDatabase._();
 
   Database? _db;
   static const _fileName = 'jaik.db';
-  static const _version = 6;
+  static const _version = 7;
 
   Future<Database> get database async {
     if (_db != null && _db!.isOpen) return _db!;
@@ -36,6 +67,7 @@ class AppDatabase {
         if (oldVersion < 4) await db.execute(_applicationsSchema);
         if (oldVersion < 5) await _migrateToV5(db);
         if (oldVersion < 6) await _migrateToV6(db);
+        if (oldVersion < 7) await _migrateToV7(db);
       },
     );
     return _db!;
@@ -87,6 +119,34 @@ class AppDatabase {
       );
     }
     await db.execute(_workCommentReactionsSchema);
+  }
+
+  /// v7: أقسام الصفحة الرئيسية: أسماؤها وأيقوناتها وترتيبها، وما أُضيف منها.
+  Future<void> _migrateToV7(Database db) async {
+    for (final MapEntry(key: old, value: name) in _renamedSections.entries) {
+      await db.update('categories', {'name': name}, where: 'name = ?', whereArgs: [old]);
+    }
+    // ما أضافه المدير من أقسام أخرى يبقى بعد هذه الأقسام.
+    await db.rawUpdate(
+      'UPDATE categories SET sort_order = sort_order + ?',
+      [_sections.length],
+    );
+    for (final (index, (name, icon, color)) in _sections.indexed) {
+      final updated = await db.update(
+        'categories',
+        {'icon': icon, 'sort_order': index},
+        where: 'name = ?',
+        whereArgs: [name],
+      );
+      if (updated == 0) {
+        await db.insert('categories', {
+          'name': name,
+          'icon': icon,
+          'color': color,
+          'sort_order': index,
+        });
+      }
+    }
   }
 
   /// v3: قسم «أعمالنا» (فيديوهات المدير) وشاشة «التوظيف» بالرقم.
@@ -333,24 +393,23 @@ class AppDatabase {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
-    Future<int> category(String name, String icon, int color, int sort) =>
-        db.insert('categories', {
-          'name': name,
-          'icon': icon,
-          'color': color,
-          'sort_order': sort,
-        });
-
-    final cElectric =
-        await category('كهرباء', 'electrical_services', 0xFFFFC107, 0);
-    final cWasher =
-        await category('تصليح غسالات', 'local_laundry_service', 0xFF03A9F4, 1);
-    final cPaint = await category('صباغة', 'format_paint', 0xFF8BC34A, 2);
-    final cDecor = await category('ديكورات', 'chair_alt', 0xFFE91E63, 3);
-    final cPlumb = await category('سباكة', 'plumbing', 0xFF00BCD4, 4);
-    final cAc = await category('تكييف', 'ac_unit', 0xFF3F51B5, 5);
-    final cClean = await category('تنظيف', 'cleaning_services', 0xFF9C27B0, 6);
-    final cCarp = await category('نجارة', 'carpenter', 0xFF795548, 7);
+    final sectionIds = <String, int>{};
+    for (final (index, (name, icon, color)) in _sections.indexed) {
+      sectionIds[name] = await db.insert('categories', {
+        'name': name,
+        'icon': icon,
+        'color': color,
+        'sort_order': index,
+      });
+    }
+    final cElectric = sectionIds['كهرباء']!;
+    final cWasher = sectionIds['اجهزة المنزل']!;
+    final cPaint = sectionIds['صباغ']!;
+    final cDecor = sectionIds['ديكورات']!;
+    final cPlumb = sectionIds['سباكة']!;
+    final cAc = sectionIds['سبالت']!;
+    final cClean = sectionIds['التنظيف']!;
+    final cCarp = sectionIds['نجار']!;
 
     Future<int> worker(
       String name,
