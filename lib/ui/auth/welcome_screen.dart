@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -201,12 +202,11 @@ class _WelcomeScreenState extends State<WelcomeScreen>
         _appState.repo.getSetting('social_instagram_url'),
         _appState.repo.getSetting('social_tiktok_url'),
       ]);
-      if (!mounted) return;
-      setState(() {
-        _socialUrls = [
-          for (final url in urls) url.trim().isEmpty ? null : url.trim(),
-        ];
-      });
+      final loaded = [
+        for (final url in urls) url.trim().isEmpty ? null : url.trim(),
+      ];
+      if (!mounted || listEquals(loaded, _socialUrls)) return;
+      setState(() => _socialUrls = loaded);
     } catch (error, stackTrace) {
       debugPrint('Failed to load contact links: $error');
       debugPrintStack(stackTrace: stackTrace);

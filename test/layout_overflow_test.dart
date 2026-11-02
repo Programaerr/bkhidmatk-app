@@ -98,6 +98,18 @@ void _expectNoOverflow(WidgetTester tester, String where) {
   expect(errors, isEmpty, reason: 'فيض في: $where → ${errors.join('\n')}');
 }
 
+/// يفتح كل تبويب حتى يُبنى، فالتبويب لا يُبنى قبل أول فتح له.
+Future<void> _visitTabs(WidgetTester tester, String where) async {
+  final tabs = find.byType(NavigationDestination);
+  for (var i = 0; i < tabs.evaluate().length; i++) {
+    await tester.tap(tabs.at(i));
+    for (var frame = 0; frame < 5; frame++) {
+      await tester.pump(const Duration(milliseconds: 60));
+    }
+    _expectNoOverflow(tester, '$where، التبويب $i');
+  }
+}
+
 void main() {
   setUpAll(() {
     SharedPreferences.setMockInitialValues({});
@@ -165,6 +177,7 @@ void main() {
           textScale: scale,
           user: _customer());
       _expectNoOverflow(tester, 'غلاف الزبون $label');
+      await _visitTabs(tester, 'غلاف الزبون $label');
     });
 
     testWidgets('تبويبات المدير كاملة بدون فيض [$label]', (tester) async {
@@ -175,6 +188,7 @@ void main() {
           textScale: scale,
           user: _admin());
       _expectNoOverflow(tester, 'غلاف المدير $label');
+      await _visitTabs(tester, 'غلاف المدير $label');
     });
   }
 }

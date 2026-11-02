@@ -14,7 +14,7 @@ class NavItem {
   final IconData activeIcon;
 }
 
-class AppShellLayout extends StatelessWidget {
+class AppShellLayout extends StatefulWidget {
   const AppShellLayout({
     super.key,
     required this.index,
@@ -37,36 +37,27 @@ class AppShellLayout extends StatelessWidget {
   final Widget? topBanner;
 
   @override
+  State<AppShellLayout> createState() => _AppShellLayoutState();
+}
+
+class _AppShellLayoutState extends State<AppShellLayout> {
+  // التبويب لا يُبنى ولا يجلب بياناته قبل أول فتح له.
+  final _opened = <int>{};
+
+  @override
   Widget build(BuildContext context) {
+    final AppShellLayout(
+      :index,
+      :items,
+      :pages,
+      :onSelect,
+      :floatingActionButton,
+      :topBanner,
+    ) = widget;
     final theme = Theme.of(context);
     final wide = MediaQuery.sizeOf(context).width >= 900;
 
-    final body = AnimatedSwitcher(
-      duration: const Duration(milliseconds: 260),
-      reverseDuration: const Duration(milliseconds: 200),
-      switchInCurve: Curves.easeOutCubic,
-      switchOutCurve: Curves.easeInCubic,
-      transitionBuilder: (child, animation) {
-        final slideAnimation = CurvedAnimation(
-          parent: animation,
-          curve: Curves.easeOutCubic,
-        );
-        return FadeTransition(
-          opacity: animation,
-          child: SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(0.035, 0),
-              end: Offset.zero,
-            ).animate(slideAnimation),
-            child: child,
-          ),
-        );
-      },
-      child: KeyedSubtree(
-        key: ValueKey(index),
-        child: pages[index],
-      ),
-    );
+    final body = IndexedStack(index: index, children: pages);
 
     if (!wide) {
       return Scaffold(
@@ -75,7 +66,7 @@ class AppShellLayout extends StatelessWidget {
             ? body
             : Column(
                 children: [
-                  topBanner!,
+                  topBanner,
                   Expanded(child: body),
                 ],
               ),
@@ -128,7 +119,7 @@ class AppShellLayout extends StatelessWidget {
                 ? body
                 : Column(
                     children: [
-                      topBanner!,
+                      topBanner,
                       Expanded(child: body),
                     ],
                   ),

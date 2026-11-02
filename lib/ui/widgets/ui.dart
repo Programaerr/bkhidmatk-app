@@ -44,6 +44,18 @@ IconData appIcon(String key) {
       return Icons.garage_rounded;
     case 'pest_control':
       return Icons.pest_control_rounded;
+    case 'hardware':
+      return Icons.hardware_rounded;
+    case 'videocam':
+      return Icons.videocam_rounded;
+    case 'yard':
+      return Icons.yard_rounded;
+    case 'engineering':
+      return Icons.engineering_rounded;
+    case 'local_shipping':
+      return Icons.local_shipping_rounded;
+    case 'local_car_wash':
+      return Icons.local_car_wash_rounded;
     default:
       return Icons.build_rounded;
   }
@@ -68,6 +80,12 @@ const categoryIconKeys = [
   'window',
   'garage',
   'pest_control',
+  'hardware',
+  'videocam',
+  'yard',
+  'engineering',
+  'local_shipping',
+  'local_car_wash',
   'build',
 ];
 
@@ -454,41 +472,47 @@ class EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 76,
-              height: 76,
-              decoration: BoxDecoration(
-                color: AppColors.gold.withValues(alpha: .18),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, size: 34, color: theme.colorScheme.onSurface),
+    final content = Padding(
+      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 76,
+            height: 76,
+            decoration: BoxDecoration(
+              color: AppColors.gold.withValues(alpha: .18),
+              shape: BoxShape.circle,
             ),
-            const SizedBox(height: 16),
-            Text(title,
-                style: theme.textTheme.titleMedium,
+            child: Icon(icon, size: 34, color: theme.colorScheme.onSurface),
+          ),
+          const SizedBox(height: 16),
+          Text(title,
+              style: theme.textTheme.titleMedium,
+              textAlign: TextAlign.center),
+          if (subtitle != null) ...[
+            const SizedBox(height: 6),
+            Text(subtitle!,
+                style: theme.textTheme.bodySmall,
                 textAlign: TextAlign.center),
-            if (subtitle != null) ...[
-              const SizedBox(height: 6),
-              Text(subtitle!,
-                  style: theme.textTheme.bodySmall,
-                  textAlign: TextAlign.center),
-            ],
-            if (actionLabel != null) ...[
-              const SizedBox(height: 18),
-              SizedBox(
-                width: 190,
-                child: PrimaryButton(
-                    label: actionLabel!, onPressed: onAction, height: 46),
-              ),
-            ],
           ],
-        ),
+          if (actionLabel != null) ...[
+            const SizedBox(height: 18),
+            SizedBox(
+              width: 190,
+              child: PrimaryButton(
+                  label: actionLabel!, onPressed: onAction, height: 46),
+            ),
+          ],
+        ],
+      ),
+    );
+    // في الشاشة القصيرة يُسحب بدل أن يخرج عن مكانه.
+    return LayoutBuilder(
+      builder: (context, constraints) => Center(
+        child: constraints.hasBoundedHeight
+            ? SingleChildScrollView(child: content)
+            : content,
       ),
     );
   }

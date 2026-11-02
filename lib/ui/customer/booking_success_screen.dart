@@ -4,6 +4,7 @@ import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../common/receipt_document.dart';
+import '../widgets/quick_route.dart';
 import '../widgets/ui.dart';
 import 'booking_detail_screen.dart';
 
@@ -142,7 +143,7 @@ class BookingSuccessScreen extends StatelessWidget {
                       IconButton(
                         onPressed: () => Navigator.push(
                           context,
-                          MaterialPageRoute(
+                          QuickRoute(
                               builder: (_) => ReceiptPreviewScreen(receipt: receipt!)),
                         ),
                         icon: const Icon(Icons.receipt_long_rounded),
@@ -158,7 +159,7 @@ class BookingSuccessScreen extends StatelessWidget {
                 icon: Icons.assignment_outlined,
                 onPressed: () => Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (_) => BookingDetailScreen(bookingId: booking.id!)),
+                  QuickRoute(builder: (_) => BookingDetailScreen(bookingId: booking.id!)),
                 ),
               ),
               const SizedBox(height: 10),

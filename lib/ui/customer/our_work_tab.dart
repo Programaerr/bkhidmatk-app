@@ -9,13 +9,8 @@ import 'work_reel.dart';
 
 /// قسم «أعمالنا»: فيديوهات الشركة التي ينشرها المدير من لوحة التحكم.
 class OurWorkTab extends StatefulWidget {
-  const OurWorkTab({
-    super.key,
-    required this.refreshTick,
-    this.isActive = true,
-  });
+  const OurWorkTab({super.key, this.isActive = true});
 
-  final int refreshTick;
   final bool isActive;
 
   @override
@@ -34,12 +29,6 @@ class _OurWorkTabState extends State<OurWorkTab> with RealtimeRefresh<OurWorkTab
   void initState() {
     super.initState();
     _load();
-  }
-
-  @override
-  void didUpdateWidget(covariant OurWorkTab oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.refreshTick != widget.refreshTick) _load();
   }
 
   void _load() {
@@ -73,7 +62,7 @@ class _OurWorkTabState extends State<OurWorkTab> with RealtimeRefresh<OurWorkTab
             child: FutureBuilder<List<OurWork>>(
               future: _future,
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
+                if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
                   return const Center(
                       child: CircularProgressIndicator(strokeWidth: 2.4));
                 }

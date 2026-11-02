@@ -8,6 +8,7 @@ import '../../data/models.dart';
 import '../../state/app_state.dart';
 import '../customer/messages_screen.dart';
 import '../customer/receipts_screen.dart';
+import '../widgets/quick_route.dart';
 import '../widgets/realtime_refresh.dart';
 import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
@@ -184,7 +185,7 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
                       subtitle: 'عرض الحسابات والتواصل معهم',
                       onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const AdminCustomersScreen()),
+                        QuickRoute(builder: (_) => const AdminCustomersScreen()),
                       ),
                     ),
                     const Divider(height: 1),
@@ -194,7 +195,7 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
                       subtitle: 'محادثات الزبائن والدعم',
                       onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const AdminThreadsScreen()),
+                        QuickRoute(builder: (_) => const AdminThreadsScreen()),
                       ).then((_) => _load()),
                     ),
                     const Divider(height: 1),
@@ -204,7 +205,7 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
                       subtitle: 'كل وصولات الدفع القابلة للطباعة',
                       onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(
+                        QuickRoute(
                             builder: (_) => const ReceiptsScreen(adminMode: true)),
                       ),
                     ),
@@ -229,7 +230,7 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
                       subtitle: 'إضافة أرقام موظفين ومتابعة التسجيل',
                       onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const AdminHiresScreen()),
+                        QuickRoute(builder: (_) => const AdminHiresScreen()),
                       ).then((_) => _load()),
                     ),
                     const Divider(height: 1),
@@ -239,7 +240,7 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
                       subtitle: 'قراءة معلومات المتقدمين وقبولهم أو رفضهم',
                       onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const AdminApplicationsScreen()),
+                        QuickRoute(builder: (_) => const AdminApplicationsScreen()),
                       ).then((_) => _load()),
                     ),
                   ],
@@ -642,7 +643,7 @@ class _AdminCustomersScreenState extends State<AdminCustomersScreen>
               child: FutureBuilder<List<AppUser>>(
                 future: _future,
                 builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
+                  if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
                     return const Center(
                         child: CircularProgressIndicator(strokeWidth: 2.4));
                   }
@@ -702,7 +703,7 @@ class _AdminCustomersScreenState extends State<AdminCustomersScreen>
                             IconButton(
                               onPressed: () => Navigator.push(
                                 context,
-                                MaterialPageRoute(
+                                QuickRoute(
                                   builder: (_) => MessagesScreen(
                                     threadId: u.id,
                                     threadName: u.name,

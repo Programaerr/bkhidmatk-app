@@ -11,51 +11,41 @@ import 'repository.dart';
 
 class SupabaseRepository implements Repository {
   SupabaseRepository(this._client) {
-    _subscribe();
+    _changes = StreamController<void>.broadcast(
+      onListen: _subscribe,
+      onCancel: _unsubscribe,
+    );
   }
 
   final SupabaseClient _client;
-  final StreamController<void> _changes = StreamController<void>.broadcast();
-  final List<RealtimeChannel> _channels = [];
+  late final StreamController<void> _changes;
+  RealtimeChannel? _channel;
   bool _closed = false;
 
+  /// لا اتصال دائم بالسيرفر: يُفتح مع المحادثة الظاهرة ويُغلق عند اختفائها.
   @override
   Stream<void> get changes => _changes.stream;
 
   void _subscribe() {
-    for (final table in const [
-      'app_profiles',
-      'categories',
-      'workers',
-      'services',
-      'bookings',
-      'posts',
-      'post_likes',
-      'comments',
-      'our_works',
-      'work_comments',
-      'work_comment_reactions',
-      'work_likes',
-      'hire_phones',
-      'craftsman_applications',
-      'messages',
-      'cards',
-      'receipts',
-      'settings',
-    ]) {
-      final channel = _client
-          .channel('jaik-repository-$table')
-          .onPostgresChanges(
-            event: PostgresChangeEvent.all,
-            schema: 'public',
-            table: table,
-            callback: (_) {
-              if (!_closed && !_changes.isClosed) _changes.add(null);
-            },
-          )
-          .subscribe();
-      _channels.add(channel);
-    }
+    _channel = _client
+        .channel('jaik-repository-messages')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'messages',
+          callback: (_) {
+            if (!_closed && !_changes.isClosed) _changes.add(null);
+          },
+        )
+        .subscribe();
+  }
+
+  Future<void> _unsubscribe() async {
+    final channel = _channel;
+    _channel = null;
+    if (channel == null) return;
+    await _client.removeChannel(channel);
+    if (_channel == null) await _client.realtime.disconnect();
   }
 
   List<Map<String, dynamic>> _maps(Object? value) => (value as List)
@@ -1394,9 +1384,7 @@ class SupabaseRepository implements Repository {
   @override
   Future<void> close() async {
     _closed = true;
-    for (final channel in _channels) {
-      await _client.removeChannel(channel);
-    }
+    await _unsubscribe();
     await _changes.close();
   }
 }

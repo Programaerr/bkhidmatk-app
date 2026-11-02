@@ -15,6 +15,7 @@ import 'package:jaik/ui/auth/truck_scene.dart';
 import 'package:jaik/ui/auth/welcome_screen.dart';
 
 import 'fake_repository.dart';
+import 'route_frames.dart';
 
 Future<void> _pump(
   WidgetTester tester, {
@@ -238,7 +239,7 @@ void main() {
     await _pump(tester);
     await tester.tap(find.text('هل لديك حساب'));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 200));
+    await pumpRouteFrames(tester);
 
     final page = tester.element(find.byType(LoginScreen));
     expect(ModalRoute.of(page)!.animation!.value, 1);
@@ -248,7 +249,7 @@ void main() {
     await _pump(tester);
     await tester.tap(find.text('زبون'));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 200));
+    await pumpRouteFrames(tester);
 
     final page = tester.element(find.byType(RegisterScreen));
     expect(ModalRoute.of(page)!.animation!.value, 1);
@@ -279,14 +280,14 @@ void main() {
 
     await tester.tap(find.text('حرفي'));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
+    await pumpRouteFrames(tester);
     expect(find.byType(CraftsmanScreen), findsOneWidget);
 
     await tester.ensureVisible(find.text('عودة كزبون'));
     await tester.pump();
     await tester.tap(find.text('عودة كزبون'));
     await tester.pump();
-    await tester.pump(const Duration(seconds: 1));
+    await pumpRouteFrames(tester);
     await tester.pump();
     expect(find.byType(CraftsmanScreen), findsNothing);
     expect(find.text('حرفي'), findsOneWidget);
@@ -296,13 +297,13 @@ void main() {
     await _pump(tester);
     await tester.tap(find.text('حرفي'));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 200));
+    await pumpRouteFrames(tester);
     final page = tester.element(find.byType(CraftsmanScreen));
     expect(ModalRoute.of(page)!.animation!.value, 1);
 
     Navigator.of(page).pop();
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 201));
+    await pumpRouteFrames(tester);
     await tester.pump();
     expect(find.byType(CraftsmanScreen), findsNothing);
   });

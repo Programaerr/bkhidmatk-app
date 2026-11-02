@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../state/app_state.dart';
+import '../widgets/quick_route.dart';
 import '../widgets/realtime_refresh.dart';
 import '../widgets/ui.dart';
 import 'messages_screen.dart';
@@ -309,7 +310,7 @@ class _ProfileTabState extends State<ProfileTab>
                     onTap: () async {
                       await Navigator.push(
                         context,
-                        MaterialPageRoute(
+                        QuickRoute(
                             builder: (_) => const ReceiptsScreen()),
                       );
                       _load();
@@ -323,7 +324,7 @@ class _ProfileTabState extends State<ProfileTab>
                   subtitle: 'تواصل مع إدارة جايك',
                   onTap: () => Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const MessagesScreen()),
+                    QuickRoute(builder: (_) => const MessagesScreen()),
                   ),
                 ),
               ],

@@ -7,6 +7,7 @@ import 'state/app_state.dart';
 import 'ui/admin/admin_shell.dart';
 import 'ui/auth/welcome_screen.dart';
 import 'ui/customer/customer_shell.dart';
+import 'ui/widgets/quick_route.dart';
 import 'ui/worker/worker_shell.dart';
 
 class JaikApp extends StatelessWidget {
@@ -59,7 +60,7 @@ class _RootGate extends StatelessWidget {
       return CustomerShell(
         onOpenAdminDashboard: () => Navigator.push(
           context,
-          MaterialPageRoute(
+          QuickRoute(
             builder: (_) => const AdminShell(showBackToApp: true),
           ),
         ),

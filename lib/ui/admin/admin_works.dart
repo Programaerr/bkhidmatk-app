@@ -12,9 +12,7 @@ import 'admin_shell.dart';
 
 /// إدارة قسم «أعمالنا»: إضافة فيديو برابط، إظهار/إخفاء، تعديل وحذف، وإحصائيات.
 class AdminWorks extends StatefulWidget {
-  const AdminWorks({super.key, required this.refreshTick});
-
-  final int refreshTick;
+  const AdminWorks({super.key});
 
   @override
   State<AdminWorks> createState() => _AdminWorksState();
@@ -30,12 +28,6 @@ class _AdminWorksState extends State<AdminWorks> with RealtimeRefresh<AdminWorks
   void initState() {
     super.initState();
     _load();
-  }
-
-  @override
-  void didUpdateWidget(covariant AdminWorks oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.refreshTick != widget.refreshTick) _load();
   }
 
   void _load() {
@@ -194,7 +186,7 @@ class _AdminWorksState extends State<AdminWorks> with RealtimeRefresh<AdminWorks
           child: FutureBuilder<List<OurWork>>(
             future: _future,
             builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
+              if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
                 return const Center(
                     child: CircularProgressIndicator(strokeWidth: 2.4));
               }
