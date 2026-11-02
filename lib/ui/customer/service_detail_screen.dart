@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
+import '../../data/sections.dart';
 import '../../state/app_state.dart';
 import '../widgets/quick_route.dart';
 import '../widgets/shell_layout.dart';
@@ -94,7 +95,7 @@ class ServiceDetailScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(100),
                         ),
                         child: Text(
-                          service.categoryName ?? 'خدمة',
+                          currentSectionName(service.categoryName) ?? 'خدمة',
                           style: const TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w800,

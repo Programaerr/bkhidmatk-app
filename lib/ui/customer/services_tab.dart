@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
+import '../../data/sections.dart';
 import '../../state/app_state.dart';
 import '../widgets/quick_route.dart';
 import '../widgets/realtime_refresh.dart';
@@ -61,7 +62,7 @@ class _ServicesTabState extends State<ServicesTab>
 
   @override
   void onRealtimeChange() {
-    _categories = context.read<AppState>().repo.listCategories();
+    _categories = context.read<AppState>().repo.listCategories().then(customerSections);
     _load();
   }
 
@@ -69,7 +70,7 @@ class _ServicesTabState extends State<ServicesTab>
   void initState() {
     super.initState();
     _categoryId = widget.initialCategoryId;
-    _categories = context.read<AppState>().repo.listCategories();
+    _categories = context.read<AppState>().repo.listCategories().then(customerSections);
     _load();
   }
 

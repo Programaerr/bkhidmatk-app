@@ -75,6 +75,24 @@ class _HomeRepo extends FakeRepo {
   Future<int> unreadForCustomer(int customerId) async => unread;
 }
 
+/// ما في السيرفر اليوم: الأقسام الثمانية القديمة.
+class _OldServerRepo extends _HomeRepo {
+  @override
+  Future<List<Category>> listCategories() async => [
+        for (final (id, name) in const [
+          (8, 'نجارة'),
+          (7, 'تنظيف'),
+          (6, 'تكييف'),
+          (5, 'سباكة'),
+          (4, 'ديكورات'),
+          (3, 'صباغة'),
+          (2, 'تصليح غسالات'),
+          (1, 'كهرباء'),
+        ])
+          Category(id: id, name: name, icon: 'build', color: 0xFF000000),
+      ];
+}
+
 Future<void> _pumpHome(
   WidgetTester tester, {
   _HomeRepo? repo,
@@ -340,6 +358,33 @@ void main() {
 
       await tester.pump(const Duration(milliseconds: 400));
       expect(repo.sectionFetches, before + 1);
+    });
+
+    testWidgets('السيرفر بأقسامه الثمانية القديمة: تظهر الأقسام كلها، والجديد منها يفتح فارغاً', (tester) async {
+      await _pumpHome(tester, repo: _OldServerRepo());
+      expect(_circle('سبالت'), findsOneWidget);
+      expect(find.text('تكييف'), findsNothing);
+
+      await _tapAndOpen(tester, find.text('عرض الكل').first);
+      await tester.pump();
+      for (final name in _sectionNames) {
+        expect(_circle(name), findsWidgets, reason: name);
+      }
+
+      // القسم القديم تحت اسمه الجديد يفتح خدماته برقمه.
+      await _tapAndOpen(tester, _circle('سبالت').last);
+      expect(tester.widget<ServicesPage>(find.byType(ServicesPage)).initialCategoryId, 6);
+      Navigator.of(tester.element(find.byType(ServicesPage))).pop();
+      await tester.pump();
+      await pumpRouteFrames(tester);
+
+      // القسم الجديد لا يعرض كل الخدمات، بل صفحة فارغة.
+      await _tapAndOpen(tester, _circle('حداد').last);
+      final page = tester.widget<ServicesPage>(find.byType(ServicesPage));
+      expect(page.initialCategoryId, isNotNull);
+      expect(page.initialCategoryId!, isNegative);
+      await tester.pump();
+      expect(find.text('لا توجد خدمات مطابقة'), findsOneWidget);
     });
 
     testWidgets('بلا حرفيين متاحين تظهر رسالة بدل الأزرار', (tester) async {

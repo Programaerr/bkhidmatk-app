@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../../data/models.dart';
 import '../../data/repository.dart';
+import '../../data/sections.dart';
 import '../../state/app_state.dart';
 import '../auth/auth_route.dart';
 import '../auth/push_key.dart';
@@ -108,7 +109,7 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
       _unreadNotifications(state),
     ]);
     return _HomeData(
-      sections: results[0] as List<Category>,
+      sections: customerSections(results[0] as List<Category>),
       craftsmen: results[1] as List<Worker>,
       unreadMessages: results[2] as int,
       unreadNotifications: results[3] as int,

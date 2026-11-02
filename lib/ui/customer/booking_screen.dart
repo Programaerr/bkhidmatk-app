@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
+import '../../data/sections.dart';
 import '../../state/app_state.dart';
 import '../widgets/quick_route.dart';
 import '../widgets/ui.dart';
@@ -231,7 +232,7 @@ class _BookingScreenState extends State<BookingScreen> {
                                 ?.copyWith(fontSize: 14)),
                         const SizedBox(height: 2),
                         Text(
-                            '${widget.service.categoryName ?? ''} · ${fmtDuration(widget.service.durationMinutes)}',
+                            '${currentSectionName(widget.service.categoryName) ?? ''} · ${fmtDuration(widget.service.durationMinutes)}',
                             style: theme.textTheme.bodySmall
                                 ?.copyWith(fontSize: 10.5)),
                       ],

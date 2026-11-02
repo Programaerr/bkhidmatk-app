@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../data/models.dart';
+import '../../data/sections.dart';
 import '../../state/app_state.dart';
 import '../auth/push_key.dart';
 import '../widgets/ui.dart';
@@ -25,8 +26,9 @@ class AllSectionsScreen extends StatefulWidget {
 }
 
 class _AllSectionsScreenState extends State<AllSectionsScreen> {
-  late final Future<List<Category>>? _sections =
-      widget.sections == null ? context.read<AppState>().repo.listCategories() : null;
+  late final Future<List<Category>>? _sections = widget.sections == null
+      ? context.read<AppState>().repo.listCategories().then(customerSections)
+      : null;
 
   @override
   Widget build(BuildContext context) {

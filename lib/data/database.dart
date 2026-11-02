@@ -5,39 +5,10 @@ import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
 
+import 'sections.dart';
+
 String hashPassword(String password, {String salt = 'jaik_v1'}) =>
     sha256.convert(utf8.encode('$salt::$password')).toString();
-
-/// أقسام الخدمات بترتيب عرضها: الاسم، والأيقونة، واللون.
-const _sections = <(String, String, int)>[
-  ('سبالت', 'ac_unit', 0xFF3F51B5),
-  ('كهرباء', 'electrical_services', 0xFFFFC107),
-  ('سباكة', 'plumbing', 0xFF00BCD4),
-  ('صباغ', 'format_paint', 0xFF8BC34A),
-  ('التنظيف', 'cleaning_services', 0xFF9C27B0),
-  ('اجهزة المنزل', 'kitchen', 0xFF03A9F4),
-  ('مجاري', 'water_damage', 0xFF607D8B),
-  ('نجار', 'carpenter', 0xFF795548),
-  ('حداد', 'hardware', 0xFF546E7A),
-  ('ديكورات', 'chair_alt', 0xFFE91E63),
-  ('تركيب كامرات', 'videocam', 0xFF673AB7),
-  ('حدائق', 'yard', 0xFF4CAF50),
-  ('طاقة شمسية', 'solar_power', 0xFFFF9800),
-  ('عامل', 'engineering', 0xFF9E9D24),
-  ('ابواب و شبابيك', 'window', 0xFF009688),
-  ('نقل الاثاث', 'local_shipping', 0xFFFF5722),
-  ('شد و تركيب الاثاث', 'handyman', 0xFFA1887F),
-  ('غسيل سيارات', 'local_car_wash', 0xFF2196F3),
-];
-
-/// الأقسام القديمة تأخذ اسمها الجديد، فتبقى خدماتها وحرفيوها معها.
-const _renamedSections = {
-  'تكييف': 'سبالت',
-  'صباغة': 'صباغ',
-  'تنظيف': 'التنظيف',
-  'تصليح غسالات': 'اجهزة المنزل',
-  'نجارة': 'نجار',
-};
 
 class AppDatabase {
   AppDatabase._();
@@ -123,15 +94,15 @@ class AppDatabase {
 
   /// v7: أقسام الصفحة الرئيسية: أسماؤها وأيقوناتها وترتيبها، وما أُضيف منها.
   Future<void> _migrateToV7(Database db) async {
-    for (final MapEntry(key: old, value: name) in _renamedSections.entries) {
+    for (final MapEntry(key: old, value: name) in renamedSections.entries) {
       await db.update('categories', {'name': name}, where: 'name = ?', whereArgs: [old]);
     }
     // ما أضافه المدير من أقسام أخرى يبقى بعد هذه الأقسام.
     await db.rawUpdate(
       'UPDATE categories SET sort_order = sort_order + ?',
-      [_sections.length],
+      [appSections.length],
     );
-    for (final (index, (name, icon, color)) in _sections.indexed) {
+    for (final (index, (name, icon, color)) in appSections.indexed) {
       final updated = await db.update(
         'categories',
         {'icon': icon, 'sort_order': index},
@@ -394,7 +365,7 @@ class AppDatabase {
     final today = DateTime(now.year, now.month, now.day);
 
     final sectionIds = <String, int>{};
-    for (final (index, (name, icon, color)) in _sections.indexed) {
+    for (final (index, (name, icon, color)) in appSections.indexed) {
       sectionIds[name] = await db.insert('categories', {
         'name': name,
         'icon': icon,
