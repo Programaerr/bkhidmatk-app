@@ -128,6 +128,13 @@ void main() {
       await _openTab(tester);
       final search = find.ancestor(of: find.byType(TextField), matching: find.byType(PushKey));
       expect(search, findsOneWidget);
+
+      // خانة البحث بلا إطار خانات التطبيق، فالزر نفسه هو الخانة.
+      final decoration = tester.widget<TextField>(find.byType(TextField)).decoration!;
+      expect(decoration.enabledBorder, InputBorder.none);
+      expect(decoration.focusedBorder, InputBorder.none);
+      expect(decoration.filled, isFalse);
+
       expect(_choice('الكل'), findsOneWidget);
       expect(tester.widget<PushKey>(_choice('الكل')).lemon, isTrue);
       expect(tester.widget<PushKey>(_choice('كهرباء')).lemon, isFalse);

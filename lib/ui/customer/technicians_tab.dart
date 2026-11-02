@@ -316,7 +316,14 @@ class _TechniciansTabState extends State<TechniciansTab> with RealtimeRefresh<Te
                   maxLines: 1,
                   style: textStyle,
                   cursorColor: ink,
-                  decoration: InputDecoration.collapsed(
+                  // بلا إطار خانات التطبيق، فالزر نفسه هو الخانة.
+                  decoration: InputDecoration(
+                    isCollapsed: true,
+                    filled: false,
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    contentPadding: EdgeInsets.zero,
                     hintText: 'ابحث عن حرفي',
                     hintStyle: textStyle.copyWith(color: ink.withValues(alpha: .55)),
                   ),
