@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -472,13 +474,97 @@ void main() {
   });
 
   group('حركة العاملين', () {
-    test('العاملان يتحركان باستمرار', () {
-      const start = WorkersPose(0);
-      const later = WorkersPose(.65);
-      expect(later.upperArm, isNot(closeTo(start.upperArm, .001)));
-      expect(later.lowerArm, isNot(closeTo(start.lowerArm, .001)));
-      expect(later.reachingArm, isNot(closeTo(start.reachingArm, .001)));
-      expect(later.holdingArm, isNot(closeTo(start.holdingArm, .001)));
+    void expectAsDrawn(WorkerFace face) {
+      for (final value in [face.browLift, face.browKnit, face.squint, face.smile, face.open]) {
+        expect(value, closeTo(0, 1e-9));
+      }
+      expect(face.look, Offset.zero);
+    }
+
+    test('يبدآن كما في الرسم، فيبقى الرسم نفسه حين تُطفأ الحركة', () {
+      const pose = WorkersPose(0);
+      for (final value in [
+        pose.wheelTurn, pose.upperArm, pose.lowerArm, pose.standingLean, pose.standingHead,
+        pose.standingNeedle, pose.kneelingLean, pose.kneelingHead, pose.reachingArm,
+        pose.holdingArm, pose.meterTilt, pose.smallNeedle, pose.tallNeedle,
+      ]) {
+        expect(value, closeTo(0, 1e-9));
+      }
+      expectAsDrawn(pose.standingFace);
+      expectAsDrawn(pose.kneelingFace);
+    });
+
+    test('لا يقفان: في كل لحظة يتحرك فيهما شيء', () {
+      for (var time = 0.0; time < 18; time += .3) {
+        final now = WorkersPose(time), next = WorkersPose(time + .3);
+        final moved = [
+          (now.standingLean, next.standingLean),
+          (now.kneelingLean, next.kneelingLean),
+          (now.holdingArm, next.holdingArm),
+          (now.standingNeedle, next.standingNeedle),
+        ].any((pair) => (pair.$1 - pair.$2).abs() > 1e-4);
+        expect(moved, isTrue, reason: '$time');
+      }
+    });
+
+    test('العجلة تدور مع كل دفعة ولا ترجع أبداً', () {
+      var last = const WorkersPose(0).wheelTurn;
+      for (var time = .02; time < 30; time += .02) {
+        final turn = WorkersPose(time).wheelTurn;
+        expect(turn, lessThanOrEqualTo(last + 1e-9), reason: '$time');
+        last = turn;
+      }
+      // في كل دورة ثلاث دفعات، وكل دفعة تديرها ضلعاً من أضلاعها التسعة.
+      expect(const WorkersPose(WorkersPose.standingCycle).wheelTurn, closeTo(-3 * 2 * math.pi / 9, 1e-9));
+    });
+
+    test('العجلة لا تدور إلا ويداه تدفعانها', () {
+      for (var time = 0.0; time < 18; time += .05) {
+        final now = WorkersPose(time), next = WorkersPose(time + .05);
+        if ((next.wheelTurn - now.wheelTurn).abs() > 1e-6) {
+          expect(math.max(now.upperArm, next.upperArm), greaterThan(0), reason: '$time');
+          expect(math.min(now.lowerArm, next.lowerArm), lessThan(0), reason: '$time');
+        }
+      }
+    });
+
+    test('مؤشر عداده ينزل، وكل دفعة ترفعه، ثم يرجع إلى علامته', () {
+      final needle = [for (final time in [2.3, 3.7, 5.1, 7.6]) WorkersPose(time).standingNeedle];
+      expect(needle.first, lessThan(-.9));
+      expect(needle[1], greaterThan(needle[0] + .25));
+      expect(needle[2], greaterThan(needle[1] + .25));
+      expect(needle.last.abs(), lessThan(.06));
+    });
+
+    test('وجه العامل الواقف يتغير مع الشغل', () {
+      final worried = const WorkersPose(1.9).standingFace;
+      expect(worried.browLift, greaterThan(.5));
+      expect(worried.open, greaterThan(.5));
+
+      final straining = const WorkersPose(2.85).standingFace;
+      expect(straining.browLift, lessThan(-.3));
+      expect(straining.browKnit, greaterThan(.2));
+      expect(straining.squint, greaterThan(.5));
+      expect(straining.smile, lessThan(-1));
+
+      final pleased = const WorkersPose(7.8).standingFace;
+      expect(pleased.smile, greaterThan(.5));
+      expect(pleased.browLift, greaterThan(.4));
+    });
+
+    test('العامل الجالس يلف العداد الصغير خطوة خطوة، والكبير يتبعه، ثم يرضى', () {
+      final small = [for (final time in [2.15, 2.75, 3.45, 4.15]) WorkersPose(time).smallNeedle];
+      for (var i = 1; i < small.length; i++) {
+        expect(small[i], greaterThan(small[i - 1] + .1), reason: '$i');
+      }
+      expect(const WorkersPose(2).tallNeedle, lessThan(-.7));
+      expect(const WorkersPose(5.5).tallNeedle.abs(), lessThan(.06));
+
+      final focused = const WorkersPose(3).kneelingFace;
+      expect(focused.browKnit, greaterThan(.2));
+      expect(focused.squint, greaterThan(.3));
+      final pleased = const WorkersPose(5.6).kneelingFace;
+      expect(pleased.smile, greaterThan(.5));
     });
 
     test('يدا العامل الواقف تتحركان بعكس بعضهما على العجلة', () {

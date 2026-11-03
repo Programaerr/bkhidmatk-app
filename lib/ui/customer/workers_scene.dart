@@ -29,7 +29,15 @@ const _upperShoulder = Offset(197, 64);
 const _lowerShoulder = Offset(181, 66);
 const _wheelHub = Offset(229.7, 53.6);
 const _standingNeedle = Offset(243.53, 53.2);
-const _standingEyes = Offset(188.25, 41.6);
+
+// أضلاع العجلة تسعة بين المحور وحافتها الخلفية، ويظهر منها ثلاثة كما في الرسم. ما يدور خلف
+// المحور لا يُرسم، وما يقترب من أعلاها أو أسفلها يختفي خلف حافتها الأمامية ويدي العامل.
+const _spokeCount = 9;
+const _spokeStep = 2 * math.pi / _spokeCount;
+const _spokeRing = Offset(229.19, 53.69);
+const _spokeRingRadii = Size(5.64, 11.68);
+const _spokeWidth = 2.12;
+const _spokeInk = Color(0xFFE0E0E0);
 
 // العامل الجالس يضبط العداد بيد ويقرأ الجهاز الذي في يده الأخرى.
 const _hip = Offset(104, 152);
@@ -39,17 +47,210 @@ const _holdingShoulder = Offset(108, 121);
 const _meterGrip = Offset(79, 138);
 const _smallNeedle = Offset(35.3, 118.6);
 const _tallNeedle = Offset(23.8, 111.3);
-const _kneelingEyes = Offset(86.7, 105.3);
 
-/// وضع العاملين في لحظة معينة: حركتهما متصلة ولا تتوقف.
+const _featureInk = Color(0xFF263238);
+
+// ملامح كل عامل في الرسم، وكيف يتحرك فمه مع الابتسامة.
+const _standingFeatures = _Features(
+  eyes: Offset(188.25, 41.6),
+  leftBrow: Offset(183.49, 37.26),
+  rightBrow: Offset(190.72, 36.25),
+  mouthCorner: Offset(185.9, 46.1),
+  mouthEnd: Offset(188.37, 47.76),
+  cornerRise: Offset(-.05, -.9),
+  endRise: Offset(.08, 0),
+  bow: Offset(0, .45),
+  mouth: Offset(187.1, 47.3),
+  openMouth: Size(1.2, 1.4),
+);
+const _kneelingFeatures = _Features(
+  eyes: Offset(86.7, 105.3),
+  leftBrow: Offset(83.06, 102.11),
+  rightBrow: Offset(90.19, 99.25),
+  mouthCorner: Offset(90.66, 108.2),
+  mouthEnd: Offset(89.39, 110.54),
+  cornerRise: Offset(.25, -.85),
+  endRise: Offset(-.05, 0),
+  bow: Offset(.31, .17),
+  mouth: Offset(90, 109.4),
+  openMouth: Size(1.3, 1.6),
+);
+
+/// مواضع ملامح أحد العاملين في الرسم.
+class _Features {
+  const _Features({
+    required this.eyes,
+    required this.leftBrow,
+    required this.rightBrow,
+    required this.mouthCorner,
+    required this.mouthEnd,
+    required this.cornerRise,
+    required this.endRise,
+    required this.bow,
+    required this.mouth,
+    required this.openMouth,
+  });
+
+  /// وسط العينين، وحوله تضيقان وتُغمضان.
+  final Offset eyes;
+
+  /// وسط كل حاجب، وحوله يميل.
+  final Offset leftBrow, rightBrow;
+
+  /// طرف الفم الذي ترفعه الابتسامة، وطرفه الآخر.
+  final Offset mouthCorner, mouthEnd;
+
+  /// حركة الطرفين ووسط الفم مع كل زيادة في الابتسامة.
+  final Offset cornerRise, endRise, bow;
+
+  /// وسط الفم، ومقاسه وهو مفتوح تماماً.
+  final Offset mouth;
+  final Size openMouth;
+
+  /// موضع نقطة من الفم بعد أن تتغير الابتسامة.
+  Offset smiled(Offset point, double smile) {
+    final chord = mouthEnd - mouthCorner;
+    final along = point - mouthCorner;
+    final t = ((along.dx * chord.dx + along.dy * chord.dy) / chord.distanceSquared).clamp(0.0, 1.0);
+    return point + (cornerRise * (1 - t) + endRise * t + bow * (4 * t * (1 - t))) * smile;
+  }
+}
+
+/// ملامح أحد العاملين في لحظة. القيم كلها صفر هي وجهه كما في الرسم.
+@immutable
+class WorkerFace {
+  const WorkerFace({
+    this.browLift = 0,
+    this.browKnit = 0,
+    this.squint = 0,
+    this.smile = 0,
+    this.open = 0,
+    this.look = Offset.zero,
+  });
+
+  /// صعود الحاجبين بوحدات الرسم، والسالب نزولهما.
+  final double browLift;
+
+  /// نزول طرفي الحاجبين الداخليين مع الشد والتركيز، والسالب صعودهما مع القلق.
+  final double browKnit;
+
+  /// ضيق العينين: 1 أضيق ما تكونان.
+  final double squint;
+
+  /// 0 ابتسامة الرسم، و-1 فم مستقيم، وتحته ينقلب إلى الأسفل، وفوق 0 ابتسامة أعرض.
+  final double smile;
+
+  /// انفتاح الفم كأنه يقول «ها».
+  final double open;
+
+  /// اتجاه النظر بوحدات الرسم.
+  final Offset look;
+
+  static WorkerFace lerp(WorkerFace a, WorkerFace b, double t) => WorkerFace(
+        browLift: ui.lerpDouble(a.browLift, b.browLift, t)!,
+        browKnit: ui.lerpDouble(a.browKnit, b.browKnit, t)!,
+        squint: ui.lerpDouble(a.squint, b.squint, t)!,
+        smile: ui.lerpDouble(a.smile, b.smile, t)!,
+        open: ui.lerpDouble(a.open, b.open, t)!,
+        look: Offset.lerp(a.look, b.look, t)!,
+      );
+}
+
+// وجوه الشغل: الشد على العجلة ونفَسه بين الدفعات، والتركيز في الضبط، والرضا بعد أن يصلح.
+const _straining = WorkerFace(browLift: -.6, browKnit: .35, squint: .7, smile: -1.4, look: Offset(.25, .2));
+const _hardStraining = WorkerFace(browLift: -.8, browKnit: .45, squint: .85, smile: -1.6, look: Offset(.25, .2));
+const _breathing =
+    WorkerFace(browLift: -.1, browKnit: .15, squint: .25, smile: -1, open: .45, look: Offset(.25, .2));
+const _focused = WorkerFace(browLift: -.4, browKnit: .35, squint: .5, smile: -1.2, look: Offset(-.3, .15));
+const _pleased = WorkerFace(browLift: .6, browKnit: -.05, squint: .5, smile: .8);
+
+/// وضع العاملين في لحظة. كل واحد يكرر قصة إصلاح: ينزل مؤشر عداده فينتبه، ثم يصلح
+/// ويتعب، ثم يرجع المؤشر إلى علامته فيرضى، ثم يهدأ على شكله في الرسم.
 class WorkersPose {
   const WorkersPose(this.time);
 
   final double time;
 
-  static const _turnPeriod = 2.6;
-  static const _dialPeriod = 3.4;
-  static const _readPeriod = 2.2;
+  static const standingCycle = 9.0;
+  static const kneelingCycle = 8.0;
+
+  // ثلاث دفعات على العجلة، وبعد كل دفعة تفلت يداه وترجعان لتمسكاها من جديد.
+  static const _pushes = [(2.4, 3.3), (3.8, 4.7), (5.2, 6.3)];
+  static const _regrip = .5;
+
+  // ثلاث لفات للعداد الصغير، وبعد كل لفة ترجع أصابعه لتمسكه من جديد.
+  static const _twists = [(2.2, 2.7), (2.9, 3.4), (3.6, 4.1)];
+  static const _release = .2;
+
+  static const _standingFaces = [
+    (0.0, WorkerFace()),
+    (0.7, WorkerFace()),
+    // يرى مؤشر العداد ينزل، فيرفع حاجبيه ويقول «ها».
+    (1.4, WorkerFace(browLift: .3, look: Offset(.35, .05))),
+    (1.9, WorkerFace(browLift: .9, browKnit: -.2, smile: -1, open: .7, look: Offset(.35, .05))),
+    (2.35, WorkerFace(browLift: -.2, browKnit: .2, squint: .3, smile: -1, look: Offset(.25, .2))),
+    (2.85, _straining),
+    (3.55, _breathing),
+    (4.25, _straining),
+    (4.95, _breathing),
+    (5.6, _hardStraining),
+    (6.3, _hardStraining),
+    // ينظر إلى المؤشر وهو يرجع، ثم يرضى.
+    (6.75, WorkerFace(browLift: .5, browKnit: -.1, smile: -.6, open: .4, look: Offset(.35, .05))),
+    (7.25, _pleased),
+    (8.3, _pleased),
+    (standingCycle, WorkerFace()),
+  ];
+
+  static const _kneelingFaces = [
+    (0.0, WorkerFace()),
+    (0.5, WorkerFace()),
+    // ينزل إلى الجهاز في يده فيرى القراءة نزلت.
+    (1.1, WorkerFace(browLift: -.2, browKnit: .25, squint: .35, smile: -1, look: Offset(-.2, .3))),
+    (1.75, WorkerFace(browLift: .8, browKnit: -.2, smile: -1, open: .6, look: Offset(-.2, .3))),
+    (2.25, _focused),
+    (4.05, _focused),
+    // ينتظر العداد الكبير، ثم يرضى.
+    (4.45, WorkerFace(browLift: .5, browKnit: -.1, smile: -.6, open: .4, look: Offset(-.35, .05))),
+    (4.95, _pleased),
+    (6.4, _pleased),
+    (kneelingCycle, WorkerFace()),
+  ];
+
+  // ميل الرأس: ينظر إلى العداد، ويرفعه حين يرى المؤشر نزل، ويهزه راضياً في الآخر.
+  static const _standingHeads = [
+    (0.0, 0.0),
+    (0.7, 0.0),
+    (1.4, .01),
+    (1.9, -.012),
+    (2.35, .01),
+    (6.3, .01),
+    (6.75, .012),
+    (7.1, .04),
+    (7.35, .005),
+    (7.6, .03),
+    (7.85, .005),
+    (standingCycle, 0.0),
+  ];
+
+  // ينزل رأسه إلى الجهاز ثم إلى العداد الصغير، ويرفعه إلى الكبير، ويهزه راضياً.
+  static const _kneelingHeads = [
+    (0.0, 0.0),
+    (0.5, 0.0),
+    (1.1, -.035),
+    (1.75, -.02),
+    (2.25, -.03),
+    (4.05, -.03),
+    (4.45, .005),
+    (4.85, -.035),
+    (5.1, -.005),
+    (5.35, -.03),
+    (5.6, -.005),
+    (kneelingCycle, 0.0),
+  ];
+
+  double get _standing => time % standingCycle;
+  double get _kneeling => time % kneelingCycle;
 
   double _wave(double period, [double shift = 0]) =>
       math.sin(2 * math.pi * time / period + shift);
@@ -61,24 +262,118 @@ class WorkersPose {
     return math.sin(math.pi * t / .18);
   }
 
-  // اليدان تتحركان بعكس بعضهما على العجلة، وجسمه يميل معهما قليلاً.
-  double get standingLean => .006 * _wave(_turnPeriod);
-  double get upperArm => .05 * _wave(_turnPeriod);
-  double get lowerArm => -.036 * _wave(_turnPeriod);
-  double get spokes => .16 * _wave(_turnPeriod);
-  double get standingHead => .018 * _wave(_turnPeriod * 2, .8);
-  double get standingNeedle => .35 * _wave(_turnPeriod * 2) + .05 * _wave(.9);
-  double get standingBlink => _blink(5.2, 1.4);
+  /// تقدّم من 0 إلى 1 بين بداية ونهاية، يبدأ هادئاً وينتهي هادئاً.
+  static double _progress(double t, double start, double end) =>
+      Curves.easeInOut.transform(((t - start) / (end - start)).clamp(0.0, 1.0));
 
-  // يده تضبط العداد، ورأسه ينزل إلى الجهاز ويرتفع إلى العداد.
-  double get kneelingLean => .005 * _wave(_dialPeriod, 1);
-  double get kneelingHead => .028 * _wave(_dialPeriod * 2, 2);
-  double get reachingArm => .02 * _wave(_dialPeriod);
-  double get smallNeedle => .45 * _wave(_dialPeriod);
-  double get holdingArm => .016 * _wave(_readPeriod, .5);
-  double get meterTilt => .05 * _wave(_readPeriod, 2);
-  double get tallNeedle => .3 * _wave(7.3, 1);
-  double get kneelingBlink => _blink(6.1, 3.7);
+  /// كم تم من الحركات في الدورة حتى الآن، مع جزء الحركة الجارية.
+  static double _done(double t, List<(double, double)> moves) =>
+      moves.fold(0, (done, move) => done + _progress(t, move.$1, move.$2));
+
+  /// قوة الحركة الجارية: تصل إلى 1 في آخرها، ثم ترجع إلى 0 واليد في مكانها من الرسم.
+  static double _effort(double t, List<(double, double)> moves, double back) {
+    for (final (start, end) in moves) {
+      if (t >= start && t < end) return _progress(t, start, end);
+      if (t >= end && t < end + back) return 1 - _progress(t, end, end + back);
+    }
+    return 0;
+  }
+
+  /// قيمة تمر بمحطات الدورة بنعومة.
+  static T _through<T>(double t, List<(double, T)> stops, T Function(T, T, double) lerp) {
+    for (var i = 1; i < stops.length; i++) {
+      final (end, to) = stops[i];
+      if (t <= end) {
+        final (start, from) = stops[i - 1];
+        return lerp(from, to, Curves.easeInOut.transform((t - start) / (end - start)));
+      }
+    }
+    return stops.last.$2;
+  }
+
+  static double _lerp(double a, double b, double t) => a + (b - a) * t;
+
+  // العامل الواقف.
+
+  double get _grip => _effort(_standing, _pushes, _regrip);
+
+  /// الدفعة الأخيرة أصعب: ترتجف فيها يداه قليلاً.
+  double get _tremble {
+    final (start, end) = _pushes.last;
+    final t = _standing;
+    if (t <= start || t >= end) return 0;
+    return math.sin(math.pi * (t - start) / (end - start)) * math.sin(2 * math.pi * 11 * t);
+  }
+
+  double get _standingPleased =>
+      _progress(_standing, 6.75, 7.25) - _progress(_standing, 8.3, standingCycle);
+
+  /// دوران العجلة منذ البداية: كل دفعة تديرها ضلعاً واحداً، ولا ترجع أبداً.
+  double get wheelTurn =>
+      -_spokeStep * (_pushes.length * (time ~/ standingCycle) + _done(_standing, _pushes));
+
+  // اليدان تتحركان بعكس بعضهما مع العجلة في الدفعة، وجسمه يميل معهما.
+  double get _hold => _grip * (1 + .08 * _tremble);
+  double get upperArm => .05 * _hold;
+  double get lowerArm => -.036 * _hold;
+  double get standingLean => .006 * _grip - .004 * _standingPleased + .002 * _wave(3.2);
+  double get standingHead => _through(_standing, _standingHeads, _lerp) + .018 * _grip;
+
+  /// نقص الضغط في عداده: 0 والمؤشر على علامته كما في الرسم، و1 في أدناه.
+  /// يرتفع المؤشر بعد كل دفعة بلحظة.
+  double get _standingDrop {
+    final t = _standing;
+    return _progress(t, .7, 1.9) * (1 - _done(t - .15, _pushes) / _pushes.length);
+  }
+
+  double get standingNeedle {
+    final t = _standing - (_pushes.last.$2 + .15);
+    final settle = t > 0 ? .14 * math.exp(-3.5 * t) * math.sin(11 * t) : 0.0;
+    final drop = _standingDrop;
+    return -1.05 * drop + settle + .025 * (1 - drop) * _wave(.9);
+  }
+
+  double get standingBlink => math.max(_blink(standingCycle, .35), _blink(standingCycle, 8.55));
+
+  WorkerFace get standingFace => _through(_standing, _standingFaces, WorkerFace.lerp);
+
+  // العامل الجالس.
+
+  double get _twist => _effort(_kneeling, _twists, _release);
+
+  /// يرفع الجهاز إلى عينيه ليقرأه، ثم ينزله.
+  double get _reading => _progress(_kneeling, .9, 1.3) - _progress(_kneeling, 1.9, 2.3);
+
+  double get _kneelingPleased =>
+      _progress(_kneeling, 4.45, 4.95) - _progress(_kneeling, 6.4, kneelingCycle);
+
+  /// نقص الضغط عنده: العداد الصغير يتبع أصابعه، والكبير يتبعه بعد لحظة.
+  double _kneelingDrop(double lag) {
+    final t = _kneeling - lag;
+    return _progress(t, .5, 1.8) * (1 - _done(t, _twists) / _twists.length);
+  }
+
+  // يميل إلى العداد وهو يضبطه، ويرجع راضياً، ويتنفس.
+  double get kneelingLean =>
+      -.004 * (_progress(_kneeling, 2.0, 2.3) - _progress(_kneeling, 4.1, 4.5)) +
+      .003 * _kneelingPleased +
+      .002 * _wave(3.6);
+  double get kneelingHead => _through(_kneeling, _kneelingHeads, _lerp);
+  double get reachingArm => -.02 * _twist;
+  double get smallNeedle => -.6 * _kneelingDrop(0);
+  double get holdingArm => .02 * _reading + .006 * _wave(2.2);
+  double get meterTilt => -.06 * _reading + .02 * _wave(2.2);
+
+  double get tallNeedle {
+    final t = _kneeling - (_twists.last.$2 + .3);
+    final settle = t > 0 ? .12 * math.exp(-3.5 * t) * math.sin(11 * t) : 0.0;
+    final drop = _kneelingDrop(.3);
+    return -.9 * drop + settle + .02 * (1 - drop) * _wave(1.3);
+  }
+
+  double get kneelingBlink => math.max(_blink(kneelingCycle, .25), _blink(kneelingCycle, 6.9));
+
+  WorkerFace get kneelingFace => _through(_kneeling, _kneelingFaces, WorkerFace.lerp);
 }
 
 /// طبقة من الرسم تُحفظ صورةً على شبكة بكسلات الشاشة: تبقى حادة وهي ساكنة، ولا تُعاد مساراتها مع كل إطار.
@@ -145,18 +440,56 @@ class _ArtLayer {
   }
 }
 
+/// ملامح أحد العاملين، تُرسم فوق وجهه وتتحرك. الفم يُحفظ نقاطاً أيضاً حتى تتغير ابتسامته.
+class _FaceArt {
+  _FaceArt({
+    required List<ArtShape> eyes,
+    required List<ArtShape> lids,
+    required List<ArtShape> leftBrow,
+    required List<ArtShape> rightBrow,
+    required List<ArtShape> mouth,
+  })  : eyes = WorkersArt._record(eyes),
+        lids = WorkersArt._record(lids),
+        leftBrow = WorkersArt._record(leftBrow),
+        rightBrow = WorkersArt._record(rightBrow),
+        mouth = WorkersArt._record(mouth),
+        mouthOutline = [
+          for (final shape in mouth)
+            (
+              Color(shape.color),
+              [
+                for (final contour in parseSvgPath(shape.path).computeMetrics())
+                  [
+                    for (var at = 0.0; at < contour.length; at += .04)
+                      contour.getTangentForOffset(at)!.position,
+                  ],
+              ],
+            ),
+        ];
+
+  final ui.Picture eyes, lids, leftBrow, rightBrow, mouth;
+  final List<(Color, List<List<Offset>>)> mouthOutline;
+
+  void dispose() {
+    for (final picture in [eyes, lids, leftBrow, rightBrow, mouth]) {
+      picture.dispose();
+    }
+  }
+}
+
 /// طبقات الرسم مرة واحدة، وصورها بمقاس الشاشة.
 class WorkersArt {
   WorkersArt()
       : _backdrop = _ArtLayer(workersBackdrop),
-        _spokes = _ArtLayer(workersSpokes),
         _standingHead = _ArtLayer(workersStandingHead),
+        _standingHeadTop = _ArtLayer(workersStandingHeadTop),
         _upperArm = _ArtLayer(workersUpperArm),
         _wheelRim = _ArtLayer(workersWheelRim),
         _standingBody = _ArtLayer(workersStandingBody),
         _lowerArm = _ArtLayer(workersLowerArm),
         _standingCollar = _ArtLayer(workersStandingCollar),
         _kneelingHead = _ArtLayer(workersKneelingHead),
+        _kneelingHeadTop = _ArtLayer(workersKneelingHeadTop),
         _palm = _ArtLayer(workersPalm),
         _smallDial = _ArtLayer(workersSmallDial),
         _reachingArm = _ArtLayer(workersReachingArm),
@@ -164,16 +497,28 @@ class WorkersArt {
         _meter = _ArtLayer(workersMeter),
         _holdingArm = _ArtLayer(workersHoldingArm),
         _kneelingCollar = _ArtLayer(workersKneelingCollar),
-        _standingEyesArt = _record(workersStandingEyes),
-        _kneelingEyesArt = _record(workersKneelingEyes),
+        _standingFace = _FaceArt(
+          eyes: workersStandingEyes,
+          lids: workersStandingLids,
+          leftBrow: workersStandingLeftBrow,
+          rightBrow: workersStandingRightBrow,
+          mouth: workersStandingMouth,
+        ),
+        _kneelingFace = _FaceArt(
+          eyes: workersKneelingEyes,
+          lids: workersKneelingLids,
+          leftBrow: workersKneelingLeftBrow,
+          rightBrow: workersKneelingRightBrow,
+          mouth: workersKneelingMouth,
+        ),
         _standingNeedleArt = _record(workersStandingNeedle),
         _smallNeedleArt = _record(workersSmallNeedle),
         _tallNeedleArt = _record(workersTallNeedle);
 
-  final _ArtLayer _backdrop, _spokes, _standingHead, _upperArm, _wheelRim, _standingBody, _lowerArm;
-  final _ArtLayer _standingCollar, _kneelingHead, _palm, _smallDial, _reachingArm, _kneelingBody;
-  final _ArtLayer _meter, _holdingArm, _kneelingCollar;
-  final ui.Picture _standingEyesArt, _kneelingEyesArt;
+  final _ArtLayer _backdrop, _standingHead, _standingHeadTop, _upperArm, _wheelRim, _standingBody;
+  final _ArtLayer _lowerArm, _standingCollar, _kneelingHead, _kneelingHeadTop, _palm, _smallDial;
+  final _ArtLayer _reachingArm, _kneelingBody, _meter, _holdingArm, _kneelingCollar;
+  final _FaceArt _standingFace, _kneelingFace;
   final ui.Picture _standingNeedleArt, _smallNeedleArt, _tallNeedleArt;
 
   Offset _origin = Offset.zero;
@@ -181,9 +526,9 @@ class WorkersArt {
   double _pixelRatio = 0;
 
   List<_ArtLayer> get _layers => [
-        _backdrop, _spokes, _standingHead, _upperArm, _wheelRim, _standingBody, _lowerArm,
-        _standingCollar, _kneelingHead, _palm, _smallDial, _reachingArm, _kneelingBody,
-        _meter, _holdingArm, _kneelingCollar,
+        _backdrop, _standingHead, _standingHeadTop, _upperArm, _wheelRim, _standingBody, _lowerArm,
+        _standingCollar, _kneelingHead, _kneelingHeadTop, _palm, _smallDial, _reachingArm,
+        _kneelingBody, _meter, _holdingArm, _kneelingCollar,
       ];
 
   void _prepare(Offset origin, double unit, double pixelRatio) {
@@ -200,9 +545,9 @@ class WorkersArt {
     for (final layer in _layers) {
       layer.dispose();
     }
-    for (final picture in [
-      _standingEyesArt, _kneelingEyesArt, _standingNeedleArt, _smallNeedleArt, _tallNeedleArt,
-    ]) {
+    _standingFace.dispose();
+    _kneelingFace.dispose();
+    for (final picture in [_standingNeedleArt, _smallNeedleArt, _tallNeedleArt]) {
       picture.dispose();
     }
   }
@@ -219,7 +564,7 @@ class WorkersArt {
   }
 }
 
-/// عاملان يشتغلان على الأنابيب، والأنابيب تكمل إلى حافتي الشاشة.
+/// عاملان يصلحان الأنابيب، والأنابيب تكمل إلى حافتي الشاشة.
 class WorkersScene extends StatefulWidget {
   const WorkersScene({super.key, required this.scale, this.left = 0});
 
@@ -267,7 +612,7 @@ class _WorkersSceneState extends State<WorkersScene> with SingleTickerProviderSt
   Widget build(BuildContext context) {
     return Semantics(
       image: true,
-      label: 'عاملان من جايك يشتغلان على أنابيب: واحد يدير الصمام والآخر يقرأ العداد',
+      label: 'عاملان من جايك يصلحان أنابيب: واحد يدير الصمام والآخر يضبط العداد',
       child: RepaintBoundary(
         child: CustomPaint(
           painter: WorkersScenePainter(
@@ -310,7 +655,7 @@ class WorkersScenePainter extends CustomPainter {
       ..scale(unit);
     _paintPipeEnds(canvas, -origin.dx / unit, (size.width - origin.dx) / unit);
     art._backdrop.paint(canvas);
-    _turned(canvas, _wheelHub, pose.spokes, art._spokes);
+    _paintSpokes(canvas, pose.wheelTurn);
     _paintStanding(canvas, pose);
     _paintKneeling(canvas, pose);
     canvas.restore();
@@ -338,6 +683,27 @@ class WorkersScenePainter extends CustomPainter {
       ..drawRect(Rect.fromLTRB(301.3, 117.837, right, 137.8), pale);
   }
 
+  /// أضلاع العجلة بعد أن دارت: أطرافها تنزلق على حافتها الخلفية.
+  void _paintSpokes(Canvas canvas, double turn) {
+    final paint = Paint()
+      ..strokeWidth = _spokeWidth
+      ..strokeCap = StrokeCap.round;
+    for (var i = 0; i < _spokeCount; i++) {
+      final angle = (math.pi / 2 + i * _spokeStep + turn) % (2 * math.pi);
+      final shown = ((math.min(angle, math.pi - angle) - .32) / .25).clamp(0.0, 1.0);
+      if (shown == 0) continue;
+      paint.color = _spokeInk.withValues(alpha: shown);
+      canvas.drawLine(
+        _wheelHub,
+        Offset(
+          _spokeRing.dx - _spokeRingRadii.width * math.sin(angle),
+          _spokeRing.dy - _spokeRingRadii.height * math.cos(angle),
+        ),
+        paint,
+      );
+    }
+  }
+
   void _turnAround(Canvas canvas, Offset center, double angle) {
     canvas
       ..translate(center.dx, center.dy)
@@ -360,14 +726,69 @@ class WorkersScenePainter extends CustomPainter {
       ..restore();
   }
 
-  void _paintEyes(Canvas canvas, Offset center, double blink, ui.Picture eyes) {
+  void _paintFace(Canvas canvas, _FaceArt face, _Features at, WorkerFace look, double blink) {
+    // العينان تضيقان مع الشد والرضا، وتُغمضان لحظة، وتنظران إلى ما يشتغل عليه.
+    final squash = math.max(blink * .85, look.squint * .55);
     canvas
       ..save()
-      ..translate(center.dx, center.dy)
-      ..scale(1, 1 - blink * .85)
-      ..translate(-center.dx, -center.dy)
-      ..drawPicture(eyes)
+      ..translate(at.eyes.dx + look.look.dx, at.eyes.dy + look.look.dy)
+      ..scale(1, 1 - squash)
+      ..translate(-at.eyes.dx, -at.eyes.dy)
+      ..drawPicture(face.eyes)
+      ..restore()
+      // خطا الجفنين ينزلان مع ضيق العينين ويصعدان مع الحاجبين.
+      ..save()
+      ..translate(0, .5 * look.squint - .35 * look.browLift)
+      ..drawPicture(face.lids)
       ..restore();
+    _paintMouth(canvas, face, at, look);
+    // الحاجبان يصعدان وينزلان، وطرفاهما الداخليان ينزلان مع العبوس.
+    for (final (center, brow, tilt) in [
+      (at.leftBrow, face.leftBrow, look.browKnit),
+      (at.rightBrow, face.rightBrow, -look.browKnit),
+    ]) {
+      canvas
+        ..save()
+        ..translate(0, -look.browLift);
+      _turnAround(canvas, center, tilt);
+      canvas
+        ..drawPicture(brow)
+        ..restore();
+    }
+  }
+
+  void _paintMouth(Canvas canvas, _FaceArt face, _Features at, WorkerFace look) {
+    canvas.save();
+    if (look.open > 0) {
+      // الفم يضيق وهو ينفتح، كأنه يقول «ها».
+      canvas
+        ..translate(at.mouth.dx, at.mouth.dy)
+        ..scale(1 - .6 * look.open, 1)
+        ..translate(-at.mouth.dx, -at.mouth.dy);
+    }
+    if (look.smile == 0) {
+      canvas.drawPicture(face.mouth);
+    } else {
+      final paint = Paint();
+      for (final (color, contours) in face.mouthOutline) {
+        final path = Path();
+        for (final points in contours) {
+          path.addPolygon([for (final point in points) at.smiled(point, look.smile)], true);
+        }
+        canvas.drawPath(path, paint..color = color);
+      }
+    }
+    canvas.restore();
+    if (look.open > 0) {
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: at.mouth,
+          width: at.openMouth.width * look.open,
+          height: at.openMouth.height * look.open,
+        ),
+        Paint()..color = _featureInk,
+      );
+    }
   }
 
   void _paintStanding(Canvas canvas, WorkersPose pose) {
@@ -376,7 +797,8 @@ class WorkersScenePainter extends CustomPainter {
     canvas.save();
     _turnAround(canvas, _standingNeck, pose.standingHead);
     art._standingHead.paint(canvas);
-    _paintEyes(canvas, _standingEyes, pose.standingBlink, art._standingEyesArt);
+    _paintFace(canvas, art._standingFace, _standingFeatures, pose.standingFace, pose.standingBlink);
+    art._standingHeadTop.paint(canvas);
     canvas.restore();
     _turned(canvas, _upperShoulder, pose.upperArm, art._upperArm);
     canvas.restore();
@@ -398,7 +820,8 @@ class WorkersScenePainter extends CustomPainter {
     canvas.save();
     _turnAround(canvas, _kneelingNeck, pose.kneelingHead);
     art._kneelingHead.paint(canvas);
-    _paintEyes(canvas, _kneelingEyes, pose.kneelingBlink, art._kneelingEyesArt);
+    _paintFace(canvas, art._kneelingFace, _kneelingFeatures, pose.kneelingFace, pose.kneelingBlink);
+    art._kneelingHeadTop.paint(canvas);
     canvas.restore();
     _turned(canvas, _reachingShoulder, pose.reachingArm, art._palm);
     canvas.restore();
