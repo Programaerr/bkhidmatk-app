@@ -12,6 +12,34 @@
                 "-File",
                 "${workspaceFolder}\\.vscode\\prepare_supabase_defines.ps1"
             ],
+            "presentation": {
+                "reveal": "silent"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Stop earlier Flutter runs",
+            "type": "process",
+            "command": "powershell",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\.vscode\\stop_earlier_runs.ps1"
+            ],
+            "presentation": {
+                "reveal": "silent"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Prepare Supabase run",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "Stop earlier Flutter runs",
+                "Prepare Supabase defines from .env"
+            ],
             "problemMatcher": []
         }
     ]

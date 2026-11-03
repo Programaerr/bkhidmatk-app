@@ -8,7 +8,7 @@
             "program": "lib/main.dart",
             "cwd": "${workspaceFolder}",
             "flutterMode": "debug",
-            "preLaunchTask": "Prepare Supabase defines from .env",
+            "preLaunchTask": "Prepare Supabase run",
             "toolArgs": [
                 "--no-pub",
                 "--dart-define=DEV_ADMIN_PREVIEW=false",
@@ -22,6 +22,7 @@
             "program": "lib/main.dart",
             "cwd": "${workspaceFolder}",
             "flutterMode": "debug",
+            "preLaunchTask": "Stop earlier Flutter runs",
             "toolArgs": [
                 "--no-pub",
                 "--dart-define=DEV_ADMIN_PREVIEW=true"
@@ -37,7 +38,7 @@
             "program": "lib/main.dart",
             "cwd": "${workspaceFolder}",
             "flutterMode": "release",
-            "preLaunchTask": "Prepare Supabase defines from .env",
+            "preLaunchTask": "Prepare Supabase run",
             "toolArgs": [
                 "--no-pub",
                 "--dart-define=DEV_ADMIN_PREVIEW=false",
@@ -54,6 +55,7 @@
             "program": "lib/main.dart",
             "cwd": "${workspaceFolder}",
             "flutterMode": "release",
+            "preLaunchTask": "Stop earlier Flutter runs",
             "toolArgs": [
                 "--no-pub",
                 "--dart-define=DEV_ADMIN_PREVIEW=true"

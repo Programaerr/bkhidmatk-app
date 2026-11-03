@@ -1,5 +1,6 @@
 {
     "java.configuration.updateBuildConfiguration": "automatic",
     "gitdoc.enabled": true,
-    "dart.openDevTools": "flutter"
+    "dart.openDevTools": "flutter",
+    "debug.internalConsoleOptions": "openOnSessionStart"
 }
