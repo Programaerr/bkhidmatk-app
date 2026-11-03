@@ -61,11 +61,7 @@ const _homeSections = 8;
 const _homeCraftsmen = 6;
 
 class HomeTab extends StatefulWidget {
-  const HomeTab(
-      {super.key,
-      required this.onOpenProfile,
-      this.onOpenSection,
-      this.onLoaded});
+  const HomeTab({super.key, required this.onOpenProfile, this.onOpenSection, this.onLoaded});
 
   final VoidCallback onOpenProfile;
 
@@ -73,8 +69,7 @@ class HomeTab extends StatefulWidget {
   final ValueChanged<String>? onOpenSection;
 
   /// يأخذ الأقسام والحرفيين بعد كل جلب، فيفتح منهما تبويب الفنيين فوراً.
-  final void Function(List<Category> sections, List<Worker> craftsmen)?
-      onLoaded;
+  final void Function(List<Category> sections, List<Worker> craftsmen)? onLoaded;
 
   @override
   State<HomeTab> createState() => _HomeTabState();
@@ -164,7 +159,8 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
                         onRefresh: () async => _load(),
                         child: ListView(
                           physics: const AlwaysScrollableScrollPhysics(),
-                          padding: EdgeInsets.zero,
+                          // يبقى آخر صف فوق شريط التنقل الزجاجي.
+                          padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
                           children: [
                             _page(data, width, unit, left, top, night),
                           ],
@@ -263,10 +259,7 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
         Positioned(
           right: profileRight + profileFace + inset + _Design.nameGap * unit,
           left: left +
-              (_Design.messagesCenterX +
-                      _Design.smallFace / 2 +
-                      _Design.nameMargin) *
-                  unit +
+              (_Design.messagesCenterX + _Design.smallFace / 2 + _Design.nameMargin) * unit +
               inset,
           top: top + _Design.profileCenter * unit - profileFace / 2,
           height: profileFace + PushKey.depth * chrome,
@@ -315,8 +308,7 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
     final ink = night ? homeNightInk : homeLabel;
     final sections = data?.sections.take(_homeSections).toList();
     final craftsmen = data?.craftsmen.take(_homeCraftsmen).toList();
-    final craftsmenRows =
-        CraftsmanGrid.heightOf(craftsmen?.length ?? _homeCraftsmen, unit);
+    final craftsmenRows = CraftsmanGrid.heightOf(craftsmen?.length ?? _homeCraftsmen, unit);
     final right = width - left - homeDesignWidth * unit;
     final titleStyle = TextStyle(
       fontFamily: 'Cairo',
@@ -336,8 +328,7 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
             child: TextButton(
               style: TextButton.styleFrom(
                 foregroundColor: ink,
-                padding:
-                    EdgeInsets.symmetric(horizontal: _Design.allPadding * unit),
+                padding: EdgeInsets.symmetric(horizontal: _Design.allPadding * unit),
                 minimumSize: Size(0, _Design.allHeight * unit),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
@@ -374,9 +365,7 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
         );
 
     return SizedBox(
-      height: top +
-          (_Design.craftsmenTop + _Design.pageBottom) * unit +
-          craftsmenRows,
+      height: top + (_Design.craftsmenTop + _Design.pageBottom) * unit + craftsmenRows,
       child: Stack(
         children: [
           Positioned(
@@ -388,12 +377,9 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
           ),
           // «الأقسام» في وسط الدائرة اليمنى.
           Positioned(
-            left: left +
-                (homeSectionRightCenter - _Design.sectionsTitleWidth / 2) *
-                    unit,
+            left: left + (homeSectionRightCenter - _Design.sectionsTitleWidth / 2) * unit,
             width: _Design.sectionsTitleWidth * unit,
-            top: top +
-                (_Design.sectionsTitleCenter - _Design.titleHeight / 2) * unit,
+            top: top + (_Design.sectionsTitleCenter - _Design.titleHeight / 2) * unit,
             height: _Design.titleHeight * unit,
             child: Center(
               child: FittedBox(
@@ -404,8 +390,7 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
           ),
           showAll(
             _Design.sectionsAllCenter,
-            AllSectionsScreen(
-                sections: data?.sections, onOpenSection: widget.onOpenSection),
+            AllSectionsScreen(sections: data?.sections, onOpenSection: widget.onOpenSection),
           ),
           Positioned(
             left: left,
@@ -420,8 +405,7 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
           Positioned(
             right: right + _Design.craftsmenTitleRight * unit,
             left: left + _Design.titleRoom * unit,
-            top: top +
-                (_Design.craftsmenTitleCenter - _Design.titleHeight / 2) * unit,
+            top: top + (_Design.craftsmenTitleCenter - _Design.titleHeight / 2) * unit,
             height: _Design.titleHeight * unit,
             child: Align(
               alignment: AlignmentDirectional.centerStart,
@@ -431,8 +415,7 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
               ),
             ),
           ),
-          showAll(_Design.craftsmenAllCenter,
-              AllCraftsmenScreen(workers: data?.craftsmen)),
+          showAll(_Design.craftsmenAllCenter, AllCraftsmenScreen(workers: data?.craftsmen)),
           Positioned(
             left: left,
             top: top + _Design.craftsmenTop * unit,
@@ -451,10 +434,7 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
                       ),
                     ),
                   )
-                : CraftsmanGrid(
-                    unit: unit,
-                    workers: craftsmen,
-                    placeholders: _homeCraftsmen),
+                : CraftsmanGrid(unit: unit, workers: craftsmen, placeholders: _homeCraftsmen),
           ),
         ],
       ),
@@ -484,180 +464,22 @@ class _CountBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 158,
-        clipBehavior: Clip.antiAlias,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(22),
-          gradient: const LinearGradient(
-            begin: Alignment.topRight,
-            end: Alignment.bottomLeft,
-            colors: [Color(0xFF0C0C0E), Color(0xFF3B3408)],
-          ),
-        ),
-        child: Stack(
-          children: [
-            Positioned(
-              left: -30,
-              top: -50,
-              child: Container(
-                width: 190,
-                height: 190,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.gold.withValues(alpha: .12),
-                ),
-              ),
-            ),
-            Positioned(
-              left: 16,
-              bottom: 18,
-              child: SizedBox(
-                width: 140,
-                height: 140,
-                child: Opacity(
-                  opacity: .9,
-                  child: Image.asset('assets/images/logo.jpg',
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => const SizedBox()),
-                ),
-              ),
-            ),
-            Positioned(
-              top: 18,
-              right: 18,
-              left: 150,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: AppColors.gold,
-                      borderRadius: BorderRadius.circular(100),
-                    ),
-                    child: const Text('عرض هذا الأسبوع',
-                        style: TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w900,
-                            color: AppColors.ink)),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'خصم 15% على\nتصليح الغسالات',
-                    style: TextStyle(
-                      fontFamily: 'Cairo',
-                      fontSize: 19,
-                      fontWeight: FontWeight.w900,
-                      height: 1.35,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: AlignmentDirectional.centerStart,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(100),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text('احجز الآن',
-                                  style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w800,
-                                      color: AppColors.ink)),
-                              SizedBox(width: 2),
-                              Icon(Icons.chevron_left_rounded,
-                                  size: 14, color: AppColors.ink),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        const Text('لفترة محدودة',
-                            style: TextStyle(
-                                color: Colors.white54, fontSize: 8.5)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+    return Container(
+      constraints: BoxConstraints(minWidth: 14 * unit),
+      padding: EdgeInsets.symmetric(horizontal: 3 * unit),
+      decoration: BoxDecoration(
+        color: const Color(0xFFD92D20),
+        borderRadius: BorderRadius.circular(100),
       ),
-    );
-  }
-}
-
-class _ServiceMiniCard extends StatelessWidget {
-  const _ServiceMiniCard({required this.service});
-
-  final Service service;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final color = Color(service.categoryColor ?? 0xFFFFD400);
-    return SizedBox(
-      width: 168,
-      child: SoftCard(
-        padding: const EdgeInsets.all(12),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-              builder: (_) => ServiceDetailScreen(service: service)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              height: 62,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    color.withValues(alpha: .28),
-                    color.withValues(alpha: .08)
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(Icons.handyman_rounded, color: color, size: 26),
-            ),
-            const SizedBox(height: 9),
-            Text(service.title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.titleSmall
-                    ?.copyWith(fontSize: 12.5, height: 1.4)),
-            const Spacer(),
-            Row(
-              children: [
-                Text(fmtMoney(service.price),
-                    style:
-                        theme.textTheme.titleSmall?.copyWith(fontSize: 11.5)),
-                const Spacer(),
-                const Icon(Icons.star_rounded,
-                    size: 12, color: Color(0xFFF5A623)),
-                Text(service.rating.toStringAsFixed(1),
-                    style: theme.textTheme.bodySmall?.copyWith(fontSize: 9.5)),
-              ],
-            ),
-          ],
+      child: Text(
+        count > 9 ? '9+' : '$count',
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontFamily: 'Cairo',
+          fontSize: _Design.badgeSize * unit,
+          height: 1.3,
+          fontWeight: FontWeight.w700,
+          color: Colors.white,
         ),
       ),
     );

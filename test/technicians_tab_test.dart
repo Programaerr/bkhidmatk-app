@@ -10,6 +10,7 @@ import 'package:jaik/ui/auth/push_key.dart';
 import 'package:jaik/ui/customer/craftsman_info_screen.dart';
 import 'package:jaik/ui/customer/customer_shell.dart';
 import 'package:jaik/ui/customer/home_keys.dart';
+import 'package:jaik/ui/customer/home_tab.dart';
 import 'package:jaik/ui/customer/technicians_tab.dart';
 
 import 'fake_repository.dart';
@@ -374,6 +375,25 @@ void main() {
         expect(tester.takeException(), isNull);
       });
     }
+
+    testWidgets('آخر صف في الرئيسية والفنيين يبقى فوق شريط التنقل الزجاجي', (tester) async {
+      await _pumpShell(tester, size: const Size(392, 700));
+      await tester.pump(const Duration(milliseconds: 500));
+      final bar = tester.getRect(find.byKey(const ValueKey('glass-navigation-bar')));
+
+      Future<void> expectClear(Type tab) async {
+        final list = find.descendant(of: find.byType(tab), matching: find.byType(Scrollable)).first;
+        await tester.drag(list, const Offset(0, -3000));
+        await tester.pump();
+        await tester.pump(const Duration(seconds: 2));
+        final last = find.descendant(of: find.byType(tab), matching: find.byType(CraftsmanKey)).last;
+        expect(tester.getRect(last).bottom, lessThanOrEqualTo(bar.top));
+      }
+
+      await expectClear(HomeTab);
+      await _openTab(tester);
+      await expectClear(TechniciansTab);
+    });
 
     testWidgets('يعمل في الوضع الليلي', (tester) async {
       await _pumpShell(tester, theme: AppTheme.dark());

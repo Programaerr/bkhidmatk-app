@@ -40,9 +40,35 @@ class AppShellLayout extends StatefulWidget {
   State<AppShellLayout> createState() => _AppShellLayoutState();
 }
 
-class _AppShellLayoutState extends State<AppShellLayout> {
+class _AppShellLayoutState extends State<AppShellLayout>
+    with SingleTickerProviderStateMixin {
   // التبويب لا يُبنى ولا يجلب بياناته قبل أول فتح له.
   final _opened = <int>{};
+
+  // التبويب الجديد يظهر بتلاشٍ وانزلاق قصير، وما خلفه يبقى محفوظاً.
+  late final _entrance = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 260),
+    value: 1,
+  );
+  late final _fade =
+      CurvedAnimation(parent: _entrance, curve: Curves.easeOutCubic);
+  late final _slide = Tween<Offset>(
+    begin: const Offset(0.035, 0),
+    end: Offset.zero,
+  ).animate(CurvedAnimation(parent: _fade, curve: Curves.easeOutCubic));
+
+  @override
+  void didUpdateWidget(AppShellLayout oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.index != widget.index) _entrance.forward(from: 0);
+  }
+
+  @override
+  void dispose() {
+    _entrance.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,12 +78,32 @@ class _AppShellLayoutState extends State<AppShellLayout> {
       :pages,
       :onSelect,
       :floatingActionButton,
+      :accent,
       :topBanner,
     ) = widget;
     final theme = Theme.of(context);
     final wide = MediaQuery.sizeOf(context).width >= 900;
 
-    final body = IndexedStack(index: index, children: pages);
+    _opened.add(index);
+    final body = IndexedStack(
+      index: index,
+      children: [
+        for (final (i, page) in pages.indexed)
+          // ما خلف التبويب الظاهر لا يتحرك ولا يجلب شيئاً.
+          TickerMode(
+            enabled: i == index,
+            child: FadeTransition(
+              opacity: i == index ? _fade : kAlwaysCompleteAnimation,
+              child: SlideTransition(
+                position: i == index
+                    ? _slide
+                    : const AlwaysStoppedAnimation(Offset.zero),
+                child: _opened.contains(i) ? page : const SizedBox.shrink(),
+              ),
+            ),
+          ),
+      ],
+    );
 
     if (!wide) {
       return Scaffold(

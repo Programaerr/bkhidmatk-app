@@ -268,7 +268,8 @@ class _TechniciansTabState extends State<TechniciansTab> with RealtimeRefresh<Te
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      padding: EdgeInsets.zero,
+      // يبقى آخر صف فوق شريط التنقل الزجاجي.
+      padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
       children: [
         SizedBox(height: top + _Design.searchTop * unit),
         Align(

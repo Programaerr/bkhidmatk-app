@@ -36,7 +36,6 @@ void main() {
     );
 
     expect(find.byType(BackdropFilter), findsOneWidget);
-    expect(find.byType(AnimatedSwitcher), findsOneWidget);
     expect(find.text('page 0'), findsOneWidget);
     final navigationRect =
         tester.getRect(find.byKey(const ValueKey('glass-navigation-bar')));
@@ -44,6 +43,12 @@ void main() {
     expect(navigationRect.bottom, lessThanOrEqualTo(844));
 
     await tester.tap(find.text('الخدمات'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    final entrance = tester.widget<FadeTransition>(find
+        .ancestor(of: find.text('page 1'), matching: find.byType(FadeTransition))
+        .first);
+    expect(entrance.opacity.value, lessThan(1));
     await tester.pumpAndSettle();
     expect(selectedIndex, 1);
     expect(find.text('page 1'), findsOneWidget);
