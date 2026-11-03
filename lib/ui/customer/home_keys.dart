@@ -42,6 +42,20 @@ double homePageTop(double safeTop, double unit) =>
 /// أسفل الجهة الصفراء.
 double homeHillBottom(double top, double unit) => top + (_hillCenterY + _hillRadiusY) * unit;
 
+// عنوان الصفحة في الجهة الصفراء.
+const _titleCenter = 61.5;
+const _titleHeight = 32.0;
+const _titleSize = 18.0;
+
+// أزرار الاختيار: الأقصر منها بعرض التصميم، والأطول بقدر اسمها.
+const _choiceMinWidth = 56.7;
+const _choiceRadius = 10.7;
+const _choiceTextSize = 11.0;
+const _choicePadding = 10.0;
+
+// عرض الزر يُقرَّب إلى هذا الحد، فتتشارك الأزرار المتقاربة صورة واحدة.
+const _choiceWidthStep = 8.0;
+
 // الأقسام: أربعة في الصف، ومراكزها من يمين الإطار إلى يساره، وهي في وسط الشاشة.
 const homeSectionRightCenter = 333.5;
 const homeSectionLeftCenter = 57.5;
@@ -125,6 +139,138 @@ class _HillPainter extends CustomPainter {
       oldDelegate.centerX != centerX ||
       oldDelegate.radiusX != radiusX ||
       oldDelegate.radiusY != radiusY;
+}
+
+/// الجهة الصفراء وعنوان الصفحة فيها.
+class HomeHeader extends StatelessWidget {
+  const HomeHeader({
+    super.key,
+    required this.width,
+    required this.unit,
+    required this.top,
+    required this.title,
+    this.titleShift = 0,
+  });
+
+  final double width;
+  final double unit;
+  final double top;
+  final String title;
+
+  /// بُعد العنوان عن وسط الشاشة نحو اليمين، بوحدات التصميم.
+  final double titleShift;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        HomeHill(width: width, unit: unit, top: top),
+        Positioned(
+          left: 2 * titleShift * unit,
+          right: 0,
+          top: top + (_titleCenter - _titleHeight / 2) * unit,
+          height: _titleHeight * unit,
+          child: Center(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                title,
+                maxLines: 1,
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: _titleSize * unit,
+                  height: 1.2,
+                  fontWeight: FontWeight.w800,
+                  color: homeLabel,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// زر اختيار: أبيض، والمختار منها بلون أزرار الحرفيين.
+class ChoiceKey extends StatelessWidget {
+  const ChoiceKey({
+    super.key,
+    required this.label,
+    required this.selected,
+    required this.unit,
+    required this.onPressed,
+  });
+
+  /// ارتفاع وجه الزر بوحدات التصميم.
+  static const faceHeight = 25.7;
+
+  /// مساحة اللمس فوق الزر وتحته بوحدات التصميم.
+  static const touchMargin = 6.0;
+
+  final String label;
+  final bool selected;
+  final double unit;
+  final VoidCallback onPressed;
+
+  double _faceWidth(BuildContext context, TextStyle style) {
+    final text = TextPainter(
+      text: TextSpan(text: label, style: style),
+      textDirection: TextDirection.rtl,
+      textScaler: MediaQuery.textScalerOf(context),
+      maxLines: 1,
+    )..layout();
+    final needed = text.width + _choicePadding * 2 * unit;
+    text.dispose();
+    final step = _choiceWidthStep * unit;
+    return math.max(_choiceMinWidth * unit, (needed / step).ceil() * step);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final night = Theme.of(context).brightness == Brightness.dark;
+    final chrome = unit * homeKeyChrome;
+    final faceHeight = ChoiceKey.faceHeight * unit;
+    final style = TextStyle(
+      fontFamily: 'Cairo',
+      fontSize: _choiceTextSize * unit,
+      height: 1.2,
+      fontWeight: FontWeight.w700,
+      color: night && !selected ? homeNightInk : homeInk,
+    );
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: label,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onPressed,
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: touchMargin * unit),
+          child: SizedBox(
+            width: _faceWidth(context, style) + PushKey.faceInset * 2 * chrome,
+            height: faceHeight + PushKey.depth * chrome,
+            child: PushKey(
+              unit: chrome,
+              faceHeight: faceHeight,
+              faceRadius: _choiceRadius,
+              lemon: selected,
+              night: night ? kAlwaysCompleteAnimation : kAlwaysDismissedAnimation,
+              child: ExcludeSemantics(
+                child: Center(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(label, maxLines: 1, style: style),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 /// صورة الشخص، ورمز شخص إن لم تكن له صورة.

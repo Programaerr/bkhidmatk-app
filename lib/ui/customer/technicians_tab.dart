@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -15,10 +13,6 @@ import 'home_keys.dart';
 
 /// مقاسات التصميم المعتمد بالبكسل (إطار عرضه 391).
 abstract final class _Design {
-  static const titleCenter = 61.5;
-  static const titleHeight = 32.0;
-  static const titleSize = 18.0;
-
   static const searchLeft = 67.2;
   static const searchWidth = 260.3;
   static const searchTop = 145.4;
@@ -33,18 +27,9 @@ abstract final class _Design {
 
   // الأزرار الخمسة الأولى كما في التصميم، والأطول منها بقدر اسمها.
   static const choiceTop = 227.1;
-  static const choiceMinWidth = 56.7;
-  static const choiceHeight = 25.7;
-  static const choiceRadius = 10.7;
   static const choiceRight = 15.7;
   static const choiceGap = 18.1;
-  static const choiceTextSize = 11.0;
-  static const choicePadding = 10.0;
-  static const choiceTouchMargin = 6.0;
   static const choiceScroll = Duration(milliseconds: 250);
-
-  // عرض الزر يُقرَّب إلى هذا الحد، فتتشارك الأزرار المتقاربة صورة واحدة.
-  static const choiceWidthStep = 8.0;
 
   static const gridTop = 277.0;
   static const gridLefts = [203.1, 14.8];
@@ -220,34 +205,7 @@ class _TechniciansTabState extends State<TechniciansTab> with RealtimeRefresh<Te
                   right: 0,
                   top: 0,
                   height: hillBottom,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      HomeHill(width: width, unit: unit, top: top),
-                      Positioned(
-                        left: 0,
-                        right: 0,
-                        top: top + (_Design.titleCenter - _Design.titleHeight / 2) * unit,
-                        height: _Design.titleHeight * unit,
-                        child: Center(
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Text(
-                              'كل الفنيين',
-                              maxLines: 1,
-                              style: TextStyle(
-                                fontFamily: 'Cairo',
-                                fontSize: _Design.titleSize * unit,
-                                height: 1.2,
-                                fontWeight: FontWeight.w800,
-                                color: homeLabel,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                  child: HomeHeader(width: width, unit: unit, top: top, title: 'كل الحرفيين'),
                 ),
               ],
             );
@@ -260,9 +218,8 @@ class _TechniciansTabState extends State<TechniciansTab> with RealtimeRefresh<Te
   Widget _page(double unit, double left, double top, bool night) {
     final chromeInset = PushKey.faceInset * unit * homeKeyChrome;
     final chromeDepth = PushKey.depth * homeKeyChrome;
-    final choicesTop = _Design.choiceTop - _Design.choiceTouchMargin;
-    final choicesHeight =
-        _Design.choiceHeight + chromeDepth + _Design.choiceTouchMargin * 2;
+    final choicesTop = _Design.choiceTop - ChoiceKey.touchMargin;
+    final choicesHeight = ChoiceKey.faceHeight + chromeDepth + ChoiceKey.touchMargin * 2;
     final choices = [null, for (final section in _sections) section.name];
     final shown = _shown;
     return ListView(
@@ -295,7 +252,7 @@ class _TechniciansTabState extends State<TechniciansTab> with RealtimeRefresh<Te
               children: [
                 for (final (i, name) in choices.indexed) ...[
                   if (i > 0) SizedBox(width: _Design.choiceGap * unit - chromeInset * 2),
-                  _ChoiceKey(
+                  ChoiceKey(
                     key: _choiceKeys.putIfAbsent(name, GlobalKey.new),
                     label: name ?? 'الكل',
                     selected: name == _chosen,
@@ -310,14 +267,14 @@ class _TechniciansTabState extends State<TechniciansTab> with RealtimeRefresh<Te
         SizedBox(height: (_Design.gridTop - choicesTop - choicesHeight) * unit),
         if (_failed && _workers == null)
           _Message(
-            text: 'تعذّر جلب الفنيين. اسحب الصفحة إلى الأسفل لإعادة المحاولة.',
+            text: 'تعذّر جلب الحرفيين. اسحب الصفحة إلى الأسفل لإعادة المحاولة.',
             unit: unit,
             night: night,
           )
         else if (shown != null && shown.isEmpty)
           const EmptyState(
             icon: Icons.search_off_rounded,
-            title: 'لا يوجد فنيون مطابقون',
+            title: 'لا يوجد حرفيون مطابقون',
             subtitle: 'جرّب كلمة بحث أخرى أو اختر نوع شغل مختلفاً.',
           )
         else
@@ -405,80 +362,6 @@ class _TechniciansTabState extends State<TechniciansTab> with RealtimeRefresh<Te
               else
                 SizedBox(width: _Design.searchMargin * unit),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// زر اختيار نوع الشغل: أبيض، والمختار منها بلون أزرار الحرفيين.
-class _ChoiceKey extends StatelessWidget {
-  const _ChoiceKey({
-    super.key,
-    required this.label,
-    required this.selected,
-    required this.unit,
-    required this.onPressed,
-  });
-
-  final String label;
-  final bool selected;
-  final double unit;
-  final VoidCallback onPressed;
-
-  double _faceWidth(BuildContext context, TextStyle style) {
-    final text = TextPainter(
-      text: TextSpan(text: label, style: style),
-      textDirection: TextDirection.rtl,
-      textScaler: MediaQuery.textScalerOf(context),
-      maxLines: 1,
-    )..layout();
-    final needed = text.width + _Design.choicePadding * 2 * unit;
-    text.dispose();
-    final step = _Design.choiceWidthStep * unit;
-    return math.max(_Design.choiceMinWidth * unit, (needed / step).ceil() * step);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final night = Theme.of(context).brightness == Brightness.dark;
-    final chrome = unit * homeKeyChrome;
-    final faceHeight = _Design.choiceHeight * unit;
-    final style = TextStyle(
-      fontFamily: 'Cairo',
-      fontSize: _Design.choiceTextSize * unit,
-      height: 1.2,
-      fontWeight: FontWeight.w700,
-      color: night && !selected ? homeNightInk : homeInk,
-    );
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: label,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onPressed,
-        child: Padding(
-          padding: EdgeInsets.symmetric(vertical: _Design.choiceTouchMargin * unit),
-          child: SizedBox(
-            width: _faceWidth(context, style) + PushKey.faceInset * 2 * chrome,
-            height: faceHeight + PushKey.depth * chrome,
-            child: PushKey(
-              unit: chrome,
-              faceHeight: faceHeight,
-              faceRadius: _Design.choiceRadius,
-              lemon: selected,
-              night: night ? kAlwaysCompleteAnimation : kAlwaysDismissedAnimation,
-              child: ExcludeSemantics(
-                child: Center(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(label, maxLines: 1, style: style),
-                  ),
-                ),
-              ),
-            ),
           ),
         ),
       ),

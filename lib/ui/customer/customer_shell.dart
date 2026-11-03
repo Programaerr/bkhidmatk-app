@@ -69,7 +69,7 @@ class _CustomerShellState extends State<CustomerShell> {
 
   static const _items = [
     NavItem('الرئيسية', Icons.home_outlined, Icons.home_rounded),
-    NavItem('الفنيين', Icons.grid_view_outlined, Icons.grid_view_rounded),
+    NavItem('الحرفيين', Icons.grid_view_outlined, Icons.grid_view_rounded),
     NavItem('حجوزاتي', Icons.event_note_outlined, Icons.event_note_rounded),
     NavItem(
         'أعمالنا', Icons.video_library_outlined, Icons.video_library_rounded),
