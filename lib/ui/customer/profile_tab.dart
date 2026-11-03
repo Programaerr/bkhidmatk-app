@@ -470,11 +470,15 @@ class _ProfileTabState extends State<ProfileTab> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      user.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: _text(unit, _Design.nameSize, FontWeight.w800, homeInk),
+                    // الاسم الطويل يصغر حتى يظهر كله، ولا يُقطع.
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: AlignmentDirectional.centerStart,
+                      child: Text(
+                        user.name,
+                        maxLines: 1,
+                        style: _text(unit, _Design.nameSize, FontWeight.w800, homeInk),
+                      ),
                     ),
                     Text(
                       user.phone,
