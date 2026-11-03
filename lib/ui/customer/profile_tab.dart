@@ -19,8 +19,9 @@ abstract final class _Design {
   static const keyWidth = 279.9;
   static const keyRadius = 11.1;
 
-  // البطاقة: الصورة في زاويتها اليمنى العليا وزر التعديل في اليسرى، والمعلومات تحت الصورة.
-  static const cardHeight = 146.5;
+  // البطاقة: الصورة في يمينها وزر التعديل في يسارها، والمعلومات مقابل الصورة.
+  // البطاقة بقدر الصورة: فوق وجهها وتحت حلقتها الهامش نفسه الذي فوقها في التصميم.
+  static const cardHeight = photoTop * 2 + photoSize + PushKey.depth * homeKeyChrome;
   static const cardRadius = 11.5;
   static const photoSize = 52.7;
   static const photoMargin = 14.0;
@@ -28,6 +29,9 @@ abstract final class _Design {
   static const editSize = 34.2;
   static const editMargin = 20.5;
   static const editIconSize = 17.0;
+
+  // بين الصورة والمعلومات ما بين دائرة الملف الشخصي والاسم في الصفحة الرئيسية.
+  static const infoGap = 10.0;
   static const nameSize = 16.0;
   static const phoneSize = 12.5;
   static const citySize = 12.0;
@@ -398,6 +402,10 @@ class _ProfileTabState extends State<ProfileTab> {
     final inset = PushKey.faceInset * chrome;
     final ink = night ? homeNightInk : homeInk;
     final photoCenter = (_Design.photoTop + _Design.photoSize / 2) * unit;
+    // المعلومات بين حلقة زر التعديل وحلقة الصورة، بعيدة عن كل منهما.
+    final infoLeft = inset * 2 + (_Design.editMargin + _Design.editSize + _Design.infoGap) * unit;
+    final infoRight = inset * 2 + (_Design.photoMargin + _Design.photoSize + _Design.infoGap) * unit;
+    final infoWidth = _Design.keyWidth * unit + inset * 2 - infoLeft - infoRight;
     return SizedBox(
       width: _Design.keyWidth * unit + inset * 2,
       height: _Design.cardHeight * unit + PushKey.depth * chrome,
@@ -447,36 +455,49 @@ class _ProfileTabState extends State<ProfileTab> {
               child: Icon(Icons.edit_outlined, size: _Design.editIconSize * unit, color: ink),
             ),
           ),
+          // المعلومات في وسط الصورة كلها، بوجهها وحلقتها، مثل الاسم في الصفحة الرئيسية.
           Positioned(
-            left: inset + _Design.photoMargin * unit,
-            right: inset + _Design.photoMargin * unit,
-            top: (_Design.photoTop + _Design.photoSize) * unit + PushKey.depth * chrome,
-            bottom: PushKey.depth * chrome,
+            left: infoLeft,
+            width: infoWidth,
+            top: _Design.photoTop * unit,
+            height: _Design.photoSize * unit + PushKey.depth * chrome,
             child: FittedBox(
               fit: BoxFit.scaleDown,
               alignment: AlignmentDirectional.centerStart,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(user.name, style: _text(unit, _Design.nameSize, FontWeight.w800, homeInk)),
-                  Text(
-                    user.phone,
-                    textDirection: TextDirection.ltr,
-                    style: _text(unit, _Design.phoneSize, FontWeight.w700, homeInk),
-                  ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.location_on_rounded, size: _Design.cityIconSize * unit, color: homeInk),
-                      SizedBox(width: 3 * unit),
-                      Text(
-                        user.city ?? 'العراق',
-                        style: _text(unit, _Design.citySize, FontWeight.w600, homeInk),
-                      ),
-                    ],
-                  ),
-                ],
+              child: SizedBox(
+                width: infoWidth,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      user.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: _text(unit, _Design.nameSize, FontWeight.w800, homeInk),
+                    ),
+                    Text(
+                      user.phone,
+                      maxLines: 1,
+                      textDirection: TextDirection.ltr,
+                      style: _text(unit, _Design.phoneSize, FontWeight.w700, homeInk),
+                    ),
+                    Row(
+                      children: [
+                        Icon(Icons.location_on_rounded, size: _Design.cityIconSize * unit, color: homeInk),
+                        SizedBox(width: 3 * unit),
+                        Flexible(
+                          child: Text(
+                            user.city ?? 'العراق',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: _text(unit, _Design.citySize, FontWeight.w600, homeInk),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
