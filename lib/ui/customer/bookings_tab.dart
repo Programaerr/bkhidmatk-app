@@ -103,7 +103,8 @@ class _BookingsTabState extends State<BookingsTab>
                     onRefresh: () async => _load(),
                     child: FutureBuilder<List<Booking>>(
                       future: _future,
-                      builder: (context, snapshot) => _page(snapshot, unit, left, top, night),
+                      builder: (context, snapshot) =>
+                          _page(snapshot, width, unit, left, top, night),
                     ),
                   ),
                 ),
@@ -130,6 +131,7 @@ class _BookingsTabState extends State<BookingsTab>
 
   Widget _page(
     AsyncSnapshot<List<Booking>> snapshot,
+    double width,
     double unit,
     double left,
     double top,
@@ -149,19 +151,26 @@ class _BookingsTabState extends State<BookingsTab>
       padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
       children: [
         SizedBox(height: top + choicesTop * unit),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            for (final (i, label) in _filters.indexed) ...[
-              if (i > 0) SizedBox(width: _Design.choiceGap * unit - chromeInset * 2),
-              ChoiceKey(
-                label: label,
-                selected: i == _filter,
-                unit: unit,
-                onPressed: () => setState(() => _filter = i),
-              ),
-            ],
-          ],
+        // في وسط الشاشة، ويتحرك جانبياً إذا كبّر الهاتف الخط حتى لم تعد تتسع.
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minWidth: width),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                for (final (i, label) in _filters.indexed) ...[
+                  if (i > 0) SizedBox(width: _Design.choiceGap * unit - chromeInset * 2),
+                  ChoiceKey(
+                    label: label,
+                    selected: i == _filter,
+                    unit: unit,
+                    onPressed: () => setState(() => _filter = i),
+                  ),
+                ],
+              ],
+            ),
+          ),
         ),
         if (loading || bookings.isEmpty) ...[
           SizedBox(height: (_Design.browseTop - choicesBottom) * unit),

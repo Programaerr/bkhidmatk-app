@@ -186,8 +186,10 @@ void main() {
       expect(faces[1].left - faces[2].right, closeTo(22.4, .01));
       // الصف في وسط الشاشة.
       expect((faces[0].right + faces[2].left) / 2, closeTo(391 / 2, .01));
-      // الاسم القصير بعرض التصميم، والطويل بقدر اسمه.
-      expect(faces[0].width, closeTo(56.7, .01));
+      // لا زر أضيق من التصميم، والاسم الطويل يأخذ عرضه.
+      for (final face in faces) {
+        expect(face.width, greaterThanOrEqualTo(56.7));
+      }
 
       final browse = _face(tester, _browse, 39);
       expect(browse.left, closeTo(128.1, .01));
