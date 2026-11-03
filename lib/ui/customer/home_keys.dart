@@ -223,8 +223,9 @@ class ChoiceKey extends StatelessWidget {
     )..layout();
     final needed = text.width + _choicePadding * 2 * unit;
     text.dispose();
+    if (needed <= _choiceMinWidth * unit) return _choiceMinWidth * unit;
     final step = _choiceWidthStep * unit;
-    return math.max(_choiceMinWidth * unit, (needed / step).ceil() * step);
+    return (needed / step).ceil() * step;
   }
 
   @override
