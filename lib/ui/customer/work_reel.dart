@@ -37,6 +37,7 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
   bool _userPaused = false;
   bool _showPlayIcon = false;
   bool _isPlaying = false;
+  bool _showDate = false;
   int _initializationGeneration = 0;
 
   @override
@@ -290,10 +291,7 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
             left: 16,
             right: 82,
             bottom: bottomClearance,
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: _caption(),
-            ),
+            child: _caption(),
           ),
           if (controller != null && controller.value.isInitialized)
             Positioned(
@@ -408,53 +406,96 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
     );
   }
 
-  // الشعار وجايك والتاريخ فقط، بلا عنوان ولا مشاهدات.
+  // الشعار على اليسار وجايك بجانبه، وكلام الفيديو على اليمين يُظهر تاريخ النشر عند لمسه.
   Widget _caption() {
+    final description = _work.description?.trim();
     return Row(
-      mainAxisSize: MainAxisSize.min,
+      textDirection: TextDirection.ltr,
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        Container(
-          width: 38,
-          height: 38,
-          padding: const EdgeInsets.all(1.5),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-          ),
-          child: ClipOval(
-            child: Image.asset(
-              'assets/images/logo.jpg',
-              fit: BoxFit.cover,
-              cacheWidth: 76,
-              cacheHeight: 76,
-              errorBuilder: (_, __, ___) => const ColoredBox(
-                color: AppColors.gold,
-                child: Icon(Icons.handyman_rounded, color: AppColors.ink),
+        Row(
+          textDirection: TextDirection.ltr,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              padding: const EdgeInsets.all(1.5),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+              ),
+              child: ClipOval(
+                child: Image.asset(
+                  'assets/images/logo.jpg',
+                  fit: BoxFit.cover,
+                  cacheWidth: 76,
+                  cacheHeight: 76,
+                  errorBuilder: (_, __, ___) => const ColoredBox(
+                    color: AppColors.gold,
+                    child: Icon(Icons.handyman_rounded, color: AppColors.ink),
+                  ),
+                ),
               ),
             ),
-          ),
-        ),
-        const SizedBox(width: 9),
-        const Flexible(
-          child: Text(
-            'جايك',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 13,
-              fontWeight: FontWeight.w900,
+            const SizedBox(width: 9),
+            const Text(
+              'جايك',
+              maxLines: 1,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.w900,
+              ),
             ),
-          ),
+          ],
         ),
-        const SizedBox(width: 7),
-        Flexible(
-          child: Text(
-            fmtDateShort(_work.createdAt),
-            textDirection: TextDirection.ltr,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: Colors.white70, fontSize: 10),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Align(
+            alignment: Alignment.bottomRight,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => setState(() => _showDate = !_showDate),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _work.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                      height: 1.45,
+                    ),
+                  ),
+                  if (description != null && description.isNotEmpty) ...[
+                    const SizedBox(height: 3),
+                    Text(
+                      description,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                  if (_showDate) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      fmtDateShort(_work.createdAt),
+                      textDirection: TextDirection.ltr,
+                      style: const TextStyle(color: Colors.white70, fontSize: 10),
+                    ),
+                  ],
+                ],
+              ),
+            ),
           ),
         ),
       ],
