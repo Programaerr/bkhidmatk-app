@@ -88,7 +88,7 @@ Future<void> _pumpShell(
 }
 
 Future<void> _openTab(WidgetTester tester) async {
-  await tester.tap(find.text('الفنيين').last);
+  await tester.tap(find.text('الحرفيين').last);
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 60));
 }
@@ -104,12 +104,14 @@ Finder get _names => find.descendant(
     );
 
 void main() {
-  group('تبويب الفنيين', () {
-    testWidgets('اسم التبويب الفنيين بدل الخدمات، والعنوان كل الفنيين', (tester) async {
+  group('تبويب الحرفيين', () {
+    testWidgets('اسم التبويب الحرفيين بدل الفنيين، والعنوان كل الحرفيين', (tester) async {
       await _pumpShell(tester);
       expect(find.text('الخدمات'), findsNothing);
+      expect(find.text('الفنيين'), findsNothing);
       await _openTab(tester);
-      expect(find.text('كل الفنيين'), findsOneWidget);
+      expect(find.text('كل الحرفيين'), findsOneWidget);
+      expect(find.text('كل الفنيين'), findsNothing);
       expect(find.text('كل الخدمات'), findsNothing);
       expect(find.text('ابحث عن حرفي'), findsOneWidget);
     });
@@ -202,7 +204,7 @@ void main() {
       await tester.pump();
       expect(repo.workerFetches, fetches);
       expect(_names, findsNothing);
-      expect(find.text('لا يوجد فنيون مطابقون'), findsOneWidget);
+      expect(find.text('لا يوجد حرفيون مطابقون'), findsOneWidget);
 
       await tester.tap(find.byIcon(Icons.close_rounded));
       await tester.pump();
@@ -226,7 +228,7 @@ void main() {
       final repo = _Repo();
       await _pumpShell(tester, repo: repo);
       final fetches = repo.workerFetches;
-      await tester.tap(find.text('الفنيين').last);
+      await tester.tap(find.text('الحرفيين').last);
       await tester.pump();
       expect(_names, findsNWidgets(3));
       expect(repo.workerFetches, fetches);
@@ -267,7 +269,7 @@ void main() {
         ),
       );
       await tester.pump();
-      expect(find.textContaining('تعذّر جلب الفنيين'), findsOneWidget);
+      expect(find.textContaining('تعذّر جلب الحرفيين'), findsOneWidget);
       expect(find.byType(CraftsmanKey), findsNothing);
     });
 
@@ -376,7 +378,7 @@ void main() {
       });
     }
 
-    testWidgets('آخر صف في الرئيسية والفنيين يبقى فوق شريط التنقل الزجاجي', (tester) async {
+    testWidgets('آخر صف في الرئيسية والحرفيين يبقى فوق شريط التنقل الزجاجي', (tester) async {
       await _pumpShell(tester, size: const Size(392, 700));
       await tester.pump(const Duration(milliseconds: 500));
       final bar = tester.getRect(find.byKey(const ValueKey('glass-navigation-bar')));
@@ -399,7 +401,7 @@ void main() {
       await _pumpShell(tester, theme: AppTheme.dark());
       await _openTab(tester);
       expect(tester.takeException(), isNull);
-      expect(find.text('كل الفنيين'), findsOneWidget);
+      expect(find.text('كل الحرفيين'), findsOneWidget);
     });
   });
 }

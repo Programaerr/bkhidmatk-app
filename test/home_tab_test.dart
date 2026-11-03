@@ -409,7 +409,7 @@ void main() {
       await tester.pump();
       await _tapAndOpen(tester, _circle('حداد').last);
       expect(inTab(CraftsmanKey), findsNothing);
-      expect(find.text('لا يوجد فنيون مطابقون'), findsOneWidget);
+      expect(find.text('لا يوجد حرفيون مطابقون'), findsOneWidget);
     });
 
     testWidgets('بلا حرفيين متاحين تظهر رسالة بدل الأزرار', (tester) async {

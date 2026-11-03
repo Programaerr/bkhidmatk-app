@@ -137,7 +137,7 @@ void main() {
       await _pumpApp(tester, const CustomerShell(), _WatchedRepo());
       bool moves<T>() => TickerMode.valuesOf(tester.element(_anyState<T>())).enabled;
       expect(moves<HomeTab>(), isTrue);
-      await tester.tap(find.text('الفنيين').last);
+      await tester.tap(find.text('الحرفيين').last);
       await tester.pump();
       expect(moves<HomeTab>(), isFalse);
       expect(moves<TechniciansTab>(), isTrue);
@@ -146,14 +146,14 @@ void main() {
     testWidgets('الرجوع إلى تبويب يحدّث بياناته', (tester) async {
       final repo = _CountingCategoriesRepo();
       await _pumpApp(tester, const CustomerShell(), repo);
-      await tester.tap(find.text('الفنيين').last);
+      await tester.tap(find.text('الحرفيين').last);
       await tester.pump();
       final opened = repo.workerLists;
       await tester.tap(find.text('حسابي'));
       await tester.pump(const Duration(seconds: 1));
       expect(repo.workerLists, opened);
 
-      await tester.tap(find.text('الفنيين').last);
+      await tester.tap(find.text('الحرفيين').last);
       await tester.pump();
       expect(repo.workerLists, opened);
       await tester.pump(const Duration(milliseconds: 400));
