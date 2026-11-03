@@ -1,14 +1,81 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/theme.dart';
 import '../../core/utils.dart';
+import '../../data/models.dart';
 import '../../state/app_state.dart';
+import '../auth/auth_route.dart';
+import '../auth/day_night_switch.dart';
+import '../auth/push_key.dart';
+import '../auth/truck_scene.dart';
 import '../widgets/quick_route.dart';
-import '../widgets/realtime_refresh.dart';
 import '../widgets/ui.dart';
+import 'home_keys.dart';
 import 'messages_screen.dart';
-import 'receipts_screen.dart';
+
+/// مقاسات التصميم المعتمد بالبكسل (إطار عرضه 391).
+abstract final class _Design {
+  static const keyWidth = 279.9;
+  static const keyRadius = 11.1;
+
+  // البطاقة: الصورة في زاويتها اليمنى العليا وزر التعديل في اليسرى، والمعلومات تحت الصورة.
+  static const cardHeight = 146.5;
+  static const cardRadius = 11.5;
+  static const photoSize = 52.7;
+  static const photoMargin = 14.0;
+  static const photoTop = 12.1;
+  static const editSize = 34.2;
+  static const editMargin = 20.5;
+  static const editIconSize = 17.0;
+  static const nameSize = 16.0;
+  static const phoneSize = 12.5;
+  static const citySize = 12.0;
+  static const cityIconSize = 13.0;
+
+  static const menuHeight = 73.1;
+  static const nightHeight = 47.2;
+  static const languageHeight = 51.9;
+  static const logoutHeight = 39.0;
+
+  // الفراغات كما في التصميم: من أسفل الجهة الصفراء أو من قاعدة الزر إلى وجه الذي بعده.
+  static const cardGap = 54.4;
+  static const groupGap = 21.6;
+  static const rowGap = 7.8;
+  static const logoutGap = 50.3;
+
+  // التصميم أطول مما فوق شريط التنقل، فتضيق الفراغات لا الأزرار حتى يظهر زر الخروج كله.
+  // وإذا ضاقت إلى هذا الحد تتحرك الصفحة.
+  static const barMargin = 12.0;
+  static const minSpacing = .35;
+
+  // ما داخل الأزرار.
+  static const keyMargin = 14.0;
+  static const menuBadgeSize = 38.0;
+  static const menuIconSize = 20.0;
+  static const smallBadgeSize = 30.0;
+  static const smallIconSize = 17.0;
+  static const badgeGap = 10.0;
+  static const titleSize = 14.0;
+  static const subtitleSize = 10.5;
+  static const arrowSize = 22.0;
+  static const switchHeight = 22.0;
+  static const pillHeight = 26.0;
+  static const pillPadding = 10.0;
+  static const pillRadius = 8.0;
+  static const pillTextSize = 11.0;
+  static const logoutTextSize = 13.0;
+  static const logoutIconSize = 18.0;
+  static const logoutIconGap = 6.0;
+}
+
+TextStyle _text(double unit, double size, FontWeight weight, Color color) => TextStyle(
+      fontFamily: 'Cairo',
+      fontSize: size * unit,
+      height: 1.3,
+      fontWeight: weight,
+      color: color,
+    );
 
 class ProfileTab extends StatefulWidget {
   const ProfileTab({
@@ -28,30 +95,7 @@ class ProfileTab extends StatefulWidget {
   State<ProfileTab> createState() => _ProfileTabState();
 }
 
-class _ProfileTabState extends State<ProfileTab>
-    with RealtimeRefresh<ProfileTab> {
-  Future<List<int>>? _stats;
-
-  @override
-  void onRealtimeChange() => _load();
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  void _load() {
-    final state = context.read<AppState>();
-    final id = state.user!.id!;
-    setState(() {
-      _stats = Future.wait([
-        state.repo.bookingsForCustomer(id).then((v) => v.length),
-        state.repo.receiptsForUser(id).then((v) => v.length),
-      ]);
-    });
-  }
-
+class _ProfileTabState extends State<ProfileTab> {
   Future<void> _editProfile() async {
     final state = context.read<AppState>();
     final user = state.user!;
@@ -145,7 +189,6 @@ class _ProfileTabState extends State<ProfileTab>
         address: address.text.trim(),
       ));
       if (mounted) AppSnack.show(context, 'تم تحديث بياناتك');
-      _load();
     }
   }
 
@@ -158,225 +201,284 @@ class _ProfileTabState extends State<ProfileTab>
     if (ok && mounted) await context.read<AppState>().logout();
   }
 
-  void _about() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const BrandLogo(size: 74, radius: 20),
-            const SizedBox(height: 10),
-            const BrandTitle(fontSize: 22),
-            const SizedBox(height: 4),
-            Text('الإصدار 1.0.0',
-                style: Theme.of(ctx)
-                    .textTheme
-                    .bodySmall
-                    ?.copyWith(fontSize: 10.5)),
-            const SizedBox(height: 12),
-            const Text(
-              'منصة عراقية تربط الزبائن بعمال وفنيين موثوقين: كهرباء، صباغة، سباكة، ديكور، تنظيف وأكثر.\n\nالدفع بماستركارد، وصولات إلكترونية قابلة للطباعة، ومتابعة كاملة للحجز.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 11.5, height: 1.8),
-            ),
-            const SizedBox(height: 12),
-            Text('الدعم: 0770 000 0000',
-                style:
-                    Theme.of(ctx).textTheme.bodySmall?.copyWith(fontSize: 11)),
-          ],
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx), child: const Text('حسناً')),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final state = context.watch<AppState>();
-    final user = state.user!;
-    return SafeArea(
-      bottom: false,
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(18, 16, 18, 30),
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-              gradient: const LinearGradient(
-                begin: Alignment.topRight,
-                end: Alignment.bottomLeft,
-                colors: [Color(0xFF111113), Color(0xFF2E2907)],
-              ),
-            ),
-            child: Column(
+    final night = Theme.of(context).brightness == Brightness.dark;
+    final safeTop = MediaQuery.viewPaddingOf(context).top;
+    final barRoom = MediaQuery.paddingOf(context).bottom;
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      // شريط الحالة فوق الجهة الصفراء دائماً، نهاراً وليلاً.
+      value: appSystemBars(night: false),
+      child: ColoredBox(
+        color: night ? homeNightGround : homeCream,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final width = constraints.maxWidth;
+            final unit = homeUnit(width);
+            final top = homePageTop(safeTop, unit);
+            final hillBottom = homeHillBottom(top, unit);
+            final rows = _rows(state, unit, night);
+            final base = PushKey.depth * homeKeyChrome;
+            final keys = rows.fold(0.0, (sum, row) => sum + row.height + base);
+            final gaps = rows.fold(0.0, (sum, row) => sum + row.gap);
+            final room =
+                (constraints.maxHeight - barRoom - hillBottom) / unit - _Design.barMargin;
+            final spacing = ((room - keys) / gaps).clamp(_Design.minSpacing, 1.0);
+            return Stack(
               children: [
-                Row(
-                  children: [
-                    AvatarCircle(
-                        name: user.name, size: 58, imagePath: user.avatarPath),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(user.name,
-                              style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w900)),
-                          const SizedBox(height: 2),
-                          Text(user.phone,
-                              textDirection: TextDirection.ltr,
-                              style: const TextStyle(
-                                  color: Colors.white54, fontSize: 11)),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              const Icon(Icons.location_on_rounded,
-                                  size: 12, color: AppColors.gold),
-                              const SizedBox(width: 3),
-                              Text(user.city ?? 'العراق',
-                                  style: const TextStyle(
-                                      color: Colors.white70, fontSize: 10)),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: _editProfile,
-                      icon: const Icon(Icons.edit_outlined,
-                          color: Colors.white, size: 20),
-                      style: IconButton.styleFrom(
-                        backgroundColor: Colors.white.withValues(alpha: .1),
-                      ),
-                    ),
-                  ],
+                Positioned.fill(
+                  child: ListView(
+                    // يبقى آخر زر فوق شريط التنقل الزجاجي.
+                    padding: EdgeInsets.only(top: hillBottom, bottom: barRoom),
+                    children: [
+                      for (final row in rows) ...[
+                        SizedBox(height: row.gap * spacing * unit),
+                        Center(child: row.key),
+                      ],
+                      SizedBox(height: _Design.barMargin * unit),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 16),
-                // وضع الموظف: بدون إحصائيات حجوزات أو وصولات.
-                if (!widget.workerMode)
-                  FutureBuilder<List<int>>(
-                    future: _stats,
-                    builder: (context, snapshot) {
-                      final s = snapshot.data ?? const [0, 0];
-                      return Row(
-                        children: [
-                          _Stat(label: 'حجز', value: '${s[0]}'),
-                          Container(
-                              width: 1,
-                              height: 30,
-                              color: Colors.white.withValues(alpha: .1)),
-                          _Stat(label: 'وصل', value: '${s[1]}'),
-                        ],
-                      );
-                    },
-                  ),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: 0,
+                  height: hillBottom,
+                  child: HomeHeader(width: width, unit: unit, top: top, title: 'الملف الشخصي'),
+                ),
               ],
-            ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  /// أزرار الصفحة بالترتيب، مع الفراغ قبل كل منها وارتفاع وجهه.
+  List<({double gap, double height, Widget key})> _rows(AppState state, double unit, bool night) {
+    final menu = [
+      if (!widget.workerMode)
+        _MenuKey(
+          unit: unit,
+          icon: Icons.event_note_rounded,
+          title: 'حجوزاتي',
+          subtitle: 'كل حجوزاتك وحالتها',
+          onPressed: widget.onOpenBookings,
+        ),
+      if (!widget.workerMode && widget.onOpenAdminDashboard != null)
+        _MenuKey(
+          unit: unit,
+          icon: Icons.space_dashboard_rounded,
+          title: 'لوحة التحكم',
+          subtitle: 'إدارة التطبيق والحجوزات',
+          onPressed: widget.onOpenAdminDashboard!,
+        ),
+      _MenuKey(
+        unit: unit,
+        icon: Icons.support_agent_rounded,
+        title: 'الرسائل والدعم',
+        subtitle: 'تواصل مع إدارة جايك',
+        onPressed: () => Navigator.push(
+          context,
+          QuickRoute(builder: (_) => const MessagesScreen()),
+        ),
+      ),
+    ];
+    final dark = state.themeMode == ThemeMode.dark;
+    final ink = night ? homeNightInk : homeInk;
+    return [
+      (gap: _Design.cardGap, height: _Design.cardHeight, key: _card(state.user!, unit, night)),
+      for (final (i, key) in menu.indexed)
+        (gap: i == 0 ? _Design.groupGap : _Design.rowGap, height: _Design.menuHeight, key: key),
+      (
+        gap: _Design.groupGap,
+        height: _Design.nightHeight,
+        key: _WideKey(
+          unit: unit,
+          faceHeight: _Design.nightHeight,
+          label: 'الوضع الليلي',
+          toggled: dark,
+          onPressed: () => state.setTheme(!dark),
+          child: Row(
+            children: [
+              _Badge(
+                unit: unit,
+                size: _Design.smallBadgeSize,
+                icon: dark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                iconSize: _Design.smallIconSize,
+              ),
+              SizedBox(width: _Design.badgeGap * unit),
+              Expanded(
+                child: Text(
+                  'الوضع الليلي',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: _text(unit, _Design.titleSize, FontWeight.w800, ink),
+                ),
+              ),
+              SizedBox(
+                width: _Design.switchHeight * 2 * unit,
+                height: _Design.switchHeight * unit,
+                child: DayNightSwitch(night: dark),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
-          SoftCard(
-            padding: EdgeInsets.zero,
-            child: Column(
-              children: [
-                if (!widget.workerMode) ...[
-                  _MenuTile(
-                    icon: Icons.event_note_rounded,
-                    title: 'حجوزاتي',
-                    subtitle: 'كل حجوزاتك وحالتها',
-                    onTap: widget.onOpenBookings,
+        ),
+      ),
+      (
+        gap: _Design.groupGap,
+        height: _Design.languageHeight,
+        key: _WideKey(
+          unit: unit,
+          faceHeight: _Design.languageHeight,
+          label: 'اللغة',
+          value: state.english ? 'English' : 'عربي',
+          onPressed: () => state.setEnglish(!state.english),
+          child: Row(
+            children: [
+              _Badge(
+                unit: unit,
+                size: _Design.smallBadgeSize,
+                icon: Icons.public,
+                iconSize: _Design.smallIconSize,
+              ),
+              SizedBox(width: _Design.badgeGap * unit),
+              Expanded(
+                child: Text(
+                  'اللغة',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: _text(unit, _Design.titleSize, FontWeight.w800, ink),
+                ),
+              ),
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: _LanguagePill(unit: unit, english: state.english),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      (
+        gap: _Design.logoutGap,
+        height: _Design.logoutHeight,
+        key: _WideKey(
+          unit: unit,
+          faceHeight: _Design.logoutHeight,
+          label: 'تسجيل الخروج',
+          red: true,
+          onPressed: _logout,
+          child: Center(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.logout_rounded, size: _Design.logoutIconSize * unit, color: Colors.white),
+                  SizedBox(width: _Design.logoutIconGap * unit),
+                  Text(
+                    'تسجيل الخروج',
+                    style: _text(unit, _Design.logoutTextSize, FontWeight.w800, Colors.white),
                   ),
-                  const Divider(height: 1),
-                  if (widget.onOpenAdminDashboard != null) ...[
-                    _MenuTile(
-                      icon: Icons.space_dashboard_rounded,
-                      title: 'لوحة التحكم',
-                      subtitle: 'إدارة التطبيق والحجوزات',
-                      onTap: widget.onOpenAdminDashboard!,
-                    ),
-                    const Divider(height: 1),
-                  ],
-                  _MenuTile(
-                    icon: Icons.receipt_long_rounded,
-                    title: 'وصولات الدفع',
-                    subtitle: 'معاينة وطباعة الوصولات',
-                    onTap: () async {
-                      await Navigator.push(
-                        context,
-                        QuickRoute(
-                            builder: (_) => const ReceiptsScreen()),
-                      );
-                      _load();
-                    },
-                  ),
-                  const Divider(height: 1),
                 ],
-                _MenuTile(
-                  icon: Icons.support_agent_rounded,
-                  title: 'الرسائل والدعم',
-                  subtitle: 'تواصل مع إدارة جايك',
-                  onTap: () => Navigator.push(
-                    context,
-                    QuickRoute(builder: (_) => const MessagesScreen()),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 14),
-          SoftCard(
-            padding: EdgeInsets.zero,
-            child: Column(
-              children: [
-                SwitchListTile.adaptive(
-                  value: state.themeMode == ThemeMode.dark,
-                  onChanged: (v) => state.setTheme(v),
-                  secondary: Icon(
-                    state.themeMode == ThemeMode.dark
-                        ? Icons.dark_mode_rounded
-                        : Icons.light_mode_rounded,
-                    size: 20,
-                  ),
-                  title: const Text('الوضع الليلي',
-                      style:
-                          TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-                  subtitle: const Text('مريح للعين في الإضاءة المنخفضة',
-                      style: TextStyle(fontSize: 10.5)),
-                ),
-                const Divider(height: 1),
-                _MenuTile(
-                  icon: Icons.info_outline_rounded,
-                  title: 'عن جايك',
-                  subtitle: 'الإصدار 1.0.0',
-                  onTap: _about,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 14),
-          SizedBox(
-            height: 50,
-            child: OutlinedButton.icon(
-              onPressed: _logout,
-              icon: const Icon(Icons.logout_rounded, size: 18),
-              label: const Text('تسجيل الخروج'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.danger,
-                side: BorderSide(color: AppColors.danger.withValues(alpha: .3)),
               ),
             ),
           ),
-          const SizedBox(height: 16),
-          Center(
-            child: Text('جايك · صُنع بحب في العراق',
-                style: theme.textTheme.bodySmall?.copyWith(fontSize: 10)),
+        ),
+      ),
+    ];
+  }
+
+  /// بطاقة الحساب الصفراء: الصورة وزر التعديل، والاسم والرقم والمحافظة.
+  Widget _card(AppUser user, double unit, bool night) {
+    final chrome = unit * homeKeyChrome;
+    final inset = PushKey.faceInset * chrome;
+    final ink = night ? homeNightInk : homeInk;
+    final photoCenter = (_Design.photoTop + _Design.photoSize / 2) * unit;
+    return SizedBox(
+      width: _Design.keyWidth * unit + inset * 2,
+      height: _Design.cardHeight * unit + PushKey.depth * chrome,
+      child: Stack(
+        children: [
+          // البطاقة نفسها لا تُضغط، بل زر التعديل فيها.
+          Positioned.fill(
+            child: IgnorePointer(
+              child: PushKey(
+                unit: chrome,
+                faceHeight: _Design.cardHeight * unit,
+                faceRadius: _Design.cardRadius,
+                lemon: true,
+                night: night ? kAlwaysCompleteAnimation : kAlwaysDismissedAnimation,
+                child: const SizedBox.shrink(),
+              ),
+            ),
+          ),
+          Positioned(
+            right: _Design.photoMargin * unit,
+            top: _Design.photoTop * unit,
+            child: IgnorePointer(
+              child: ExcludeSemantics(
+                child: PushKeyCircle(
+                  diameter: _Design.photoSize * unit,
+                  unit: chrome,
+                  label: user.name,
+                  onPressed: null,
+                  child: PersonFace(
+                    name: user.name,
+                    imagePath: user.avatarPath,
+                    size: _Design.photoSize * unit,
+                    color: ink,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: _Design.editMargin * unit,
+            top: photoCenter - _Design.editSize / 2 * unit,
+            child: PushKeyCircle(
+              diameter: _Design.editSize * unit,
+              unit: chrome,
+              label: 'تعديل الملف الشخصي',
+              onPressed: _editProfile,
+              child: Icon(Icons.edit_outlined, size: _Design.editIconSize * unit, color: ink),
+            ),
+          ),
+          Positioned(
+            left: inset + _Design.photoMargin * unit,
+            right: inset + _Design.photoMargin * unit,
+            top: (_Design.photoTop + _Design.photoSize) * unit + PushKey.depth * chrome,
+            bottom: PushKey.depth * chrome,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: AlignmentDirectional.centerStart,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(user.name, style: _text(unit, _Design.nameSize, FontWeight.w800, homeInk)),
+                  Text(
+                    user.phone,
+                    textDirection: TextDirection.ltr,
+                    style: _text(unit, _Design.phoneSize, FontWeight.w700, homeInk),
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.location_on_rounded, size: _Design.cityIconSize * unit, color: homeInk),
+                      SizedBox(width: 3 * unit),
+                      Text(
+                        user.city ?? 'العراق',
+                        style: _text(unit, _Design.citySize, FontWeight.w600, homeInk),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
@@ -384,63 +486,186 @@ class _ProfileTabState extends State<ProfileTab>
   }
 }
 
-class _Stat extends StatelessWidget {
-  const _Stat({required this.label, required this.value});
+/// زر بعرض البطاقة من نظام أزرار التطبيق، وما فيه يبدأ بهامش من طرفيه.
+class _WideKey extends StatelessWidget {
+  const _WideKey({
+    required this.unit,
+    required this.faceHeight,
+    required this.label,
+    required this.onPressed,
+    required this.child,
+    this.red = false,
+    this.toggled,
+    this.value,
+  });
 
+  final double unit;
+  final double faceHeight;
   final String label;
-  final String value;
+  final VoidCallback onPressed;
+  final Widget child;
+  final bool red;
+  final bool? toggled;
+  final String? value;
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Column(
-        children: [
-          Text(value,
-              style: const TextStyle(
-                  color: AppColors.gold,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900)),
-          Text(label,
-              style: const TextStyle(color: Colors.white54, fontSize: 9.5)),
-        ],
+    final night = Theme.of(context).brightness == Brightness.dark;
+    final chrome = unit * homeKeyChrome;
+    return Semantics(
+      button: true,
+      label: label,
+      toggled: toggled,
+      value: value,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onPressed,
+        child: SizedBox(
+          width: _Design.keyWidth * unit + PushKey.faceInset * 2 * chrome,
+          height: faceHeight * unit + PushKey.depth * chrome,
+          child: PushKey(
+            unit: chrome,
+            faceHeight: faceHeight * unit,
+            faceRadius: _Design.keyRadius,
+            red: red,
+            night: night ? kAlwaysCompleteAnimation : kAlwaysDismissedAnimation,
+            child: ExcludeSemantics(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: _Design.keyMargin * unit),
+                child: child,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
 }
 
-class _MenuTile extends StatelessWidget {
-  const _MenuTile({
+/// زر أبيض لصفحة أخرى: أيقونة في دائرة صفراء، واسم وشرح، وسهم.
+class _MenuKey extends StatelessWidget {
+  const _MenuKey({
+    required this.unit,
     required this.icon,
     required this.title,
     required this.subtitle,
-    required this.onTap,
+    required this.onPressed,
   });
 
+  final double unit;
   final IconData icon;
   final String title;
   final String subtitle;
-  final VoidCallback onTap;
+  final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return ListTile(
-      onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-      leading: Container(
-        width: 38,
-        height: 38,
-        decoration: BoxDecoration(
-          color: AppColors.gold.withValues(alpha: .15),
-          borderRadius: BorderRadius.circular(11),
-        ),
-        child: Icon(icon, size: 19),
+    final night = Theme.of(context).brightness == Brightness.dark;
+    final ink = night ? homeNightInk : homeInk;
+    return _WideKey(
+      unit: unit,
+      faceHeight: _Design.menuHeight,
+      label: title,
+      onPressed: onPressed,
+      child: Row(
+        children: [
+          _Badge(
+            unit: unit,
+            size: _Design.menuBadgeSize,
+            icon: icon,
+            iconSize: _Design.menuIconSize,
+          ),
+          SizedBox(width: _Design.badgeGap * unit),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: _text(unit, _Design.titleSize, FontWeight.w800, ink),
+                ),
+                Text(
+                  subtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: _text(unit, _Design.subtitleSize, FontWeight.w600, ink.withValues(alpha: .6)),
+                ),
+              ],
+            ),
+          ),
+          Icon(Icons.chevron_left_rounded, size: _Design.arrowSize * unit, color: ink),
+        ],
       ),
-      title: Text(title,
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-      subtitle: Text(subtitle,
-          style: theme.textTheme.bodySmall?.copyWith(fontSize: 10)),
-      trailing: const Icon(Icons.chevron_left_rounded, size: 20),
+    );
+  }
+}
+
+/// أيقونة في دائرة بلون الجهة الصفراء.
+class _Badge extends StatelessWidget {
+  const _Badge({
+    required this.unit,
+    required this.size,
+    required this.icon,
+    required this.iconSize,
+  });
+
+  final double unit;
+  final double size;
+  final IconData icon;
+  final double iconSize;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size * unit,
+      height: size * unit,
+      decoration: const BoxDecoration(
+        color: TruckSceneMetrics.hillColor,
+        shape: BoxShape.circle,
+      ),
+      child: Icon(icon, size: iconSize * unit, color: homeInk),
+    );
+  }
+}
+
+/// اللغتان، والمختارة منهما بلون الجهة الصفراء.
+class _LanguagePill extends StatelessWidget {
+  const _LanguagePill({required this.unit, required this.english});
+
+  final double unit;
+  final bool english;
+
+  @override
+  Widget build(BuildContext context) {
+    final night = Theme.of(context).brightness == Brightness.dark;
+    final ink = night ? homeNightInk : homeInk;
+    final radius = BorderRadius.circular(_Design.pillRadius * unit);
+    Widget option(String text, bool chosen) => Container(
+          height: _Design.pillHeight * unit,
+          padding: EdgeInsets.symmetric(horizontal: _Design.pillPadding * unit),
+          alignment: Alignment.center,
+          decoration: chosen
+              ? BoxDecoration(color: TruckSceneMetrics.hillColor, borderRadius: radius)
+              : null,
+          child: Text(
+            text,
+            style: _text(
+              unit,
+              _Design.pillTextSize,
+              FontWeight.w800,
+              chosen ? homeInk : ink.withValues(alpha: .6),
+            ),
+          ),
+        );
+    return DecoratedBox(
+      decoration: BoxDecoration(color: ink.withValues(alpha: .06), borderRadius: radius),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [option('عربي', !english), option('English', english)],
+      ),
     );
   }
 }
