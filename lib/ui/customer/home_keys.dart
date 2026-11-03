@@ -45,7 +45,7 @@ double homeHillBottom(double top, double unit) => top + (_hillCenterY + _hillRad
 // عنوان الصفحة في الجهة الصفراء.
 const _titleCenter = 61.5;
 const _titleHeight = 32.0;
-const _titleSize = 18.0;
+const _titleSize = 20.3;
 
 // أزرار الاختيار: الأقصر منها بعرض التصميم، والأطول بقدر اسمها.
 const _choiceMinWidth = 56.7;
