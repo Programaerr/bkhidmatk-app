@@ -41,6 +41,11 @@ const _lemonFaceCenter = Color(0xFFE2E255);
 const _lemonFaceEdge = Color(0xFFDFDF53);
 const _lemonSide = Color(0xFFCDCD4D);
 
+// زر تسجيل الخروج الأحمر، نهاراً وليلاً.
+const _redFaceCenter = Color(0xFFFA4D4D);
+const _redFaceEdge = Color(0xFFF74C4B);
+const _redSide = Color(0xFFE34646);
+
 // مقاسات أزرار الشاشة الأولى وألوانها.
 const _loginDesignWidth = 391.0;
 const _loginDesignHeight = 715.0;
@@ -262,6 +267,7 @@ class PushKey extends StatefulWidget {
     this.night = kAlwaysDismissedAnimation,
     this.yellow = false,
     this.lemon = false,
+    this.red = false,
     this.round = false,
     this.faceRadius = 4,
   });
@@ -288,6 +294,9 @@ class PushKey extends StatefulWidget {
   /// وجه الزر وجانبه بلون الجهة الصفراء في الصفحة الرئيسية.
   final bool lemon;
 
+  /// وجه الزر وجانبه باللون الأحمر، مثل زر تسجيل الخروج.
+  final bool red;
+
   /// وجه الزر دائرة، وجانبه وقاعدته حولها.
   final bool round;
 
@@ -299,7 +308,7 @@ class PushKey extends StatefulWidget {
 }
 
 /// ما يميز شكل الزر ولونه.
-typedef _KeyStyle = ({bool yellow, bool lemon, bool round, double faceRadius});
+typedef _KeyStyle = ({bool yellow, bool lemon, bool red, bool round, double faceRadius});
 
 class _PushKeyState extends State<PushKey> {
   final _resting = _RestingImages();
@@ -311,6 +320,7 @@ class _PushKeyState extends State<PushKey> {
   _KeyStyle get _style => (
         yellow: widget.yellow,
         lemon: widget.lemon,
+        red: widget.red,
         round: widget.round,
         faceRadius: widget.faceRadius,
       );
@@ -575,11 +585,13 @@ class _KeyPainter extends CustomPainter {
 
   Color _tone(Color day, Color dark) => Color.lerp(day, dark, night.value)!;
 
-  Color _keyTone(Color inYellow, Color inLemon, Color day, Color dark) => style.yellow
+  Color _keyTone(Color inYellow, Color inLemon, Color inRed, Color day, Color dark) => style.yellow
       ? inYellow
       : style.lemon
           ? inLemon
-          : _tone(day, dark);
+          : style.red
+              ? inRed
+              : _tone(day, dark);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -632,7 +644,7 @@ class _KeyPainter extends CustomPainter {
       )
       ..drawRRect(
         side,
-        Paint()..color = _keyTone(_yellowSide, _lemonSide, _side, _nightSide),
+        Paint()..color = _keyTone(_yellowSide, _lemonSide, _redSide, _side, _nightSide),
       )
       ..save()
       ..clipRRect(side);
@@ -688,8 +700,8 @@ class _KeyPainter extends CustomPainter {
           face.center,
           face.width * .62,
           [
-            _keyTone(_yellowFaceCenter, _lemonFaceCenter, _faceCenter, _nightFaceCenter),
-            _keyTone(_yellowFaceEdge, _lemonFaceEdge, _faceEdge, _nightFaceEdge),
+            _keyTone(_yellowFaceCenter, _lemonFaceCenter, _redFaceCenter, _faceCenter, _nightFaceCenter),
+            _keyTone(_yellowFaceEdge, _lemonFaceEdge, _redFaceEdge, _faceEdge, _nightFaceEdge),
           ],
         ),
     );
