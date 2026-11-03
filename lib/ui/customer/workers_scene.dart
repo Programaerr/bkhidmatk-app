@@ -377,11 +377,12 @@ class WorkersPose {
   double get wheelTurn =>
       -_turnPerPush * (_pushes.length * (time ~/ standingCycle) + _done(_standing, _pushes));
 
-  // اليدان تدوران مع حافة العجلة بعكس بعضهما في الدفعة، وجسمه يميل معهما.
+  // اليدان تدوران مع حافة العجلة بعكس بعضهما في الدفعة، وجسمه يميل معهما قليلاً حتى لا تفلت
+  // يده العليا من الحافة.
   double get _hold => _grip * (1 + .08 * _tremble);
-  double get upperArm => .12 * _hold;
+  double get upperArm => .1 * _hold;
   double get lowerArm => -.09 * _hold;
-  double get standingLean => .02 * _grip - .008 * _standingPleased + .003 * _wave(3.2);
+  double get standingLean => .008 * _grip - .008 * _standingPleased + .003 * _wave(3.2);
   double get standingHead => _through(_standing, _standingHeads, _lerp) + .05 * _grip;
 
   /// نقص الضغط في عداده: 0 والمؤشر على علامته كما في الرسم، و1 في أدناه.
@@ -421,13 +422,10 @@ class WorkersPose {
     return _progress(t, .5, 1.8) * (1 - _done(t, _twists) / _twists.length);
   }
 
-  // يميل إلى العداد وهو يضبطه، ويرجع فرحاً، ويتنفس.
-  double get kneelingLean =>
-      -.012 * (_progress(_kneeling, 2.0, 2.3) - _progress(_kneeling, 4.1, 4.5)) +
-      .008 * _kneelingPleased +
-      .003 * _wave(3.6);
+  // يرجع فرحاً ويتنفس، ولا يميل وهو يضبط حتى تبقى أصابعه على العداد.
+  double get kneelingLean => .006 * _kneelingPleased + .003 * _wave(3.6);
   double get kneelingHead => _through(_kneeling, _kneelingHeads, _lerp);
-  double get reachingArm => -.025 * _twist;
+  double get reachingArm => .02 * _twist;
   double get smallNeedle => -1.0 * _kneelingDrop(0);
   double get holdingArm => .045 * _reading + .006 * _wave(2.2);
   double get meterTilt => -.15 * _reading + .02 * _wave(2.2);

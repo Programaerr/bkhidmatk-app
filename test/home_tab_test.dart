@@ -475,7 +475,10 @@ void main() {
 
   group('حركة العاملين', () {
     void expectAsDrawn(WorkerFace face) {
-      for (final value in [face.browLift, face.browKnit, face.squint, face.smile, face.open]) {
+      for (final value in [
+        face.browLift, face.browKnit, face.squint, face.happy, face.smile, face.open, face.teeth,
+        face.grin, face.tongue, face.sweat,
+      ]) {
         expect(value, closeTo(0, 1e-9));
       }
       expect(face.look, Offset.zero);
@@ -514,8 +517,8 @@ void main() {
         expect(turn, lessThanOrEqualTo(last + 1e-9), reason: '$time');
         last = turn;
       }
-      // في كل دورة ثلاث دفعات، وكل دفعة تديرها ضلعاً من أضلاعها التسعة.
-      expect(const WorkersPose(WorkersPose.standingCycle).wheelTurn, closeTo(-3 * 2 * math.pi / 9, 1e-9));
+      // في كل دورة ثلاث دفعات، وكل دفعة تديرها ضلعاً ونصفاً من أضلاعها التسعة: نصف لفة كاملة.
+      expect(const WorkersPose(WorkersPose.standingCycle).wheelTurn, closeTo(-math.pi, 1e-9));
     });
 
     test('العجلة لا تدور إلا ويداه تدفعانها', () {
@@ -536,20 +539,25 @@ void main() {
       expect(needle.last.abs(), lessThan(.06));
     });
 
-    test('وجه العامل الواقف يتغير مع الشغل', () {
+    test('وجه العامل الواقف يتغير مع الشغل بملامح تُرى على الهاتف', () {
+      // يتفاجأ: عينان واسعتان وحاجبان عاليان وفم مفتوح.
       final worried = const WorkersPose(1.9).standingFace;
-      expect(worried.browLift, greaterThan(.5));
-      expect(worried.open, greaterThan(.5));
+      expect(worried.browLift, greaterThan(1));
+      expect(worried.squint, lessThan(-.3));
+      expect(worried.open, greaterThan(.8));
 
+      // يشد: عينان مغمضتان وأسنان مضغوطة وحاجبان معقودان، وفي الدفعة الأخيرة يعرق.
       final straining = const WorkersPose(2.85).standingFace;
-      expect(straining.browLift, lessThan(-.3));
-      expect(straining.browKnit, greaterThan(.2));
-      expect(straining.squint, greaterThan(.5));
-      expect(straining.smile, lessThan(-1));
+      expect(straining.squint, greaterThan(.8));
+      expect(straining.teeth, greaterThan(.8));
+      expect(straining.browKnit, greaterThan(.3));
+      expect(const WorkersPose(5.8).standingFace.sweat, greaterThan(.8));
 
+      // يفرح: عينان كقوسين وضحكة واسعة.
       final pleased = const WorkersPose(7.8).standingFace;
-      expect(pleased.smile, greaterThan(.5));
-      expect(pleased.browLift, greaterThan(.4));
+      expect(pleased.happy, greaterThan(.8));
+      expect(pleased.grin, greaterThan(.8));
+      expect(pleased.browLift, greaterThan(.5));
     });
 
     test('العامل الجالس يلف العداد الصغير خطوة خطوة، والكبير يتبعه، ثم يرضى', () {
@@ -560,11 +568,13 @@ void main() {
       expect(const WorkersPose(2).tallNeedle, lessThan(-.7));
       expect(const WorkersPose(5.5).tallNeedle.abs(), lessThan(.06));
 
+      // يركّز ولسانه خارج فمه، ثم يفرح.
       final focused = const WorkersPose(3).kneelingFace;
-      expect(focused.browKnit, greaterThan(.2));
-      expect(focused.squint, greaterThan(.3));
+      expect(focused.browKnit, greaterThan(.3));
+      expect(focused.tongue, greaterThan(.8));
       final pleased = const WorkersPose(5.6).kneelingFace;
-      expect(pleased.smile, greaterThan(.5));
+      expect(pleased.happy, greaterThan(.8));
+      expect(pleased.grin, greaterThan(.8));
     });
 
     test('يدا العامل الواقف تتحركان بعكس بعضهما على العجلة', () {
@@ -574,15 +584,36 @@ void main() {
       }
     });
 
-    test('الحركة صغيرة حتى تبقى اليدان على العجلة والعداد', () {
+    test('اليدان تبقيان على حافة العجلة، والأصابع على العداد الصغير', () {
+      Offset turned(Offset point, Offset center, double angle) {
+        final d = point - center;
+        return center +
+            Offset(d.dx * math.cos(angle) - d.dy * math.sin(angle), d.dx * math.sin(angle) + d.dy * math.cos(angle));
+      }
+
+      // حافة العجلة الأمامية في الرسم، ونقطة قبض كل يد عليها.
+      const rim = Rect.fromLTRB(226.4, 41.2, 231.74, 64.64);
+      bool onRim(Offset point) {
+        final x = (point.dx - rim.center.dx) / (rim.width / 2);
+        final y = (point.dy - rim.center.dy) / (rim.height / 2);
+        return x * x + y * y <= 1;
+      }
+
+      const waist = Offset(187, 104), hip = Offset(104, 152);
+      const dial = Offset(35.1, 118.7);
       for (var time = 0.0; time < 20; time += .05) {
         final pose = WorkersPose(time);
-        expect(pose.upperArm.abs(), lessThanOrEqualTo(.06));
-        expect(pose.lowerArm.abs(), lessThanOrEqualTo(.06));
-        expect(pose.reachingArm.abs(), lessThanOrEqualTo(.03));
-        expect(pose.holdingArm.abs(), lessThanOrEqualTo(.03));
-        expect(pose.standingLean.abs(), lessThanOrEqualTo(.01));
-        expect(pose.kneelingLean.abs(), lessThanOrEqualTo(.01));
+        final upper = turned(turned(const Offset(228.5, 44), const Offset(197, 64), pose.upperArm), waist,
+            pose.standingLean);
+        final lower = turned(turned(const Offset(228.5, 62.5), const Offset(181, 66), pose.lowerArm), waist,
+            pose.standingLean);
+        expect(onRim(upper), isTrue, reason: 'upper hand at $time');
+        expect(onRim(lower), isTrue, reason: 'lower hand at $time');
+
+        final fingers = turned(turned(const Offset(37.5, 121.5), const Offset(92, 127), pose.reachingArm), hip,
+            pose.kneelingLean);
+        expect((fingers - dial).distance, lessThan(4.3), reason: 'fingers at $time');
+        expect(pose.holdingArm.abs(), lessThanOrEqualTo(.06));
       }
     });
   });
