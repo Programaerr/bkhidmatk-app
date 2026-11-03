@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -16,7 +18,7 @@ import 'home_keys.dart';
 
 /// مقاسات التصميم المعتمد بالبكسل (إطار عرضه 391).
 abstract final class _Design {
-  // العنوان وزر التصفح أبعد عن وسط الشاشة قليلاً نحو اليمين، كما في التصميم.
+  // العنوان أبعد عن وسط الشاشة قليلاً نحو اليمين، كما في التصميم.
   static const titleShift = 4.6;
 
   // الاختيارات الثلاثة في وسط الشاشة.
@@ -25,8 +27,6 @@ abstract final class _Design {
 
   static const listGap = 24.2;
 
-  static const browseLeft = 128.1;
-  static const browseTop = 474.7;
   static const browseWidth = 144.7;
   static const browseHeight = 39.0;
   static const browseRadius = 11.1;
@@ -104,7 +104,7 @@ class _BookingsTabState extends State<BookingsTab>
                     child: FutureBuilder<List<Booking>>(
                       future: _future,
                       builder: (context, snapshot) =>
-                          _page(snapshot, width, unit, left, top, night),
+                          _page(snapshot, constraints.biggest, unit, left, top, night),
                     ),
                   ),
                 ),
@@ -131,13 +131,14 @@ class _BookingsTabState extends State<BookingsTab>
 
   Widget _page(
     AsyncSnapshot<List<Booking>> snapshot,
-    double width,
+    Size size,
     double unit,
     double left,
     double top,
     bool night,
   ) {
     final chromeInset = PushKey.faceInset * unit * homeKeyChrome;
+    final barRoom = MediaQuery.paddingOf(context).bottom;
     final choicesTop = _Design.choiceTop - ChoiceKey.touchMargin;
     final choicesBottom = _Design.choiceTop +
         ChoiceKey.faceHeight +
@@ -148,14 +149,14 @@ class _BookingsTabState extends State<BookingsTab>
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       // يبقى آخر حجز فوق شريط التنقل الزجاجي.
-      padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
+      padding: EdgeInsets.only(bottom: barRoom),
       children: [
         SizedBox(height: top + choicesTop * unit),
         // في وسط الشاشة، ويتحرك جانبياً إذا كبّر الهاتف الخط حتى لم تعد تتسع.
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: ConstrainedBox(
-            constraints: BoxConstraints(minWidth: width),
+            constraints: BoxConstraints(minWidth: size.width),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -173,18 +174,16 @@ class _BookingsTabState extends State<BookingsTab>
           ),
         ),
         if (loading || bookings.isEmpty) ...[
-          SizedBox(height: (_Design.browseTop - choicesBottom) * unit),
+          SizedBox(
+            height: _browseTop(size.height - barRoom, top, unit) - (top + choicesBottom * unit),
+          ),
           // بلا حجوزات يبقى زر التصفح وحده في الصفحة.
-          Align(
-            alignment: Alignment.topLeft,
-            child: Padding(
-              padding: EdgeInsets.only(left: left + _Design.browseLeft * unit - chromeInset),
-              child: _browseRoom(
-                unit,
-                loading
-                    ? const Center(child: CircularProgressIndicator(strokeWidth: 2.4))
-                    : _browseKey(unit, night),
-              ),
+          Center(
+            child: _browseRoom(
+              unit,
+              loading
+                  ? const Center(child: CircularProgressIndicator(strokeWidth: 2.4))
+                  : _browseKey(unit, night),
             ),
           ),
           SizedBox(height: _Design.pageBottom * unit),
@@ -206,6 +205,17 @@ class _BookingsTabState extends State<BookingsTab>
     );
   }
 
+  /// أعلى زر التصفح: في وسط المكان الفارغ بين الاختيارات وشريط التنقل، ولا يلتصق بالاختيارات.
+  double _browseTop(double barTop, double top, double unit) {
+    final chromeDepth = PushKey.depth * homeKeyChrome;
+    final choicesEnd = top + (_Design.choiceTop + ChoiceKey.faceHeight + chromeDepth) * unit;
+    final browseHeight = (_Design.browseHeight + chromeDepth) * unit;
+    return math.max(
+      choicesEnd + _Design.listGap * unit,
+      (choicesEnd + barTop - browseHeight) / 2,
+    );
+  }
+
   /// مكان زر التصفح مع جانبه وقاعدته.
   Widget _browseRoom(double unit, Widget child) {
     final chrome = unit * homeKeyChrome;
@@ -224,6 +234,7 @@ class _BookingsTabState extends State<BookingsTab>
         unit: unit * homeKeyChrome,
         faceHeight: _Design.browseHeight * unit,
         faceRadius: _Design.browseRadius,
+        lemon: true,
         night: night ? kAlwaysCompleteAnimation : kAlwaysDismissedAnimation,
         child: Semantics(
           button: true,
@@ -238,7 +249,7 @@ class _BookingsTabState extends State<BookingsTab>
                   fontSize: _Design.browseTextSize * unit,
                   height: 1.2,
                   fontWeight: FontWeight.w800,
-                  color: night ? homeNightInk : homeInk,
+                  color: homeInk,
                 ),
               ),
             ),

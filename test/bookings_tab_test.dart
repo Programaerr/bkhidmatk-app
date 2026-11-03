@@ -116,10 +116,10 @@ void main() {
       expect(tester.widget<PushKey>(_choice('المكتملة')).lemon, isFalse);
     });
 
-    testWidgets('بلا حجوزات يبقى زر تصفح الحرفيين وحده في الصفحة', (tester) async {
+    testWidgets('بلا حجوزات يبقى زر تصفح الحرفيين الأصفر وحده في الصفحة', (tester) async {
       await _openBookings(tester);
       expect(_browse, findsOneWidget);
-      expect(tester.widget<PushKey>(_browse).lemon, isFalse);
+      expect(tester.widget<PushKey>(_browse).lemon, isTrue);
       expect(find.text('لا توجد حجوزات هنا'), findsNothing);
       expect(find.text('تصفح الفنيين'), findsNothing);
       expect(_cards, findsNothing);
@@ -170,7 +170,7 @@ void main() {
       expect(_browse, findsOneWidget);
     });
 
-    testWidgets('الأزرار في أماكن التصميم', (tester) async {
+    testWidgets('الاختيارات في أماكن التصميم، وزر التصفح في وسط المكان الفارغ', (tester) async {
       await _openBookings(tester);
       final faces = [
         for (final label in ['الكل', 'المكتملة', 'الملغاة'])
@@ -191,10 +191,13 @@ void main() {
         expect(face.width, greaterThanOrEqualTo(56.7));
       }
 
-      final browse = _face(tester, _browse, 39);
-      expect(browse.left, closeTo(128.1, .01));
-      expect(browse.top, closeTo(474.7, .01));
-      expect(browse.width, closeTo(144.7, .01));
+      expect(_face(tester, _browse, 39).width, closeTo(144.7, .01));
+      // زر التصفح بجانبه وقاعدته في وسط الشاشة، وبين الاختيارات وشريط التنقل.
+      final browse = tester.getRect(_browse);
+      expect(browse.center.dx, closeTo(391 / 2, .01));
+      final choicesEnd = faces[0].bottom + PushKey.depth * homeKeyChrome;
+      final barTop = 870 - MediaQuery.paddingOf(tester.element(find.byType(BookingsTab))).bottom;
+      expect(browse.top - choicesEnd, closeTo(barTop - browse.bottom, .01));
     });
 
     testWidgets('آخر حجز يبقى فوق شريط التنقل الزجاجي', (tester) async {
