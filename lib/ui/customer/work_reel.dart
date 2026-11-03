@@ -241,9 +241,10 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     final controller = _controller;
+    // الشعار يساراً والأزرار يميناً، على مستوى واحد فوق شريط التنقل مباشرة.
     final bottomClearance = MediaQuery.sizeOf(context).width >= 900
         ? 20.0
-        : MediaQuery.paddingOf(context).bottom + 94;
+        : MediaQuery.paddingOf(context).bottom;
     return ColoredBox(
       color: Colors.black,
       child: Stack(
@@ -289,23 +290,17 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
             left: 16,
             right: 82,
             bottom: bottomClearance,
-            child: _caption(),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: _caption(),
+            ),
           ),
           if (controller != null && controller.value.isInitialized)
             Positioned(
               left: 0,
               right: 0,
               bottom: 0,
-              child: VideoProgressIndicator(
-                controller,
-                allowScrubbing: true,
-                padding: EdgeInsets.zero,
-                colors: const VideoProgressColors(
-                  playedColor: AppColors.gold,
-                  bufferedColor: Colors.white38,
-                  backgroundColor: Colors.white24,
-                ),
-              ),
+              child: ReelProgressBar(controller: controller),
             ),
         ],
       ),
@@ -413,104 +408,85 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
     );
   }
 
+  // الشعار وجايك والتاريخ فقط، بلا عنوان ولا مشاهدات.
   Widget _caption() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Row(
-          children: [
-            Container(
-              width: 38,
-              height: 38,
-              padding: const EdgeInsets.all(1.5),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-              ),
-              child: ClipOval(
-                child: Image.asset(
-                  'assets/images/logo.jpg',
-                  fit: BoxFit.cover,
-                  cacheWidth: 76,
-                  cacheHeight: 76,
-                  errorBuilder: (_, __, ___) => const ColoredBox(
-                    color: AppColors.gold,
-                    child: Icon(Icons.handyman_rounded, color: AppColors.ink),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 9),
-            Flexible(
-              child: Row(
-                children: [
-                  const Flexible(
-                    child: Text(
-                      'جايك',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 7),
-                  Flexible(
-                    child: Text(
-                      '· ${fmtDateShort(_work.createdAt)}',
-                      textDirection: TextDirection.ltr,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style:
-                          const TextStyle(color: Colors.white70, fontSize: 10),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 9),
-        Text(
-          _work.title,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
+        Container(
+          width: 38,
+          height: 38,
+          padding: const EdgeInsets.all(1.5),
+          decoration: const BoxDecoration(
             color: Colors.white,
-            fontSize: 15,
-            fontWeight: FontWeight.w900,
-            height: 1.45,
+            shape: BoxShape.circle,
+          ),
+          child: ClipOval(
+            child: Image.asset(
+              'assets/images/logo.jpg',
+              fit: BoxFit.cover,
+              cacheWidth: 76,
+              cacheHeight: 76,
+              errorBuilder: (_, __, ___) => const ColoredBox(
+                color: AppColors.gold,
+                child: Icon(Icons.handyman_rounded, color: AppColors.ink),
+              ),
+            ),
           ),
         ),
-        if (_work.description?.trim().isNotEmpty == true) ...[
-          const SizedBox(height: 3),
-          Text(
-            _work.description!.trim(),
-            maxLines: 2,
+        const SizedBox(width: 9),
+        const Flexible(
+          child: Text(
+            'جايك',
+            maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
+            style: TextStyle(
               color: Colors.white,
-              fontSize: 11,
-              height: 1.4,
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
             ),
           ),
-        ],
-        const SizedBox(height: 6),
-        Row(
-          children: [
-            const Icon(Icons.visibility_outlined,
-                color: Colors.white70, size: 13),
-            const SizedBox(width: 4),
-            Text(
-              '${fmtNumber(_work.views)} مشاهدة',
-              style: const TextStyle(color: Colors.white70, fontSize: 10),
-            ),
-          ],
+        ),
+        const SizedBox(width: 7),
+        Flexible(
+          child: Text(
+            fmtDateShort(_work.createdAt),
+            textDirection: TextDirection.ltr,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: Colors.white70, fontSize: 10),
+          ),
         ),
       ],
+    );
+  }
+}
+
+/// شريط تقدم الفيديو أسفل الشاشة. في العربية يمتلئ من اليمين، والسحب نحو اليسار يقدّم الفيديو.
+class ReelProgressBar extends StatelessWidget {
+  const ReelProgressBar({super.key, required this.controller});
+
+  final VideoPlayerController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    // سحّاب video_player يقيس الإصبع من الحافة اليسرى دائماً، والشريط في العربية يمتلئ من
+    // اليمين، فكان السحب لليسار يرجّع الفيديو. يُرسم الشريط من اليسار ثم يُقلب، فيتبع اللمس امتلاءه.
+    return Transform.flip(
+      flipX: Directionality.of(context) == TextDirection.rtl,
+      child: Directionality(
+        textDirection: TextDirection.ltr,
+        child: VideoProgressIndicator(
+          controller,
+          allowScrubbing: true,
+          padding: EdgeInsets.zero,
+          colors: const VideoProgressColors(
+            playedColor: AppColors.gold,
+            bufferedColor: Colors.white38,
+            backgroundColor: Colors.white24,
+          ),
+        ),
+      ),
     );
   }
 }

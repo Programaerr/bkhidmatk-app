@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../data/models.dart';
 import '../../state/app_state.dart';
+import '../auth/auth_route.dart';
 import '../widgets/realtime_refresh.dart';
 import '../widgets/ui.dart';
 import 'work_reel.dart';
@@ -54,55 +56,53 @@ class _OurWorkTabState extends State<OurWorkTab> with RealtimeRefresh<OurWorkTab
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      bottom: false,
-      child: Column(
-        children: [
-          Expanded(
-            child: FutureBuilder<List<OurWork>>(
-              future: _future,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
-                  return const Center(
-                      child: CircularProgressIndicator(strokeWidth: 2.4));
-                }
-                final works = snapshot.data ?? const <OurWork>[];
-                if (works.isEmpty) {
-                  return const EmptyState(
-                    icon: Icons.video_library_outlined,
-                    title: 'لا توجد أعمال بعد',
-                    subtitle: 'ستنشر جايك أحدث أعمالها وفيديوهاتها هنا قريباً.',
-                  );
-                }
-                if (_currentPage >= works.length) {
-                  _currentPage = works.length - 1;
-                }
-                if (widget.isActive && works.isNotEmpty) {
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (mounted && widget.isActive) {
-                      _countView(works[_currentPage]);
-                    }
-                  });
-                }
-                return PageView.builder(
-                  scrollDirection: Axis.vertical,
-                  itemCount: works.length,
-                  onPageChanged: (index) {
-                    setState(() => _currentPage = index);
-                    _countView(works[index]);
-                  },
-                  itemBuilder: (context, index) => WorkReel(
-                    key: ValueKey(works[index].id ?? index),
-                    work: works[index],
-                    isActive: widget.isActive && index == _currentPage,
-                    onChanged: _load,
-                  ),
-                );
-              },
+    return FutureBuilder<List<OurWork>>(
+      future: _future,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
+          return const Center(
+              child: CircularProgressIndicator(strokeWidth: 2.4));
+        }
+        final works = snapshot.data ?? const <OurWork>[];
+        if (works.isEmpty) {
+          return const SafeArea(
+            bottom: false,
+            child: EmptyState(
+              icon: Icons.video_library_outlined,
+              title: 'لا توجد أعمال بعد',
+              subtitle: 'ستنشر جايك أحدث أعمالها وفيديوهاتها هنا قريباً.',
+            ),
+          );
+        }
+        if (_currentPage >= works.length) {
+          _currentPage = works.length - 1;
+        }
+        if (widget.isActive && works.isNotEmpty) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted && widget.isActive) {
+              _countView(works[_currentPage]);
+            }
+          });
+        }
+        // الفيديو يملأ الشاشة كلها حتى ما تحت شريط الحالة، وأيقونات الشريط بيضاء فوقه.
+        return AnnotatedRegion<SystemUiOverlayStyle>(
+          value: appSystemBars(night: true),
+          child: PageView.builder(
+            scrollDirection: Axis.vertical,
+            itemCount: works.length,
+            onPageChanged: (index) {
+              setState(() => _currentPage = index);
+              _countView(works[index]);
+            },
+            itemBuilder: (context, index) => WorkReel(
+              key: ValueKey(works[index].id ?? index),
+              work: works[index],
+              isActive: widget.isActive && index == _currentPage,
+              onChanged: _load,
             ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
