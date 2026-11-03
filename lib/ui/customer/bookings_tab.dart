@@ -1,15 +1,39 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
+import '../auth/auth_route.dart';
+import '../auth/push_key.dart';
 import '../widgets/quick_route.dart';
 import '../widgets/realtime_refresh.dart';
-import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
 import 'booking_detail_screen.dart';
+import 'home_keys.dart';
+
+/// مقاسات التصميم المعتمد بالبكسل (إطار عرضه 391).
+abstract final class _Design {
+  // العنوان وزر التصفح أبعد عن وسط الشاشة قليلاً نحو اليمين، كما في التصميم.
+  static const titleShift = 4.6;
+
+  // الاختيارات الثلاثة في وسط الشاشة.
+  static const choiceTop = 150.1;
+  static const choiceGap = 22.4;
+
+  static const listGap = 24.2;
+
+  static const browseLeft = 128.1;
+  static const browseTop = 474.7;
+  static const browseWidth = 144.7;
+  static const browseHeight = 39.0;
+  static const browseRadius = 11.1;
+  static const browseTextSize = 13.0;
+
+  static const pageBottom = 24.0;
+}
 
 class BookingsTab extends StatefulWidget {
   const BookingsTab({super.key, required this.onBrowse});
@@ -25,7 +49,7 @@ class _BookingsTabState extends State<BookingsTab>
   int _filter = 0;
   late Future<List<Booking>> _future;
 
-  static const _filters = ['الكل', 'القادمة', 'المكتملة', 'الملغاة'];
+  static const _filters = ['الكل', 'المكتملة', 'الملغاة'];
 
   @override
   void onRealtimeChange() => _load();
@@ -47,15 +71,8 @@ class _BookingsTabState extends State<BookingsTab>
   List<Booking> _apply(List<Booking> all) {
     switch (_filter) {
       case 1:
-        return all
-            .where((b) =>
-                b.status == BookingStatus.pending ||
-                b.status == BookingStatus.confirmed ||
-                b.status == BookingStatus.inProgress)
-            .toList();
-      case 2:
         return all.where((b) => b.status == BookingStatus.completed).toList();
-      case 3:
+      case 2:
         return all.where((b) => b.status == BookingStatus.cancelled).toList();
       default:
         return all;
@@ -64,102 +81,160 @@ class _BookingsTabState extends State<BookingsTab>
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return SafeArea(
-      bottom: false,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(18, 14, 18, 0),
-            child: Row(
+    final night = Theme.of(context).brightness == Brightness.dark;
+    final safeTop = MediaQuery.viewPaddingOf(context).top;
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      // شريط الحالة فوق الجهة الصفراء دائماً، نهاراً وليلاً.
+      value: appSystemBars(night: false),
+      child: ColoredBox(
+        color: night ? homeNightGround : homeCream,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final width = constraints.maxWidth;
+            final unit = homeUnit(width);
+            final left = (width - homeDesignWidth * unit) / 2;
+            final top = homePageTop(safeTop, unit);
+            final hillBottom = homeHillBottom(top, unit);
+            return Stack(
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('حجوزاتي', style: theme.textTheme.headlineSmall),
-                      const SizedBox(height: 2),
-                      Text('تابع كل حجوزاتك ووصولاتك من مكان واحد',
-                          style: theme.textTheme.bodySmall),
-                    ],
+                Positioned.fill(
+                  child: RefreshIndicator(
+                    edgeOffset: hillBottom,
+                    onRefresh: () async => _load(),
+                    child: FutureBuilder<List<Booking>>(
+                      future: _future,
+                      builder: (context, snapshot) => _page(snapshot, unit, left, top, night),
+                    ),
                   ),
                 ),
-                AppIconButton(
-                  icon: Icons.refresh_rounded,
-                  onTap: _load,
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: 0,
+                  height: hillBottom,
+                  child: HomeHeader(
+                    width: width,
+                    unit: unit,
+                    top: top,
+                    title: 'كل الحجوزات',
+                    titleShift: _Design.titleShift,
+                  ),
                 ),
               ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _page(
+    AsyncSnapshot<List<Booking>> snapshot,
+    double unit,
+    double left,
+    double top,
+    bool night,
+  ) {
+    final chromeInset = PushKey.faceInset * unit * homeKeyChrome;
+    final choicesTop = _Design.choiceTop - ChoiceKey.touchMargin;
+    final choicesBottom = _Design.choiceTop +
+        ChoiceKey.faceHeight +
+        PushKey.depth * homeKeyChrome +
+        ChoiceKey.touchMargin;
+    final loading = snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData;
+    final bookings = _apply(snapshot.data ?? const []);
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      // يبقى آخر حجز فوق شريط التنقل الزجاجي.
+      padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
+      children: [
+        SizedBox(height: top + choicesTop * unit),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            for (final (i, label) in _filters.indexed) ...[
+              if (i > 0) SizedBox(width: _Design.choiceGap * unit - chromeInset * 2),
+              ChoiceKey(
+                label: label,
+                selected: i == _filter,
+                unit: unit,
+                onPressed: () => setState(() => _filter = i),
+              ),
+            ],
+          ],
+        ),
+        if (loading || bookings.isEmpty) ...[
+          SizedBox(height: (_Design.browseTop - choicesBottom) * unit),
+          // بلا حجوزات يبقى زر التصفح وحده في الصفحة.
+          Align(
+            alignment: Alignment.topLeft,
+            child: Padding(
+              padding: EdgeInsets.only(left: left + _Design.browseLeft * unit - chromeInset),
+              child: _browseRoom(
+                unit,
+                loading
+                    ? const Center(child: CircularProgressIndicator(strokeWidth: 2.4))
+                    : _browseKey(unit, night),
+              ),
             ),
           ),
-          const SizedBox(height: 14),
+          SizedBox(height: _Design.pageBottom * unit),
+        ] else ...[
           SizedBox(
-            height: 36,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 18),
-              itemCount: _filters.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
-              itemBuilder: (context, i) {
-                final selected = i == _filter;
-                return GestureDetector(
-                  onTap: () => setState(() => _filter = i),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: selected ? AppColors.gold : theme.colorScheme.surface,
-                      borderRadius: BorderRadius.circular(100),
-                      border: Border.all(
-                          color: selected ? AppColors.gold : theme.colorScheme.outline),
-                    ),
-                    child: Text(
-                      _filters[i],
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-                        color: theme.colorScheme.onSurface,
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
+            height: (_Design.choiceTop + ChoiceKey.faceHeight + _Design.listGap - choicesBottom) *
+                unit,
           ),
-          const SizedBox(height: 10),
-          Expanded(
-            child: FutureBuilder<List<Booking>>(
-              future: _future,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
-                }
-                final bookings = _apply(snapshot.data ?? const []);
-                if (bookings.isEmpty) {
-                  return EmptyState(
-                    icon: Icons.event_note_rounded,
-                    title: 'لا توجد حجوزات هنا',
-                    subtitle: 'احجز خدمتك الأولى واستمتع بفنيين موثوقين.',
-                    actionLabel: 'تصفح الفنيين',
-                    onAction: widget.onBrowse,
-                  );
-                }
-                return RefreshIndicator(
-                  onRefresh: () async => _load(),
-                  child: ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(18, 8, 18, 26),
-                    itemCount: bookings.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
-                    itemBuilder: (context, i) => _BookingCard(
-                      booking: bookings[i],
-                      onChanged: _load,
-                    ),
-                  ),
-                );
-              },
+          for (final (i, booking) in bookings.indexed) ...[
+            if (i > 0) const SizedBox(height: 10),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: left + 18),
+              child: _BookingCard(booking: booking, onChanged: _load),
             ),
-          ),
+          ],
+          const SizedBox(height: 26),
         ],
+      ],
+    );
+  }
+
+  /// مكان زر التصفح مع جانبه وقاعدته.
+  Widget _browseRoom(double unit, Widget child) {
+    final chrome = unit * homeKeyChrome;
+    return SizedBox(
+      width: _Design.browseWidth * unit + PushKey.faceInset * 2 * chrome,
+      height: _Design.browseHeight * unit + PushKey.depth * chrome,
+      child: child,
+    );
+  }
+
+  Widget _browseKey(double unit, bool night) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: widget.onBrowse,
+      child: PushKey(
+        unit: unit * homeKeyChrome,
+        faceHeight: _Design.browseHeight * unit,
+        faceRadius: _Design.browseRadius,
+        night: night ? kAlwaysCompleteAnimation : kAlwaysDismissedAnimation,
+        child: Semantics(
+          button: true,
+          child: Center(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                'تصفح الحرفيين',
+                maxLines: 1,
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: _Design.browseTextSize * unit,
+                  height: 1.2,
+                  fontWeight: FontWeight.w800,
+                  color: night ? homeNightInk : homeInk,
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
