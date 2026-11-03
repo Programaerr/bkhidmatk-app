@@ -77,11 +77,11 @@ class _FakeVideo extends ValueNotifier<VideoPlayerValue> implements VideoPlayerC
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-/// مقاس هاتف المستخدم مع شريط الحالة وأزرار النظام.
+/// هاتف المستخدم: التطبيق يرسم تحت شريط الحالة وينتهي فوق أزرار النظام الثلاثة.
 void _userPhone(WidgetTester tester) {
-  const padding = FakeViewPadding(top: 38.4, bottom: 48);
+  const padding = FakeViewPadding(top: 38.4);
   tester.view
-    ..physicalSize = const Size(392.7, 872.7)
+    ..physicalSize = const Size(392.7, 825.5)
     ..devicePixelRatio = 1
     ..padding = padding
     ..viewPadding = padding;
@@ -178,7 +178,7 @@ void main() {
     );
     await tester.pump();
 
-    expect(tester.getRect(find.byType(WorkReel)), const Rect.fromLTWH(0, 0, 392.7, 872.7));
+    expect(tester.getRect(find.byType(WorkReel)), const Rect.fromLTWH(0, 0, 392.7, 825.5));
     final bars = tester.widget<AnnotatedRegion<SystemUiOverlayStyle>>(
       find.ancestor(
         of: find.byType(WorkReel),
@@ -189,8 +189,8 @@ void main() {
   });
 
   testWidgets(
-      'only the logo, the name and the date sit at the bottom left, '
-      'level with the actions at the bottom right, just above the bar', (tester) async {
+      'the logo sits at the bottom left with the name beside it, and the video text on the right '
+      'shows the publish date when tapped, level with the actions, just above the bar', (tester) async {
     SharedPreferences.setMockInitialValues({});
     _userPhone(tester);
     await tester.pumpWidget(
@@ -210,34 +210,93 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
 
     Finder inReel(Finder finder) => find.descendant(of: find.byType(WorkReel), matching: finder);
+    Rect rect(Finder finder) => tester.getRect(finder);
     expect(inReel(find.text('جايك')), findsOneWidget);
-    expect(inReel(find.text('01/11/2025')), findsOneWidget);
-    for (final gone in ['عمل تجريبي', 'وصف العمل', '38 مشاهدة', '· 01/11/2025']) {
+    expect(inReel(find.text('عمل تجريبي')), findsOneWidget);
+    expect(inReel(find.text('وصف العمل')), findsOneWidget);
+    // لا تاريخ ولا مشاهدات قبل اللمس.
+    for (final gone in ['01/11/2025', '· 01/11/2025', '38 مشاهدة']) {
       expect(find.text(gone), findsNothing, reason: gone);
     }
     expect(inReel(find.byIcon(Icons.visibility_outlined)), findsNothing);
 
-    final logo = tester.getRect(
+    // الشعار على الحافة اليسرى، وجايك على يمينه.
+    final logo = rect(
       find.ancestor(of: inReel(find.byType(ClipOval)), matching: find.byType(Container)).first,
     );
-    final name = tester.getRect(inReel(find.text('جايك')));
-    final date = tester.getRect(inReel(find.text('01/11/2025')));
-    // على الحافة اليسرى، والترتيب كما كان: الشعار ثم جايك ثم التاريخ.
-    expect(date.left, closeTo(16, .01));
-    expect(date.right, lessThan(name.left));
-    expect(name.right, lessThan(logo.left));
+    final name = rect(inReel(find.text('جايك')));
+    expect(logo.left, closeTo(16, .01));
+    expect(name.left, greaterThan(logo.right));
 
-    final share = tester.getRect(inReel(find.text('مشاركة')));
-    final shareIcon = tester.getRect(inReel(find.byIcon(Icons.share_rounded)));
-    final heart = tester.getRect(inReel(find.byIcon(Icons.favorite_outline_rounded)));
+    // كلام الفيديو على اليمين بجانب الأزرار.
+    final title = rect(inReel(find.text('عمل تجريبي')));
+    final description = rect(inReel(find.text('وصف العمل')));
+    final shareIcon = rect(inReel(find.byIcon(Icons.share_rounded)));
+    final heart = rect(inReel(find.byIcon(Icons.favorite_outline_rounded)));
+    expect(title.right, closeTo(392.7 - 82, .01));
+    expect(description.right, closeTo(392.7 - 82, .01));
+    expect(title.left, greaterThan(name.right));
     expect(shareIcon.center.dx, closeTo(392.7 - 12 - 26, .01));
-    expect(logo.right, lessThan(shareIcon.left));
+    expect(title.right, lessThan(shareIcon.left));
     expect(heart.bottom, lessThan(shareIcon.top));
-    // الصفّان على مستوى واحد، وبينهما وبين شريط التنقل الزجاجي هامش الشريط نفسه.
-    final bar = tester.getRect(find.byKey(const ValueKey('glass-navigation-bar')));
+
+    // كلها على مستوى واحد، وبينها وبين شريط التنقل الزجاجي هامش الشريط نفسه.
+    final share = rect(inReel(find.text('مشاركة')));
+    final bar = rect(find.byKey(const ValueKey('glass-navigation-bar')));
     expect(logo.bottom, closeTo(share.bottom, .01));
+    expect(description.bottom, closeTo(logo.bottom, .01));
     expect(bar.top - logo.bottom, closeTo(16, .01));
+
+    // لمس الكلام يُظهر تاريخ النشر تحته، ولمسه مرة ثانية يخفيه.
+    await tester.tap(inReel(find.text('عمل تجريبي')));
+    await tester.pump();
+    final date = rect(inReel(find.text('01/11/2025')));
+    expect(date.right, closeTo(392.7 - 82, .01));
+    expect(date.top, greaterThan(rect(inReel(find.text('وصف العمل'))).bottom));
+    expect(date.bottom, closeTo(logo.bottom, .01));
+    await tester.tap(inReel(find.text('عمل تجريبي')));
+    await tester.pump();
+    expect(find.text('01/11/2025'), findsNothing);
   });
+
+  for (final (size, scale) in const [
+    (Size(320, 568), 1.3),
+    (Size(360, 640), 1.0),
+    (Size(392, 825), 2.0),
+    (Size(412, 915), 1.0),
+    (Size(825, 392), 1.0),
+    (Size(1280, 800), 1.0),
+  ]) {
+    testWidgets('nothing overflows on ${size.width.toInt()}x${size.height.toInt()} @${scale}x',
+        (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      tester.view
+        ..physicalSize = size
+        ..devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        ChangeNotifierProvider<AppState>.value(
+          value: AppState(repository: _WorksRepo())..user = _customer,
+          child: MaterialApp(
+            theme: AppTheme.light(),
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(scale)),
+              child: Directionality(textDirection: TextDirection.rtl, child: child!),
+            ),
+            home: const CustomerShell(),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 60));
+      await tester.tap(find.text('أعمالنا'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.tap(find.descendant(of: find.byType(WorkReel), matching: find.text('عمل تجريبي')));
+      await tester.pump();
+      expect(find.text('01/11/2025'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
 
   testWidgets('in Arabic the progress bar fills from the right and dragging left moves forward',
       (tester) async {
