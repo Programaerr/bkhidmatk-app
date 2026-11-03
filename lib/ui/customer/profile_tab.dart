@@ -596,7 +596,8 @@ class _MenuKey extends StatelessWidget {
               ],
             ),
           ),
-          Icon(Icons.chevron_left_rounded, size: _Design.arrowSize * unit, color: ink),
+          // يتجه السهم إلى اليسار في العربية، مثل سهم «عرض الكل».
+          Icon(Icons.chevron_right_rounded, size: _Design.arrowSize * unit, color: ink),
         ],
       ),
     );
