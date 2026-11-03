@@ -199,22 +199,43 @@ void main() {
 
     testWidgets('على الشاشة الطويلة كل زر في مكانه من التصميم ووسط الشاشة', (tester) async {
       await _openProfile(tester, size: const Size(391, 1000));
+      // البطاقة صارت بقدر الصورة، فارتفع ما تحتها 60.6 وبقيت الفراغات كما في التصميم.
       final tops = {
-        'حجوزاتي': 345.7,
-        'الرسائل والدعم': 435.6,
-        'الوضع الليلي': 539.3,
-        'اللغة': 617.1,
+        'حجوزاتي': 285.1,
+        'الرسائل والدعم': 375.0,
+        'الوضع الليلي': 478.7,
+        'اللغة': 556.5,
       };
       expect(_face(tester, _card).top, closeTo(168.6, .1));
+      expect(_face(tester, _card).height, closeTo(85.9, .1));
       for (final MapEntry(key: text, value: top) in tops.entries) {
         expect(_face(tester, _key(text)).top, closeTo(top, .1), reason: text);
       }
-      expect(_face(tester, _logoutKey).top, closeTo(728.3, .1));
+      expect(_face(tester, _logoutKey).top, closeTo(667.7, .1));
       for (final key in [_card, _key('حجوزاتي'), _key('اللغة'), _logoutKey]) {
         final face = _face(tester, key);
         expect(face.width, closeTo(279.9, .01));
         expect(face.center.dx, closeTo(391 / 2, .01));
       }
+    });
+
+    testWidgets('الاسم والرقم والمحافظة مقابل الصورة، وبينهما ما بين الدائرة والاسم في الرئيسية', (tester) async {
+      await _openProfile(tester);
+      Finder circle(String label) => _inProfile(
+            find.byWidgetPredicate((w) => w is PushKeyCircle && w.label == label),
+          );
+      final photo = tester.getRect(circle('محمد باقر'));
+      final edit = tester.getRect(circle('تعديل الملف الشخصي'));
+      for (final text in ['محمد باقر', '07701234567', 'بغداد']) {
+        final box = tester.getRect(_inProfile(find.text(text)));
+        expect(box.right, lessThanOrEqualTo(photo.left - 10 + .01), reason: text);
+        expect(box.left, greaterThanOrEqualTo(edit.right + 10 - .01), reason: text);
+        expect(box.top, greaterThanOrEqualTo(photo.top - .01), reason: text);
+        expect(box.bottom, lessThanOrEqualTo(photo.bottom + .01), reason: text);
+      }
+      // أول سطر يبدأ من عند الصورة، كما يبدأ الاسم في الرئيسية.
+      final name = tester.getRect(_inProfile(find.text('محمد باقر')));
+      expect(name.right, closeTo(photo.left - 10, .01));
     });
 
     testWidgets('في هاتف المستخدم يظهر زر الخروج كله فوق شريط التنقل', (tester) async {
