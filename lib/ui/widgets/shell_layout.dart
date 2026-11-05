@@ -221,10 +221,11 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
     vsync: this,
     duration: const Duration(milliseconds: 200),
   );
-  // رحلة الفقاعة من تبويب إلى آخر: تكبر وتنكسر في الطريق ثم تستقر.
+  // رحلة الفقاعة من تبويب إلى آخر كسائل (مثل فينوم، طلب المستخدم): رأسها يسبق إلى التبويب،
+  // وذيلها يلحقه برقبة تَرِقّ ثم يُسحب إليه، وتهتز قليلاً ثم تستقر.
   late final _trip = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 460),
+    duration: const Duration(milliseconds: 640),
   );
   // سرعة الإصبع تمطّ الزجاج وتقوّي انكساره، ويعود مستوياً حين يقف الإصبع.
   late final _settle = AnimationController(
@@ -311,10 +312,11 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
     return Directionality.of(context) == TextDirection.rtl ? width - start : start;
   }
 
+  /// رأس الفقاعة السائلة الآن، ومنه تبدأ رحلة جديدة إن ضُغط تبويب آخر قبل أن تصل.
   double _tripCentre(double width) => lerpDouble(
         _tripFrom,
         _tabCenter(_tripTo, width),
-        Curves.easeOutBack.transform(_trip.value),
+        _GooPainter.lead(_trip.value),
       )!;
 
   // التبويب يُفتح بمجرد اللمس، والبقاء عليه أو السحب يحوّل فقاعته إلى مجهر.
@@ -408,17 +410,7 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
         presence: t,
       );
     }
-    if (_trip.isAnimating) {
-      final bump = math.sin(math.pi * _trip.value);
-      return (
-        centre: _tripCentre(width),
-        width: bubbleWidth * (1 + .3 * bump),
-        height: bubbleHeight * (1 + .1 * bump),
-        zoom: 1 + .22 * bump,
-        refract: .5 * bump,
-        presence: math.min(1, bump * 3),
-      );
-    }
+    // في الرحلة بين التبويبات ترسم الفقاعةَ [_GooPainter]، لا الزجاج.
     return null;
   }
 
@@ -521,13 +513,36 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
                                           child: AnimatedBuilder(
                                             animation: _glass,
                                             builder: (context, bubble) => Opacity(
-                                              opacity: 1 -
-                                                  (_drop(width, itemWidth)
-                                                          ?.presence ??
-                                                      0),
+                                              opacity: _trip.isAnimating
+                                                  ? 0
+                                                  : 1 -
+                                                      (_drop(width, itemWidth)
+                                                              ?.presence ??
+                                                          0),
                                               child: bubble,
                                             ),
                                             child: _bubble(isDark),
+                                          ),
+                                        ),
+                                      ),
+                                      // الفقاعة السائلة في رحلتها، بلون الفقاعة الساكنة وحافتها.
+                                      Positioned.fill(
+                                        child: IgnorePointer(
+                                          child: AnimatedBuilder(
+                                            animation: _trip,
+                                            builder: (context, _) =>
+                                                _trip.isAnimating
+                                                    ? CustomPaint(
+                                                        painter: _GooPainter(
+                                                          from: _tripFrom,
+                                                          to: _tabCenter(
+                                                              _tripTo, width),
+                                                          t: _trip.value,
+                                                          itemWidth: itemWidth,
+                                                          isDark: isDark,
+                                                        ),
+                                                      )
+                                                    : const SizedBox.shrink(),
                                           ),
                                         ),
                                       ),
@@ -670,6 +685,111 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
       child: tint,
     );
   }
+}
+
+/// الفقاعة وهي تنتقل كسائل: رأس يسبق إلى التبويب الجديد، وذيل يتأخر ثم يُسحب إليه، وبينهما رقبة
+/// تَرِقّ كلما طال المطّ. حين يصل الرأس يهتز قليلاً كالهلام، وفي آخرها تطابق الفقاعة الساكنة تماماً.
+class _GooPainter extends CustomPainter {
+  const _GooPainter({
+    required this.from,
+    required this.to,
+    required this.t,
+    required this.itemWidth,
+    required this.isDark,
+  });
+
+  final double from;
+  final double to;
+  final double t;
+  final double itemWidth;
+  final bool isDark;
+
+  /// تقدّم الرأس: سريع ثم يهدأ، ويصل عند 70% من الرحلة.
+  static double lead(double t) => Curves.easeOutCubic.transform((t / .7).clamp(0.0, 1.0));
+
+  /// تقدّم الذيل: يتأخر قليلاً ثم يلحق بنعومة، ويصل عند 90%.
+  static double trail(double t) =>
+      Curves.easeInOutCubic.transform(((t - .12) / .78).clamp(0.0, 1.0));
+
+  RRect _pill(double centreX, double centreY, double width, double height) =>
+      RRect.fromRectAndRadius(
+        Rect.fromCenter(center: Offset(centreX, centreY), width: width, height: height),
+        Radius.circular(height / 2),
+      );
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final width = itemWidth - 8;
+    final height = size.height - 8;
+    final cy = size.height / 2;
+    final headX = lerpDouble(from, to, lead(t))!;
+    final tailX = lerpDouble(from, to, trail(t))!;
+    // مقدار المطّ: صفر والفقاعة مجتمعة، وواحد حين يبتعد الذيل عن الرأس عرض تبويب.
+    final pull = ((headX - tailX).abs() / itemWidth).clamp(0.0, 1.2);
+    // اهتزاز الهلام بعد وصول الرأس، يخفت حتى يسكن.
+    final settle = ((t - .7) / .3).clamp(0.0, 1.0);
+    final wobble = settle == 0
+        ? 0.0
+        : math.sin(settle * math.pi * 3) * math.pow(1 - settle, 2) * .07;
+
+    final headW = width * (1 - .1 * pull) * (1 + wobble);
+    final headH = height * (1 - .05 * pull) * (1 - wobble * .6);
+    final tailW = width * (1 - .4 * pull);
+    final tailH = height * (1 - .32 * pull);
+    final neckH = height * (1 - .58 * math.min(pull, 1.0));
+    final midX = (headX + tailX) / 2;
+
+    final neck = Path()
+      ..moveTo(tailX, cy - tailH / 2)
+      ..quadraticBezierTo(midX, cy - neckH / 2, headX, cy - headH / 2)
+      ..lineTo(headX, cy + headH / 2)
+      ..quadraticBezierTo(midX, cy + neckH / 2, tailX, cy + tailH / 2)
+      ..close();
+    final goo = Path.combine(
+      PathOperation.union,
+      Path.combine(
+        PathOperation.union,
+        Path()..addRRect(_pill(headX, cy, headW, headH)),
+        Path()..addRRect(_pill(tailX, cy, tailW, tailH)),
+      ),
+      neck,
+    );
+
+    // ألوان الفقاعة الساكنة وظلها وحافتها.
+    final glass = Colors.white.withValues(alpha: isDark ? .16 : .34);
+    final bounds = goo.getBounds();
+    canvas
+      ..drawPath(
+        goo.shift(const Offset(0, 2)),
+        Paint()
+          ..color = Colors.black.withValues(alpha: isDark ? .20 : .08)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
+      )
+      ..drawPath(
+        goo,
+        Paint()
+          ..shader = LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [glass, Colors.white.withValues(alpha: isDark ? .04 : .10)],
+          ).createShader(bounds),
+      )
+      ..drawPath(
+        goo,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1
+          ..color = glass,
+      );
+  }
+
+  @override
+  bool shouldRepaint(_GooPainter oldDelegate) =>
+      oldDelegate.t != t ||
+      oldDelegate.from != from ||
+      oldDelegate.to != to ||
+      oldDelegate.itemWidth != itemWidth ||
+      oldDelegate.isDark != isDark;
 }
 
 class _GlassNavigationDestination extends StatelessWidget {
