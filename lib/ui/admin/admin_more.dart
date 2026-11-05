@@ -515,12 +515,6 @@ class _AdminCustomersScreenState extends State<AdminCustomersScreen>
     }
   }
 
-  Future<void> _sms(String phone) async {
-    if (!await launchUrl(Uri.parse('sms:${phoneForCall(phone)}'))) {
-      if (mounted) AppSnack.show(context, 'تعذر فتح تطبيق الرسائل', error: true);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);

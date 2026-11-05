@@ -222,16 +222,9 @@ class _AdminServicesState extends State<AdminServices>
                       child: const Text('مخفي',
                           style: TextStyle(fontSize: 8.5, color: AppColors.danger)),
                     ),
-                  PopupMenuButton<String>(
-                    icon: const Icon(Icons.more_vert_rounded, size: 19),
-                    onSelected: (v) {
-                      if (v == 'edit') _editService(s);
-                      if (v == 'delete') _deleteService(s);
-                    },
-                    itemBuilder: (_) => const [
-                      PopupMenuItem(value: 'edit', child: Text('تعديل')),
-                      PopupMenuItem(value: 'delete', child: Text('حذف')),
-                    ],
+                  _rowActions(
+                    onEdit: () => _editService(s),
+                    onDelete: () => _deleteService(s),
                   ),
                 ],
               ),

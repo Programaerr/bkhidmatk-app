@@ -7,6 +7,7 @@ import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../../data/repository.dart';
 import '../../state/app_state.dart';
+import '../auth/push_key.dart';
 import '../common/receipt_document.dart';
 import '../widgets/quick_route.dart';
 import '../widgets/realtime_refresh.dart';
@@ -80,7 +81,8 @@ class _AdminBookingsState extends State<AdminBookings>
           title: 'إدارة الحجوزات',
           subtitle: 'متابعة وتحديث حالة كل حجز',
           actions: [
-            AppIconButton(icon: Icons.refresh_rounded, onTap: _load),
+            AppIconButton(
+                icon: Icons.refresh_rounded, tooltip: 'تحديث', onTap: _load),
           ],
         ),
         Padding(
@@ -98,39 +100,24 @@ class _AdminBookingsState extends State<AdminBookings>
           ),
         ),
         SizedBox(
-          height: 34,
+          height: 50,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 18),
             itemCount: filters.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 7),
-            itemBuilder: (context, i) {
-              final selected = _status == filters[i].$1;
-              return GestureDetector(
-                onTap: () {
-                  _status = filters[i].$1;
-                  _load();
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: selected ? AppColors.gold : theme.colorScheme.surface,
-                    borderRadius: BorderRadius.circular(100),
-                    border: Border.all(
-                        color: selected ? AppColors.gold : theme.colorScheme.outline),
-                  ),
-                  child: Text(filters[i].$2,
-                      style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-                          color: theme.colorScheme.onSurface)),
-                ),
-              );
-            },
+            separatorBuilder: (_, __) => const SizedBox(width: 4),
+            itemBuilder: (context, i) => PushKeyButton(
+              label: filters[i].$2,
+              compact: true,
+              expand: false,
+              tone: _status == filters[i].$1 ? KeyTone.lemon : KeyTone.white,
+              onPressed: () {
+                _status = filters[i].$1;
+                _load();
+              },
+            ),
           ),
         ),
-        const SizedBox(height: 8),
         Expanded(
           child: FutureBuilder<List<Booking>>(
             future: _future,
@@ -349,6 +336,7 @@ class _BookingSheetState extends State<_BookingSheet> {
                       ),
                       AppIconButton(
                         icon: Icons.call_outlined,
+                        tooltip: 'اتصال',
                         onTap: () => _call(b.customerPhone),
                       ),
                     ],
@@ -412,9 +400,11 @@ class _BookingSheetState extends State<_BookingSheet> {
                             ],
                           ),
                         ),
-                        TextButton(
+                        SecondaryButton(
+                          label: b.workerName == null ? 'تعيين' : 'تغيير',
+                          compact: true,
+                          expand: false,
                           onPressed: _assign,
-                          child: const Text('تغيير', style: TextStyle(fontSize: 11)),
                         ),
                       ],
                     ),
@@ -438,11 +428,13 @@ class _BookingSheetState extends State<_BookingSheet> {
                               style: const TextStyle(fontSize: 11),
                             ),
                           ),
-                          IconButton(
-                            onPressed: () => ReceiptActions.print(context, _receipt!),
-                            icon: const Icon(Icons.print_rounded, size: 19),
+                          AppIconButton(
+                            small: true,
+                            tooltip: 'طباعة',
+                            onTap: () => ReceiptActions.print(context, _receipt!),
+                            icon: Icons.print_rounded,
                           ),
-                          const Icon(Icons.chevron_left_rounded, size: 18),
+                          const Icon(Icons.chevron_right_rounded, size: 18),
                         ],
                       ),
                     ),
@@ -508,31 +500,20 @@ class _StatusAction extends StatelessWidget {
 
   final String label;
   final IconData icon;
+
+  /// الأحمر وحده يغيّر لون الزر، لأنه إجراء لا رجعة فيه.
   final Color color;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(100),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: .1),
-          borderRadius: BorderRadius.circular(100),
-          border: Border.all(color: color.withValues(alpha: .35)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 15, color: color),
-            const SizedBox(width: 4),
-            Text(label,
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: color)),
-          ],
-        ),
-      ),
+    return PushKeyButton(
+      label: label,
+      icon: icon,
+      compact: true,
+      expand: false,
+      tone: color == AppColors.danger ? KeyTone.red : KeyTone.yellow,
+      onPressed: onTap,
     );
   }
 }
