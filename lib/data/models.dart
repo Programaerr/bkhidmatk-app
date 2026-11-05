@@ -398,7 +398,7 @@ class BookingStatus {
   static const all = [pending, confirmed, dispatched, inProgress, completed, cancelled];
 
   static String label(String s) => switch (s) {
-        pending => 'بانتظار موافقة الإدارة',
+        pending => 'بانتظار الموافقة',
         confirmed => 'تمت الموافقة',
         dispatched => 'الحرفي في الطريق',
         inProgress => 'قيد التنفيذ',

@@ -51,7 +51,9 @@ class _WorkerRequestsTabState extends State<WorkerRequestsTab>
 
   Future<void> _load() async {
     final next = _fetch();
-    setState(() => _future = next);
+    setState(() {
+      _future = next;
+    });
     try {
       await next;
     } catch (_) {}
