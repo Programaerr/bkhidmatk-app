@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -52,7 +53,9 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
   @override
   void didUpdateWidget(covariant WorkReel oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _work = widget.work;
+    // بعد الإعجاب تعيد الصفحة جلب الأعمال، وتمرّر النسخة القديمة نفسها حتى يصل الجديد.
+    // أخذها كان يرجع القلب فارغاً لحظةً، ثم يمتلئ ويحتفل مرة ثانية.
+    if (!identical(oldWidget.work, widget.work)) _work = widget.work;
     if (oldWidget.work.videoUrl != widget.work.videoUrl) {
       _failed = false;
       _isPlaying = false;
@@ -380,22 +383,19 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
       mainAxisSize: MainAxisSize.min,
       children: [
         _ReelAction(
-          icon: _work.likedByMe
-              ? Icons.favorite_rounded
-              : Icons.favorite_outline_rounded,
+          icon: LikeHeart(liked: _work.likedByMe),
           label: fmtNumber(_work.likes),
-          color: _work.likedByMe ? AppColors.danger : Colors.white,
           onTap: _toggleLike,
         ),
         const SizedBox(height: 18),
         _ReelAction(
-          icon: Icons.mode_comment_rounded,
+          icon: const ReelGlyph(ReelGlyphShape.comment),
           label: fmtNumber(_work.commentCount),
           onTap: _openComments,
         ),
         const SizedBox(height: 18),
         _ReelAction(
-          icon: Icons.share_rounded,
+          icon: const ReelGlyph(ReelGlyphShape.share),
           label: 'مشاركة',
           onTap: _share,
         ),
@@ -539,17 +539,222 @@ class ReelProgressBar extends StatelessWidget {
   }
 }
 
+/// قلب الإعجاب بتصميم con-like: قلب أحمر محدد دائماً، وعند الإعجاب يظهر فوقه القلب الممتلئ
+/// من لا شيء ويكبر إلى 1.2 ثم يستقر، وتنطلق حوله ستة خطوط تكبر وتختفي، كله في نصف ثانية.
+class LikeHeart extends StatefulWidget {
+  const LikeHeart({super.key, required this.liked, this.size = 30});
+
+  final bool liked;
+  final double size;
+
+  /// --red في التصميم.
+  static const red = Color.fromRGBO(255, 50, 50, 1);
+
+  @override
+  State<LikeHeart> createState() => _LikeHeartState();
+}
+
+class _LikeHeartState extends State<LikeHeart>
+    with SingleTickerProviderStateMixin {
+  // يبدأ منتهياً، فالقلب المعجب به من قبل يظهر ثابتاً بلا احتفال.
+  late final _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 500),
+    value: 1,
+  );
+
+  // kfr-filled: من 0 إلى 1.2 مع الظهور، ثم يعود إلى حجمه.
+  late final _fillScale = TweenSequence<double>([
+    TweenSequenceItem(
+      tween: Tween(begin: 0.0, end: 1.2).chain(CurveTween(curve: Curves.ease)),
+      weight: 1,
+    ),
+    TweenSequenceItem(
+      tween: Tween(begin: 1.2, end: 1.0).chain(CurveTween(curve: Curves.ease)),
+      weight: 1,
+    ),
+  ]).animate(_controller);
+  late final _fillOpacity = TweenSequence<double>([
+    TweenSequenceItem(
+      tween: Tween(begin: 0.0, end: 1.0).chain(CurveTween(curve: Curves.ease)),
+      weight: 1,
+    ),
+    TweenSequenceItem(tween: ConstantTween(1.0), weight: 1),
+  ]).animate(_controller);
+
+  // kfr-celebrate: الخطوط تكبر من 0 إلى 1.2، وتخفت إلى 0.8 ثم تختفي.
+  late final _burstScale = Tween(begin: 0.0, end: 1.2)
+      .chain(CurveTween(curve: Curves.ease))
+      .animate(_controller);
+  late final _burstOpacity = TweenSequence<double>([
+    TweenSequenceItem(
+      tween: Tween(begin: 1.0, end: .8).chain(CurveTween(curve: Curves.ease)),
+      weight: 1,
+    ),
+    TweenSequenceItem(
+      tween: Tween(begin: .8, end: 0.0).chain(CurveTween(curve: Curves.ease)),
+      weight: 1,
+    ),
+  ]).animate(_controller);
+
+  @override
+  void didUpdateWidget(LikeHeart oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.liked && !oldWidget.liked) _controller.forward(from: 0);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final size = widget.size;
+    return SizedBox.square(
+      dimension: size,
+      child: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.center,
+        children: [
+          Icon(Icons.favorite_outline_rounded, size: size, color: LikeHeart.red),
+          if (widget.liked) ...[
+            FadeTransition(
+              opacity: _fillOpacity,
+              child: ScaleTransition(
+                scale: _fillScale,
+                child: Icon(Icons.favorite_rounded,
+                    size: size, color: LikeHeart.red),
+              ),
+            ),
+            // مربع الخطوط ضعف القلب، كما في التصميم (100 حول قلب 50).
+            OverflowBox(
+              maxWidth: size * 2,
+              maxHeight: size * 2,
+              child: IgnorePointer(
+                child: FadeTransition(
+                  opacity: _burstOpacity,
+                  child: ScaleTransition(
+                    scale: _burstScale,
+                    child: CustomPaint(
+                      size: Size.square(size * 2),
+                      painter: const _BurstPainter(),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// خطوط الاحتفال حول القلب، بنقاطها في التصميم داخل مربع 100 وبخط سُمكه 1.
+class _BurstPainter extends CustomPainter {
+  const _BurstPainter();
+
+  static const _lines = [
+    (Offset(10, 10), Offset(20, 20)),
+    (Offset(10, 50), Offset(20, 50)),
+    (Offset(20, 80), Offset(30, 70)),
+    (Offset(90, 10), Offset(80, 20)),
+    (Offset(90, 50), Offset(80, 50)),
+    (Offset(80, 80), Offset(70, 70)),
+  ];
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.scale(size.width / 100);
+    final paint = Paint()
+      ..color = LikeHeart.red
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+    for (final (from, to) in _lines) {
+      canvas.drawLine(from, to, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_BurstPainter oldDelegate) => false;
+}
+
+enum ReelGlyphShape { comment, share }
+
+/// أيقونات الفيديو مرسومة بخط مثل إنستغرام: فقاعة كلام للتعليقات وطائرة ورقية للمشاركة.
+class ReelGlyph extends StatelessWidget {
+  const ReelGlyph(this.shape, {super.key, this.size = 30});
+
+  final ReelGlyphShape shape;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      size: Size.square(size),
+      painter: _ReelGlyphPainter(shape),
+    );
+  }
+}
+
+class _ReelGlyphPainter extends CustomPainter {
+  const _ReelGlyphPainter(this.shape);
+
+  final ReelGlyphShape shape;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // الرسم في مربع 24 وخطه 2، مثل باقي الأيقونات.
+    canvas.scale(size.width / 24);
+    final paint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2
+      ..strokeJoin = StrokeJoin.round
+      ..strokeCap = StrokeCap.round;
+    switch (shape) {
+      case ReelGlyphShape.comment:
+        // دائرة يخرج منها ذيل صغير نحو الأسفل.
+        const centre = Offset(12, 11.6);
+        const radius = 9.4;
+        const start = 22 * math.pi / 180;
+        final bubble = Path()
+          ..moveTo(centre.dx + radius * math.cos(start),
+              centre.dy + radius * math.sin(start))
+          ..arcTo(Rect.fromCircle(center: centre, radius: radius), start,
+              -314 * math.pi / 180, false)
+          ..lineTo(21.5, 21.3)
+          ..close();
+        canvas.drawPath(bubble, paint);
+      case ReelGlyphShape.share:
+        // طائرة ورقية رأسها إلى الأعلى، وطيّتها خط من الرأس إلى وسطها.
+        final plane = Path()
+          ..moveTo(2.5, 3.5)
+          ..lineTo(21.5, 3.5)
+          ..lineTo(12.2, 20.2)
+          ..lineTo(9.6, 10.4)
+          ..close();
+        canvas.drawPath(plane, paint);
+        canvas.drawLine(const Offset(21.5, 3.5), const Offset(9.6, 10.4), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_ReelGlyphPainter oldDelegate) =>
+      oldDelegate.shape != shape;
+}
+
 class _ReelAction extends StatelessWidget {
   const _ReelAction({
     required this.icon,
     required this.label,
     required this.onTap,
-    this.color = Colors.white,
   });
 
-  final IconData icon;
+  final Widget icon;
   final String label;
-  final Color color;
   final VoidCallback onTap;
 
   @override
@@ -561,7 +766,7 @@ class _ReelAction extends StatelessWidget {
         width: 52,
         child: Column(
           children: [
-            Icon(icon, color: color, size: 30),
+            icon,
             const SizedBox(height: 3),
             Text(
               label,
