@@ -81,7 +81,7 @@ class SplashScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
-      backgroundColor: AppColors.ink,
+      backgroundColor: Colors.black,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -101,35 +101,22 @@ class SplashScreen extends StatelessWidget {
   }
 }
 
+/// الشعار الجديد كبيراً، وفيه كلمة «جايك» نفسها، فلا نص تحته.
 class BrandLogoBig extends StatelessWidget {
   const BrandLogoBig({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(26),
-          child: Image.asset(
-            'assets/images/logo.jpg',
-            width: 104,
-            height: 104,
-            fit: BoxFit.cover,
-            cacheWidth: 208,
-            cacheHeight: 208,
-          ),
-        ),
-        const SizedBox(height: 16),
-        const Text(
-          'جايك',
-          style: TextStyle(
-            fontFamily: 'Cairo',
-            fontSize: 30,
-            fontWeight: FontWeight.w900,
-            color: AppColors.gold,
-          ),
-        ),
-      ],
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(30),
+      child: Image.asset(
+        'assets/images/logo.jpg',
+        width: 220,
+        height: 220,
+        fit: BoxFit.cover,
+        cacheWidth: 440,
+        cacheHeight: 440,
+      ),
     );
   }
 }
