@@ -72,6 +72,8 @@ class _AdminShellState extends State<AdminShell> {
         items: _items,
         pages: _pages,
         onSelect: _go,
+        // قوائم اللوحة عادية بهامش 26 فقط، فلو امتدت خلف الشريط لخفي آخر ما فيها ولم يمكن النزول إليه.
+        extendBody: false,
       ),
     );
   }

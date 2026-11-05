@@ -22,6 +22,7 @@ class AppShellLayout extends StatefulWidget {
     required this.onSelect,
     this.floatingActionButton,
     this.accent = AppColors.gold,
+    this.extendBody = true,
   });
 
   final int index;
@@ -30,6 +31,10 @@ class AppShellLayout extends StatefulWidget {
   final ValueChanged<int> onSelect;
   final Widget? floatingActionButton;
   final Color accent;
+
+  /// الصفحات تمتد خلف الشريط الزجاجي وتحسب هي هامشها السفلي (صفحات الزبون المرسومة بالتصميم).
+  /// الصفحات القوائم العادية، مثل لوحة التحكم، تُقصر فوق الشريط فلا يخفي آخرها.
+  final bool extendBody;
 
   @override
   State<AppShellLayout> createState() => _AppShellLayoutState();
@@ -76,6 +81,7 @@ class _AppShellLayoutState extends State<AppShellLayout>
       :onSelect,
       :floatingActionButton,
       :accent,
+      :extendBody,
     ) = widget;
     final theme = Theme.of(context);
     final wide = MediaQuery.sizeOf(context).width >= 900;
@@ -109,7 +115,7 @@ class _AppShellLayoutState extends State<AppShellLayout>
 
     if (!wide) {
       return Scaffold(
-        extendBody: true,
+        extendBody: extendBody,
         body: body,
         floatingActionButton: floatingActionButton,
         bottomNavigationBar: _GlassNavigationBar(

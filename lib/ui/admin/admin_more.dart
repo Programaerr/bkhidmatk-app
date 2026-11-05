@@ -41,7 +41,11 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
 
   void _load() {
     final future = context.read<AppState>().repo.stats();
-    if (mounted) setState(() => _stats = future);
+    if (mounted) {
+      setState(() {
+        _stats = future;
+      });
+    }
   }
 
   @override
