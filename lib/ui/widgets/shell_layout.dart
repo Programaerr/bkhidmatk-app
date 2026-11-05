@@ -49,23 +49,36 @@ class _AppShellLayoutState extends State<AppShellLayout>
   static const _maxAlive = 3;
   final _alive = <int>[];
 
-  // التبويب الجديد يظهر بتلاشٍ وانزلاق قصير، وما خلفه يبقى محفوظاً.
+  // التبويب الجديد يظهر فوق السابق بتلاشٍ وانزلاق قصير، أبطأ قليلاً ليكون سلساً (طلب المستخدم).
+  // السابق يبقى تحته حتى يكتمل ظهوره، فلا تومض الأرضية بينهما.
   late final _entrance = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 260),
+    duration: const Duration(milliseconds: 380),
     value: 1,
-  );
-  late final _fade =
-      CurvedAnimation(parent: _entrance, curve: Curves.easeOutCubic);
+  )..addStatusListener((status) {
+      if (status == AnimationStatus.completed && _leaving != null) {
+        setState(() => _leaving = null);
+      }
+    });
+  late final _fade = CurvedAnimation(parent: _entrance, curve: Curves.easeInOut);
   late final _slide = Tween<Offset>(
     begin: const Offset(0.035, 0),
     end: Offset.zero,
-  ).animate(CurvedAnimation(parent: _fade, curve: Curves.easeOutCubic));
+  ).animate(CurvedAnimation(
+    parent: CurvedAnimation(parent: _entrance, curve: Curves.easeOutCubic),
+    curve: Curves.easeOutCubic,
+  ));
+
+  /// التبويب السابق، ظاهر تحت الجديد حتى يكتمل ظهوره.
+  int? _leaving;
 
   @override
   void didUpdateWidget(AppShellLayout oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.index != widget.index) _entrance.forward(from: 0);
+    if (oldWidget.index != widget.index) {
+      _leaving = oldWidget.index;
+      _entrance.forward(from: 0);
+    }
   }
 
   @override
@@ -95,20 +108,39 @@ class _AppShellLayoutState extends State<AppShellLayout>
       _alive.removeAt(0);
     }
 
-    final body = IndexedStack(
-      index: index,
+    // التبويب الظاهر آخراً فوق الجميع، والسابق تحته مباشرة. المفاتيح تحفظ كل تبويب حين يتغير ترتيبها.
+    final leaving = _leaving == index ? null : _leaving;
+    final order = [
+      for (var i = 0; i < pages.length; i++)
+        if (i != index && i != leaving) i,
+      if (leaving != null) leaving,
+      index,
+    ];
+    final body = Stack(
+      fit: StackFit.expand,
       children: [
-        for (final (i, page) in pages.indexed)
-          // ما خلف التبويب الظاهر لا يتحرك ولا يجلب شيئاً.
-          TickerMode(
-            enabled: i == index,
-            child: FadeTransition(
-              opacity: i == index ? _fade : kAlwaysCompleteAnimation,
-              child: SlideTransition(
-                position: i == index
-                    ? _slide
-                    : const AlwaysStoppedAnimation(Offset.zero),
-                child: _alive.contains(i) ? page : const SizedBox.shrink(),
+        for (final i in order)
+          KeyedSubtree(
+            key: ValueKey(i),
+            child: Offstage(
+              offstage: i != index && i != leaving,
+              child: IgnorePointer(
+                ignoring: i != index,
+                // ما خلف التبويب الظاهر لا يتحرك ولا يجلب شيئاً.
+                child: TickerMode(
+                  enabled: i == index,
+                  child: FadeTransition(
+                    opacity: i == index ? _fade : kAlwaysCompleteAnimation,
+                    child: SlideTransition(
+                      position: i == index
+                          ? _slide
+                          : const AlwaysStoppedAnimation(Offset.zero),
+                      child: _alive.contains(i)
+                          ? pages[i]
+                          : const SizedBox.shrink(),
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
@@ -482,12 +514,14 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
                                     gradient: LinearGradient(
                                       begin: Alignment.topCenter,
                                       end: Alignment.bottomCenter,
+                                      // ليلاً زجاج شفاف مثل النهار (طلب المستخدم): بياض خفيف فوق
+                                      // التغبيش، لا لوح داكن يخفي ما تحته.
                                       colors: isDark
                                           ? [
-                                              theme.colorScheme.surface
-                                                  .withValues(alpha: .62),
-                                              theme.colorScheme.surface
-                                                  .withValues(alpha: .46),
+                                              Colors.white
+                                                  .withValues(alpha: .12),
+                                              Colors.white
+                                                  .withValues(alpha: .06),
                                             ]
                                           : [
                                               Colors.white
@@ -499,7 +533,7 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
                                     borderRadius: radius,
                                     border: Border.all(
                                       color: Colors.white
-                                          .withValues(alpha: isDark ? .18 : .70),
+                                          .withValues(alpha: isDark ? .22 : .70),
                                     ),
                                   ),
                                   child: Stack(
