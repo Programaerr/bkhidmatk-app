@@ -539,10 +539,13 @@ class ReelProgressBar extends StatelessWidget {
   }
 }
 
-/// قلب الإعجاب بتصميم con-like: قلب أحمر محدد دائماً، وعند الإعجاب يظهر فوقه القلب الممتلئ
-/// من لا شيء ويكبر إلى 1.2 ثم يستقر، وتنطلق حوله ستة خطوط تكبر وتختفي، كله في نصف ثانية.
+/// حجم أيقونات الفيديو (القلب والتعليقات والمشاركة)، 24 مثل إنستغرام.
+const reelIconSize = 24.0;
+
+/// قلب الإعجاب بتصميم con-like: قلب محدد أبيض (طلب المستخدم، والتصميم أحمر)، وعند الإعجاب
+/// يحمرّ ويظهر فوقه القلب الممتلئ الأحمر من لا شيء ويكبر إلى 1.2 ثم يستقر، وتنطلق حوله ستة خطوط تكبر وتختفي، كله في نصف ثانية.
 class LikeHeart extends StatefulWidget {
-  const LikeHeart({super.key, required this.liked, this.size = 30});
+  const LikeHeart({super.key, required this.liked, this.size = reelIconSize});
 
   final bool liked;
   final double size;
@@ -618,7 +621,9 @@ class _LikeHeartState extends State<LikeHeart>
         clipBehavior: Clip.none,
         alignment: Alignment.center,
         children: [
-          Icon(Icons.favorite_outline_rounded, size: size, color: LikeHeart.red),
+          // أبيض قبل الإعجاب مثل باقي الأيقونات، وأحمر معه.
+          Icon(Icons.favorite_outline_rounded,
+              size: size, color: widget.liked ? LikeHeart.red : Colors.white),
           if (widget.liked) ...[
             FadeTransition(
               opacity: _fillOpacity,
@@ -685,7 +690,7 @@ enum ReelGlyphShape { comment, share }
 
 /// أيقونات الفيديو مرسومة بخط مثل إنستغرام: فقاعة كلام للتعليقات وطائرة ورقية للمشاركة.
 class ReelGlyph extends StatelessWidget {
-  const ReelGlyph(this.shape, {super.key, this.size = 30});
+  const ReelGlyph(this.shape, {super.key, this.size = reelIconSize});
 
   final ReelGlyphShape shape;
   final double size;
