@@ -5,6 +5,7 @@ import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../common/receipt_document.dart';
 import '../widgets/quick_route.dart';
+import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
 import 'booking_detail_screen.dart';
 
@@ -135,18 +136,21 @@ class BookingSuccessScreen extends StatelessWidget {
                           ],
                         ),
                       ),
-                      IconButton(
-                        onPressed: () => ReceiptActions.print(context, receipt!),
-                        icon: const Icon(Icons.print_rounded),
+                      AppIconButton(
+                        small: true,
+                        onTap: () => ReceiptActions.print(context, receipt!),
+                        icon: Icons.print_rounded,
                         tooltip: 'طباعة',
                       ),
-                      IconButton(
-                        onPressed: () => Navigator.push(
+                      const SizedBox(width: 4),
+                      AppIconButton(
+                        small: true,
+                        onTap: () => Navigator.push(
                           context,
                           QuickRoute(
                               builder: (_) => ReceiptPreviewScreen(receipt: receipt!)),
                         ),
-                        icon: const Icon(Icons.receipt_long_rounded),
+                        icon: Icons.receipt_long_rounded,
                         tooltip: 'معاينة',
                       ),
                     ],
@@ -163,13 +167,9 @@ class BookingSuccessScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 10),
-              SizedBox(
-                height: 52,
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: () => Navigator.popUntil(context, (r) => r.isFirst),
-                  child: const Text('العودة للرئيسية'),
-                ),
+              SecondaryButton(
+                label: 'العودة للرئيسية',
+                onPressed: () => Navigator.popUntil(context, (r) => r.isFirst),
               ),
             ],
           ),

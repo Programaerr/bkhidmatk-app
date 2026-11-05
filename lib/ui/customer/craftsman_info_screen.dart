@@ -1,20 +1,45 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../core/utils.dart';
 import '../../data/models.dart';
+import '../../state/app_state.dart';
 import '../auth/push_key.dart';
+import '../widgets/quick_route.dart';
 import '../widgets/ui.dart';
+import 'booking_flow.dart';
 import 'home_keys.dart';
+import 'messages_screen.dart';
 
 const _circleSize = 96.0;
 
-/// معلومات الحرفي بعد الضغط على زره في الصفحة الرئيسية.
-class CraftsmanInfoScreen extends StatelessWidget {
+/// معلومات الحرفي بعد الضغط على زره، وخدماته التي يُحجز منها.
+class CraftsmanInfoScreen extends StatefulWidget {
   const CraftsmanInfoScreen({super.key, required this.worker});
 
   final Worker worker;
 
   @override
+  State<CraftsmanInfoScreen> createState() => _CraftsmanInfoScreenState();
+}
+
+class _CraftsmanInfoScreenState extends State<CraftsmanInfoScreen> {
+  late final Future<List<Service>> _services = _loadServices();
+
+  /// خدمات قسمه، وما كان منها لحرفي آخر لا يظهر هنا.
+  Future<List<Service>> _loadServices() async {
+    final worker = widget.worker;
+    final all = await context
+        .read<AppState>()
+        .repo
+        .listServices(categoryId: worker.categoryId);
+    final own = all.where((s) => s.workerId == null || s.workerId == worker.id).toList();
+    return own.isEmpty ? all : own;
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final worker = widget.worker;
     final theme = Theme.of(context);
     final night = theme.brightness == Brightness.dark;
     final ground = night ? homeNightGround : homeCream;
@@ -104,6 +129,103 @@ class CraftsmanInfoScreen extends StatelessWidget {
               child: Text(bio, style: theme.textTheme.bodyMedium),
             ),
           ],
+          const SizedBox(height: 22),
+          Text(
+            'احجز خدمة',
+            style: TextStyle(
+              fontFamily: 'Cairo',
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              color: ink,
+            ),
+          ),
+          const SizedBox(height: 8),
+          FutureBuilder<List<Service>>(
+            future: _services,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Center(child: CircularProgressIndicator(strokeWidth: 2.4)),
+                );
+              }
+              final services = snapshot.data ?? const <Service>[];
+              if (snapshot.hasError || services.isEmpty) {
+                return Column(
+                  children: [
+                    Text(
+                      snapshot.hasError
+                          ? 'تعذّر جلب الخدمات الآن.'
+                          : 'لا توجد خدمات لهذا القسم بعد. راسل جايك ونرتب لك الموعد.',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodySmall?.copyWith(color: ink),
+                    ),
+                    const SizedBox(height: 10),
+                    SecondaryButton(
+                      label: 'مراسلة جايك',
+                      icon: Icons.chat_bubble_outline_rounded,
+                      onPressed: () => Navigator.push(
+                        context,
+                        QuickRoute(builder: (_) => const MessagesScreen()),
+                      ),
+                    ),
+                  ],
+                );
+              }
+              return Column(
+                children: [
+                  for (final service in services)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: _ServiceRow(
+                        service: service,
+                        onBook: () =>
+                            startServiceBooking(context, service, workerId: worker.id),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ServiceRow extends StatelessWidget {
+  const _ServiceRow({required this.service, required this.onBook});
+
+  final Service service;
+  final VoidCallback onBook;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SoftCard(
+      padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  service.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleSmall?.copyWith(fontSize: 13.5),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${fmtMoney(service.price)} · ${fmtDuration(service.durationMinutes)}',
+                  style: theme.textTheme.bodySmall?.copyWith(fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          PrimaryButton(label: 'احجز', compact: true, expand: false, onPressed: onBook),
         ],
       ),
     );

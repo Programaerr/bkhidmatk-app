@@ -7,7 +7,9 @@ import '../../data/models.dart';
 import '../../state/app_state.dart';
 import '../customer/messages_screen.dart';
 import '../widgets/quick_route.dart';
+import '../auth/push_key.dart';
 import '../widgets/realtime_refresh.dart';
+import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
 
 /// Admin inbox: one row per customer conversation.
@@ -41,13 +43,11 @@ class _AdminThreadsScreenState extends State<AdminThreadsScreen>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('الرسائل'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_forward_rounded),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [IconButton(onPressed: _load, icon: const Icon(Icons.refresh_rounded))],
+      appBar: PushKeyAppBar(
+        title: 'الرسائل',
+        actions: [
+          AppIconButton(icon: Icons.refresh_rounded, tooltip: 'تحديث', onTap: _load),
+        ],
       ),
       body: SafeArea(
         child: FutureBuilder<List<ChatThread>>(

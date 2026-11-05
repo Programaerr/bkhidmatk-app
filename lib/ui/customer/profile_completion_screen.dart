@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../state/app_state.dart';
+import '../auth/push_key.dart';
 import '../auth/raised_field.dart';
 import '../widgets/ui.dart';
 
@@ -114,7 +115,7 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
   Widget build(BuildContext context) {
     final user = context.watch<AppState>().user;
     return Scaffold(
-      appBar: AppBar(title: const Text('إكمال بيانات الحجز')),
+      appBar: const PushKeyAppBar(title: 'إكمال بيانات الحجز'),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(22, 12, 22, 28),

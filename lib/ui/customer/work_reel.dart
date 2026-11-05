@@ -12,6 +12,7 @@ import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
 import '../widgets/media_view.dart';
+import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
 
 class WorkReel extends StatefulWidget {
@@ -348,10 +349,12 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
               style: TextStyle(color: Colors.white, fontSize: 13),
             ),
             const SizedBox(height: 8),
-            TextButton.icon(
+            SecondaryButton(
+              label: 'فتح الرابط',
+              icon: Icons.open_in_new_rounded,
+              compact: true,
+              expand: false,
               onPressed: _openExternal,
-              icon: const Icon(Icons.open_in_new_rounded),
-              label: const Text('فتح الرابط'),
             ),
           ],
         ),
@@ -685,14 +688,19 @@ class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
           maxLength: 2000,
           decoration: const InputDecoration(hintText: 'اكتب تعليقك'),
         ),
+        actionsAlignment: MainAxisAlignment.start,
         actions: [
-          TextButton(
+          SecondaryButton(
+            label: 'إلغاء',
+            compact: true,
+            expand: false,
             onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء'),
           ),
-          FilledButton(
+          PrimaryButton(
+            label: 'حفظ',
+            compact: true,
+            expand: false,
             onPressed: () => Navigator.pop(context, controller.text.trim()),
-            child: const Text('حفظ'),
           ),
         ],
       ),
@@ -831,9 +839,11 @@ class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
                         ?.copyWith(fontWeight: FontWeight.w900),
                   ),
                 ),
-                IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close_rounded),
+                AppIconButton(
+                  small: true,
+                  onTap: () => Navigator.pop(context),
+                  icon: Icons.close_rounded,
+                  tooltip: 'إغلاق',
                 ),
               ],
             ),
@@ -866,12 +876,11 @@ class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
                                     style: theme.textTheme.bodySmall,
                                   ),
                                 ),
-                                IconButton(
-                                  visualDensity: VisualDensity.compact,
-                                  onPressed: () =>
-                                      setState(() => _replyTo = null),
-                                  icon:
-                                      const Icon(Icons.close_rounded, size: 18),
+                                AppIconButton(
+                                  small: true,
+                                  onTap: () => setState(() => _replyTo = null),
+                                  icon: Icons.close_rounded,
+                                  tooltip: 'إلغاء الرد',
                                 ),
                               ],
                             ),
@@ -892,18 +901,10 @@ class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  IconButton.filled(
-                    onPressed: _sending ? null : _send,
-                    icon: _sending
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.send_rounded),
-                    color: AppColors.ink,
-                    style:
-                        IconButton.styleFrom(backgroundColor: AppColors.gold),
+                  AppIconButton(
+                    onTap: _sending ? null : _send,
+                    icon: Icons.send_rounded,
+                    tooltip: 'إرسال',
                   ),
                 ],
               ),

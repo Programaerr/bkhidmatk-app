@@ -6,7 +6,9 @@ import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
+import '../auth/push_key.dart';
 import '../widgets/realtime_refresh.dart';
+import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
 
 class MessagesScreen extends StatefulWidget {
@@ -110,13 +112,8 @@ class _MessagesScreenState extends State<MessagesScreen>
     final theme = Theme.of(context);
     final title = _asAdmin ? (widget.threadName ?? 'محادثة زبون') : 'الدعم الفني';
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_forward_rounded),
-          onPressed: () => Navigator.pop(context),
-        ),
-        titleSpacing: 0,
-        title: Row(
+      appBar: PushKeyAppBar(
+        titleWidget: Row(
           children: [
             Container(
               width: 38,
@@ -133,33 +130,19 @@ class _MessagesScreenState extends State<MessagesScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(title, style: theme.textTheme.titleSmall?.copyWith(fontSize: 14)),
-                  Row(
-                    children: [
-                      Container(
-                        width: 6,
-                        height: 6,
-                        decoration: const BoxDecoration(
-                          color: AppColors.success,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Text('متصل الآن',
-                          style: theme.textTheme.bodySmall?.copyWith(fontSize: 9.5)),
-                    ],
-                  ),
+                  Text(_asAdmin ? 'محادثة زبون' : 'فريق جايك',
+                      style: theme.textTheme.bodySmall?.copyWith(fontSize: 9.5)),
                 ],
               ),
             ),
           ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.call_outlined),
-            onPressed: _call,
+          AppIconButton(
+            icon: Icons.call_outlined,
+            onTap: _call,
             tooltip: 'اتصال',
           ),
-          const SizedBox(width: 6),
         ],
       ),
       body: SafeArea(
@@ -218,23 +201,10 @@ class _MessagesScreenState extends State<MessagesScreen>
                       ),
                     ),
                     const SizedBox(width: 8),
-                    GestureDetector(
+                    AppIconButton(
                       onTap: _sending ? null : _send,
-                      child: Container(
-                        width: 46,
-                        height: 46,
-                        decoration: const BoxDecoration(
-                          color: AppColors.gold,
-                          shape: BoxShape.circle,
-                        ),
-                        child: _sending
-                            ? const Padding(
-                                padding: EdgeInsets.all(12),
-                                child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: AppColors.ink),
-                              )
-                            : const Icon(Icons.send_rounded, size: 20),
-                      ),
+                      icon: _sending ? Icons.more_horiz_rounded : Icons.send_rounded,
+                      tooltip: 'إرسال',
                     ),
                   ],
                 ),

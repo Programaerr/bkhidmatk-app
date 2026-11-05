@@ -6,6 +6,7 @@ import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
+import '../auth/push_key.dart';
 import '../widgets/ui.dart';
 
 class CardResult {
@@ -97,13 +98,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     final theme = Theme.of(context);
     final numberText = _number.text.replaceAll(RegExp(r'\D'), '');
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('الدفع بماستركارد'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_forward_rounded),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
+      appBar: const PushKeyAppBar(title: 'الدفع بماستركارد'),
       body: SafeArea(
         child: Form(
           key: _formKey,

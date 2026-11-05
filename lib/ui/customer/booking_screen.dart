@@ -6,15 +6,19 @@ import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../../data/sections.dart';
 import '../../state/app_state.dart';
+import '../auth/push_key.dart';
 import '../widgets/quick_route.dart';
 import '../widgets/ui.dart';
 import 'booking_success_screen.dart';
 import 'payment_screen.dart';
 
 class BookingScreen extends StatefulWidget {
-  const BookingScreen({super.key, required this.service});
+  const BookingScreen({super.key, required this.service, this.workerId});
 
   final Service service;
+
+  /// الحرفي الذي اختاره الزبون من صفحته، وإلا فحرفي الخدمة نفسها.
+  final int? workerId;
 
   @override
   State<BookingScreen> createState() => _BookingScreenState();
@@ -41,7 +45,7 @@ class _BookingScreenState extends State<BookingScreen> {
       return DateTime(d.year, d.month, d.day);
     });
     _selectedDay = _days.first;
-    _workerId = widget.service.workerId;
+    _workerId = widget.workerId ?? widget.service.workerId;
     _address = TextEditingController(
         text: context.read<AppState>().user?.address ?? '');
     _loadWorkers();
@@ -194,13 +198,7 @@ class _BookingScreenState extends State<BookingScreen> {
     final worker = matches.isEmpty ? null : matches.first;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('حجز الخدمة'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_forward_rounded),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
+      appBar: const PushKeyAppBar(title: 'حجز الخدمة'),
       body: SafeArea(
         bottom: false,
         child: ListView(
@@ -438,7 +436,10 @@ class _BookingScreenState extends State<BookingScreen> {
                           style: TextStyle(fontSize: 11.5),
                         ),
                       ),
-                      TextButton(
+                      SecondaryButton(
+                        label: 'إدخال',
+                        compact: true,
+                        expand: false,
                         onPressed: () async {
                           final result = await Navigator.push<CardResult>(
                             context,
@@ -448,7 +449,6 @@ class _BookingScreenState extends State<BookingScreen> {
                           );
                           if (result != null) setState(() => _card = result);
                         },
-                        child: const Text('إدخال'),
                       ),
                     ],
                   ),

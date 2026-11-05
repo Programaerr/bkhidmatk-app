@@ -5,6 +5,7 @@ import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
+import '../auth/push_key.dart';
 import '../common/receipt_document.dart';
 import '../widgets/quick_route.dart';
 import '../widgets/realtime_refresh.dart';
@@ -167,7 +168,6 @@ class _BookingDetailScreenState extends State<BookingDetailScreen>
             PrimaryButton(
               label: 'إرسال التقييم',
               icon: Icons.how_to_reg_rounded,
-              height: 48,
               loading: _ratingBusy,
               onPressed: _ratingBusy ? null : _submitRating,
             ),
@@ -186,7 +186,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen>
     final b = _booking;
     if (b == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('تفاصيل الحجز')),
+        appBar: const PushKeyAppBar(title: 'تفاصيل الحجز'),
         body: const EmptyState(
             icon: Icons.search_off_rounded, title: 'الحجز غير موجود'),
       );
@@ -194,13 +194,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen>
     final canCancel = b.status == BookingStatus.pending ||
         b.status == BookingStatus.confirmed;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('تفاصيل الحجز'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_forward_rounded),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
+      appBar: const PushKeyAppBar(title: 'تفاصيل الحجز'),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(18, 4, 18, 26),
@@ -349,11 +343,14 @@ class _BookingDetailScreenState extends State<BookingDetailScreen>
                         ],
                       ),
                     ),
-                    IconButton(
-                      onPressed: () => ReceiptActions.print(context, _receipt!),
-                      icon: const Icon(Icons.print_rounded, size: 20),
+                    AppIconButton(
+                      small: true,
+                      onTap: () => ReceiptActions.print(context, _receipt!),
+                      icon: Icons.print_rounded,
+                      tooltip: 'طباعة',
                     ),
-                    const Icon(Icons.chevron_left_rounded, size: 20),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.chevron_right_rounded, size: 20),
                   ],
                 ),
               ),
@@ -364,17 +361,10 @@ class _BookingDetailScreenState extends State<BookingDetailScreen>
             ],
             if (canCancel) ...[
               const SizedBox(height: 18),
-              SizedBox(
-                height: 50,
-                child: OutlinedButton(
-                  onPressed: _cancel,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.danger,
-                    side: BorderSide(
-                        color: AppColors.danger.withValues(alpha: .35)),
-                  ),
-                  child: const Text('إلغاء الحجز'),
-                ),
+              SecondaryButton(
+                label: 'إلغاء الحجز',
+                danger: true,
+                onPressed: _cancel,
               ),
             ],
           ],

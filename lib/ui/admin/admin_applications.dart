@@ -127,13 +127,7 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('طلبات الحرفيين'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_forward_rounded),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
+      appBar: const PushKeyAppBar(title: 'طلبات الحرفيين'),
       body: SafeArea(
         child: FutureBuilder<List<CraftsmanApplication>>(
           future: _future,

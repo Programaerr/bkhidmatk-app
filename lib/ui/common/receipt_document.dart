@@ -11,6 +11,8 @@ import 'package:screenshot/screenshot.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
+import '../auth/push_key.dart';
+import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
 
 /// The visual receipt (used both on-screen and as the printed PDF source).
@@ -48,6 +50,8 @@ class ReceiptDocument extends StatelessWidget {
                       'assets/images/logo.jpg',
                       width: 54,
                       height: 54,
+                      cacheWidth: 162,
+                      cacheHeight: 162,
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -462,16 +466,13 @@ class ReceiptPreviewScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('معاينة الوصل'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_forward_rounded),
-          onPressed: () => Navigator.pop(context),
-        ),
+      appBar: PushKeyAppBar(
+        title: 'معاينة الوصل',
         actions: [
-          IconButton(
-            icon: const Icon(Icons.ios_share_rounded),
-            onPressed: () => ReceiptActions.share(context, receipt),
+          AppIconButton(
+            icon: Icons.ios_share_rounded,
+            tooltip: 'مشاركة',
+            onTap: () => ReceiptActions.share(context, receipt),
           ),
         ],
       ),

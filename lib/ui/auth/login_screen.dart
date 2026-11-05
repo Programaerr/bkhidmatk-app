@@ -189,26 +189,22 @@ class _LoginScreenState extends State<LoginScreen> {
                       Row(
                         children: [
                           Expanded(
-                            child: OutlinedButton(
+                            child: PushKeyButton(
+                              label: 'زبون',
+                              compact: true,
                               onPressed: _loading
                                   ? null
                                   : () => _quick('07701234567', '123456'),
-                              style: OutlinedButton.styleFrom(
-                                  minimumSize: const Size(0, 42)),
-                              child: const Text('زبون',
-                                  style: TextStyle(fontSize: 12)),
                             ),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: OutlinedButton(
+                            child: PushKeyButton(
+                              label: 'مدير',
+                              compact: true,
                               onPressed: _loading
                                   ? null
                                   : () => _quick('07700000000', 'admin123'),
-                              style: OutlinedButton.styleFrom(
-                                  minimumSize: const Size(0, 42)),
-                              child: const Text('مدير',
-                                  style: TextStyle(fontSize: 12)),
                             ),
                           ),
                         ],

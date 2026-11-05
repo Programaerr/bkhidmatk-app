@@ -5,6 +5,7 @@ import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
+import '../auth/push_key.dart';
 import '../common/receipt_document.dart';
 import '../widgets/quick_route.dart';
 import '../widgets/realtime_refresh.dart';
@@ -46,13 +47,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.adminMode ? 'كل الوصولات' : 'وصولاتي'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_forward_rounded),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
+      appBar: PushKeyAppBar(title: widget.adminMode ? 'كل الوصولات' : 'وصولاتي'),
       body: SafeArea(
         child: FutureBuilder<List<Receipt>>(
           future: _future,
@@ -197,18 +192,22 @@ class _ReceiptsScreenState extends State<ReceiptsScreen>
                               PaymentMethodBadge(
                                   method: r.method, brand: r.cardBrand, last4: r.last4),
                               const Spacer(),
-                              TextButton.icon(
+                              SecondaryButton(
+                                label: 'معاينة',
+                                icon: Icons.visibility_outlined,
+                                compact: true,
+                                expand: false,
                                 onPressed: () => Navigator.push(
                                   context,
                                   QuickRoute(
                                       builder: (_) => ReceiptPreviewScreen(receipt: r)),
                                 ),
-                                icon: const Icon(Icons.visibility_outlined, size: 15),
-                                label: const Text('معاينة', style: TextStyle(fontSize: 11)),
                               ),
-                              IconButton(
-                                onPressed: () => ReceiptActions.print(context, r),
-                                icon: const Icon(Icons.print_rounded, size: 19),
+                              const SizedBox(width: 4),
+                              AppIconButton(
+                                small: true,
+                                onTap: () => ReceiptActions.print(context, r),
+                                icon: Icons.print_rounded,
                                 tooltip: 'طباعة',
                               ),
                             ],
