@@ -690,6 +690,7 @@ class _WorkersSceneState extends State<WorkersScene> with SingleTickerProviderSt
             scale: widget.scale,
             left: widget.left,
             pixelRatio: MediaQuery.devicePixelRatioOf(context),
+            night: Theme.of(context).brightness == Brightness.dark,
           ),
         ),
       ),
@@ -704,6 +705,7 @@ class WorkersScenePainter extends CustomPainter {
     required this.scale,
     required this.pixelRatio,
     this.left = 0,
+    this.night = false,
   }) : super(repaint: time);
 
   final WorkersArt art;
@@ -711,6 +713,9 @@ class WorkersScenePainter extends CustomPainter {
   final double scale;
   final double left;
   final double pixelRatio;
+
+  /// خط الأرض الداكن يضيع ليلاً، فيصير أبيض ليظهر العاملان واقفين عليه.
+  final bool night;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -722,7 +727,7 @@ class WorkersScenePainter extends CustomPainter {
       ..save()
       ..translate(origin.dx, origin.dy)
       ..scale(unit);
-    _paintPipeEnds(canvas, -origin.dx / unit, (size.width - origin.dx) / unit);
+    _paintPipeEnds(canvas, -origin.dx / unit, (size.width - origin.dx) / unit, unit);
     art._backdrop.paint(canvas);
     _paintSpokes(canvas, pose.wheelTurn);
     _paintStanding(canvas, pose);
@@ -731,13 +736,20 @@ class WorkersScenePainter extends CustomPainter {
   }
 
   /// الأنابيب وخط الأرض من طرفيها في الرسم إلى حافتي الشاشة.
-  void _paintPipeEnds(Canvas canvas, double left, double right) {
+  void _paintPipeEnds(Canvas canvas, double left, double right, double unit) {
     final pipe = Paint()..color = _pipeInk;
     final pale = Paint()..color = _paleInk;
     double high(double x) => 128.547 + (x - 6.95) * _pipeSlope;
     double low(double x) => 161.816 + (x - 6.66) * _pipeSlope;
+    // خط الأرض أرفع من بكسل، فيظهر الأبيض ليلاً رمادياً باهتاً؛ ليلاً سُمكه بكسلان على الأقل.
+    final groundBottom = night
+        ? 195.3 + math.max(.216, 2 / (unit * pixelRatio))
+        : 195.516;
     canvas
-      ..drawRect(Rect.fromLTRB(left, 195.3, right, 195.516), Paint()..color = _groundInk)
+      ..drawRect(
+        Rect.fromLTRB(left, 195.3, right, groundBottom),
+        Paint()..color = night ? Colors.white : _groundInk,
+      )
       ..drawPath(
         Path()
           ..moveTo(left, high(left))
@@ -1017,5 +1029,6 @@ class WorkersScenePainter extends CustomPainter {
       oldDelegate.time != time ||
       oldDelegate.scale != scale ||
       oldDelegate.left != left ||
-      oldDelegate.pixelRatio != pixelRatio;
+      oldDelegate.pixelRatio != pixelRatio ||
+      oldDelegate.night != night;
 }

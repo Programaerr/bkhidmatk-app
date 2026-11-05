@@ -18,16 +18,17 @@ const _sideInnerShadow = Color(0x24000000);
 const _sideShine = Color(0x40FFFFFF);
 const _sideGlow = Colors.white;
 
-// الألوان نفسها في الوضع الليلي.
-const _nightFaceCenter = Color(0xFF2C2C32);
-const _nightFaceEdge = Color(0xFF25252B);
-const _nightFaceOutline = Color(0x1FFFFFFF);
-const _nightSide = Color(0xFF17171A);
+// الألوان نفسها في الوضع الليلي، رمادية من أرضية الليل (#212121) لتتناغم معها كما يتناغم
+// الزر الأبيض مع الكريمي نهاراً: الوجه أفتح منها قليلاً، والجانب أغمق قليلاً، والظل خفيف.
+const _nightFaceCenter = Color(0xFF313131);
+const _nightFaceEdge = Color(0xFF2B2B2B);
+const _nightFaceOutline = Color(0x17FFFFFF);
+const _nightSide = Color(0xFF1A1A1A);
 const _nightBaseFill = Color(0x14FFFFFF);
 const _nightBaseHighlight = Color(0x14FFFFFF);
-const _nightBaseInnerShadow = Color(0x66000000);
-const _nightSideShadow = Color(0x80000000);
-const _nightSideInnerShadow = Color(0x4D000000);
+const _nightBaseInnerShadow = Color(0x40000000);
+const _nightSideShadow = Color(0x4D000000);
+const _nightSideInnerShadow = Color(0x33000000);
 const _nightSideShine = Color(0x14FFFFFF);
 const _nightSideGlow = Color(0x26FFFFFF);
 
