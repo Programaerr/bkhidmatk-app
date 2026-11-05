@@ -1,4 +1,5 @@
-import 'dart:ui' show ImageFilter;
+import 'dart:async';
+import 'dart:ui' show ImageFilter, lerpDouble;
 
 import 'package:flutter/material.dart';
 
@@ -169,7 +170,8 @@ class _AppShellLayoutState extends State<AppShellLayout>
   }
 }
 
-/// شريط التنقل السفلي: لمسة واحدة تفتح التبويب، والسحب عليه ينتقل بين التبويبات.
+/// شريط التنقل السفلي: لمسة واحدة تفتح التبويب. والبقاء على الفقاعة أو سحبها يحوّلها إلى مجهر
+/// يتحرك يميناً ويساراً ويكبّر ما تحته، ويُفتح التبويب الذي يُترك عليه.
 class _GlassNavigationBar extends StatefulWidget {
   const _GlassNavigationBar({
     required this.index,
@@ -187,11 +189,34 @@ class _GlassNavigationBar extends StatefulWidget {
   State<_GlassNavigationBar> createState() => _GlassNavigationBarState();
 }
 
-class _GlassNavigationBarState extends State<_GlassNavigationBar> {
+class _GlassNavigationBarState extends State<_GlassNavigationBar>
+    with SingleTickerProviderStateMixin {
   static const _height = 60.0;
+  // البقاء على الفقاعة هذه المدة، أو تحريك الإصبع هذه المسافة، يحوّلها إلى مجهر.
+  static const _holdDelay = Duration(milliseconds: 180);
+  static const _moveToLens = 8.0;
 
+  final _barKey = GlobalKey();
   final _boundsKey = GlobalKey();
   bool _isDragging = false;
+
+  late final _lens = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 200),
+  );
+  bool _lensOn = false;
+  double _fingerX = 0;
+  Offset? _downAt;
+  Timer? _hold;
+  // إصبع واحد يحرّك الشريط، وما يلمسه إصبع ثانٍ في الوقت نفسه يُهمل.
+  int? _pointer;
+
+  @override
+  void dispose() {
+    _hold?.cancel();
+    _lens.dispose();
+    super.dispose();
+  }
 
   int? _indexAt(Offset globalPosition) {
     final renderObject = _boundsKey.currentContext?.findRenderObject();
@@ -213,10 +238,79 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar> {
     if (mounted && _isDragging != value) setState(() => _isDragging = value);
   }
 
-  // التبويب يُفتح بمجرد اللمس، ويتبع الإصبع إن سحبه على الشريط.
-  void _touchDown(Offset globalPosition) {
+  double _barX(Offset globalPosition) {
+    final box = _barKey.currentContext?.findRenderObject();
+    return box is RenderBox ? box.globalToLocal(globalPosition).dx : 0;
+  }
+
+  /// منتصف التبويب على الشاشة، من اليمين في العربية.
+  double _tabCenter(int index, double width) {
+    final itemWidth = width / widget.items.length;
+    final start = itemWidth * index + itemWidth / 2;
+    return Directionality.of(context) == TextDirection.rtl ? width - start : start;
+  }
+
+  // التبويب يُفتح بمجرد اللمس، والبقاء عليه أو السحب يحوّل فقاعته إلى مجهر.
+  void _touchDown(PointerDownEvent event) {
+    if (_pointer != null) return;
+    _pointer = event.pointer;
+    final globalPosition = event.position;
     _setDragging(true);
     _scrub(globalPosition);
+    _downAt = globalPosition;
+    _hold?.cancel();
+    _hold = Timer(_holdDelay, () => _startLens(globalPosition));
+  }
+
+  void _touchMove(PointerMoveEvent event) {
+    if (event.pointer != _pointer) return;
+    final globalPosition = event.position;
+    if (!_lensOn) {
+      final down = _downAt;
+      if (down == null || (globalPosition - down).distance < _moveToLens) {
+        return;
+      }
+      _startLens(globalPosition);
+    }
+    setState(() => _fingerX = _barX(globalPosition));
+  }
+
+  void _startLens(Offset globalPosition) {
+    _hold?.cancel();
+    if (!mounted || _lensOn) return;
+    setState(() {
+      _lensOn = true;
+      _fingerX = _barX(globalPosition);
+    });
+    _lens.forward();
+  }
+
+  // ترك المجهر يفتح التبويب الذي تحته، ويصغر المجهر إلى فقاعته.
+  void _touchUp(PointerUpEvent event) {
+    if (event.pointer != _pointer) return;
+    _pointer = null;
+    final globalPosition = event.position;
+    _hold?.cancel();
+    _downAt = null;
+    _setDragging(false);
+    if (!_lensOn) return;
+    setState(() {
+      _lensOn = false;
+      _fingerX = _barX(globalPosition);
+    });
+    _scrub(globalPosition);
+    _lens.reverse();
+  }
+
+  void _touchCancel(PointerCancelEvent event) {
+    if (event.pointer != _pointer) return;
+    _pointer = null;
+    _hold?.cancel();
+    _downAt = null;
+    _setDragging(false);
+    if (!_lensOn) return;
+    setState(() => _lensOn = false);
+    _lens.reverse();
   }
 
   @override
@@ -237,124 +331,204 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar> {
             child: SizedBox(
               height: _height,
               width: double.infinity,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  borderRadius: radius,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: isDark ? .25 : .12),
-                      blurRadius: 18,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: radius,
-                  // زجاج: ما خلف الشريط يظهر مغبّشاً من تحت بياض خفيف.
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final itemWidth = constraints.maxWidth / items.length;
-                        return Listener(
-                          key: const ValueKey('glass-navigation-bar'),
-                          behavior: HitTestBehavior.opaque,
-                          onPointerDown: (event) => _touchDown(event.position),
-                          onPointerMove: (event) => _scrub(event.position),
-                          onPointerUp: (_) => _setDragging(false),
-                          onPointerCancel: (_) => _setDragging(false),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final width = constraints.maxWidth;
+                  final itemWidth = width / items.length;
+                  return Stack(
+                    key: _barKey,
+                    clipBehavior: Clip.none,
+                    children: [
+                      Positioned.fill(
+                        // مع ظهور المجهر يصغر الشريط وأيقوناته، ويبقى المجهر بحجمه.
+                        child: AnimatedBuilder(
+                          animation: _lens,
+                          builder: (context, bar) => Transform.scale(
+                            scale: 1 -
+                                .08 * Curves.easeOutCubic.transform(_lens.value),
+                            child: bar,
+                          ),
                           child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: isDark
-                                    ? [
-                                        theme.colorScheme.surface
-                                            .withValues(alpha: .62),
-                                        theme.colorScheme.surface
-                                            .withValues(alpha: .46),
-                                      ]
-                                    : [
-                                        Colors.white.withValues(alpha: .50),
-                                        Colors.white.withValues(alpha: .32),
-                                      ],
+                          decoration: BoxDecoration(
+                            borderRadius: radius,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black
+                                    .withValues(alpha: isDark ? .25 : .12),
+                                blurRadius: 18,
+                                offset: const Offset(0, 5),
                               ),
-                              borderRadius: radius,
-                              border: Border.all(
-                                color: Colors.white
-                                    .withValues(alpha: isDark ? .18 : .70),
-                              ),
-                            ),
-                            child: Stack(
-                              key: _boundsKey,
-                              children: [
-                                AnimatedPositionedDirectional(
-                                  duration: const Duration(milliseconds: 380),
-                                  curve: Curves.easeOutBack,
-                                  start: itemWidth * widget.index + 4,
-                                  top: 4,
-                                  bottom: 4,
-                                  width: itemWidth - 8,
-                                  child: AnimatedScale(
-                                    scale: _isDragging ? 1.05 : 1,
-                                    duration: const Duration(milliseconds: 180),
-                                    curve: Curves.easeOutCubic,
-                                    // فقاعة التبويب المختار زجاج أبيض، وأيقونتها وحدها صفراء.
-                                    child: DecoratedBox(
-                                      decoration: BoxDecoration(
-                                        borderRadius:
-                                            BorderRadius.circular(_height / 2),
-                                        gradient: LinearGradient(
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                          colors: [
-                                            Colors.white.withValues(
-                                                alpha: isDark ? .24 : .92),
-                                            Colors.white.withValues(
-                                                alpha: isDark ? .10 : .60),
-                                          ],
-                                        ),
-                                        border: Border.all(
-                                          color: Colors.white.withValues(
-                                              alpha: isDark ? .30 : .95),
-                                        ),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black.withValues(
-                                                alpha: isDark ? .20 : .08),
-                                            blurRadius: 8,
-                                            offset: const Offset(0, 2),
-                                          ),
-                                        ],
-                                      ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: radius,
+                            // زجاج: ما خلف الشريط يظهر مغبّشاً من تحت بياض خفيف.
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                              child: Listener(
+                                key: const ValueKey('glass-navigation-bar'),
+                                behavior: HitTestBehavior.opaque,
+                                onPointerDown: _touchDown,
+                                onPointerMove: _touchMove,
+                                onPointerUp: _touchUp,
+                                onPointerCancel: _touchCancel,
+                                child: DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: isDark
+                                          ? [
+                                              theme.colorScheme.surface
+                                                  .withValues(alpha: .62),
+                                              theme.colorScheme.surface
+                                                  .withValues(alpha: .46),
+                                            ]
+                                          : [
+                                              Colors.white
+                                                  .withValues(alpha: .50),
+                                              Colors.white
+                                                  .withValues(alpha: .32),
+                                            ],
+                                    ),
+                                    borderRadius: radius,
+                                    border: Border.all(
+                                      color: Colors.white
+                                          .withValues(alpha: isDark ? .18 : .70),
                                     ),
                                   ),
-                                ),
-                                Row(
-                                  children: [
-                                    for (var i = 0; i < items.length; i++)
-                                      Expanded(
-                                        child: _GlassNavigationDestination(
-                                          item: items[i],
-                                          selected: i == widget.index,
-                                          accent: widget.accent,
-                                          onTap: () {
-                                            if (i != widget.index) {
-                                              widget.onSelect(i);
-                                            }
-                                          },
+                                  child: Stack(
+                                    key: _boundsKey,
+                                    children: [
+                                      AnimatedPositionedDirectional(
+                                        // تحت المجهر تقفز الفقاعة إلى مكانها الجديد دون حركة.
+                                        duration: _lensOn || _lens.value > 0
+                                            ? Duration.zero
+                                            : const Duration(milliseconds: 380),
+                                        curve: Curves.easeOutBack,
+                                        start: itemWidth * widget.index + 4,
+                                        top: 4,
+                                        bottom: 4,
+                                        width: itemWidth - 8,
+                                        child: AnimatedScale(
+                                          scale: _isDragging ? 1.05 : 1,
+                                          duration:
+                                              const Duration(milliseconds: 180),
+                                          curve: Curves.easeOutCubic,
+                                          child: FadeTransition(
+                                            opacity: ReverseAnimation(_lens),
+                                            child: _bubble(isDark),
+                                          ),
                                         ),
                                       ),
-                                  ],
+                                      Row(
+                                        children: [
+                                          for (var i = 0; i < items.length; i++)
+                                            Expanded(
+                                              child: _GlassNavigationDestination(
+                                                item: items[i],
+                                                selected: i == widget.index,
+                                                accent: widget.accent,
+                                                onTap: () {
+                                                  if (i != widget.index) {
+                                                    widget.onSelect(i);
+                                                  }
+                                                },
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ],
+                              ),
                             ),
                           ),
-                        );
-                      },
-                    ),
-                  ),
+                        ),
+                        ),
+                      ),
+                      AnimatedBuilder(
+                        animation: _lens,
+                        builder: (context, _) =>
+                            _magnifier(width, itemWidth, isDark),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // فقاعة التبويب المختار زجاج شفاف، حافتها بلونها نفسه، وأيقونتها وحدها صفراء.
+  Widget _bubble(bool isDark) {
+    final glass = Colors.white.withValues(alpha: isDark ? .16 : .34);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(_height / 2),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            glass,
+            Colors.white.withValues(alpha: isDark ? .04 : .10),
+          ],
+        ),
+        border: Border.all(color: glass),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? .20 : .08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // المجهر: يكبر من مكان الفقاعة ويتبع الإصبع، ويكبّر الأيقونات التي تحته.
+  Widget _magnifier(double width, double itemWidth, bool isDark) {
+    final t = Curves.easeOutCubic.transform(_lens.value);
+    if (t == 0) {
+      return const Positioned(left: 0, top: 0, child: SizedBox.shrink());
+    }
+    final half = itemWidth / 2;
+    final finger = _fingerX.clamp(half, width - half);
+    final center = lerpDouble(_tabCenter(widget.index, width), finger, t)!;
+    final lensWidth = lerpDouble(itemWidth - 8, itemWidth + 18, t)!;
+    final lensHeight = lerpDouble(_height - 8, _height + 16, t)!;
+    final radius = BorderRadius.circular(lensHeight / 2);
+    return Positioned(
+      left: center - lensWidth / 2,
+      top: (_height - lensHeight) / 2,
+      width: lensWidth,
+      height: lensHeight,
+      child: IgnorePointer(
+        child: Opacity(
+          opacity: t,
+          child: RawMagnifier(
+            size: Size(lensWidth, lensHeight),
+            magnificationScale: lerpDouble(1, 1.35, t)!,
+            // بلا ظل: ظل المجهر يعتّم ما بداخله.
+            decoration: MagnifierDecoration(
+              shape: RoundedRectangleBorder(borderRadius: radius),
+            ),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: radius,
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.white.withValues(alpha: isDark ? .14 : .30),
+                    Colors.white.withValues(alpha: isDark ? .03 : .06),
+                  ],
+                ),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: isDark ? .14 : .30),
                 ),
               ),
             ),
