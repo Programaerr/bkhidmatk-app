@@ -250,8 +250,9 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar> {
                 ),
                 child: ClipRRect(
                   borderRadius: radius,
+                  // زجاج: ما خلف الشريط يظهر مغبّشاً من تحت بياض خفيف.
                   child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                    filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                     child: LayoutBuilder(
                       builder: (context, constraints) {
                         final itemWidth = constraints.maxWidth / items.length;
@@ -267,17 +268,22 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar> {
                               gradient: LinearGradient(
                                 begin: Alignment.topCenter,
                                 end: Alignment.bottomCenter,
-                                colors: [
-                                  theme.colorScheme.surface
-                                      .withValues(alpha: isDark ? .78 : .72),
-                                  theme.colorScheme.surface
-                                      .withValues(alpha: isDark ? .62 : .56),
-                                ],
+                                colors: isDark
+                                    ? [
+                                        theme.colorScheme.surface
+                                            .withValues(alpha: .62),
+                                        theme.colorScheme.surface
+                                            .withValues(alpha: .46),
+                                      ]
+                                    : [
+                                        Colors.white.withValues(alpha: .50),
+                                        Colors.white.withValues(alpha: .32),
+                                      ],
                               ),
                               borderRadius: radius,
                               border: Border.all(
                                 color: Colors.white
-                                    .withValues(alpha: isDark ? .16 : .48),
+                                    .withValues(alpha: isDark ? .18 : .70),
                               ),
                             ),
                             child: Stack(
@@ -294,6 +300,7 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar> {
                                     scale: _isDragging ? 1.05 : 1,
                                     duration: const Duration(milliseconds: 180),
                                     curve: Curves.easeOutCubic,
+                                    // فقاعة التبويب المختار زجاج أبيض، وأيقونتها وحدها صفراء.
                                     child: DecoratedBox(
                                       decoration: BoxDecoration(
                                         borderRadius:
@@ -302,16 +309,24 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar> {
                                           begin: Alignment.topLeft,
                                           end: Alignment.bottomRight,
                                           colors: [
-                                            widget.accent
-                                                .withValues(alpha: .30),
-                                            widget.accent
-                                                .withValues(alpha: .13),
+                                            Colors.white.withValues(
+                                                alpha: isDark ? .24 : .92),
+                                            Colors.white.withValues(
+                                                alpha: isDark ? .10 : .60),
                                           ],
                                         ),
                                         border: Border.all(
-                                          color: widget.accent
-                                              .withValues(alpha: .28),
+                                          color: Colors.white.withValues(
+                                              alpha: isDark ? .30 : .95),
                                         ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withValues(
+                                                alpha: isDark ? .20 : .08),
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ),
