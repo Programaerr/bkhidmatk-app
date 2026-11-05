@@ -104,6 +104,9 @@ class ProfileTab extends StatefulWidget {
 class _ProfileTabState extends State<ProfileTab> {
   final _fold = HeaderFold();
 
+  /// مكان مفتاح الليل، ليبقى حياً فوق خفوت الشاشة.
+  final _nightSwitch = LayerLink();
+
   @override
   void dispose() {
     _fold.dispose();
@@ -327,9 +330,18 @@ class _ProfileTabState extends State<ProfileTab> {
           faceHeight: _Design.nightHeight,
           label: 'الوضع الليلي',
           toggled: dark,
-          // الشاشة تتحول إلى الليل بتلاشٍ بطيء مع دوران المفتاح.
-          onPressed: () =>
-              ThemeCrossFade.swap(context, () => state.setTheme(!dark)),
+          // الشاشة تتحول إلى الليل بتلاشٍ بطيء، والمفتاح ينقلب بسرعته فوقها (طلب المستخدم).
+          onPressed: () => ThemeCrossFade.swap(
+            context,
+            () => state.setTheme(!dark),
+            live: (
+              link: _nightSwitch,
+              size: Size(_Design.switchHeight * 2 * unit, _Design.switchHeight * unit),
+              builder: (context) => DayNightSwitch(
+                night: context.watch<AppState>().themeMode == ThemeMode.dark,
+              ),
+            ),
+          ),
           child: Row(
             children: [
               _Badge(
@@ -350,7 +362,10 @@ class _ProfileTabState extends State<ProfileTab> {
               SizedBox(
                 width: _Design.switchHeight * 2 * unit,
                 height: _Design.switchHeight * unit,
-                child: DayNightSwitch(night: dark),
+                child: CompositedTransformTarget(
+                  link: _nightSwitch,
+                  child: DayNightSwitch(night: dark),
+                ),
               ),
             ],
           ),

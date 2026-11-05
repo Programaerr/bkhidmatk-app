@@ -5,6 +5,10 @@ import 'package:flutter/rendering.dart';
 
 import '../auth/day_night_switch.dart';
 
+/// ما يُرسم حياً فوق صورة الشاشة أثناء الخفوت: يتبع [link] (CompositedTransformTarget في مكانه
+/// الأصلي) بمقاس [size]، ويُبنى من جديد بـ [builder] فيتبع الحالة الجديدة فوراً.
+typedef LiveSpot = ({LayerLink link, Size size, WidgetBuilder builder});
+
 /// تبديل الوضع الليلي داخل التطبيق بتلاشٍ هادئ: تُصوَّر الشاشة قبل التبديل، وتبقى صورتها فوق
 /// الألوان الجديدة ثم تخفت ببطء. أزرار التطبيق ترسم ألوان الليل دفعة واحدة، فبدونه كانت
 /// الشاشة تقفز من النهار إلى الليل.
@@ -14,12 +18,14 @@ class ThemeCrossFade extends StatefulWidget {
   final Widget child;
 
   /// يصوّر الشاشة، ثم يبدّل بـ [change]، ثم يُخفي الصورة ببطء. بلا هذا الغلاف يبدّل فقط.
+  /// [live] يبقى حياً فوق الصورة طوال الخفوت، مثل مفتاح الليل: ينقلب بسرعته ولا يخفت مع الشاشة.
   static Future<void> swap(
     BuildContext context,
-    Future<void> Function() change,
-  ) {
+    Future<void> Function() change, {
+    LiveSpot? live,
+  }) {
     final state = context.findAncestorStateOfType<_ThemeCrossFadeState>();
-    return state == null ? change() : state._swap(change);
+    return state == null ? change() : state._swap(change, live);
   }
 
   @override
@@ -39,8 +45,9 @@ class _ThemeCrossFadeState extends State<ThemeCrossFade>
     CurvedAnimation(parent: _fade, curve: Curves.easeInOut),
   );
   ui.Image? _shot;
+  LiveSpot? _live;
 
-  Future<void> _swap(Future<void> Function() change) async {
+  Future<void> _swap(Future<void> Function() change, LiveSpot? live) async {
     if (MediaQuery.disableAnimationsOf(context)) return change();
     // تُصوَّر بعد إطار مكتمل، فلا يبقى في الشاشة شيء بانتظار الرسم.
     await WidgetsBinding.instance.endOfFrame;
@@ -52,6 +59,7 @@ class _ThemeCrossFadeState extends State<ThemeCrossFade>
     setState(() {
       _shot?.dispose();
       _shot = shot;
+      _live = live;
     });
     _fade.value = 0;
     await change();
@@ -66,6 +74,7 @@ class _ThemeCrossFadeState extends State<ThemeCrossFade>
     setState(() {
       _shot?.dispose();
       _shot = null;
+      _live = null;
     });
   }
 
@@ -79,6 +88,7 @@ class _ThemeCrossFadeState extends State<ThemeCrossFade>
   @override
   Widget build(BuildContext context) {
     final shot = _shot;
+    final live = _live;
     return RepaintBoundary(
       key: _boundary,
       child: Stack(
@@ -96,6 +106,21 @@ class _ThemeCrossFadeState extends State<ThemeCrossFade>
                     ),
                   ),
           ),
+          if (shot != null && live != null)
+            Positioned(
+              left: 0,
+              top: 0,
+              child: CompositedTransformFollower(
+                link: live.link,
+                showWhenUnlinked: false,
+                child: IgnorePointer(
+                  child: SizedBox.fromSize(
+                    size: live.size,
+                    child: Builder(builder: live.builder),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
