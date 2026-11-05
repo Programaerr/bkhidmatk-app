@@ -42,6 +42,117 @@ double homePageTop(double safeTop, double unit) =>
 /// أسفل الجهة الصفراء.
 double homeHillBottom(double top, double unit) => top + (_hillCenterY + _hillRadiusY) * unit;
 
+// الجهة الصفراء بعد أن تنطوي إلى شريط: ارتفاعه تحت شريط الحالة، وانحناء حافته، ومقياس ما فيه.
+const _foldedBar = 54.0;
+const _foldedRadiusY = 9.0;
+const _foldedScale = .8;
+
+// أبعد ما يتابعه الطي من تمرير الصفحة، فلا يعاد البناء بعده.
+const _foldTrackLimit = 240.0;
+
+/// حال الجهة الصفراء: مفتوحة بحجمها الكامل في أعلى الصفحة، أو منطوية إلى شريط رفيع حين تنزل الصفحة.
+///
+/// الجهة الكاملة تأخذ خُمس الشاشة في كل تبويب، فتنطوي كلما قرأ الزبون ما تحتها وتعود إذا رجع إلى الأعلى.
+@immutable
+class HomeHeaderMetrics {
+  const HomeHeaderMetrics({
+    required this.unit,
+    required this.safeTop,
+    required this.top,
+    this.fold = 0,
+  });
+
+  final double unit;
+  final double safeTop;
+
+  /// نزول الصفحة تحت شريط الحالة، من [homePageTop].
+  final double top;
+
+  /// 0 مفتوحة، و1 شريط.
+  final double fold;
+
+  double get openHeight => homeHillBottom(top, unit);
+
+  double get barHeight => math.min(safeTop + _foldedBar, openHeight);
+
+  /// كم يلزم أن تنزل الصفحة حتى تنطوي الجهة كلها.
+  double get foldDistance => math.max(openHeight - barHeight, 1.0);
+
+  /// ارتفاعها الآن، بقوسها السفلي.
+  double get height => openHeight + (barHeight - openHeight) * fold;
+
+  /// مقياس ما فيها من أزرار وعنوان.
+  double get scale => 1 + (_foldedScale - 1) * fold;
+
+  /// وسط ما فيها رأسياً، من وسطه في التصميم المفتوح إلى وسط الشريط.
+  double centerY(double designCenter) {
+    final folded = safeTop + _foldedBar / 2 - 2;
+    final open = top + designCenter * unit;
+    return open + (folded - open) * fold;
+  }
+
+  double get _radiusY => _hillRadiusY * unit + (_foldedRadiusY - _hillRadiusY * unit) * fold;
+
+  double get _curveCenterY => height - _radiusY;
+}
+
+/// يتابع تمرير الصفحة التي تحت الجهة الصفراء ليطويها.
+class HeaderFold extends ValueNotifier<double> {
+  HeaderFold() : super(0);
+
+  /// يلف القائمة التي يتابع تمريرها.
+  Widget track({required Widget child}) => NotificationListener<ScrollNotification>(
+        onNotification: (notification) {
+          if (notification.depth == 0 && notification.metrics.axis == Axis.vertical) {
+            value = notification.metrics.pixels.clamp(0.0, _foldTrackLimit);
+          }
+          return false;
+        },
+        child: child,
+      );
+}
+
+/// الجهة الصفراء في أعلى الصفحة، بارتفاع يتبع طيّها. توضع داخل [Stack] فوق القائمة.
+class FoldingHeader extends StatelessWidget {
+  const FoldingHeader({
+    super.key,
+    required this.fold,
+    required this.unit,
+    required this.safeTop,
+    required this.top,
+    required this.builder,
+  });
+
+  final HeaderFold fold;
+  final double unit;
+  final double safeTop;
+  final double top;
+  final Widget Function(BuildContext context, HomeHeaderMetrics metrics) builder;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<double>(
+      valueListenable: fold,
+      builder: (context, offset, _) {
+        final open = HomeHeaderMetrics(unit: unit, safeTop: safeTop, top: top);
+        final metrics = HomeHeaderMetrics(
+          unit: unit,
+          safeTop: safeTop,
+          top: top,
+          fold: (offset / open.foldDistance).clamp(0.0, 1.0),
+        );
+        return Positioned(
+          left: 0,
+          right: 0,
+          top: 0,
+          height: metrics.height,
+          child: builder(context, metrics),
+        );
+      },
+    );
+  }
+}
+
 // عنوان الصفحة في الجهة الصفراء.
 const _titleCenter = 61.5;
 const _titleHeight = 32.0;
@@ -87,20 +198,19 @@ const _ratingStarSize = 11.0;
 
 /// الجهة الصفراء العليا بحافتها المنحنية من الأسفل.
 class HomeHill extends StatelessWidget {
-  const HomeHill({super.key, required this.width, required this.unit, required this.top});
+  const HomeHill({super.key, required this.width, required this.metrics});
 
   final double width;
-  final double unit;
-  final double top;
+  final HomeHeaderMetrics metrics;
 
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
       painter: _HillPainter(
-        bottom: top + _hillCenterY * unit,
+        bottom: metrics._curveCenterY,
         centerX: _hillCenterX * width / homeDesignWidth,
         radiusX: _hillRadiusX * width / homeDesignWidth,
-        radiusY: _hillRadiusY * unit,
+        radiusY: metrics._radiusY,
       ),
     );
   }
@@ -146,15 +256,13 @@ class HomeHeader extends StatelessWidget {
   const HomeHeader({
     super.key,
     required this.width,
-    required this.unit,
-    required this.top,
+    required this.metrics,
     required this.title,
     this.titleShift = 0,
   });
 
   final double width;
-  final double unit;
-  final double top;
+  final HomeHeaderMetrics metrics;
   final String title;
 
   /// بُعد العنوان عن وسط الشاشة نحو اليمين، بوحدات التصميم.
@@ -162,15 +270,17 @@ class HomeHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final unit = metrics.unit;
+    final height = _titleHeight * unit * metrics.scale;
     return Stack(
       fit: StackFit.expand,
       children: [
-        HomeHill(width: width, unit: unit, top: top),
+        HomeHill(width: width, metrics: metrics),
         Positioned(
           left: 2 * titleShift * unit,
           right: 0,
-          top: top + (_titleCenter - _titleHeight / 2) * unit,
-          height: _titleHeight * unit,
+          top: metrics.centerY(_titleCenter) - height / 2,
+          height: height,
           child: Center(
             child: FittedBox(
               fit: BoxFit.scaleDown,
@@ -179,7 +289,7 @@ class HomeHeader extends StatelessWidget {
                 maxLines: 1,
                 style: TextStyle(
                   fontFamily: 'Cairo',
-                  fontSize: _titleSize * unit,
+                  fontSize: _titleSize * unit * metrics.scale,
                   height: 1.2,
                   fontWeight: FontWeight.w800,
                   color: homeLabel,

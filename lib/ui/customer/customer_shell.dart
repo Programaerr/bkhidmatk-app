@@ -9,13 +9,9 @@ import 'profile_tab.dart';
 import 'technicians_tab.dart';
 
 class CustomerShell extends StatefulWidget {
-  const CustomerShell({
-    super.key,
-    this.adminPreview = false,
-    this.onOpenAdminDashboard,
-  });
+  const CustomerShell({super.key, this.onOpenAdminDashboard});
 
-  final bool adminPreview;
+  /// للمدير فقط: يفتح لوحة التحكم من صفحة حسابه.
   final VoidCallback? onOpenAdminDashboard;
 
   @override
@@ -25,7 +21,7 @@ class CustomerShell extends StatefulWidget {
 class _CustomerShellState extends State<CustomerShell> {
   int _index = 0;
 
-  // آخر ما جلبته الرئيسية، فيفتح منه تبويب الفنيين فوراً دون انتظار السيرفر.
+  // آخر ما جلبته الرئيسية، فيفتح منه تبويب الحرفيين فوراً دون انتظار السيرفر.
   List<Category>? _loadedSections;
   List<Worker>? _loadedWorkers;
   final _technicianChoice = TechniciansChoice();
@@ -36,7 +32,8 @@ class _CustomerShellState extends State<CustomerShell> {
     super.dispose();
   }
 
-  void _openSection(String name) {
+  /// يفتح تبويب الحرفيين على نوع الشغل المضغوط عليه، أو على كلهم إن لم يُعطَ اسم.
+  void _openSection(String? name) {
     _technicianChoice.choose(name);
     _go(1);
   }
@@ -91,27 +88,10 @@ class _CustomerShellState extends State<CustomerShell> {
           _home,
           _technicians,
           _bookings,
-          _index == 3 ? const OurWorkTab() : const OurWorkTab(isActive: false),
+          OurWorkTab(isActive: _index == 3),
           _profile,
         ],
         onSelect: _go,
-        topBanner: widget.adminPreview
-            ? Material(
-                color: const Color(0xFFFFF3B0),
-                child: SafeArea(
-                  bottom: false,
-                  child: SizedBox(
-                    height: 44,
-                    width: double.infinity,
-                    child: TextButton.icon(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-                      label: const Text('العودة إلى لوحة المدير'),
-                    ),
-                  ),
-                ),
-              )
-            : null,
       ),
     );
   }

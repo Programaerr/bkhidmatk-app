@@ -53,7 +53,8 @@ String _searchable(String text) => text
 class TechniciansChoice extends ChangeNotifier {
   String? section;
 
-  void choose(String name) {
+  /// [name] خالٍ يعني كل الحرفيين.
+  void choose(String? name) {
     section = name;
     notifyListeners();
   }
@@ -79,6 +80,7 @@ class _TechniciansTabState extends State<TechniciansTab> with RealtimeRefresh<Te
   final _searchFocus = FocusNode();
   final _choicesScroll = ScrollController();
   final _choiceKeys = <String?, GlobalKey>{};
+  final _fold = HeaderFold();
   List<Category> _sections = customerSections(const []);
   List<Worker>? _workers;
   String? _chosen;
@@ -106,6 +108,7 @@ class _TechniciansTabState extends State<TechniciansTab> with RealtimeRefresh<Te
   @override
   void dispose() {
     widget.choice?.removeListener(_onChosenOutside);
+    _fold.dispose();
     _choicesScroll.dispose();
     _search.dispose();
     _searchFocus.dispose();
@@ -197,15 +200,16 @@ class _TechniciansTabState extends State<TechniciansTab> with RealtimeRefresh<Te
                   child: RefreshIndicator(
                     edgeOffset: hillBottom,
                     onRefresh: _load,
-                    child: _page(unit, left, top, night),
+                    child: _fold.track(child: _page(unit, left, top, night)),
                   ),
                 ),
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  top: 0,
-                  height: hillBottom,
-                  child: HomeHeader(width: width, unit: unit, top: top, title: 'كل الحرفيين'),
+                FoldingHeader(
+                  fold: _fold,
+                  unit: unit,
+                  safeTop: safeTop,
+                  top: top,
+                  builder: (context, metrics) =>
+                      HomeHeader(width: width, metrics: metrics, title: 'كل الحرفيين'),
                 ),
               ],
             );

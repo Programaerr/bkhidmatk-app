@@ -65,8 +65,8 @@ class HomeTab extends StatefulWidget {
 
   final VoidCallback onOpenProfile;
 
-  /// يفتح تبويب الفنيين على نوع الشغل المضغوط عليه.
-  final ValueChanged<String>? onOpenSection;
+  /// يفتح تبويب الحرفيين على نوع الشغل المضغوط عليه، أو على كلهم إن لم يُعطَ نوع.
+  final ValueChanged<String?>? onOpenSection;
 
   /// يأخذ الأقسام والحرفيين بعد كل جلب، فيفتح منهما تبويب الفنيين فوراً.
   final void Function(List<Category> sections, List<Worker> craftsmen)? onLoaded;
@@ -77,6 +77,7 @@ class HomeTab extends StatefulWidget {
 
 class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
   Future<_HomeData>? _future;
+  final _fold = HeaderFold();
 
   @override
   void onRealtimeChange() => _load();
@@ -85,6 +86,12 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void dispose() {
+    _fold.dispose();
+    super.dispose();
   }
 
   void _load() {
@@ -157,22 +164,26 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
                       child: RefreshIndicator(
                         edgeOffset: hillBottom,
                         onRefresh: () async => _load(),
-                        child: ListView(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          // يبقى آخر صف فوق شريط التنقل الزجاجي.
-                          padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
-                          children: [
-                            _page(data, width, unit, left, top, night),
-                          ],
+                        child: _fold.track(
+                          child: ListView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            // يبقى آخر صف فوق شريط التنقل الزجاجي.
+                            padding:
+                                EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
+                            children: [
+                              _page(data, width, unit, left, top, night),
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                    Positioned(
-                      left: 0,
-                      right: 0,
-                      top: 0,
-                      height: hillBottom,
-                      child: _header(user, data, width, unit, left, top, night),
+                    FoldingHeader(
+                      fold: _fold,
+                      unit: unit,
+                      safeTop: safeTop,
+                      top: top,
+                      builder: (context, metrics) =>
+                          _header(user, data, width, left, metrics, night),
                     ),
                   ],
                 );
@@ -184,15 +195,18 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
     );
   }
 
+  /// الجهة الصفراء: صورة الحساب واسمه، وزرا الرسائل والإشعارات. تنطوي إلى شريط مع نزول الصفحة،
+  /// فيصغر ما فيها بالتحويل لا بتغيير مقاسه، حتى لا تُرسم الأزرار من جديد مع كل إطار.
   Widget _header(
     AppUser user,
     _HomeData? data,
     double width,
-    double unit,
     double left,
-    double top,
+    HomeHeaderMetrics metrics,
     bool night,
   ) {
+    final unit = metrics.unit;
+    final scale = metrics.scale;
     final ink = night ? homeNightInk : homeInk;
     final chrome = unit * homeKeyChrome;
     final inset = PushKey.faceInset * chrome;
@@ -200,6 +214,14 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
     final smallFace = _Design.smallFace * unit;
     final profileRight = left + _Design.profileRight * unit;
     final touchMargin = _Design.smallTouchMargin * unit;
+    final depth = PushKey.depth * chrome;
+
+    // يصغر حول وجه الزر نفسه لا حول مربعه الذي فيه جانبه وقاعدته.
+    Widget shrunk(double face, Widget child) => Transform.scale(
+          scale: scale,
+          alignment: Alignment(0, -depth / (face + depth)),
+          child: child,
+        );
 
     Widget small({
       required double centerX,
@@ -210,59 +232,66 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
     }) {
       return Positioned(
         left: left + centerX * unit - smallFace / 2 - inset - touchMargin,
-        top: top + _Design.smallCenter * unit - smallFace / 2 - touchMargin,
-        child: PushKeyCircle(
-          diameter: smallFace,
-          unit: chrome,
-          touchMargin: touchMargin,
-          label: label,
-          onPressed: () => _open(page),
-          child: SizedBox.expand(
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Icon(icon, size: _Design.smallIconSize * unit, color: ink),
-                if (badge > 0)
-                  Positioned(
-                    top: 0,
-                    right: 0,
-                    child: _CountBadge(count: badge, unit: unit),
-                  ),
-              ],
+        top: metrics.centerY(_Design.smallCenter) - smallFace / 2 - touchMargin,
+        child: shrunk(
+          smallFace,
+          PushKeyCircle(
+            diameter: smallFace,
+            unit: chrome,
+            touchMargin: touchMargin,
+            label: label,
+            onPressed: () => _open(page),
+            child: SizedBox.expand(
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Icon(icon, size: _Design.smallIconSize * unit, color: ink),
+                  if (badge > 0)
+                    Positioned(
+                      top: 0,
+                      right: 0,
+                      child: _CountBadge(count: badge, unit: unit),
+                    ),
+                ],
+              ),
             ),
           ),
         ),
       );
     }
 
+    final profileTop = metrics.centerY(_Design.profileCenter) - profileFace / 2;
     return Stack(
       fit: StackFit.expand,
       children: [
-        HomeHill(width: width, unit: unit, top: top),
+        HomeHill(width: width, metrics: metrics),
         Positioned(
           right: profileRight - inset,
-          top: top + _Design.profileCenter * unit - profileFace / 2,
-          child: PushKeyCircle(
-            diameter: profileFace,
-            unit: chrome,
-            label: 'الملف الشخصي',
-            onPressed: widget.onOpenProfile,
-            child: PersonFace(
-              name: user.name,
-              imagePath: user.avatarPath,
-              size: profileFace,
-              color: ink,
+          top: profileTop,
+          child: shrunk(
+            profileFace,
+            PushKeyCircle(
+              diameter: profileFace,
+              unit: chrome,
+              label: 'الملف الشخصي',
+              onPressed: widget.onOpenProfile,
+              child: PersonFace(
+                name: user.name,
+                imagePath: user.avatarPath,
+                size: profileFace,
+                color: ink,
+              ),
             ),
           ),
         ),
         // الاسم في وسط الدائرة كلها، بوجهها وحلقتها، وبعيد عن حلقتها.
         Positioned(
-          right: profileRight + profileFace + inset + _Design.nameGap * unit,
+          right: profileRight + profileFace * scale + inset + _Design.nameGap * unit,
           left: left +
               (_Design.messagesCenterX + _Design.smallFace / 2 + _Design.nameMargin) * unit +
               inset,
-          top: top + _Design.profileCenter * unit - profileFace / 2,
-          height: profileFace + PushKey.depth * chrome,
+          top: profileTop,
+          height: profileFace + depth,
           child: Align(
             alignment: AlignmentDirectional.centerStart,
             child: Text(
@@ -271,7 +300,7 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontFamily: 'Cairo',
-                fontSize: _Design.nameSize * unit,
+                fontSize: _Design.nameSize * unit * scale,
                 height: 1.2,
                 fontWeight: FontWeight.w700,
                 color: homeInk,
@@ -319,7 +348,7 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
     );
 
     // «عرض الكل» وسهمه في وسط الدائرة اليسرى.
-    Widget showAll(double center, Widget page) => Positioned(
+    Widget showAll(double center, VoidCallback onPressed) => Positioned(
           left: left + (homeSectionLeftCenter - _Design.allWidth / 2) * unit,
           width: _Design.allWidth * unit,
           top: top + (center - _Design.allHeight / 2) * unit,
@@ -332,7 +361,7 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
                 minimumSize: Size(0, _Design.allHeight * unit),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
-              onPressed: () => _open(page),
+              onPressed: onPressed,
               child: FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Row(
@@ -390,7 +419,10 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
           ),
           showAll(
             _Design.sectionsAllCenter,
-            AllSectionsScreen(sections: data?.sections, onOpenSection: widget.onOpenSection),
+            () => _open(AllSectionsScreen(
+              sections: data?.sections,
+              onOpenSection: widget.onOpenSection,
+            )),
           ),
           Positioned(
             left: left,
@@ -415,7 +447,8 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
               ),
             ),
           ),
-          showAll(_Design.craftsmenAllCenter, AllCraftsmenScreen(workers: data?.craftsmen)),
+          // كل الحرفيين هم تبويب الحرفيين نفسه، فلا صفحة ثانية تكرره.
+          showAll(_Design.craftsmenAllCenter, () => widget.onOpenSection?.call(null)),
           Positioned(
             left: left,
             top: top + _Design.craftsmenTop * unit,

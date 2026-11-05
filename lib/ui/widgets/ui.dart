@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
+import '../auth/push_key.dart';
 
 IconData appIcon(String key) {
   switch (key) {
@@ -89,6 +90,7 @@ const categoryIconKeys = [
   'build',
 ];
 
+/// شعار جايك. كان يُرسم فارغاً بلا صورة، فيظهر مربعاً خالياً حيث يوضع.
 class BrandLogo extends StatelessWidget {
   const BrandLogo(
       {super.key, this.size = 44, this.radius = 12, this.showBorder = false});
@@ -99,6 +101,7 @@ class BrandLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final pixels = (size * MediaQuery.devicePixelRatioOf(context)).ceil();
     return Container(
       width: size,
       height: size,
@@ -109,48 +112,12 @@ class BrandLogo extends StatelessWidget {
             : null,
       ),
       clipBehavior: Clip.antiAlias,
-    );
-  }
-}
-
-class BrandTitle extends StatelessWidget {
-  const BrandTitle({super.key, this.fontSize = 20, this.color});
-
-  final double fontSize;
-  final Color? color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      'جايك',
-      style: TextStyle(
-        fontFamily: 'Cairo',
-        fontWeight: FontWeight.w900,
-        fontSize: fontSize,
-        color: color ?? Theme.of(context).colorScheme.onSurface,
-        height: 1.1,
-      ),
-    );
-  }
-}
-
-class PagePadding extends StatelessWidget {
-  const PagePadding(
-      {super.key, required this.child, this.maxWidth = 860, this.padding});
-
-  final Widget child;
-  final double maxWidth;
-  final EdgeInsets? padding;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: maxWidth),
-        child: Padding(
-          padding: padding ?? const EdgeInsets.symmetric(horizontal: 18),
-          child: child,
-        ),
+      child: Image.asset(
+        'assets/images/logo.jpg',
+        fit: BoxFit.cover,
+        cacheWidth: pixels,
+        cacheHeight: pixels,
+        errorBuilder: (_, __, ___) => const ColoredBox(color: AppColors.gold),
       ),
     );
   }
@@ -208,7 +175,8 @@ class SectionHeader extends StatelessWidget {
                       style: const TextStyle(
                           fontWeight: FontWeight.w800, fontSize: 12.5)),
                   const SizedBox(width: 2),
-                  const Icon(Icons.chevron_left_rounded, size: 18),
+                  // يتجه إلى اليسار في العربية، فهو ينقل إلى الأمام لا إلى الخلف.
+                  const Icon(Icons.chevron_right_rounded, size: 18),
                 ],
               ),
             ),
@@ -258,6 +226,7 @@ class SoftCard extends StatelessWidget {
   }
 }
 
+/// الزر الرئيسي في أي صفحة: أصفر بشكل أزرار الصفحة الرئيسية. [tone] يغيّر لونه للأزرار الأخرى.
 class PrimaryButton extends StatelessWidget {
   const PrimaryButton({
     super.key,
@@ -266,7 +235,8 @@ class PrimaryButton extends StatelessWidget {
     this.icon,
     this.loading = false,
     this.expand = true,
-    this.height = 54,
+    this.compact = false,
+    this.tone = KeyTone.yellow,
   });
 
   final String label;
@@ -274,40 +244,56 @@ class PrimaryButton extends StatelessWidget {
   final IconData? icon;
   final bool loading;
   final bool expand;
-  final double height;
+  final bool compact;
+  final KeyTone tone;
 
   @override
   Widget build(BuildContext context) {
-    final child = Row(
-      mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        if (loading)
-          const SizedBox(
-            width: 18,
-            height: 18,
-            child: CircularProgressIndicator(
-                strokeWidth: 2.4, color: AppColors.ink),
-          )
-        else if (icon != null) ...[
-          Icon(icon, size: 20),
-          const SizedBox(width: 8),
-        ],
-        Flexible(
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(label, maxLines: 1),
-          ),
-        ),
-      ],
+    return PushKeyButton(
+      label: label,
+      onPressed: onPressed,
+      icon: icon,
+      loading: loading,
+      expand: expand,
+      compact: compact,
+      tone: tone,
     );
-    return SizedBox(
-      height: height,
-      width: expand ? double.infinity : null,
-      child: FilledButton(
-        onPressed: loading ? null : onPressed,
-        child: child,
-      ),
+  }
+}
+
+/// الزر الثانوي: أبيض بالشكل نفسه، لما يلي الإجراء الرئيسي أو يخالفه.
+class SecondaryButton extends StatelessWidget {
+  const SecondaryButton({
+    super.key,
+    required this.label,
+    this.onPressed,
+    this.icon,
+    this.loading = false,
+    this.expand = true,
+    this.compact = false,
+    this.danger = false,
+  });
+
+  final String label;
+  final VoidCallback? onPressed;
+  final IconData? icon;
+  final bool loading;
+  final bool expand;
+  final bool compact;
+
+  /// للإجراء الذي لا رجعة فيه، مثل الإلغاء والحذف.
+  final bool danger;
+
+  @override
+  Widget build(BuildContext context) {
+    return PushKeyButton(
+      label: label,
+      onPressed: onPressed,
+      icon: icon,
+      loading: loading,
+      expand: expand,
+      compact: compact,
+      tone: danger ? KeyTone.red : KeyTone.white,
     );
   }
 }
@@ -498,10 +484,10 @@ class EmptyState extends StatelessWidget {
           ],
           if (actionLabel != null) ...[
             const SizedBox(height: 18),
-            SizedBox(
-              width: 190,
-              child: PrimaryButton(
-                  label: actionLabel!, onPressed: onAction, height: 46),
+            PrimaryButton(
+              label: actionLabel!,
+              onPressed: onAction,
+              expand: false,
             ),
           ],
         ],
@@ -552,15 +538,20 @@ Future<bool> confirmAction(
     builder: (ctx) => AlertDialog(
       title: Text(title),
       content: Text(message),
+      actionsAlignment: MainAxisAlignment.start,
       actions: [
-        TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('إلغاء')),
-        TextButton(
+        SecondaryButton(
+          label: 'إلغاء',
+          compact: true,
+          expand: false,
+          onPressed: () => Navigator.pop(ctx, false),
+        ),
+        PrimaryButton(
+          label: confirmLabel,
+          compact: true,
+          expand: false,
+          tone: danger ? KeyTone.red : KeyTone.yellow,
           onPressed: () => Navigator.pop(ctx, true),
-          style: TextButton.styleFrom(
-              foregroundColor: danger ? AppColors.danger : null),
-          child: Text(confirmLabel),
         ),
       ],
     ),
@@ -763,11 +754,14 @@ class StatTile extends StatelessWidget {
                           size: 17,
                           color: color == AppColors.gold ? null : color),
                     ),
-                    const SizedBox(width: 6),
-                    Icon(Icons.arrow_outward_rounded,
-                        size: 14,
-                        color:
-                            theme.colorScheme.onSurface.withValues(alpha: .35)),
+                    // السهم لا يظهر إلا لما يفتح صفحة، فلا يوحي بزر لا يعمل.
+                    if (onTap != null) ...[
+                      const SizedBox(width: 6),
+                      Icon(Icons.arrow_outward_rounded,
+                          size: 14,
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: .35)),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -806,97 +800,21 @@ class SegmentedTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      height: 44,
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(100),
-        border: Border.all(color: theme.colorScheme.outline),
-      ),
-      child: Row(
-        children: List.generate(values.length, (i) {
-          final selected = i == index;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => onChanged(i),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: selected ? AppColors.gold : Colors.transparent,
-                  borderRadius: BorderRadius.circular(100),
-                ),
-                child: Text(
-                  labels?[i] ?? values[i],
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-                    color:
-                        selected ? AppColors.ink : theme.colorScheme.onSurface,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
+    // أزرار الاختيار نفسها في الصفحة الرئيسية: المختار بلون الجهة الصفراء، والبقية بيضاء.
+    return Row(
+      children: [
+        for (var i = 0; i < values.length; i++) ...[
+          if (i > 0) const SizedBox(width: 4),
+          Expanded(
+            child: PushKeyButton(
+              label: labels?[i] ?? values[i],
+              compact: true,
+              tone: i == index ? KeyTone.lemon : KeyTone.white,
+              onPressed: () => onChanged(i),
             ),
-          );
-        }),
-      ),
-    );
-  }
-}
-
-class IconTile extends StatelessWidget {
-  const IconTile({
-    super.key,
-    required this.icon,
-    required this.label,
-    this.color = AppColors.gold,
-    this.onTap,
-    this.selected = false,
-  });
-
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback? onTap;
-  final bool selected;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 54,
-            height: 54,
-            decoration: BoxDecoration(
-              color: selected ? color : color.withValues(alpha: .16),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: selected ? color : color.withValues(alpha: .25),
-                width: selected ? 2 : 1,
-              ),
-            ),
-            child: Icon(icon, size: 26, color: selected ? Colors.white : null),
-          ),
-          const SizedBox(height: 7),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
           ),
         ],
-      ),
+      ],
     );
   }
 }

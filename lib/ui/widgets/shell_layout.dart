@@ -3,10 +3,9 @@ import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 
 import '../../core/theme.dart';
-import '../../data/models.dart';
-import '../../core/utils.dart';
+import '../auth/push_key.dart';
 
-/// A single bottom-navigation destination definition used by both shells.
+/// A single bottom-navigation destination definition used by all shells.
 class NavItem {
   const NavItem(this.label, this.icon, this.activeIcon);
   final String label;
@@ -23,8 +22,6 @@ class AppShellLayout extends StatefulWidget {
     required this.onSelect,
     this.floatingActionButton,
     this.accent = AppColors.gold,
-    this.headerBadge,
-    this.topBanner,
   });
 
   final int index;
@@ -33,8 +30,6 @@ class AppShellLayout extends StatefulWidget {
   final ValueChanged<int> onSelect;
   final Widget? floatingActionButton;
   final Color accent;
-  final Widget? headerBadge;
-  final Widget? topBanner;
 
   @override
   State<AppShellLayout> createState() => _AppShellLayoutState();
@@ -42,8 +37,10 @@ class AppShellLayout extends StatefulWidget {
 
 class _AppShellLayoutState extends State<AppShellLayout>
     with SingleTickerProviderStateMixin {
-  // التبويب لا يُبنى ولا يجلب بياناته قبل أول فتح له.
-  final _opened = <int>{};
+  /// أكثر التبويبات ظهوراً حديثاً يبقى مبنياً، وما سواها يُترك فتتحرر ذاكرته
+  /// (الرسوم والصور والفيديو). التبويب الأحدث في آخر القائمة.
+  static const _maxAlive = 3;
+  final _alive = <int>[];
 
   // التبويب الجديد يظهر بتلاشٍ وانزلاق قصير، وما خلفه يبقى محفوظاً.
   late final _entrance = AnimationController(
@@ -79,12 +76,17 @@ class _AppShellLayoutState extends State<AppShellLayout>
       :onSelect,
       :floatingActionButton,
       :accent,
-      :topBanner,
     ) = widget;
     final theme = Theme.of(context);
     final wide = MediaQuery.sizeOf(context).width >= 900;
 
-    _opened.add(index);
+    _alive
+      ..remove(index)
+      ..add(index);
+    while (_alive.length > _maxAlive) {
+      _alive.removeAt(0);
+    }
+
     final body = IndexedStack(
       index: index,
       children: [
@@ -98,7 +100,7 @@ class _AppShellLayoutState extends State<AppShellLayout>
                 position: i == index
                     ? _slide
                     : const AlwaysStoppedAnimation(Offset.zero),
-                child: _opened.contains(i) ? page : const SizedBox.shrink(),
+                child: _alive.contains(i) ? page : const SizedBox.shrink(),
               ),
             ),
           ),
@@ -108,14 +110,7 @@ class _AppShellLayoutState extends State<AppShellLayout>
     if (!wide) {
       return Scaffold(
         extendBody: true,
-        body: topBanner == null
-            ? body
-            : Column(
-                children: [
-                  topBanner,
-                  Expanded(child: body),
-                ],
-              ),
+        body: body,
         floatingActionButton: floatingActionButton,
         bottomNavigationBar: _GlassNavigationBar(
           index: index,
@@ -160,16 +155,7 @@ class _AppShellLayoutState extends State<AppShellLayout>
               ),
             ),
           ),
-          Expanded(
-            child: topBanner == null
-                ? body
-                : Column(
-                    children: [
-                      topBanner,
-                      Expanded(child: body),
-                    ],
-                  ),
-          ),
+          Expanded(child: body),
         ],
       ),
       floatingActionButton: floatingActionButton,
@@ -177,6 +163,7 @@ class _AppShellLayoutState extends State<AppShellLayout>
   }
 }
 
+/// شريط التنقل السفلي: لمسة واحدة تفتح التبويب، والسحب عليه ينتقل بين التبويبات.
 class _GlassNavigationBar extends StatefulWidget {
   const _GlassNavigationBar({
     required this.index,
@@ -195,80 +182,74 @@ class _GlassNavigationBar extends StatefulWidget {
 }
 
 class _GlassNavigationBarState extends State<_GlassNavigationBar> {
-  final _navigationBoundsKey = GlobalKey();
+  static const _height = 60.0;
+
+  final _boundsKey = GlobalKey();
   bool _isDragging = false;
 
-  void _selectAt(Offset globalPosition) {
-    final renderObject =
-        _navigationBoundsKey.currentContext?.findRenderObject();
-    if (renderObject is! RenderBox || renderObject.size.width <= 0) return;
-
-    final localPosition = renderObject.globalToLocal(globalPosition);
+  int? _indexAt(Offset globalPosition) {
+    final renderObject = _boundsKey.currentContext?.findRenderObject();
+    if (renderObject is! RenderBox || renderObject.size.width <= 0) return null;
+    final local = renderObject.globalToLocal(globalPosition);
     final itemWidth = renderObject.size.width / widget.items.length;
-    final direction = Directionality.of(context);
-    final logicalX = direction == TextDirection.rtl
-        ? renderObject.size.width - localPosition.dx
-        : localPosition.dx;
-    final nextIndex =
-        (logicalX / itemWidth).floor().clamp(0, widget.items.length - 1);
-    if (nextIndex != widget.index) widget.onSelect(nextIndex);
+    final logicalX = Directionality.of(context) == TextDirection.rtl
+        ? renderObject.size.width - local.dx
+        : local.dx;
+    return (logicalX / itemWidth).floor().clamp(0, widget.items.length - 1);
   }
 
-  void _startDrag(Offset globalPosition) {
-    setState(() => _isDragging = true);
-    _selectAt(globalPosition);
+  void _scrub(Offset globalPosition) {
+    final next = _indexAt(globalPosition);
+    if (next != null && next != widget.index) widget.onSelect(next);
   }
 
-  void _updateDrag(Offset globalPosition) {
-    _selectAt(globalPosition);
-  }
-
-  void _endDrag() {
-    if (mounted) setState(() => _isDragging = false);
+  void _setDragging(bool value) {
+    if (mounted && _isDragging != value) setState(() => _isDragging = value);
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final radius = BorderRadius.circular(_height / 2);
+    final items = widget.items;
 
     return SafeArea(
       top: false,
-      minimum: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      minimum: const EdgeInsets.fromLTRB(16, 6, 16, 8),
       child: SizedBox(
-        height: 82,
+        height: _height + 8,
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 560),
             child: SizedBox(
-              height: 66,
+              height: _height,
               width: double.infinity,
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(40),
+                  borderRadius: radius,
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: isDark ? .25 : .12),
-                      blurRadius: 22,
-                      offset: const Offset(0, 7),
+                      blurRadius: 18,
+                      offset: const Offset(0, 5),
                     ),
                   ],
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(40),
+                  borderRadius: radius,
                   child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                    filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
                     child: LayoutBuilder(
                       builder: (context, constraints) {
-                        final itemWidth =
-                            constraints.maxWidth / widget.items.length;
+                        final itemWidth = constraints.maxWidth / items.length;
                         return Listener(
                           key: const ValueKey('glass-navigation-bar'),
                           behavior: HitTestBehavior.opaque,
-                          onPointerDown: (event) => _startDrag(event.position),
-                          onPointerMove: (event) => _updateDrag(event.position),
-                          onPointerUp: (_) => _endDrag(),
-                          onPointerCancel: (_) => _endDrag(),
+                          onPointerDown: (_) => _setDragging(true),
+                          onPointerMove: (event) => _scrub(event.position),
+                          onPointerUp: (_) => _setDragging(false),
+                          onPointerCancel: (_) => _setDragging(false),
                           child: DecoratedBox(
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
@@ -281,29 +262,30 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar> {
                                       .withValues(alpha: isDark ? .62 : .56),
                                 ],
                               ),
-                              borderRadius: BorderRadius.circular(40),
+                              borderRadius: radius,
                               border: Border.all(
                                 color: Colors.white
                                     .withValues(alpha: isDark ? .16 : .48),
                               ),
                             ),
                             child: Stack(
-                              key: _navigationBoundsKey,
+                              key: _boundsKey,
                               children: [
                                 AnimatedPositionedDirectional(
-                                  duration: const Duration(milliseconds: 480),
+                                  duration: const Duration(milliseconds: 380),
                                   curve: Curves.easeOutBack,
                                   start: itemWidth * widget.index + 4,
                                   top: 4,
                                   bottom: 4,
                                   width: itemWidth - 8,
                                   child: AnimatedScale(
-                                    scale: _isDragging ? 1.06 : 1,
+                                    scale: _isDragging ? 1.05 : 1,
                                     duration: const Duration(milliseconds: 180),
                                     curve: Curves.easeOutCubic,
                                     child: DecoratedBox(
                                       decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(32),
+                                        borderRadius:
+                                            BorderRadius.circular(_height / 2),
                                         gradient: LinearGradient(
                                           begin: Alignment.topLeft,
                                           end: Alignment.bottomRight,
@@ -318,29 +300,23 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar> {
                                           color: widget.accent
                                               .withValues(alpha: .28),
                                         ),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: widget.accent
-                                                .withValues(alpha: .13),
-                                            blurRadius: 12,
-                                            spreadRadius: 1,
-                                          ),
-                                        ],
                                       ),
                                     ),
                                   ),
                                 ),
                                 Row(
                                   children: [
-                                    for (var i = 0;
-                                        i < widget.items.length;
-                                        i++)
+                                    for (var i = 0; i < items.length; i++)
                                       Expanded(
                                         child: _GlassNavigationDestination(
-                                          item: widget.items[i],
+                                          item: items[i],
                                           selected: i == widget.index,
                                           accent: widget.accent,
-                                          onTap: () => widget.onSelect(i),
+                                          onTap: () {
+                                            if (i != widget.index) {
+                                              widget.onSelect(i);
+                                            }
+                                          },
                                         ),
                                       ),
                                   ],
@@ -382,138 +358,52 @@ class _GlassNavigationDestination extends StatelessWidget {
       button: true,
       selected: selected,
       label: item.label,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: SizedBox(
-          height: double.infinity,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AnimatedScale(
-                scale: selected ? 1.08 : 1,
-                duration: const Duration(milliseconds: 260),
-                curve: Curves.easeOutCubic,
-                child: Icon(
-                  selected ? item.activeIcon : item.icon,
-                  size: 23,
-                  color: selected ? accent : theme.colorScheme.onSurfaceVariant,
+      child: ExcludeSemantics(
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onTap,
+          child: SizedBox(
+            height: double.infinity,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AnimatedScale(
+                  scale: selected ? 1.08 : 1,
+                  duration: const Duration(milliseconds: 260),
+                  curve: Curves.easeOutCubic,
+                  child: Icon(
+                    selected ? item.activeIcon : item.icon,
+                    size: 23,
+                    color:
+                        selected ? accent : theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 2),
-              AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 220),
-                curve: Curves.easeOut,
-                style: TextStyle(
-                  color: selected
-                      ? theme.colorScheme.onSurface
-                      : theme.colorScheme.onSurfaceVariant,
-                  fontSize: selected ? 10 : 9,
-                  fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-                ),
-                child: Text(
+                const SizedBox(height: 2),
+                Text(
                   item.label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    color: selected
+                        ? theme.colorScheme.onSurface
+                        : theme.colorScheme.onSurfaceVariant,
+                    fontSize: 10,
+                    height: 1.2,
+                    fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class CustomerHeader extends StatelessWidget {
-  const CustomerHeader({
-    super.key,
-    required this.title,
-    this.subtitle,
-    this.actions = const [],
-    this.showBack = false,
-  });
-
-  final String title;
-  final String? subtitle;
-  final List<Widget> actions;
-  final bool showBack;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.fromLTRB(18, 8, 18, 14),
-      decoration: BoxDecoration(
-        color: theme.scaffoldBackgroundColor,
-        border: Border(
-            bottom: BorderSide(
-                color: theme.colorScheme.outline.withValues(alpha: .6))),
-      ),
-      child: SafeArea(
-        bottom: false,
-        child: Row(
-          children: [
-            if (showBack)
-              Padding(
-                padding: const EdgeInsets.only(left: 6),
-                child: _CircleIconButton(
-                  icon: Icons.arrow_forward_rounded,
-                  onTap: () => Navigator.maybePop(context),
-                ),
-              ),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title,
-                      style:
-                          theme.textTheme.titleLarge?.copyWith(fontSize: 19)),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 1),
-                    Text(subtitle!, style: theme.textTheme.bodySmall),
-                  ],
-                ],
-              ),
+              ],
             ),
-            ...actions,
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CircleIconButton extends StatelessWidget {
-  const _CircleIconButton({required this.icon, required this.onTap});
-
-  final IconData icon;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Material(
-      color: theme.colorScheme.surface,
-      shape: const CircleBorder(),
-      child: InkWell(
-        onTap: onTap,
-        customBorder: const CircleBorder(),
-        child: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: theme.colorScheme.outline),
           ),
-          child: Icon(icon, size: 20),
         ),
       ),
     );
   }
 }
 
+/// زر دائري بأيقونة بشكل أزرار الصفحة الرئيسية، للأشرطة وللصفوف.
 class AppIconButton extends StatelessWidget {
   const AppIconButton({
     super.key,
@@ -521,66 +411,29 @@ class AppIconButton extends StatelessWidget {
     required this.onTap,
     this.badge = 0,
     this.tooltip,
+    this.small = false,
+    this.color,
   });
 
   final IconData icon;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final int badge;
   final String? tooltip;
+  final bool small;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final button = Material(
-      color: theme.colorScheme.surface,
-      shape: const CircleBorder(),
-      child: InkWell(
-        onTap: onTap,
-        customBorder: const CircleBorder(),
-        child: Container(
-          width: 42,
-          height: 42,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: theme.colorScheme.outline),
-          ),
-          child: Icon(icon, size: 20),
-        ),
-      ),
-    );
-    if (badge <= 0) return button;
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        button,
-        Positioned(
-          top: -2,
-          right: -2,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-            decoration: BoxDecoration(
-              color: AppColors.danger,
-              borderRadius: BorderRadius.circular(100),
-              border:
-                  Border.all(color: theme.scaffoldBackgroundColor, width: 2),
-            ),
-            child: Text(
-              badge > 9 ? '9+' : '$badge',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 9,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ),
-        ),
-      ],
+    return PushKeyIconButton(
+      icon: icon,
+      onPressed: onTap,
+      label: tooltip ?? '',
+      badge: badge,
+      small: small,
+      color: color,
     );
   }
 }
-
-String newInvoiceNumber(int bookingId, DateTime date) =>
-    invoiceNumber(bookingId, date);
 
 class PaymentMethodBadge extends StatelessWidget {
   const PaymentMethodBadge(
@@ -614,12 +467,3 @@ class PaymentMethodBadge extends StatelessWidget {
     );
   }
 }
-
-StatusKind statusKind(String status) => switch (status) {
-      BookingStatus.completed => StatusKind.success,
-      BookingStatus.cancelled => StatusKind.danger,
-      BookingStatus.pending => StatusKind.warning,
-      _ => StatusKind.info,
-    };
-
-enum StatusKind { success, danger, warning, info }

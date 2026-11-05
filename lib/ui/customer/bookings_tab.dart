@@ -48,6 +48,7 @@ class _BookingsTabState extends State<BookingsTab>
     with RealtimeRefresh<BookingsTab> {
   int _filter = 0;
   late Future<List<Booking>> _future;
+  final _fold = HeaderFold();
 
   static const _filters = ['الكل', 'المكتملة', 'الملغاة'];
 
@@ -58,6 +59,12 @@ class _BookingsTabState extends State<BookingsTab>
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void dispose() {
+    _fold.dispose();
+    super.dispose();
   }
 
   void _load() {
@@ -101,22 +108,23 @@ class _BookingsTabState extends State<BookingsTab>
                   child: RefreshIndicator(
                     edgeOffset: hillBottom,
                     onRefresh: () async => _load(),
-                    child: FutureBuilder<List<Booking>>(
-                      future: _future,
-                      builder: (context, snapshot) =>
-                          _page(snapshot, constraints.biggest, unit, left, top, night),
+                    child: _fold.track(
+                      child: FutureBuilder<List<Booking>>(
+                        future: _future,
+                        builder: (context, snapshot) =>
+                            _page(snapshot, constraints.biggest, unit, left, top, night),
+                      ),
                     ),
                   ),
                 ),
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  top: 0,
-                  height: hillBottom,
-                  child: HomeHeader(
+                FoldingHeader(
+                  fold: _fold,
+                  unit: unit,
+                  safeTop: safeTop,
+                  top: top,
+                  builder: (context, metrics) => HomeHeader(
                     width: width,
-                    unit: unit,
-                    top: top,
+                    metrics: metrics,
                     title: 'كل الحجوزات',
                     titleShift: _Design.titleShift,
                   ),
@@ -227,29 +235,32 @@ class _BookingsTabState extends State<BookingsTab>
   }
 
   Widget _browseKey(double unit, bool night) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: widget.onBrowse,
-      child: PushKey(
-        unit: unit * homeKeyChrome,
-        faceHeight: _Design.browseHeight * unit,
-        faceRadius: _Design.browseRadius,
-        lemon: true,
-        night: night ? kAlwaysCompleteAnimation : kAlwaysDismissedAnimation,
-        child: Semantics(
-          button: true,
-          child: Center(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                'تصفح الحرفيين',
-                maxLines: 1,
-                style: TextStyle(
-                  fontFamily: 'Cairo',
-                  fontSize: _Design.browseTextSize * unit,
-                  height: 1.2,
-                  fontWeight: FontWeight.w800,
-                  color: homeInk,
+    return Semantics(
+      button: true,
+      label: 'تصفح الحرفيين',
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.onBrowse,
+        child: PushKey(
+          unit: unit * homeKeyChrome,
+          faceHeight: _Design.browseHeight * unit,
+          faceRadius: _Design.browseRadius,
+          lemon: true,
+          night: night ? kAlwaysCompleteAnimation : kAlwaysDismissedAnimation,
+          child: ExcludeSemantics(
+            child: Center(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  'تصفح الحرفيين',
+                  maxLines: 1,
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontSize: _Design.browseTextSize * unit,
+                    height: 1.2,
+                    fontWeight: FontWeight.w800,
+                    color: homeInk,
+                  ),
                 ),
               ),
             ),
@@ -330,7 +341,7 @@ class _BookingCard extends StatelessWidget {
               Text(fmtMoney(booking.total),
                   style: theme.textTheme.titleSmall?.copyWith(fontSize: 12.5)),
               const SizedBox(width: 6),
-              const Icon(Icons.chevron_left_rounded, size: 18),
+              const Icon(Icons.chevron_right_rounded, size: 18),
             ],
           ),
         ],

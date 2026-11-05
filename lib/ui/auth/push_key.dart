@@ -57,6 +57,13 @@ const _loginInk = Color(0xFF263238);
 const _loginNightInk = Color(0xFFF4F4EE);
 const _loginSpinner = Color(0xFF416F9E);
 
+// الزر الصغير داخل البطاقات والصفوف: أصغر من زر الشاشة الأولى بقدر هذا المقياس.
+const _compactScale = .88;
+const _compactFaceHeight = 31.0;
+const _compactTextSize = 12.0;
+const _compactPadding = 14.0;
+const _compactMinWidth = 64.0;
+
 // زر الرجوع: حافته على حافة خانات الصفحة، وبعده عنوانها.
 const _backFaceWidth = 34.0;
 const _backArrowSize = 20.0;
@@ -112,29 +119,54 @@ class PushKeyBack extends StatelessWidget {
   }
 }
 
-/// شريط صفحة تُفتح من الشاشة الأولى: عنوانها وزر الرجوع.
+/// شريط صفحة: زر الرجوع في طرفه وعنوانها، وأزرار إجراءاتها في الطرف الآخر.
+///
+/// هو الشريط الوحيد للصفحات المفتوحة فوق غيرها، فيتوحد شكل الرجوع واتجاه سهمه.
 class PushKeyAppBar extends StatelessWidget implements PreferredSizeWidget {
-  const PushKeyAppBar({super.key, required this.title, this.backgroundColor});
+  const PushKeyAppBar({
+    super.key,
+    this.title = '',
+    this.titleWidget,
+    this.backgroundColor,
+    this.actions = const [],
+    this.showBack = true,
+  });
 
   final String title;
+
+  /// يحل محل [title] حين يحتاج العنوان إلى صورة أو سطر ثانٍ.
+  final Widget? titleWidget;
   final Color? backgroundColor;
+
+  /// أزرار الإجراءات، وأولها يلي العنوان مباشرة.
+  final List<Widget> actions;
+  final bool showBack;
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
   @override
   Widget build(BuildContext context) {
+    final back = showBack && Navigator.canPop(context);
     return AppBar(
       backgroundColor: backgroundColor,
+      automaticallyImplyLeading: false,
       leadingWidth: _pageMargin + PushKeyBack.width * pushKeyUnit(context),
-      titleSpacing: _backTitleGap,
-      leading: const PushKeyBack(),
-      title: Text(title),
+      titleSpacing: back ? _backTitleGap : 18,
+      leading: back ? const PushKeyBack() : null,
+      title: titleWidget ?? Text(title),
+      actions: [...actions, const SizedBox(width: 12)],
     );
   }
 }
 
+/// نغمة الزر: أبيض، أو أصفر بلون التطبيق، أو بلون الجهة الصفراء، أو أحمر.
+enum KeyTone { white, yellow, lemon, red }
+
 /// زر بشكل أزرار الشاشة الأولى ومقاساتها، ويأخذ عرض المكان الذي يوضع فيه.
+///
+/// هو الزر الوحيد للإجراءات في التطبيق كله: [compact] للصغير منها داخل البطاقات،
+/// و[expand] خطأ ليأخذ عرض اسمه فقط.
 class PushKeyButton extends StatelessWidget {
   const PushKeyButton({
     super.key,
@@ -142,66 +174,198 @@ class PushKeyButton extends StatelessWidget {
     required this.onPressed,
     this.loading = false,
     this.yellow = false,
+    this.tone,
+    this.icon,
+    this.compact = false,
+    this.expand = true,
   });
 
   /// ارتفاعه كاملاً بوحدات التصميم، مع هامش اللمس فوقه وتحته.
   static const outerHeight = _loginFaceHeight + PushKey.depth + _loginTouchMargin * 2;
 
   final String label;
-  final VoidCallback onPressed;
+
+  /// بلا إجراء يظهر الزر باهتاً لا يستجيب.
+  final VoidCallback? onPressed;
   final bool loading;
   final bool yellow;
 
+  /// تغلب على [yellow] إن وُجدت.
+  final KeyTone? tone;
+  final IconData? icon;
+  final bool compact;
+  final bool expand;
+
   @override
   Widget build(BuildContext context) {
-    final unit = pushKeyUnit(context);
+    final unit = pushKeyUnit(context) * (compact ? _compactScale : 1);
     final night = Theme.of(context).brightness == Brightness.dark;
-    final faceHeight = _loginFaceHeight * unit;
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: loading ? null : onPressed,
-      child: Padding(
-        padding: EdgeInsets.symmetric(vertical: _loginTouchMargin * unit),
-        child: SizedBox(
-          width: double.infinity,
-          height: faceHeight + PushKey.depth * unit,
-          child: PushKey(
-            unit: unit,
-            faceHeight: faceHeight,
-            held: loading,
-            yellow: yellow,
-            night: night ? kAlwaysCompleteAnimation : kAlwaysDismissedAnimation,
-            child: Semantics(
-              button: true,
-              enabled: !loading,
-              child: Center(
-                child: loading
-                    ? SizedBox(
-                        width: 16 * unit,
-                        height: 16 * unit,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: yellow ? _loginInk : _loginSpinner,
-                        ),
-                      )
-                    : FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          label,
-                          style: TextStyle(
-                            fontFamily: 'Cairo',
-                            fontSize: _loginTextSize * unit,
-                            height: 1.2,
-                            fontWeight: FontWeight.w800,
-                            color: night && !yellow ? _loginNightInk : _loginInk,
-                          ),
-                        ),
-                      ),
+    final keyTone = tone ?? (yellow ? KeyTone.yellow : KeyTone.white);
+    final faceHeight = (compact ? _compactFaceHeight : _loginFaceHeight) * unit;
+    final textSize = (compact ? _compactTextSize : _loginTextSize) * unit;
+    final ink = keyTone == KeyTone.red
+        ? Colors.white
+        : night && keyTone == KeyTone.white
+            ? _loginNightInk
+            : _loginInk;
+    final style = TextStyle(
+      fontFamily: 'Cairo',
+      fontSize: textSize,
+      height: 1.2,
+      fontWeight: FontWeight.w800,
+      color: ink,
+    );
+    final enabled = onPressed != null && !loading;
+    final iconSize = textSize * 1.35;
+    final iconGap = textSize * .45;
+
+    double? width;
+    if (!expand) {
+      final text = TextPainter(
+        text: TextSpan(text: label, style: style),
+        textDirection: TextDirection.rtl,
+        textScaler: MediaQuery.textScalerOf(context),
+        maxLines: 1,
+      )..layout();
+      final needed =
+          text.width + (icon == null ? 0 : iconSize + iconGap) + _compactPadding * 2 * unit;
+      text.dispose();
+      width = math.max(needed, _compactMinWidth * unit) + PushKey.faceInset * 2 * unit;
+    }
+
+    final content = loading
+        ? SizedBox(
+            width: 16 * unit,
+            height: 16 * unit,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: keyTone == KeyTone.white ? _loginSpinner : _loginInk,
+            ),
+          )
+        : FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (icon != null) ...[
+                  Icon(icon, size: iconSize, color: ink),
+                  SizedBox(width: iconGap),
+                ],
+                Text(label, maxLines: 1, style: style),
+              ],
+            ),
+          );
+
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      label: label,
+      child: ExcludeSemantics(
+        child: Opacity(
+          opacity: onPressed == null && !loading ? .5 : 1,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: enabled ? onPressed : null,
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: _loginTouchMargin * unit),
+              child: SizedBox(
+                width: width ?? double.infinity,
+                height: faceHeight + PushKey.depth * unit,
+                child: PushKey(
+                  unit: unit,
+                  faceHeight: faceHeight,
+                  held: loading,
+                  yellow: keyTone == KeyTone.yellow,
+                  lemon: keyTone == KeyTone.lemon,
+                  red: keyTone == KeyTone.red,
+                  night: night ? kAlwaysCompleteAnimation : kAlwaysDismissedAnimation,
+                  child: Center(child: content),
+                ),
               ),
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// زر دائري بأيقونة، بشكل أزرار الشاشة الأولى: للإجراءات في الأشرطة وداخل البطاقات.
+class PushKeyIconButton extends StatelessWidget {
+  const PushKeyIconButton({
+    super.key,
+    required this.icon,
+    required this.onPressed,
+    this.label = '',
+    this.badge = 0,
+    this.small = false,
+    this.color,
+  });
+
+  final IconData icon;
+  final VoidCallback? onPressed;
+
+  /// وصف الزر لقارئ الشاشة.
+  final String label;
+
+  /// عدد التنبيهات فوق الزر، ولا يظهر إن كان صفراً.
+  final int badge;
+  final bool small;
+
+  /// لون الأيقونة، ويبقى لون الحبر إن لم يُعطَ.
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final u = pushKeyUnit(context);
+    final night = Theme.of(context).brightness == Brightness.dark;
+    final diameter = (small ? 28.0 : 34.0) * u;
+    final button = Opacity(
+      opacity: onPressed == null ? .5 : 1,
+      child: PushKeyCircle(
+        diameter: diameter,
+        unit: u * .7,
+        label: label,
+        onPressed: onPressed,
+        touchMargin: 2,
+        child: Icon(
+          icon,
+          size: diameter * .52,
+          color: color ?? (night ? _loginNightInk : _loginInk),
+        ),
+      ),
+    );
+    if (badge <= 0) return button;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        button,
+        PositionedDirectional(
+          top: 0,
+          end: 0,
+          child: IgnorePointer(
+            child: Container(
+              constraints: BoxConstraints(minWidth: 15 * u),
+              padding: EdgeInsets.symmetric(horizontal: 4 * u),
+              decoration: BoxDecoration(
+                color: AppColors.danger,
+                borderRadius: BorderRadius.circular(100),
+              ),
+              child: Text(
+                badge > 9 ? '9+' : '$badge',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: 9 * u,
+                  height: 1.35,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
