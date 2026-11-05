@@ -105,7 +105,7 @@ class _AdminWorksState extends State<AdminWorks> with RealtimeRefresh<AdminWorks
                   textDirection: TextDirection.ltr,
                   keyboardType: TextInputType.url,
                   decoration: const InputDecoration(
-                    hintText: 'https://example.com/video.mp4',
+                    hintText: 'رابط يوتيوب أو فيديو مباشر (mp4)',
                     labelText: 'رابط الفيديو',
                     prefixIcon: Icon(Icons.link_rounded, size: 20),
                   ),

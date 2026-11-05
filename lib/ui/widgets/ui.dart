@@ -578,7 +578,25 @@ Future<T?> showAppSheet<T>(
               MediaQuery.viewInsetsOf(ctx).bottom -
               24,
         ),
-        child: builder(ctx),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // زر إغلاق ظاهر في كل نافذة سفلية، فلا يُترك الخروج منها للسحب (الآيفون لا زر رجوع فيه).
+            Padding(
+              padding: const EdgeInsetsDirectional.only(end: 14, bottom: 2),
+              child: Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: PushKeyIconButton(
+                  icon: Icons.close_rounded,
+                  label: 'إغلاق',
+                  small: true,
+                  onPressed: () => Navigator.maybePop(ctx),
+                ),
+              ),
+            ),
+            Flexible(child: builder(ctx)),
+          ],
+        ),
       ),
     ),
   );

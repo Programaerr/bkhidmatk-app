@@ -265,7 +265,10 @@ class _BookingDetailScreenState extends State<BookingDetailScreen>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     if (_loading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        appBar: PushKeyAppBar(title: 'تفاصيل الحجز'),
+        body: Center(child: CircularProgressIndicator()),
+      );
     }
     final b = _booking;
     if (b == null) {

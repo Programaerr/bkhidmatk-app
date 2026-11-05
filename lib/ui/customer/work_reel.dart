@@ -1,11 +1,12 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
+import '../../data/youtube_stream.dart';
 
 import '../../core/theme.dart';
 import '../../core/utils.dart';
@@ -73,6 +74,14 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
     if (mounted && widget.isActive) _initializeVideo();
   }
 
+  /// رابط الفيديو الذي يُشغَّل داخل التطبيق: رابط يوتيوب يُستخرج منه ملف الفيديو نفسه ليُشغَّل
+  /// بمشغّل التطبيق، وغيره يُشغَّل كما هو.
+  Future<String> _playableUrl(String path) async {
+    final id = youtubeIdOf(path);
+    if (id == null) return path;
+    return resolveYoutubeStream(id);
+  }
+
   Future<void> _initializeVideo() async {
     if (!widget.isActive || _controller != null) return;
     final generation = ++_initializationGeneration;
@@ -83,7 +92,9 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
         controller =
             VideoPlayerController.asset(path.replaceFirst('asset:', ''));
       } else if (isNetworkMedia(path)) {
-        controller = VideoPlayerController.networkUrl(Uri.parse(path));
+        final url = await _playableUrl(path);
+        if (!mounted || generation != _initializationGeneration || !widget.isActive) return;
+        controller = VideoPlayerController.networkUrl(Uri.parse(url));
       } else {
         controller = VideoPlayerController.file(File(path));
       }
@@ -203,13 +214,10 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
     if (mounted) AppSnack.show(context, 'تم نسخ رابط الفيديو');
   }
 
-  Future<void> _openExternal() async {
-    final uri = Uri.tryParse(_work.videoUrl);
-    if (uri == null) return;
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication) &&
-        mounted) {
-      AppSnack.show(context, 'تعذر فتح رابط الفيديو', error: true);
-    }
+  /// يعيد محاولة تشغيل الفيديو بعد فشله.
+  void _retry() {
+    setState(() => _failed = false);
+    _initializeVideo();
   }
 
   Future<void> _disposeVideo() async {
@@ -347,18 +355,20 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
             const Icon(Icons.play_disabled_rounded,
                 color: Colors.white70, size: 44),
             const SizedBox(height: 8),
-            const Text(
-              'تعذر تشغيل الفيديو داخل التطبيق',
+            Text(
+              kIsWeb && youtubeIdOf(_work.videoUrl) != null
+                  ? 'روابط يوتيوب تُشغَّل داخل التطبيق على الهاتف، والمتصفح يمنع ذلك. استعمل رابط فيديو مباشر (mp4) للتجربة هنا.'
+                  : 'تعذر تشغيل الفيديو داخل التطبيق',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white, fontSize: 13),
+              style: const TextStyle(color: Colors.white, fontSize: 13),
             ),
             const SizedBox(height: 8),
             SecondaryButton(
-              label: 'فتح الرابط',
-              icon: Icons.open_in_new_rounded,
+              label: 'إعادة المحاولة',
+              icon: Icons.refresh_rounded,
               compact: true,
               expand: false,
-              onPressed: _openExternal,
+              onPressed: _retry,
             ),
           ],
         ),

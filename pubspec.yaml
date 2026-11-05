@@ -27,7 +27,7 @@ dependencies:
   screenshot: ^3.0.0
   supabase_flutter: ^2.18.3
   sqflite_common_ffi_web: ^1.2.0
-
+  youtube_explode_dart: ^3.1.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -51,3 +51,7 @@ flutter:
           weight: 700
         - asset: assets/fonts/Cairo-Black.ttf
           weight: 900
+
+# youtube_explode_dart يطلب xml 6، وباقي المشروع (pdf وprinting وimage) يحتاج 7. المكتبة تعمل مع 7.
+dependency_overrides:
+  xml: ^7.0.1

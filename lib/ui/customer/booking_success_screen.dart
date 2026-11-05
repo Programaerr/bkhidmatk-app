@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
+import '../auth/push_key.dart';
 import '../common/receipt_document.dart';
 import '../widgets/quick_route.dart';
 import '../widgets/shell_layout.dart';
@@ -19,6 +20,7 @@ class BookingSuccessScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
+      appBar: const PushKeyAppBar(title: 'تم إرسال الحجز'),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(22, 32, 22, 24),
