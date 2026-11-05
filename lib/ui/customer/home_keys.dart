@@ -121,16 +121,12 @@ class _HillPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    canvas.drawPath(
-      Path()
-        ..addRect(Rect.fromLTRB(0, 0, size.width, bottom))
-        ..addOval(Rect.fromCenter(
-          center: Offset(centerX, bottom),
-          width: radiusX * 2,
-          height: radiusY * 2,
-        )),
-      Paint()..color = TruckSceneMetrics.hillColor,
-    );
+    // شريط صفرا صغير في اعلى الشاشة يشبه الشريط العلوي، بدل التلة الكبيرة
+    // التي كانت تأخذ مساحة كبيرة من الشاشة.
+    final barHeight = math.min(size.height, 16.0);
+    final barRect = Rect.fromLTRB(0, 0, size.width, barHeight);
+    final barR = RRect.fromRectAndRadius(barRect, Radius.circular(barHeight / 2));
+    canvas.drawRRect(barR, Paint()..color = TruckSceneMetrics.hillColor);
   }
 
   @override
