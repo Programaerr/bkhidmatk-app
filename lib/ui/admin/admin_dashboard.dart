@@ -33,6 +33,7 @@ class AdminDashboard extends StatefulWidget {
 class _AdminDashboardState extends State<AdminDashboard>
     with RealtimeRefresh<AdminDashboard> {
   Future<(AppStats, List<Booking>, int)>? _future;
+  int _unread = 0;
 
   @override
   void onRealtimeChange() => _load();
@@ -50,6 +51,7 @@ class _AdminDashboardState extends State<AdminDashboard>
         final stats = await repo.stats();
         final bookings = await repo.allBookings();
         final works = await repo.workCount();
+        _unread = stats.unreadMessages;
         return (stats, bookings.take(4).toList(), works);
       }();
     });
@@ -73,7 +75,7 @@ class _AdminDashboardState extends State<AdminDashboard>
             const SizedBox(width: 8),
             AppIconButton(
               icon: Icons.chat_bubble_outline_rounded,
-              badge: 0,
+              badge: _unread,
               onTap: () => Navigator.push(
                 context,
                 QuickRoute(builder: (_) => const AdminThreadsScreen()),
@@ -106,6 +108,9 @@ class _AdminDashboardState extends State<AdminDashboard>
                           begin: Alignment.topRight,
                           end: Alignment.bottomLeft,
                           colors: [Color(0xFF111113), Color(0xFF38310A)],
+                        ),
+                        border: Border.all(
+                          color: AppColors.gold.withValues(alpha: .22),
                         ),
                       ),
                       child: Column(

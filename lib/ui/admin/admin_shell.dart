@@ -12,9 +12,7 @@ import 'admin_works.dart';
 import '../customer/customer_shell.dart';
 
 class AdminShell extends StatefulWidget {
-  const AdminShell({super.key, this.showBackToApp = false});
-
-  final bool showBackToApp;
+  const AdminShell({super.key});
 
   @override
   State<AdminShell> createState() => _AdminShellState();
@@ -64,26 +62,6 @@ class _AdminShellState extends State<AdminShell> {
       items: _items,
       pages: _pages,
       onSelect: _go,
-      topBanner: widget.showBackToApp
-          ? Material(
-              color: Theme.of(context).colorScheme.surface,
-              child: SafeArea(
-                bottom: false,
-                child: SizedBox(
-                  height: 44,
-                  width: double.infinity,
-                  child: Align(
-                    alignment: AlignmentDirectional.centerStart,
-                    child: IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      tooltip: 'العودة إلى التطبيق',
-                      icon: const Icon(Icons.arrow_forward_rounded),
-                    ),
-                  ),
-                ),
-              ),
-            )
-          : null,
     );
   }
 }

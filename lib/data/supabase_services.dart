@@ -49,10 +49,16 @@ class SupabaseServices {
 
   final SupabaseClient client;
 
-  static const _url = String.fromEnvironment('SUPABASE_URL');
+  static const _url = String.fromEnvironment(
+    'SUPABASE_URL',
+    defaultValue: 'https://scapsbhbpsxxjrafdcni.supabase.co',
+  );
   static const _publishableKey = String.fromEnvironment(
     'SUPABASE_PUBLISHABLE_KEY',
-    defaultValue: String.fromEnvironment('SUPABASE_ANON_KEY'),
+    defaultValue: String.fromEnvironment(
+      'SUPABASE_ANON_KEY',
+      defaultValue: 'sb_publishable_4naOj0PFIQNyAEqz10b-dA_mXvwP9_j',
+    ),
   );
 
   static bool get isConfigured => _url.isNotEmpty && _publishableKey.isNotEmpty;
