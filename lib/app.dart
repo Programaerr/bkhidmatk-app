@@ -8,6 +8,7 @@ import 'ui/admin/admin_shell.dart';
 import 'ui/auth/welcome_screen.dart';
 import 'ui/customer/customer_shell.dart';
 import 'ui/widgets/quick_route.dart';
+import 'ui/widgets/theme_cross_fade.dart';
 import 'ui/worker/worker_shell.dart';
 
 class JaikApp extends StatelessWidget {
@@ -39,8 +40,10 @@ class JaikApp extends StatelessWidget {
         builder: (context, child) => MediaQuery.withClampedTextScaling(
           minScaleFactor: .9,
           maxScaleFactor: 1.3,
-          child:
-              Directionality(textDirection: TextDirection.rtl, child: child!),
+          child: Directionality(
+            textDirection: TextDirection.rtl,
+            child: ThemeCrossFade(child: child!),
+          ),
         ),
         home: const _RootGate(),
       ),

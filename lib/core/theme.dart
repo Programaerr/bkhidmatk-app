@@ -9,7 +9,8 @@ class AppColors {
   static const inkSoft = Color(0xFF1B1B20);
   static const inkMuted = Color(0xFF5F5F66);
   static const paper = Color(0xFFF6F6F0);
-  static const paperDark = Color(0xFF050507);
+  /// أرضية الصفحات ليلاً، الدرجة التي اختارها المستخدم. الأزرار تبقى على سوادها.
+  static const paperDark = Color(0xFF212121);
   static const line = Color(0xFFE9E9DF);
   static const lineDark = Color(0xFF2E2E36);
   static const success = Color(0xFF16A34A);

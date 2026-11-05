@@ -15,10 +15,10 @@ const _hintColor = Color(0xFFCCCCCC);
 const _focusColor = AppColors.ink;
 const _glowAlpha = .2;
 
-// الألوان نفسها في الوضع الليلي.
-const _nightFill = Color(0xFF2C2C32);
-const _nightOutline = Color(0xFF3A3A40);
-const _nightDepthColor = Color(0xFF17171A);
+// الألوان نفسها في الوضع الليلي، بألوان أزرار الليل لتتناغم مع أرضيته (#212121).
+const _nightFill = Color(0xFF313131);
+const _nightOutline = Color(0xFF3D3D3D);
+const _nightDepthColor = Color(0xFF1A1A1A);
 const _nightHintColor = Color(0xFF9B9BA3);
 const _nightFocusColor = Color(0xFFF4F4EE);
 
