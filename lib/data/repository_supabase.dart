@@ -332,7 +332,10 @@ class SupabaseRepository implements Repository {
         )
         .map((row) => Worker.fromMap(_read(row)))
         .toList()
-      ..sort((a, b) => b.rating.compareTo(a.rating));
+      ..sort((a, b) {
+        final byRating = b.rating.compareTo(a.rating);
+        return byRating != 0 ? byRating : (a.id ?? 0).compareTo(b.id ?? 0);
+      });
     return workers;
   }
 
@@ -475,7 +478,7 @@ class SupabaseRepository implements Repository {
       (from, to) => _client
           .from('bookings')
           .select(
-            '*,services(title),workers(name),app_profiles!bookings_customer_id_fkey(name,phone)',
+            '*,services(title),workers(name),app_profiles!bookings_customer_id_fkey(name,phone,city)',
           )
           .range(from, to),
     );
@@ -492,6 +495,7 @@ class SupabaseRepository implements Repository {
       'worker_phone': worker?['phone'],
       'customer_name': customer?['name'],
       'customer_phone': customer?['phone'],
+      'customer_city': customer?['city'],
     });
   }
 
@@ -502,7 +506,7 @@ class SupabaseRepository implements Repository {
       dynamic query = _client
           .from('bookings')
           .select(
-              '*,services(title),workers(name),app_profiles!bookings_customer_id_fkey(name,phone)')
+              '*,services(title),workers(name),app_profiles!bookings_customer_id_fkey(name,phone,city)')
           .eq('customer_id', customerId);
       if (status != null) query = query.eq('status', status);
       return query.order('scheduled_at', ascending: false).range(from, to);
@@ -537,7 +541,7 @@ class SupabaseRepository implements Repository {
       await _client
           .from('bookings')
           .select(
-              '*,services(title),workers(name),app_profiles!bookings_customer_id_fkey(name,phone)')
+              '*,services(title),workers(name),app_profiles!bookings_customer_id_fkey(name,phone,city)')
           .eq('id', id)
           .limit(1),
     );
@@ -561,6 +565,41 @@ class SupabaseRepository implements Repository {
     await _client.rpc('assign_booking_worker', params: {
       'p_booking_id': bookingId,
       'p_worker_id': workerId,
+    });
+  }
+
+  @override
+  Future<void> setBookingPrice(int bookingId, double amount) async {
+    await _client.rpc('set_booking_price', params: {
+      'p_booking_id': bookingId,
+      'p_amount': amount,
+    });
+  }
+
+  @override
+  Future<void> adminUpdateBooking(
+    int bookingId, {
+    required DateTime scheduledAt,
+    required String slot,
+    required String address,
+    String? notes,
+    String? adminNote,
+  }) async {
+    await _client.rpc('admin_update_booking', params: {
+      'p_booking_id': bookingId,
+      'p_scheduled_at': scheduledAt.toUtc().toIso8601String(),
+      'p_slot': slot,
+      'p_address': address,
+      'p_notes': notes,
+      'p_admin_note': adminNote,
+    });
+  }
+
+  @override
+  Future<void> respondToBookingEdit(int bookingId, {required bool approve}) async {
+    await _client.rpc('customer_respond_booking_edit', params: {
+      'p_booking_id': bookingId,
+      'p_approve': approve,
     });
   }
 

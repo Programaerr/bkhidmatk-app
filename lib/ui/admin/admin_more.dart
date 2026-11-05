@@ -74,11 +74,7 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(AppRadius.lg),
-                  gradient: const LinearGradient(
-                    begin: Alignment.topRight,
-                    end: Alignment.bottomLeft,
-                    colors: [Color(0xFF111113), Color(0xFF332D07)],
-                  ),
+                  color: const Color(0xFF17171B),
                 ),
                 child: Row(
                   children: [

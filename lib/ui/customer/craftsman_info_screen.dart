@@ -218,7 +218,7 @@ class _ServiceRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${fmtMoney(service.price)} · ${fmtDuration(service.durationMinutes)}',
+                  'المدة المتوقعة: ${fmtDuration(service.durationMinutes)}',
                   style: theme.textTheme.bodySmall?.copyWith(fontSize: 11),
                 ),
               ],

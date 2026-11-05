@@ -16,7 +16,7 @@ class AppDatabase {
 
   Database? _db;
   static const _fileName = 'jaik.db';
-  static const _version = 8;
+  static const _version = 9;
 
   Future<Database> get database async {
     if (_db != null && _db!.isOpen) return _db!;
@@ -40,6 +40,7 @@ class AppDatabase {
         if (oldVersion < 6) await _migrateToV6(db);
         if (oldVersion < 7) await _migrateToV7(db);
         if (oldVersion < 8) await _migrateToV8(db);
+        if (oldVersion < 9) await _migrateToV9(db);
       },
     );
     return _db!;
@@ -94,6 +95,15 @@ class AppDatabase {
   }
 
   /// v7: أقسام الصفحة الرئيسية: أسماؤها وأيقوناتها وترتيبها، وما أُضيف منها.
+  /// v9: تعديل الإدارة للحجز وموافقة الزبون عليه.
+  Future<void> _migrateToV9(Database db) async {
+    await db.execute('ALTER TABLE bookings ADD COLUMN admin_edited_at TEXT');
+    await db.execute('ALTER TABLE bookings ADD COLUMN edit_summary TEXT');
+    await db.execute('ALTER TABLE bookings ADD COLUMN admin_note TEXT');
+    await db.execute(
+        "ALTER TABLE bookings ADD COLUMN customer_ack TEXT NOT NULL DEFAULT 'none'");
+  }
+
   /// v8: رد الحرفي ووقت إرساله على طلب الحجز.
   Future<void> _migrateToV8(Database db) async {
     await db.execute(
@@ -290,6 +300,10 @@ class AppDatabase {
         review TEXT,
         worker_response TEXT NOT NULL DEFAULT 'pending',
         dispatched_at TEXT,
+        admin_edited_at TEXT,
+        edit_summary TEXT,
+        admin_note TEXT,
+        customer_ack TEXT NOT NULL DEFAULT 'none',
         created_at TEXT NOT NULL
       )
     ''');

@@ -10,7 +10,6 @@ import '../auth/push_key.dart';
 import '../widgets/quick_route.dart';
 import '../widgets/ui.dart';
 import 'booking_success_screen.dart';
-import 'payment_screen.dart';
 
 class BookingScreen extends StatefulWidget {
   const BookingScreen({super.key, required this.service, this.workerId});
@@ -30,8 +29,6 @@ class _BookingScreenState extends State<BookingScreen> {
   String _slot = '10:00';
   int? _workerId;
   List<Worker> _workers = const [];
-  String _method = 'cash';
-  CardResult? _card;
   bool _loading = false;
   late final TextEditingController _address;
   final _notes = TextEditingController();
@@ -138,16 +135,6 @@ class _BookingScreenState extends State<BookingScreen> {
       AppSnack.show(context, 'أدخل عنواناً تفصيلياً للخدمة', error: true);
       return;
     }
-    if (_method == 'card' && _card == null) {
-      final result = await Navigator.push<CardResult>(
-        context,
-        QuickRoute(
-            builder: (_) => PaymentScreen(amount: widget.service.price)),
-      );
-      if (result == null || !mounted) return;
-      setState(() => _card = result);
-    }
-
     setState(() => _loading = true);
     try {
       final bookingId = await repo.createBooking(Booking(
@@ -159,28 +146,16 @@ class _BookingScreenState extends State<BookingScreen> {
         address: _address.text.trim(),
         notes: _notes.text.trim().isEmpty ? null : _notes.text.trim(),
         status: BookingStatus.pending,
-        paymentMethod: _method,
-        total: widget.service.price,
+        // السعر يُحدد بالاتفاق لاحقاً، ثم يُنشأ الوصل به.
+        total: 0,
         createdAt: DateTime.now(),
       ));
-      await repo.createReceiptForBooking(
-        bookingId: bookingId,
-        userId: user.id!,
-        title: 'وصل دفع خدمة',
-        amount: widget.service.price,
-        method: _method,
-        cardBrand: _card?.brand,
-        last4: _card?.last4,
-        paid: _method == 'card',
-      );
       final booking = await repo.bookingById(bookingId);
-      final receipt = await repo.receiptForBooking(bookingId);
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
         QuickRoute(
-          builder: (_) =>
-              BookingSuccessScreen(booking: booking!, receipt: receipt),
+          builder: (_) => BookingSuccessScreen(booking: booking!),
         ),
       );
     } catch (e) {
@@ -236,9 +211,6 @@ class _BookingScreenState extends State<BookingScreen> {
                       ],
                     ),
                   ),
-                  Text(fmtMoney(widget.service.price),
-                      style:
-                          theme.textTheme.titleSmall?.copyWith(fontSize: 13)),
                 ],
               ),
             ),
@@ -394,82 +366,18 @@ class _BookingScreenState extends State<BookingScreen> {
               ),
             ),
             const SizedBox(height: 22),
-            const SectionHeader(title: 'طريقة الدفع'),
-            Row(
-              children: [
-                Expanded(
-                  child: _PayOption(
-                    selected: _method == 'cash',
-                    icon: Icons.payments_outlined,
-                    title: 'عند الوصول',
-                    subtitle: 'نقداً للفني',
-                    onTap: () => setState(() => _method = 'cash'),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _PayOption(
-                    selected: _method == 'card',
-                    icon: Icons.credit_card_rounded,
-                    title: 'ماستركارد',
-                    subtitle:
-                        _card == null ? 'دفع آمن' : '•••• ${_card!.last4}',
-                    onTap: () => setState(() => _method = 'card'),
-                  ),
-                ),
-              ],
-            ),
-            if (_method == 'card' && _card == null)
-              Padding(
-                padding: const EdgeInsets.only(top: 10),
-                child: SoftCard(
-                  color: AppColors.gold.withValues(alpha: .1),
-                  borderColor: AppColors.gold.withValues(alpha: .35),
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.info_outline_rounded, size: 18),
-                      const SizedBox(width: 8),
-                      const Expanded(
-                        child: Text(
-                          'ستُطلب بيانات البطاقة عند تأكيد الحجز (بيئة تجريبية).',
-                          style: TextStyle(fontSize: 11.5),
-                        ),
-                      ),
-                      SecondaryButton(
-                        label: 'إدخال',
-                        compact: true,
-                        expand: false,
-                        onPressed: () async {
-                          final result = await Navigator.push<CardResult>(
-                            context,
-                            QuickRoute(
-                                builder: (_) => PaymentScreen(
-                                    amount: widget.service.price)),
-                          );
-                          if (result != null) setState(() => _card = result);
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            const SizedBox(height: 20),
             SoftCard(
-              child: Column(
+              color: AppColors.gold.withValues(alpha: .1),
+              borderColor: AppColors.gold.withValues(alpha: .35),
+              child: const Row(
                 children: [
-                  _SummaryRow(
-                      label: 'سعر الخدمة',
-                      value: fmtMoney(widget.service.price)),
-                  const SizedBox(height: 8),
-                  _SummaryRow(label: 'رسوم التطبيق', value: fmtMoney(0)),
-                  const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 10),
-                      child: Divider()),
-                  _SummaryRow(
-                    label: 'الإجمالي',
-                    value: fmtMoney(widget.service.price),
-                    bold: true,
+                  Icon(Icons.handshake_outlined, size: 20),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'السعر يُحدد بالاتفاق بعد مراجعة الإدارة لطلبك، ثم يُضاف إلى وصلك لتدفع لاحقاً.',
+                      style: TextStyle(fontSize: 12, height: 1.6),
+                    ),
                   ),
                 ],
               ),
@@ -485,12 +393,8 @@ class _BookingScreenState extends State<BookingScreen> {
             border: Border(top: BorderSide(color: theme.colorScheme.outline)),
           ),
           child: PrimaryButton(
-            label: _method == 'card' && _card == null
-                ? 'متابعة الدفع'
-                : 'تأكيد الحجز',
-            icon: _method == 'card'
-                ? Icons.lock_outline_rounded
-                : Icons.check_circle_outline_rounded,
+            label: 'إرسال طلب الحجز',
+            icon: Icons.send_rounded,
             loading: _loading,
             onPressed: _confirm,
           ),
@@ -528,98 +432,4 @@ class _BookingScreenState extends State<BookingScreen> {
     '19:00',
     '20:00',
   ];
-}
-
-class _PayOption extends StatelessWidget {
-  const _PayOption({
-    required this.selected,
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  final bool selected;
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 160),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: selected
-              ? AppColors.gold.withValues(alpha: .16)
-              : theme.colorScheme.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-              color: selected ? AppColors.gold : theme.colorScheme.outline,
-              width: selected ? 1.6 : 1),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 20),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title,
-                      style: const TextStyle(
-                          fontSize: 12.5, fontWeight: FontWeight.w800)),
-                  Text(subtitle,
-                      style: theme.textTheme.bodySmall?.copyWith(fontSize: 10)),
-                ],
-              ),
-            ),
-            Icon(
-              selected
-                  ? Icons.radio_button_checked_rounded
-                  : Icons.radio_button_off_rounded,
-              size: 18,
-              color: selected
-                  ? AppColors.gold
-                  : theme.colorScheme.onSurface.withValues(alpha: .3),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SummaryRow extends StatelessWidget {
-  const _SummaryRow(
-      {required this.label, required this.value, this.bold = false});
-
-  final String label;
-  final String value;
-  final bool bold;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Row(
-      children: [
-        Text(label,
-            style: theme.textTheme.bodySmall?.copyWith(
-              fontSize: bold ? 13 : 12,
-              fontWeight: bold ? FontWeight.w800 : FontWeight.w600,
-              color: bold ? theme.colorScheme.onSurface : null,
-            )),
-        const Spacer(),
-        Text(value,
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontSize: bold ? 15 : 12.5,
-              fontWeight: bold ? FontWeight.w900 : FontWeight.w700,
-            )),
-      ],
-    );
-  }
 }

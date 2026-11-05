@@ -35,13 +35,7 @@ class ReceiptDocument extends StatelessWidget {
           children: [
             Container(
               padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topRight,
-                  end: Alignment.bottomLeft,
-                  colors: [Color(0xFF111113), Color(0xFF2E2907)],
-                ),
-              ),
+              decoration: const BoxDecoration(color: Color(0xFF17171B)),
               child: Row(
                 children: [
                   ClipRRect(

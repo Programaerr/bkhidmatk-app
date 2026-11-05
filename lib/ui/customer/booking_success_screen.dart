@@ -107,8 +107,8 @@ class BookingSuccessScreen extends StatelessWidget {
                         Expanded(
                           child: _SmallInfo(
                             icon: Icons.payments_rounded,
-                            label: 'الإجمالي',
-                            value: fmtMoney(booking.total),
+                            label: 'السعر',
+                            value: bookingPriceLabel(booking),
                           ),
                         ),
                       ],

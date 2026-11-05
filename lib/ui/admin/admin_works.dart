@@ -219,11 +219,7 @@ class _AdminWorksState extends State<AdminWorks> with RealtimeRefresh<AdminWorks
                                 height: 46,
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(13),
-                                  gradient: const LinearGradient(
-                                    begin: Alignment.topRight,
-                                    end: Alignment.bottomLeft,
-                                    colors: [Color(0xFF141416), Color(0xFF3A3308)],
-                                  ),
+                                  color: const Color(0xFF17171B),
                                 ),
                                 child: const Icon(Icons.play_arrow_rounded,
                                     color: AppColors.gold, size: 26),

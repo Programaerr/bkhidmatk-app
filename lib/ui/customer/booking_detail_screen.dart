@@ -31,6 +31,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen>
   int _rating = 0;
   final _review = TextEditingController();
   bool _ratingBusy = false;
+  bool _ackBusy = false;
 
   @override
   void dispose() {
@@ -97,6 +98,89 @@ class _BookingDetailScreenState extends State<BookingDetailScreen>
           context, 'تعذر حفظ التقييم. تأكد أن الحجز مكتمل ولم تقيّمه مسبقاً.',
           error: true);
     }
+  }
+
+  Future<void> _answerEdit(bool approve) async {
+    setState(() => _ackBusy = true);
+    try {
+      await context.read<AppState>().repo.respondToBookingEdit(_booking!.id!, approve: approve);
+      if (mounted) {
+        AppSnack.show(context, approve ? 'وافقتَ على التعديل' : 'وصل رفضك إلى الإدارة');
+      }
+    } catch (_) {
+      if (mounted) AppSnack.show(context, 'تعذر إرسال ردك، حاول مرة أخرى', error: true);
+    }
+    if (mounted) setState(() => _ackBusy = false);
+    await _load();
+  }
+
+  /// تعديل الإدارة للحجز: متى، وما الذي تغيّر، وموافقتك عليه.
+  Widget _editCard(ThemeData theme, Booking b) {
+    final pending = b.customerAck == CustomerAck.pending;
+    final color = switch (b.customerAck) {
+      CustomerAck.approved => AppColors.success,
+      CustomerAck.declined => AppColors.danger,
+      _ => AppColors.goldDeep,
+    };
+    return SoftCard(
+      borderColor: color.withValues(alpha: .6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.edit_calendar_rounded, size: 20, color: color),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  pending ? 'عدّلت الإدارة حجزك' : 'تعديل الإدارة على حجزك',
+                  style: theme.textTheme.titleSmall?.copyWith(fontSize: 13.5),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text('تاريخ التعديل: ${fmtDateTime(b.adminEditedAt!)}',
+              style: theme.textTheme.bodySmall),
+          if (b.editSummary != null) ...[
+            const SizedBox(height: 6),
+            Text(b.editSummary!, style: theme.textTheme.bodyMedium),
+          ],
+          if (b.adminNote != null) ...[
+            const SizedBox(height: 4),
+            Text('رسالة الإدارة: ${b.adminNote}', style: theme.textTheme.bodySmall),
+          ],
+          if (!pending) ...[
+            const SizedBox(height: 6),
+            Text(CustomerAck.label(b.customerAck),
+                style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: color)),
+          ] else ...[
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: PrimaryButton(
+                    label: 'موافق',
+                    compact: true,
+                    loading: _ackBusy,
+                    onPressed: () => _answerEdit(true),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: SecondaryButton(
+                    label: 'لا أوافق',
+                    compact: true,
+                    danger: true,
+                    onPressed: _ackBusy ? null : () => _answerEdit(false),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
   }
 
   /// بطاقة تقييم الفني بعد اكتمال الحجز.
@@ -229,6 +313,10 @@ class _BookingDetailScreenState extends State<BookingDetailScreen>
                 ],
               ),
             ),
+            if (b.adminEditedAt != null) ...[
+              const SizedBox(height: 12),
+              _editCard(theme, b),
+            ],
             const SizedBox(height: 12),
             SoftCard(
               child: Column(
@@ -286,29 +374,28 @@ class _BookingDetailScreenState extends State<BookingDetailScreen>
                 children: [
                   Row(
                     children: [
-                      Text('الدفع',
+                      Text('السعر',
                           style: theme.textTheme.titleSmall
                               ?.copyWith(fontSize: 13)),
                       const Spacer(),
-                      PaymentMethodBadge(
-                        method: b.paymentMethod,
-                        brand: _receipt?.cardBrand,
-                        last4: _receipt?.last4,
-                      ),
-                    ],
-                  ),
-                  const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 10),
-                      child: Divider()),
-                  Row(
-                    children: [
-                      Text('الإجمالي', style: theme.textTheme.bodySmall),
-                      const Spacer(),
-                      Text(fmtMoney(b.total),
+                      Text(bookingPriceLabel(b),
                           style: theme.textTheme.titleLarge
-                              ?.copyWith(fontSize: 18)),
+                              ?.copyWith(fontSize: b.hasPrice ? 18 : 13)),
                     ],
                   ),
+                  if (!b.hasPrice) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      'يُتفق على السعر مع الإدارة، ثم يُضاف إلى وصلك لتدفعه لاحقاً.',
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ] else if (_receipt != null) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      _receipt!.paid ? 'تم دفعه.' : 'أُضيف إلى وصلك ولم يُدفع بعد.',
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ],
                 ],
               ),
             ),

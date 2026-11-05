@@ -264,16 +264,8 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar> {
                           onPointerCancel: (_) => _setDragging(false),
                           child: DecoratedBox(
                             decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  theme.colorScheme.surface
-                                      .withValues(alpha: isDark ? .78 : .72),
-                                  theme.colorScheme.surface
-                                      .withValues(alpha: isDark ? .62 : .56),
-                                ],
-                              ),
+                              color: theme.colorScheme.surface
+                                  .withValues(alpha: isDark ? .72 : .66),
                               borderRadius: radius,
                               border: Border.all(
                                 color: Colors.white
@@ -298,16 +290,8 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar> {
                                       decoration: BoxDecoration(
                                         borderRadius:
                                             BorderRadius.circular(_height / 2),
-                                        gradient: LinearGradient(
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                          colors: [
-                                            widget.accent
-                                                .withValues(alpha: .30),
-                                            widget.accent
-                                                .withValues(alpha: .13),
-                                          ],
-                                        ),
+                                        color: widget.accent
+                                            .withValues(alpha: .22),
                                         border: Border.all(
                                           color: widget.accent
                                               .withValues(alpha: .28),

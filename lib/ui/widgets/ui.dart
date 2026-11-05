@@ -819,3 +819,7 @@ class SegmentedTabs extends StatelessWidget {
     );
   }
 }
+
+/// سعر الحجز كما يُعرض: المتفق عليه إن حُدد، وإلا يُقال إنه بالاتفاق.
+String bookingPriceLabel(Booking booking) =>
+    booking.hasPrice ? fmtMoney(booking.total) : 'يُحدد بالاتفاق';

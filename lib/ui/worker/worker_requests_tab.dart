@@ -239,7 +239,7 @@ class _RequestCard extends StatelessWidget {
           const SizedBox(height: 6),
           Text('الزبون: ${b.customerName ?? 'زبون'}', style: theme.textTheme.bodyMedium),
           Text(
-            '${fmtDate(b.scheduledAt)} · ${fmtSlot(b.slot)} · ${fmtMoney(b.total)}',
+            '${fmtDate(b.scheduledAt)} · ${fmtSlot(b.slot)}',
             style: theme.textTheme.bodySmall,
           ),
           if (b.notes != null && b.notes!.isNotEmpty)

@@ -324,6 +324,24 @@ class _BookingCard extends StatelessWidget {
               StatusPill(status: booking.status, dense: true),
             ],
           ),
+          if (booking.customerAck == CustomerAck.pending) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(Icons.edit_calendar_rounded, size: 15, color: AppColors.goldDeep),
+                const SizedBox(width: 5),
+                Expanded(
+                  child: Text(
+                    'عدّلت الإدارة حجزك، افتحه ووافق على التعديل',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w800,
+                        color: theme.colorScheme.onSurface),
+                  ),
+                ),
+              ],
+            ),
+          ],
           const Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Divider()),
           Row(
             children: [
@@ -338,7 +356,7 @@ class _BookingCard extends StatelessWidget {
                   style: theme.textTheme.bodySmall?.copyWith(fontSize: 10.5),
                 ),
               ),
-              Text(fmtMoney(booking.total),
+              Text(bookingPriceLabel(booking),
                   style: theme.textTheme.titleSmall?.copyWith(fontSize: 12.5)),
               const SizedBox(width: 6),
               const Icon(Icons.chevron_right_rounded, size: 18),

@@ -365,18 +365,8 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
   Widget _gradientOverlay() {
     return const IgnorePointer(
       child: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0x55000000),
-              Colors.transparent,
-              Color(0xCC000000),
-            ],
-            stops: [0, .35, 1],
-          ),
-        ),
+        // طبقة واحدة ثابتة اللون فوق الفيديو لتقرأ النصوص، بلا تدرج.
+        decoration: BoxDecoration(color: Color(0x66000000)),
       ),
     );
   }

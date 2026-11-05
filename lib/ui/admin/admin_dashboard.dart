@@ -105,11 +105,7 @@ class _AdminDashboardState extends State<AdminDashboard>
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(AppRadius.lg),
-                        gradient: const LinearGradient(
-                          begin: Alignment.topRight,
-                          end: Alignment.bottomLeft,
-                          colors: [Color(0xFF111113), Color(0xFF38310A)],
-                        ),
+                        color: const Color(0xFF17171B),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -249,7 +245,7 @@ class _AdminDashboardState extends State<AdminDashboard>
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
-                                    Text(fmtMoney(b.total),
+                                    Text(bookingPriceLabel(b),
                                         style: theme.textTheme.bodySmall
                                             ?.copyWith(
                                                 fontWeight: FontWeight.w800,
@@ -298,16 +294,7 @@ class _WeeklyChart extends StatelessWidget {
                   Container(
                     height: 8 + (70 * (p.value / max)).clamp(0, 70).toDouble(),
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: p.value > 0
-                            ? [
-                                AppColors.gold,
-                                AppColors.gold.withValues(alpha: .35)
-                              ]
-                            : [Colors.white24, Colors.white10],
-                      ),
+                      color: p.value > 0 ? AppColors.gold : Colors.white24,
                       borderRadius: BorderRadius.circular(6),
                     ),
                   ),

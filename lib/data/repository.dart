@@ -77,6 +77,22 @@ abstract class Repository {
   /// طلبات الحرفي صاحب هذا الحساب. العنوان ورقم الزبون فيها فارغان حتى ترسله الإدارة.
   Future<List<Booking>> bookingsForWorker(AppUser worker);
 
+  /// المدير يحدد السعر المتفق عليه للحجز، فيُنشأ به الوصل (أو يتحدث) ليدفعه الزبون لاحقاً.
+  Future<void> setBookingPrice(int bookingId, double amount);
+
+  /// تعديل المدير للحجز: يسجّل ما تغيّر ووقت التعديل، ويطلب موافقة الزبون عليه.
+  Future<void> adminUpdateBooking(
+    int bookingId, {
+    required DateTime scheduledAt,
+    required String slot,
+    required String address,
+    String? notes,
+    String? adminNote,
+  });
+
+  /// الزبون يوافق على تعديل الإدارة أو يرفضه.
+  Future<void> respondToBookingEdit(int bookingId, {required bool approve});
+
   /// الحرفي يؤكد الطلب أو يعتذر عنه قبل إرساله.
   Future<void> respondToBooking(int bookingId, {required bool accept});
 

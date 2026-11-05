@@ -130,7 +130,8 @@ class LocalRepository implements Repository {
       'workers',
       where: where.isEmpty ? null : where.join(' AND '),
       whereArgs: args.isEmpty ? null : args,
-      orderBy: 'rating DESC',
+      // التساوي في التقييم يُفكّ برقم الحرفي، وإلا بدّلت الصفوف أماكنها عند كل تحميل.
+      orderBy: 'rating DESC, id ASC',
     );
     return rows.map(Worker.fromMap).toList();
   }
@@ -237,7 +238,7 @@ class LocalRepository implements Repository {
   // ------------------------------------------------------------- bookings
   static const _bookingSelect = '''
     SELECT b.*, s.title AS service_title, w.name AS worker_name, w.phone AS worker_phone,
-           u.name AS customer_name, u.phone AS customer_phone
+           u.name AS customer_name, u.phone AS customer_phone, u.city AS customer_city
     FROM bookings b
     LEFT JOIN services s ON s.id = b.service_id
     LEFT JOIN workers w ON w.id = b.worker_id
@@ -321,6 +322,79 @@ class LocalRepository implements Repository {
       {'worker_id': workerId, 'worker_response': WorkerResponse.pending},
       where: 'id = ?',
       whereArgs: [bookingId],
+    );
+  }
+
+  @override
+  Future<void> setBookingPrice(int bookingId, double amount) async {
+    final db = await _db;
+    final booking = await bookingById(bookingId);
+    if (booking == null) return;
+    await db.update('bookings', {'total': amount}, where: 'id = ?', whereArgs: [bookingId]);
+    final receipt = await receiptForBooking(bookingId);
+    if (receipt == null) {
+      await createReceiptForBooking(
+        bookingId: bookingId,
+        userId: booking.customerId,
+        title: 'وصل دفع خدمة',
+        amount: amount,
+        method: 'cash',
+        paid: false,
+      );
+    } else if (!receipt.paid) {
+      await db.update('receipts', {'amount': amount},
+          where: 'id = ?', whereArgs: [receipt.id]);
+    }
+  }
+
+  @override
+  Future<void> adminUpdateBooking(
+    int bookingId, {
+    required DateTime scheduledAt,
+    required String slot,
+    required String address,
+    String? notes,
+    String? adminNote,
+  }) async {
+    final db = await _db;
+    final old = await bookingById(bookingId);
+    if (old == null) return;
+    String day(DateTime d) => '${d.year}/${d.month.toString().padLeft(2, '0')}/${d.day.toString().padLeft(2, '0')}';
+    final changes = <String>[
+      if (day(old.scheduledAt) != day(scheduledAt))
+        'الموعد: ${day(old.scheduledAt)} ← ${day(scheduledAt)}.',
+      if (old.slot != slot) 'الوقت: ${old.slot} ← $slot.',
+      if (old.address != address.trim()) 'العنوان تغيّر.',
+      if ((old.notes ?? '') != (notes ?? '').trim()) 'الملاحظات تغيّرت.',
+    ];
+    if (changes.isEmpty && (old.adminNote ?? '') == (adminNote ?? '').trim()) return;
+    final scheduleChanged = day(old.scheduledAt) != day(scheduledAt) || old.slot != slot;
+    await db.update(
+      'bookings',
+      {
+        'scheduled_at': scheduledAt.toIso8601String(),
+        'slot': slot,
+        'address': address.trim(),
+        'notes': (notes ?? '').trim().isEmpty ? null : notes!.trim(),
+        'admin_note': (adminNote ?? '').trim().isEmpty ? null : adminNote!.trim(),
+        'admin_edited_at': DateTime.now().toIso8601String(),
+        'edit_summary': changes.isEmpty ? null : changes.join(' '),
+        'customer_ack': CustomerAck.pending,
+        if (scheduleChanged && old.workerId != null) 'worker_response': WorkerResponse.pending,
+      },
+      where: 'id = ?',
+      whereArgs: [bookingId],
+    );
+  }
+
+  @override
+  Future<void> respondToBookingEdit(int bookingId, {required bool approve}) async {
+    final db = await _db;
+    await db.update(
+      'bookings',
+      {'customer_ack': approve ? CustomerAck.approved : CustomerAck.declined},
+      where: 'id = ? AND customer_ack = ?',
+      whereArgs: [bookingId, CustomerAck.pending],
     );
   }
 
@@ -993,7 +1067,7 @@ class LocalRepository implements Repository {
 
   static const _receiptSelect = '''
     SELECT r.*, b.worker_id AS worker_id, s.title AS service_title, w.name AS worker_name,
-           u.name AS customer_name, u.phone AS customer_phone
+           u.name AS customer_name, u.phone AS customer_phone, u.city AS customer_city
     FROM receipts r
     LEFT JOIN bookings b ON b.id = r.booking_id
     LEFT JOIN services s ON s.id = b.service_id

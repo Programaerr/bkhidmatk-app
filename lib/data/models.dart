@@ -277,6 +277,15 @@ class Booking {
   /// متى أرسلته الإدارة، وهو null قبل الإرسال.
   final DateTime? dispatchedAt;
 
+  /// آخر تعديل من الإدارة، وما الذي تغيّر، ورسالتها للزبون، وموافقة الزبون عليه ([CustomerAck]).
+  final DateTime? adminEditedAt;
+  final String? editSummary;
+  final String? adminNote;
+  final String customerAck;
+
+  /// مدينة الزبون، تظهر للمدير.
+  final String? customerCity;
+
   final String? serviceTitle;
   final String? workerName;
   final String? workerPhone;
@@ -300,12 +309,20 @@ class Booking {
     this.review,
     this.workerResponse = WorkerResponse.pending,
     this.dispatchedAt,
+    this.adminEditedAt,
+    this.editSummary,
+    this.adminNote,
+    this.customerAck = CustomerAck.none,
+    this.customerCity,
     this.serviceTitle,
     this.workerName,
     this.workerPhone,
     this.customerName,
     this.customerPhone,
   });
+
+  /// السعر يُحدد بالاتفاق بعد الطلب، وقبله يكون صفراً.
+  bool get hasPrice => total > 0;
 
   /// الحرفي ذهب أو في طريقه: وبعده فقط يرى العنوان ورقم الزبون.
   bool get sentToCustomer =>
@@ -347,6 +364,11 @@ class Booking {
         review: m['review'] as String?,
         workerResponse: m['worker_response'] as String? ?? WorkerResponse.pending,
         dispatchedAt: _date(m['dispatched_at']),
+        adminEditedAt: _date(m['admin_edited_at']),
+        editSummary: m['edit_summary'] as String?,
+        adminNote: m['admin_note'] as String?,
+        customerAck: m['customer_ack'] as String? ?? CustomerAck.none,
+        customerCity: m['customer_city'] as String?,
         serviceTitle: m['service_title'] as String?,
         workerName: m['worker_name'] as String?,
         workerPhone: m['worker_phone'] as String?,
@@ -379,6 +401,11 @@ class Booking {
         review: review ?? this.review,
         workerResponse: workerResponse ?? this.workerResponse,
         dispatchedAt: dispatchedAt,
+        adminEditedAt: adminEditedAt,
+        editSummary: editSummary,
+        adminNote: adminNote,
+        customerAck: customerAck,
+        customerCity: customerCity,
         serviceTitle: serviceTitle,
         workerName: workerName ?? this.workerName,
         workerPhone: workerPhone,
@@ -995,4 +1022,19 @@ class RevenuePoint {
   final DateTime day;
   final double value;
   const RevenuePoint(this.day, this.value);
+}
+
+/// موافقة الزبون على تعديل الإدارة لحجزه.
+class CustomerAck {
+  static const none = 'none';
+  static const pending = 'pending';
+  static const approved = 'approved';
+  static const declined = 'declined';
+
+  static String label(String s) => switch (s) {
+        pending => 'بانتظار موافقة الزبون',
+        approved => 'وافق الزبون على التعديل',
+        declined => 'رفض الزبون التعديل',
+        _ => '',
+      };
 }

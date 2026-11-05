@@ -71,11 +71,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen>
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(AppRadius.lg),
-                    gradient: const LinearGradient(
-                      begin: Alignment.topRight,
-                      end: Alignment.bottomLeft,
-                      colors: [Color(0xFF111113), Color(0xFF2E2907)],
-                    ),
+                    color: const Color(0xFF17171B),
                   ),
                   child: Row(
                     children: [

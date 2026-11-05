@@ -222,11 +222,6 @@ class _AdminServicesState extends State<AdminServices>
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.bodySmall?.copyWith(fontSize: 9.5),
                         ),
-                        Text(fmtMoney(s.price),
-                            style: theme.textTheme.bodySmall?.copyWith(
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.w800,
-                                color: theme.colorScheme.onSurface)),
                       ],
                     ),
                   ),
@@ -276,6 +271,7 @@ class _AdminServicesState extends State<AdminServices>
           itemBuilder: (context, i) {
             final w = workers[i];
             return SoftCard(
+              key: ValueKey(w.id),
               padding: const EdgeInsets.all(12),
               child: Row(
                 children: [
@@ -308,18 +304,27 @@ class _AdminServicesState extends State<AdminServices>
                   Switch.adaptive(
                     value: w.available,
                     onChanged: (v) async {
-                      await context.read<AppState>().repo.saveWorker(Worker(
-                            id: w.id,
-                            name: w.name,
-                            phone: w.phone,
-                            specialty: w.specialty,
-                            categoryId: w.categoryId,
-                            rating: w.rating,
-                            jobsDone: w.jobsDone,
-                            bio: w.bio,
-                            available: v,
-                          ));
-                      _load();
+                      final repo = context.read<AppState>().repo;
+                      try {
+                        await repo.saveWorker(Worker(
+                              id: w.id,
+                              name: w.name,
+                              phone: w.phone,
+                              specialty: w.specialty,
+                              categoryId: w.categoryId,
+                              rating: w.rating,
+                              jobsDone: w.jobsDone,
+                              bio: w.bio,
+                              // بدونها كانت صورته تُمحى عند كل تبديل للتوفر.
+                              avatarPath: w.avatarPath,
+                              available: v,
+                            ));
+                      } catch (_) {
+                        if (mounted) {
+                          AppSnack.show(this.context, 'تعذر تغيير حالة الحرفي', error: true);
+                        }
+                      }
+                      if (mounted) _load();
                     },
                   ),
                   _rowActions(
@@ -395,7 +400,6 @@ class _ServiceFormState extends State<_ServiceForm> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _title;
   late final TextEditingController _desc;
-  late final TextEditingController _price;
   late final TextEditingController _duration;
   List<Category> _categories = const [];
   List<Worker> _workers = const [];
@@ -410,7 +414,6 @@ class _ServiceFormState extends State<_ServiceForm> {
     final s = widget.service;
     _title = TextEditingController(text: s?.title ?? '');
     _desc = TextEditingController(text: s?.description ?? '');
-    _price = TextEditingController(text: s == null ? '' : s.price.round().toString());
     _duration = TextEditingController(text: '${s?.durationMinutes ?? 60}');
     _categoryId = s?.categoryId;
     _workerId = s?.workerId;
@@ -434,7 +437,6 @@ class _ServiceFormState extends State<_ServiceForm> {
   void dispose() {
     _title.dispose();
     _desc.dispose();
-    _price.dispose();
     _duration.dispose();
     super.dispose();
   }
@@ -448,7 +450,8 @@ class _ServiceFormState extends State<_ServiceForm> {
           workerId: _workerId,
           title: _title.text.trim(),
           description: _desc.text.trim(),
-          price: double.tryParse(_price.text) ?? 0,
+          // السعر يُتفق عليه لكل حجز، فلا سعر للخدمة نفسها.
+          price: widget.service?.price ?? 0,
           durationMinutes: int.tryParse(_duration.text) ?? 60,
           rating: widget.service?.rating ?? 4.8,
           active: _active,
@@ -493,22 +496,6 @@ class _ServiceFormState extends State<_ServiceForm> {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const FieldLabel('السعر', required_: true),
-                        TextFormField(
-                          controller: _price,
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                          decoration: const InputDecoration(suffixText: 'د.ع'),
-                          validator: (v) => (int.tryParse(v ?? '') ?? 0) <= 0 ? 'سعر غير صالح' : null,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
