@@ -160,8 +160,8 @@ class WelcomeScreen extends StatefulWidget {
 
 class _WelcomeScreenState extends State<WelcomeScreen>
     with SingleTickerProviderStateMixin {
-  late final _nightController = AnimationController(
-      vsync: this, duration: const Duration(milliseconds: 500));
+  late final _nightController =
+      AnimationController(vsync: this, duration: kNightSwitchDuration);
   late final _night =
       CurvedAnimation(parent: _nightController, curve: Curves.easeInOut);
   late final AppState _appState;

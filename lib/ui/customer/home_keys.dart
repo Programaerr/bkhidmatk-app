@@ -2,7 +2,6 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../auth/push_key.dart';
@@ -534,19 +533,19 @@ class CraftsmanKey extends StatelessWidget {
           child: PushKey(
             unit: chrome,
             faceHeight: faceHeight,
-            // ليلاً يصير الزر داكناً بأسماء بيضاء، فلا يتعب العين ولا يضيع الاسم على الأصفر.
-            lemon: !night,
+            // أصفر ليلاً ونهاراً بأسماء داكنة (طلب المستخدم)، وظله وحده يأخذ ألوان الليل.
+            lemon: true,
             night: night ? kAlwaysCompleteAnimation : kAlwaysDismissedAnimation,
             faceRadius: _craftsmanRadius,
-            child: ExcludeSemantics(child: _face(worker, night)),
+            child: ExcludeSemantics(child: _face(worker)),
           ),
         ),
       ),
     );
   }
 
-  Widget _face(Worker? worker, bool night) {
-    final ink = night ? homeNightInk : homeInk;
+  Widget _face(Worker? worker) {
+    const ink = homeInk;
     final circle = _craftsmanCircle * unit;
     return Stack(
       children: [
@@ -625,7 +624,7 @@ class CraftsmanKey extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.star_rounded, size: _ratingStarSize * unit, color: night ? AppColors.gold : homeInk),
+                Icon(Icons.star_rounded, size: _ratingStarSize * unit, color: homeInk),
                 Text(
                   worker.rating.toStringAsFixed(1),
                   style: TextStyle(

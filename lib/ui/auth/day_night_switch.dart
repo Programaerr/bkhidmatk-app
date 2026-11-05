@@ -22,6 +22,9 @@ const _panelCenterY = _trackHeight - _panelHeight / 2;
 // تبعد اللوحة اليمنى في الأصل 1px عن طرف الإطار، وحجم خطه 17px.
 const _rightPanelHinge = _trackWidth - 1 / 17 - _panelWidth;
 
+/// مدة التحول بين النهار والليل: دوران المفتاح وتبدّل ألوان الشاشة معه، ببطء وسلاسة.
+const kNightSwitchDuration = Duration(milliseconds: 700);
+
 const _tilt = 10 * math.pi / 180;
 const _swing = 45 * math.pi / 180;
 
@@ -39,8 +42,8 @@ class DayNightSwitch extends StatelessWidget {
         tween: Tween<double>(end: night ? 1 : 0),
         duration: MediaQuery.disableAnimationsOf(context)
             ? Duration.zero
-            : const Duration(milliseconds: 150),
-        curve: Curves.ease,
+            : kNightSwitchDuration,
+        curve: Curves.easeInOutCubic,
         builder: (context, progress, _) => CustomPaint(painter: _SwitchPainter(progress)),
       ),
     );
