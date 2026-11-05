@@ -109,9 +109,6 @@ class _AdminDashboardState extends State<AdminDashboard>
                           end: Alignment.bottomLeft,
                           colors: [Color(0xFF111113), Color(0xFF38310A)],
                         ),
-                        border: Border.all(
-                          color: AppColors.gold.withValues(alpha: .22),
-                        ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,

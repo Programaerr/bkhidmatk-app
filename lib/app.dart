@@ -61,7 +61,7 @@ class _RootGate extends StatelessWidget {
         onOpenAdminDashboard: () => Navigator.push(
           context,
           QuickRoute(
-            builder: (_) => const AdminShell(),
+            builder: (_) => const AdminShell(showBackToApp: true),
           ),
         ),
       );
