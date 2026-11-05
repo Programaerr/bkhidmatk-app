@@ -6,7 +6,9 @@ import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
+import '../auth/push_key.dart';
 import '../widgets/realtime_refresh.dart';
+import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
 
 /// طلبات الحرفيين: الإدارة تقرأ معلومات المتقدم، وعند القبول يدخل رقمه في التوظيف
@@ -59,9 +61,10 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen>
                 icon: Icons.phone_iphone_rounded,
                 label: 'رقم الهاتف',
                 value: a.phone,
-                trailing: IconButton(
-                  onPressed: () => _call(a.phone),
-                  icon: const Icon(Icons.call_rounded, size: 20),
+                trailing: AppIconButton(
+                  small: true,
+                  onTap: () => _call(a.phone),
+                  icon: Icons.call_rounded,
                   tooltip: 'اتصال',
                 ),
               ),
@@ -84,16 +87,16 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen>
                 Row(
                   children: [
                     Expanded(
-                      child: OutlinedButton(
+                      child: SecondaryButton(
+                        label: 'رفض',
+                        danger: true,
                         onPressed: () => Navigator.pop(ctx, false),
-                        child: const Text('رفض'),
                       ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: PrimaryButton(
                         label: 'قبول',
-                        height: 52,
                         onPressed: () => Navigator.pop(ctx, true),
                       ),
                     ),

@@ -5,7 +5,9 @@ import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
+import '../auth/push_key.dart';
 import '../widgets/realtime_refresh.dart';
+import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
 
 /// التوظيف بالرقم: الإدارة تضيف أرقام الأشخاص، وعند تسجيلهم بالتطبيق
@@ -139,16 +141,12 @@ class _AdminHiresScreenState extends State<AdminHiresScreen>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('التوظيف'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_forward_rounded),
-          onPressed: () => Navigator.pop(context),
-        ),
+      appBar: PushKeyAppBar(
+        title: 'التوظيف',
         actions: [
-          IconButton(
-            onPressed: _add,
-            icon: const Icon(Icons.person_add_alt_1_rounded),
+          AppIconButton(
+            onTap: _add,
+            icon: Icons.person_add_alt_1_rounded,
             tooltip: 'إضافة رقم',
           ),
         ],
@@ -268,19 +266,12 @@ class _AdminHiresScreenState extends State<AdminHiresScreen>
                                     ),
                                   ),
                                   const SizedBox(height: 4),
-                                  SizedBox(
-                                    height: 30,
-                                    width: 34,
-                                    child: IconButton(
-                                      padding: EdgeInsets.zero,
-                                      onPressed: () => _delete(h),
-                                      icon: const Icon(
-                                        Icons.delete_outline_rounded,
-                                        size: 18,
-                                        color: AppColors.danger,
-                                      ),
-                                      tooltip: 'حذف',
-                                    ),
+                                  AppIconButton(
+                                    small: true,
+                                    onTap: () => _delete(h),
+                                    icon: Icons.delete_outline_rounded,
+                                    color: AppColors.danger,
+                                    tooltip: 'حذف',
                                   ),
                                 ],
                               ),

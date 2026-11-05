@@ -179,7 +179,8 @@ class _AdminWorksState extends State<AdminWorks> with RealtimeRefresh<AdminWorks
           title: 'أعمالنا',
           subtitle: 'نشر فيديوهات الشركة ومتابعة المشاهدات والتفاعل',
           actions: [
-            AppIconButton(icon: Icons.add_rounded, onTap: () => _edit()),
+            AppIconButton(
+                icon: Icons.add_rounded, tooltip: 'إضافة', onTap: () => _edit()),
           ],
         ),
         Expanded(
@@ -250,36 +251,18 @@ class _AdminWorksState extends State<AdminWorks> with RealtimeRefresh<AdminWorks
                                   ],
                                 ),
                               ),
-                              PopupMenuButton<String>(
-                                padding: EdgeInsets.zero,
-                                icon: const Icon(Icons.more_vert_rounded, size: 20),
-                                onSelected: (v) {
-                                  if (v == 'edit') {
-                                    _edit(work: w);
-                                  } else if (v == 'delete') {
-                                    _delete(w);
-                                  }
-                                },
-                                itemBuilder: (_) => const [
-                                  PopupMenuItem(
-                                    value: 'edit',
-                                    child: Row(children: [
-                                      Icon(Icons.edit_outlined, size: 17),
-                                      SizedBox(width: 8),
-                                      Text('تعديل'),
-                                    ]),
-                                  ),
-                                  PopupMenuItem(
-                                    value: 'delete',
-                                    child: Row(children: [
-                                      Icon(Icons.delete_outline_rounded,
-                                          size: 17, color: AppColors.danger),
-                                      SizedBox(width: 8),
-                                      Text('حذف',
-                                          style: TextStyle(color: AppColors.danger)),
-                                    ]),
-                                  ),
-                                ],
+                              AppIconButton(
+                                small: true,
+                                icon: Icons.edit_outlined,
+                                tooltip: 'تعديل',
+                                onTap: () => _edit(work: w),
+                              ),
+                              AppIconButton(
+                                small: true,
+                                icon: Icons.delete_outline_rounded,
+                                tooltip: 'حذف',
+                                color: AppColors.danger,
+                                onTap: () => _delete(w),
                               ),
                             ],
                           ),
@@ -318,16 +301,6 @@ class _AdminWorksState extends State<AdminWorks> with RealtimeRefresh<AdminWorks
                                 w.active ? 'ظاهر للزبائن' : 'مخفي',
                                 style: theme.textTheme.bodySmall
                                     ?.copyWith(fontSize: 10.5),
-                              ),
-                              const Spacer(),
-                              TextButton(
-                                onPressed: () => _edit(work: w),
-                                child: const Text(
-                                  'تعديل',
-                                  style: TextStyle(
-                                      fontSize: 11.5,
-                                      fontWeight: FontWeight.w700),
-                                ),
                               ),
                             ],
                           ),

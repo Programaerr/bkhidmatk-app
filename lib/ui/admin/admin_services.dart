@@ -124,6 +124,7 @@ class _AdminServicesState extends State<AdminServices>
           actions: [
             AppIconButton(
               icon: Icons.add_rounded,
+              tooltip: 'إضافة',
               onTap: () => _tab == 0
                   ? _editService()
                   : _tab == 1
@@ -147,6 +148,23 @@ class _AdminServicesState extends State<AdminServices>
               : _tab == 1
                   ? _workersList()
                   : _categoriesList(),
+        ),
+      ],
+    );
+  }
+
+  /// زرا التعديل والحذف في آخر كل صف، بشكل واحد للخدمات والفنيين والأقسام.
+  Widget _rowActions({required VoidCallback onEdit, required VoidCallback onDelete}) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        AppIconButton(small: true, icon: Icons.edit_outlined, tooltip: 'تعديل', onTap: onEdit),
+        AppIconButton(
+          small: true,
+          icon: Icons.delete_outline_rounded,
+          tooltip: 'حذف',
+          color: AppColors.danger,
+          onTap: onDelete,
         ),
       ],
     );
@@ -304,16 +322,9 @@ class _AdminServicesState extends State<AdminServices>
                       _load();
                     },
                   ),
-                  PopupMenuButton<String>(
-                    icon: const Icon(Icons.more_vert_rounded, size: 19),
-                    onSelected: (v) {
-                      if (v == 'edit') _editWorker(w);
-                      if (v == 'delete') _deleteWorker(w);
-                    },
-                    itemBuilder: (_) => const [
-                      PopupMenuItem(value: 'edit', child: Text('تعديل')),
-                      PopupMenuItem(value: 'delete', child: Text('حذف')),
-                    ],
+                  _rowActions(
+                    onEdit: () => _editWorker(w),
+                    onDelete: () => _deleteWorker(w),
                   ),
                 ],
               ),
@@ -357,14 +368,9 @@ class _AdminServicesState extends State<AdminServices>
                     child: Text(c.name,
                         style: theme.textTheme.titleSmall?.copyWith(fontSize: 13)),
                   ),
-                  IconButton(
-                    onPressed: () => _editCategory(c),
-                    icon: const Icon(Icons.edit_outlined, size: 18),
-                  ),
-                  IconButton(
-                    onPressed: () => _deleteCategory(c),
-                    icon: const Icon(Icons.delete_outline_rounded,
-                        size: 18, color: AppColors.danger),
+                  _rowActions(
+                    onEdit: () => _editCategory(c),
+                    onDelete: () => _deleteCategory(c),
                   ),
                 ],
               ),
