@@ -262,7 +262,7 @@ class Booking {
   final String slot;
   final String address;
   final String? notes;
-  final String status; // pending, confirmed, in_progress, completed, cancelled
+  final String status; // pending, confirmed, dispatched, in_progress, completed, cancelled
   final String paymentMethod; // cash, card
   final double total;
   final DateTime createdAt;
@@ -270,6 +270,12 @@ class Booking {
   /// تقييم العامل من العميل بعد اكتمال الحجز (1..5)، وnull إذا لم يقيّم بعد.
   final int? rating;
   final String? review;
+
+  /// رد الحرفي على الطلب: pending أو accepted أو declined ([WorkerResponse]).
+  final String workerResponse;
+
+  /// متى أرسلته الإدارة، وهو null قبل الإرسال.
+  final DateTime? dispatchedAt;
 
   final String? serviceTitle;
   final String? workerName;
@@ -292,12 +298,20 @@ class Booking {
     required this.createdAt,
     this.rating,
     this.review,
+    this.workerResponse = WorkerResponse.pending,
+    this.dispatchedAt,
     this.serviceTitle,
     this.workerName,
     this.workerPhone,
     this.customerName,
     this.customerPhone,
   });
+
+  /// الحرفي ذهب أو في طريقه: وبعده فقط يرى العنوان ورقم الزبون.
+  bool get sentToCustomer =>
+      status == BookingStatus.dispatched ||
+      status == BookingStatus.inProgress ||
+      status == BookingStatus.completed;
 
   Map<String, Object?> toMap() => {
         if (id != null) 'id': id,
@@ -331,6 +345,8 @@ class Booking {
         createdAt: _date(m['created_at']) ?? DateTime.now(),
         rating: (m['rating'] as num?)?.toInt(),
         review: m['review'] as String?,
+        workerResponse: m['worker_response'] as String? ?? WorkerResponse.pending,
+        dispatchedAt: _date(m['dispatched_at']),
         serviceTitle: m['service_title'] as String?,
         workerName: m['worker_name'] as String?,
         workerPhone: m['worker_phone'] as String?,
@@ -344,6 +360,7 @@ class Booking {
     String? workerName,
     int? rating,
     String? review,
+    String? workerResponse,
   }) =>
       Booking(
         id: id,
@@ -360,6 +377,8 @@ class Booking {
         createdAt: createdAt,
         rating: rating ?? this.rating,
         review: review ?? this.review,
+        workerResponse: workerResponse ?? this.workerResponse,
+        dispatchedAt: dispatchedAt,
         serviceTitle: serviceTitle,
         workerName: workerName ?? this.workerName,
         workerPhone: workerPhone,
@@ -371,19 +390,34 @@ class Booking {
 class BookingStatus {
   static const pending = 'pending';
   static const confirmed = 'confirmed';
+  static const dispatched = 'dispatched';
   static const inProgress = 'in_progress';
   static const completed = 'completed';
   static const cancelled = 'cancelled';
 
-  static const all = [pending, confirmed, inProgress, completed, cancelled];
+  static const all = [pending, confirmed, dispatched, inProgress, completed, cancelled];
 
   static String label(String s) => switch (s) {
-        pending => 'بانتظار التأكيد',
-        confirmed => 'تم التأكيد',
+        pending => 'بانتظار موافقة الإدارة',
+        confirmed => 'تمت الموافقة',
+        dispatched => 'الحرفي في الطريق',
         inProgress => 'قيد التنفيذ',
         completed => 'مكتمل',
         cancelled => 'ملغي',
         _ => s,
+      };
+}
+
+/// رد الحرفي على طلب الحجز.
+class WorkerResponse {
+  static const pending = 'pending';
+  static const accepted = 'accepted';
+  static const declined = 'declined';
+
+  static String label(String s) => switch (s) {
+        accepted => 'الحرفي وافق',
+        declined => 'الحرفي اعتذر',
+        _ => 'بانتظار رد الحرفي',
       };
 }
 

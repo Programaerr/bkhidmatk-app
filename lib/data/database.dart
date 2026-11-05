@@ -16,7 +16,7 @@ class AppDatabase {
 
   Database? _db;
   static const _fileName = 'jaik.db';
-  static const _version = 7;
+  static const _version = 8;
 
   Future<Database> get database async {
     if (_db != null && _db!.isOpen) return _db!;
@@ -39,6 +39,7 @@ class AppDatabase {
         if (oldVersion < 5) await _migrateToV5(db);
         if (oldVersion < 6) await _migrateToV6(db);
         if (oldVersion < 7) await _migrateToV7(db);
+        if (oldVersion < 8) await _migrateToV8(db);
       },
     );
     return _db!;
@@ -93,6 +94,13 @@ class AppDatabase {
   }
 
   /// v7: أقسام الصفحة الرئيسية: أسماؤها وأيقوناتها وترتيبها، وما أُضيف منها.
+  /// v8: رد الحرفي ووقت إرساله على طلب الحجز.
+  Future<void> _migrateToV8(Database db) async {
+    await db.execute(
+        "ALTER TABLE bookings ADD COLUMN worker_response TEXT NOT NULL DEFAULT 'pending'");
+    await db.execute('ALTER TABLE bookings ADD COLUMN dispatched_at TEXT');
+  }
+
   Future<void> _migrateToV7(Database db) async {
     for (final MapEntry(key: old, value: name) in renamedSections.entries) {
       await db.update('categories', {'name': name}, where: 'name = ?', whereArgs: [old]);
@@ -280,6 +288,8 @@ class AppDatabase {
         total REAL NOT NULL,
         rating INTEGER,
         review TEXT,
+        worker_response TEXT NOT NULL DEFAULT 'pending',
+        dispatched_at TEXT,
         created_at TEXT NOT NULL
       )
     ''');

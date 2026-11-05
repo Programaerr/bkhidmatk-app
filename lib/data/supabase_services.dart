@@ -222,9 +222,11 @@ class SupabaseServices {
   Future<void> signOut() => client.auth.signOut();
 
   Future<List<AppNotification>> notifications() async {
+    // ما أرسله هو (إشعارات الحجز التي تنشئها قاعدة البيانات باسمه) ليس له، بل لمن أُرسل إليه.
     final rows = await client
         .from('app_notifications')
-        .select('id,title,body,sent_at,read_at')
+        .select('id,title,body,sent_at,read_at,app_profiles!inner(auth_user_id)')
+        .eq('app_profiles.auth_user_id', client.auth.currentUser!.id)
         .order('sent_at', ascending: false)
         .limit(100);
     return rows.map((row) => AppNotification.fromMap(row)).toList();

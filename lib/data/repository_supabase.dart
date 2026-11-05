@@ -558,9 +558,24 @@ class SupabaseRepository implements Repository {
 
   @override
   Future<void> assignWorker(int bookingId, int? workerId) async {
-    await _client
-        .from('bookings')
-        .update({'worker_id': workerId}).eq('id', bookingId);
+    await _client.rpc('assign_booking_worker', params: {
+      'p_booking_id': bookingId,
+      'p_worker_id': workerId,
+    });
+  }
+
+  @override
+  Future<List<Booking>> bookingsForWorker(AppUser worker) async {
+    final rows = _maps(await _client.rpc('worker_bookings'));
+    return rows.map((row) => Booking.fromMap(_read(row))).toList();
+  }
+
+  @override
+  Future<void> respondToBooking(int bookingId, {required bool accept}) async {
+    await _client.rpc('worker_respond_booking', params: {
+      'p_booking_id': bookingId,
+      'p_accept': accept,
+    });
   }
 
   @override

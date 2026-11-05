@@ -113,6 +113,12 @@ class FakeRepo implements Repository {
   Future<void> assignWorker(int bookingId, int? workerId) async {}
 
   @override
+  Future<List<Booking>> bookingsForWorker(AppUser worker) async => const [];
+
+  @override
+  Future<void> respondToBooking(int bookingId, {required bool accept}) async {}
+
+  @override
   Future<bool> rateBooking(
           {required int bookingId,
           required int rating,

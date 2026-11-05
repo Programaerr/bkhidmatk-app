@@ -268,7 +268,10 @@ class _BookingDetailScreenState extends State<BookingDetailScreen>
                         Text(b.workerName ?? 'لم يتم تعيين فني بعد',
                             style: theme.textTheme.titleSmall
                                 ?.copyWith(fontSize: 13.5)),
-                        Text('الفني المسؤول',
+                        Text(
+                            b.workerName == null
+                                ? 'الفني المسؤول'
+                                : 'الفني المسؤول · ${WorkerResponse.label(b.workerResponse)}',
                             style: theme.textTheme.bodySmall
                                 ?.copyWith(fontSize: 10)),
                       ],
@@ -384,8 +387,9 @@ class _Timeline extends StatelessWidget {
     final theme = Theme.of(context);
     final cancelled = status == BookingStatus.cancelled;
     final steps = [
-      (BookingStatus.pending, 'تم الطلب', Icons.receipt_long_rounded),
-      (BookingStatus.confirmed, 'تم التأكيد', Icons.verified_rounded),
+      (BookingStatus.pending, 'وصل طلبك إلى الإدارة', Icons.receipt_long_rounded),
+      (BookingStatus.confirmed, 'تم حجزك بموافقة الإدارة', Icons.verified_rounded),
+      (BookingStatus.dispatched, 'الحرفي في الطريق إليك', Icons.local_shipping_rounded),
       (BookingStatus.inProgress, 'قيد التنفيذ', Icons.engineering_rounded),
       (BookingStatus.completed, 'مكتمل', Icons.done_all_rounded),
     ];

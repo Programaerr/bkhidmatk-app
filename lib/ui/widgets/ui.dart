@@ -307,6 +307,7 @@ class StatusPill extends StatelessWidget {
   static Color colorOf(String s) => switch (s) {
         BookingStatus.pending => const Color(0xFFF59E0B),
         BookingStatus.confirmed => AppColors.info,
+        BookingStatus.dispatched => const Color(0xFF0D9488),
         BookingStatus.inProgress => AppColors.violet,
         BookingStatus.completed => AppColors.success,
         BookingStatus.cancelled => AppColors.danger,

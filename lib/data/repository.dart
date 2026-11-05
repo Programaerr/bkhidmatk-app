@@ -71,7 +71,14 @@ abstract class Repository {
 
   Future<void> updateBookingStatus(int id, String status);
 
+  /// يعيّن الحرفي (أو يغيّره)، فيعود رده إلى «بانتظار» ويُخطَر الحرفي الجديد.
   Future<void> assignWorker(int bookingId, int? workerId);
+
+  /// طلبات الحرفي صاحب هذا الحساب. العنوان ورقم الزبون فيها فارغان حتى ترسله الإدارة.
+  Future<List<Booking>> bookingsForWorker(AppUser worker);
+
+  /// الحرفي يؤكد الطلب أو يعتذر عنه قبل إرساله.
+  Future<void> respondToBooking(int bookingId, {required bool accept});
 
   /// تقييم العامل بعد اكتمال الحجز.
   ///

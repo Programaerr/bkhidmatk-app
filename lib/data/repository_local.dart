@@ -294,8 +294,16 @@ class LocalRepository implements Repository {
   @override
   Future<void> updateBookingStatus(int id, String status) async {
     final db = await _db;
-    await db.update('bookings', {'status': status},
-        where: 'id = ?', whereArgs: [id]);
+    await db.update(
+      'bookings',
+      {
+        'status': status,
+        if (status == BookingStatus.dispatched)
+          'dispatched_at': DateTime.now().toIso8601String(),
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
     if (status == BookingStatus.completed) {
       final rows = await db.query('bookings',
           columns: ['worker_id'], where: 'id=?', whereArgs: [id]);
@@ -308,8 +316,59 @@ class LocalRepository implements Repository {
   @override
   Future<void> assignWorker(int bookingId, int? workerId) async {
     final db = await _db;
-    await db.update('bookings', {'worker_id': workerId},
-        where: 'id = ?', whereArgs: [bookingId]);
+    await db.update(
+      'bookings',
+      {'worker_id': workerId, 'worker_response': WorkerResponse.pending},
+      where: 'id = ?',
+      whereArgs: [bookingId],
+    );
+  }
+
+  @override
+  Future<List<Booking>> bookingsForWorker(AppUser worker) async {
+    final db = await _db;
+    final rows = await db.rawQuery(
+      '$_bookingSelect WHERE w.phone = ? ORDER BY b.created_at DESC',
+      [normalizePhone(worker.phone)],
+    );
+    // العنوان ورقم الزبون لا يصلان إلى الحرفي قبل أن ترسله الإدارة.
+    return [
+      for (final row in rows)
+        _hideUntilSent(Booking.fromMap(row)),
+    ];
+  }
+
+  Booking _hideUntilSent(Booking b) => b.sentToCustomer
+      ? b
+      : Booking(
+          id: b.id,
+          customerId: b.customerId,
+          serviceId: b.serviceId,
+          workerId: b.workerId,
+          scheduledAt: b.scheduledAt,
+          slot: b.slot,
+          address: '',
+          notes: b.notes,
+          status: b.status,
+          paymentMethod: b.paymentMethod,
+          total: b.total,
+          createdAt: b.createdAt,
+          workerResponse: b.workerResponse,
+          dispatchedAt: b.dispatchedAt,
+          serviceTitle: b.serviceTitle,
+          workerName: b.workerName,
+          customerName: b.customerName,
+        );
+
+  @override
+  Future<void> respondToBooking(int bookingId, {required bool accept}) async {
+    final db = await _db;
+    await db.update(
+      'bookings',
+      {'worker_response': accept ? WorkerResponse.accepted : WorkerResponse.declined},
+      where: 'id = ? AND status IN (?, ?)',
+      whereArgs: [bookingId, BookingStatus.pending, BookingStatus.confirmed],
+    );
   }
 
   @override

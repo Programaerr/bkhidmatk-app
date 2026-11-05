@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -15,8 +16,17 @@ import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
 import 'admin_shell.dart';
 
+/// طلب من خارج التبويب أن يُفتح على حالة معينة. كل طلب نسخة جديدة، فيصل ولو تكررت الحالة.
+class BookingsFilterRequest {
+  const BookingsFilterRequest(this.status);
+
+  final String? status;
+}
+
 class AdminBookings extends StatefulWidget {
-  const AdminBookings({super.key, this.initialFilter});
+  const AdminBookings({super.key, this.initialFilter, this.filterRequest});
+
+  final ValueListenable<BookingsFilterRequest?>? filterRequest;
 
   final String? initialFilter;
 
@@ -38,11 +48,20 @@ class _AdminBookingsState extends State<AdminBookings>
   void initState() {
     super.initState();
     _status = widget.initialFilter;
+    widget.filterRequest?.addListener(_onFilterRequest);
+    _load();
+  }
+
+  void _onFilterRequest() {
+    final request = widget.filterRequest?.value;
+    if (request == null) return;
+    _status = request.status;
     _load();
   }
 
   @override
   void dispose() {
+    widget.filterRequest?.removeListener(_onFilterRequest);
     _search.dispose();
     super.dispose();
   }
@@ -69,8 +88,9 @@ class _AdminBookingsState extends State<AdminBookings>
     final theme = Theme.of(context);
     final filters = <(String?, String)>[
       (null, 'الكل'),
-      (BookingStatus.pending, 'جديد'),
-      (BookingStatus.confirmed, 'مؤكد'),
+      (BookingStatus.pending, 'طلبات جديدة'),
+      (BookingStatus.confirmed, 'موافَق عليها'),
+      (BookingStatus.dispatched, 'تم الإرسال'),
       (BookingStatus.inProgress, 'قيد التنفيذ'),
       (BookingStatus.completed, 'مكتمل'),
       (BookingStatus.cancelled, 'ملغي'),
@@ -395,8 +415,21 @@ class _BookingSheetState extends State<_BookingSheet> {
                             children: [
                               Text(b.workerName ?? 'لم يتم تعيين فني',
                                   style: theme.textTheme.titleSmall?.copyWith(fontSize: 12)),
-                              Text('الفني المسؤول',
-                                  style: theme.textTheme.bodySmall?.copyWith(fontSize: 9.5)),
+                              Text(
+                                  b.workerName == null
+                                      ? 'الفني المسؤول'
+                                      : WorkerResponse.label(b.workerResponse),
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    fontSize: 9.5,
+                                    color: b.workerResponse == WorkerResponse.declined
+                                        ? AppColors.danger
+                                        : b.workerResponse == WorkerResponse.accepted
+                                            ? AppColors.success
+                                            : null,
+                                    fontWeight: b.workerResponse == WorkerResponse.pending
+                                        ? null
+                                        : FontWeight.w800,
+                                  )),
                             ],
                           ),
                         ),
@@ -449,12 +482,26 @@ class _BookingSheetState extends State<_BookingSheet> {
                     children: [
                       if (b.status == BookingStatus.pending)
                         _StatusAction(
-                          label: 'تأكيد الحجز',
+                          label: 'موافقة على الحجز',
                           icon: Icons.verified_rounded,
                           color: AppColors.info,
                           onTap: () => _setStatus(BookingStatus.confirmed),
                         ),
                       if (b.status == BookingStatus.confirmed)
+                        _StatusAction(
+                          label: 'إرسال الحرفي',
+                          icon: Icons.local_shipping_rounded,
+                          color: AppColors.info,
+                          onTap: () {
+                            if (b.workerId == null) {
+                              AppSnack.show(context, 'عيّن حرفياً أولاً ثم أرسله',
+                                  error: true);
+                              return;
+                            }
+                            _setStatus(BookingStatus.dispatched);
+                          },
+                        ),
+                      if (b.status == BookingStatus.dispatched)
                         _StatusAction(
                           label: 'بدء التنفيذ',
                           icon: Icons.play_arrow_rounded,

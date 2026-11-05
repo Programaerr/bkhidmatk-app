@@ -5,6 +5,7 @@ import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
+import '../customer/notifications_screen.dart';
 import '../widgets/quick_route.dart';
 import '../widgets/realtime_refresh.dart';
 import '../widgets/shell_layout.dart';
@@ -20,7 +21,7 @@ class AdminDashboard extends StatefulWidget {
     required this.onOpenWorks,
   });
 
-  final VoidCallback onOpenBookings;
+  final ValueChanged<String?> onOpenBookings;
   final VoidCallback onOpenWorks;
 
   @override
@@ -64,6 +65,14 @@ class _AdminDashboardState extends State<AdminDashboard>
           title: 'لوحة التحكم',
           subtitle: 'مرحباً ${user.name} · إدارة كاملة للتطبيق',
           actions: [
+            AppIconButton(
+              icon: Icons.notifications_none_rounded,
+              tooltip: 'الإشعارات',
+              onTap: () => Navigator.push(
+                context,
+                QuickRoute(builder: (_) => const NotificationsScreen()),
+              ),
+            ),
             AppIconButton(
               icon: Icons.chat_bubble_outline_rounded,
               tooltip: 'الرسائل',
@@ -164,14 +173,14 @@ class _AdminDashboardState extends State<AdminDashboard>
                           label: 'حجوزات اليوم',
                           value: '${stats.bookingsToday}',
                           icon: Icons.event_available_rounded,
-                          onTap: widget.onOpenBookings,
+                          onTap: () => widget.onOpenBookings(null),
                         ),
                         StatTile(
-                          label: 'بانتظار التأكيد',
+                          label: 'طلبات بانتظار موافقتك',
                           value: '${stats.pending}',
                           icon: Icons.pending_actions_rounded,
                           color: const Color(0xFFF59E0B),
-                          onTap: widget.onOpenBookings,
+                          onTap: () => widget.onOpenBookings(BookingStatus.pending),
                         ),
                         StatTile(
                           label: 'الزبائن',
@@ -197,7 +206,7 @@ class _AdminDashboardState extends State<AdminDashboard>
                     SectionHeader(
                       title: 'أحدث الحجوزات',
                       actionLabel: 'إدارة الكل',
-                      onAction: widget.onOpenBookings,
+                      onAction: () => widget.onOpenBookings(null),
                     ),
                     if (bookings.isEmpty)
                       const SoftCard(
@@ -211,7 +220,7 @@ class _AdminDashboardState extends State<AdminDashboard>
                           padding: const EdgeInsets.only(bottom: 8),
                           child: SoftCard(
                             padding: const EdgeInsets.all(12),
-                            onTap: widget.onOpenBookings,
+                            onTap: () => widget.onOpenBookings(null),
                             child: Row(
                               children: [
                                 AvatarCircle(

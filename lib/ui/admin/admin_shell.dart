@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../data/models.dart';
+
 import '../../core/theme.dart';
 import '../auth/push_key.dart';
 import '../widgets/shell_layout.dart';
@@ -32,13 +34,27 @@ class _AdminShellState extends State<AdminShell> {
 
   void _go(int index) => setState(() => _index = index);
 
+  final _bookingsFilter = ValueNotifier<BookingsFilterRequest?>(null);
+
+  /// يفتح تبويب الحجوزات على حالة معينة، مثل الطلبات الجديدة بانتظار موافقتك.
+  void _openBookings(String? status) {
+    _bookingsFilter.value = BookingsFilterRequest(status);
+    _go(1);
+  }
+
+  @override
+  void dispose() {
+    _bookingsFilter.dispose();
+    super.dispose();
+  }
+
   // تبقى هي نفسها بين البناءات، فتبديل التبويب لا يعيد بناء التبويبات كلها.
   late final _pages = [
     AdminDashboard(
-      onOpenBookings: () => _go(1),
+      onOpenBookings: _openBookings,
       onOpenWorks: () => _go(3),
     ),
-    const AdminBookings(),
+    AdminBookings(filterRequest: _bookingsFilter),
     const AdminServices(),
     const AdminWorks(),
     const AdminMore(),
