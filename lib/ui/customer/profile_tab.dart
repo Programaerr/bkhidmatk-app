@@ -48,6 +48,10 @@ abstract final class _Design {
   static const cardGap = 54.4;
   static const groupGap = 21.6;
   static const rowGap = 7.8;
+
+  // عنوان «الإعدادات» فوق الوضع الليلي واللغة، أقرب إليهما مما فوقه.
+  static const settingsTitleSize = 15.0;
+  static const settingsTitleGap = 9.0;
   static const logoutGap = 50.3;
 
   // التصميم أطول مما فوق شريط التنقل، فتضيق الفراغات لا الأزرار حتى يظهر زر الخروج كله.
@@ -322,8 +326,21 @@ class _ProfileTabState extends State<ProfileTab> {
       (gap: _Design.cardGap, height: _Design.cardHeight, key: _card(state.user!, unit, night)),
       for (final (i, key) in menu.indexed)
         (gap: i == 0 ? _Design.groupGap : _Design.rowGap, height: _Design.menuHeight, key: key),
+      // عنوان في الوسط يعرّف أن ما تحته إعدادات (طلب المستخدم). ليس زراً، فلا تُحسب له قاعدة.
       (
         gap: _Design.groupGap,
+        height: _Design.settingsTitleSize * 1.3 - PushKey.depth * homeKeyChrome,
+        key: Semantics(
+          header: true,
+          child: Text(
+            'الإعدادات',
+            textAlign: TextAlign.center,
+            style: _text(unit, _Design.settingsTitleSize, FontWeight.w800, ink),
+          ),
+        ),
+      ),
+      (
+        gap: _Design.settingsTitleGap,
         height: _Design.nightHeight,
         key: _WideKey(
           unit: unit,
