@@ -294,8 +294,8 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar> {
                                   duration: const Duration(milliseconds: 480),
                                   curve: Curves.easeOutBack,
                                   start: itemWidth * widget.index + 4,
-                                  top: 6,
-                                  height: 16,
+                                  top: 4,
+                                  bottom: 4,
                                   width: itemWidth - 8,
                                   child: AnimatedScale(
                                     scale: _isDragging ? 1.06 : 1,
