@@ -174,6 +174,13 @@ class _AppShellLayoutState extends State<AppShellLayout>
 /// شريط التنقل السفلي: لمسة واحدة تفتح التبويب، وتنتقل الفقاعة إليه زجاجاً يكسر ما تحته ثم
 /// يستقر. والبقاء على الفقاعة أو سحبها يحوّلها إلى مجهر يتحرك يميناً ويساراً ويكبّر ما تحته،
 /// ويُفتح التبويب الذي يُترك عليه.
+/// ارتفاع أعلى زجاج شريط التنقل عن أسفل الشاشة، لما يُرسم فوقه مباشرة (مثل شريط تقدم الفيديو).
+/// تحت الزجاج شريط النظام إن وُجد، ثم 4 بين الزجاج ومكانه.
+double glassBarTop(BuildContext context) =>
+    MediaQuery.viewPaddingOf(context).bottom +
+    _GlassNavigationBarState._height +
+    4;
+
 class _GlassNavigationBar extends StatefulWidget {
   const _GlassNavigationBar({
     required this.index,
@@ -422,9 +429,12 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
     final radius = BorderRadius.circular(_height / 2);
     final items = widget.items;
 
+    // لا فراغ تحت الشريط: الـ 8 التي كانت تحته صارت فوقه، فينزل الزجاج ويبقى ارتفاع الشريط
+    // كما هو فلا تتحرك الصفحات. فوق شريط النظام السفلي يبقى كما كان.
+    final lift = math.max(0.0, 8 - MediaQuery.paddingOf(context).bottom);
     return SafeArea(
       top: false,
-      minimum: const EdgeInsets.fromLTRB(16, 6, 16, 8),
+      minimum: EdgeInsets.fromLTRB(16, 6 + lift, 16, 0),
       child: SizedBox(
         height: _height + 8,
         child: Center(
@@ -591,8 +601,11 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
     if (drop == null || drop.presence <= 0) {
       return const Positioned(left: 0, top: 0, child: SizedBox.shrink());
     }
+    // تحت الزجاج 4 ثم حافة الشاشة، فالعدسة الأطول من الشريط تكبر نحو الأعلى ولا تُقصّ.
+    final room = _height + 4 + MediaQuery.paddingOf(context).bottom;
     final rect = Rect.fromCenter(
-      center: Offset(drop.centre, _height / 2),
+      center: Offset(
+          drop.centre, math.min(_height / 2, room - drop.height / 2)),
       width: drop.width,
       height: drop.height,
     );
@@ -681,39 +694,20 @@ class _GlassNavigationDestination extends StatelessWidget {
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: onTap,
+          // أيقونة وحدها بلا اسم تحتها (طلب المستخدم)، والاسم يبقى لقارئ الشاشة.
           child: SizedBox(
             height: double.infinity,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                AnimatedScale(
-                  scale: selected ? 1.08 : 1,
-                  duration: const Duration(milliseconds: 260),
-                  curve: Curves.easeOutCubic,
-                  child: Icon(
-                    selected ? item.activeIcon : item.icon,
-                    size: 23,
-                    color:
-                        selected ? accent : theme.colorScheme.onSurfaceVariant,
-                  ),
+            child: Center(
+              child: AnimatedScale(
+                scale: selected ? 1.08 : 1,
+                duration: const Duration(milliseconds: 260),
+                curve: Curves.easeOutCubic,
+                child: Icon(
+                  selected ? item.activeIcon : item.icon,
+                  size: 23,
+                  color: selected ? accent : theme.colorScheme.onSurfaceVariant,
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  item.label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontFamily: 'Cairo',
-                    color: selected
-                        ? theme.colorScheme.onSurface
-                        : theme.colorScheme.onSurfaceVariant,
-                    fontSize: 10,
-                    height: 1.2,
-                    fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ),

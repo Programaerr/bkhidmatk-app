@@ -250,10 +250,8 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
     final wide = MediaQuery.sizeOf(context).width >= 900;
     final bottomClearance =
         wide ? 20.0 : MediaQuery.paddingOf(context).bottom + 6;
-    // شريط التقدم فوق شريط التنقل: الزجاج يبدأ تحت هامش الصفحة بـ 10، فيملأ مكان اللمس
-    // ما بين الزجاج والشعار، والخط الرفيع في وسطه.
-    final progressBottom =
-        wide ? 0.0 : MediaQuery.paddingOf(context).bottom - 10;
+    // شريط التقدم واقف على زجاج شريط التنقل مباشرة، والخط الرفيع في وسط مكان لمسه.
+    final progressBottom = wide ? 0.0 : glassBarTop(context);
     return ColoredBox(
       color: Colors.black,
       child: Stack(
