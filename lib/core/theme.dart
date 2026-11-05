@@ -6,12 +6,12 @@ class AppColors {
   static const goldDeep = Color(0xFFE8BE00);
   static const goldSoft = Color(0xFFFFF3BF);
   static const ink = Color(0xFF0B0B0D);
-  static const inkSoft = Color(0xFF17171A);
+  static const inkSoft = Color(0xFF1B1B20);
   static const inkMuted = Color(0xFF5F5F66);
   static const paper = Color(0xFFF6F6F0);
-  static const paperDark = Color(0xFF08080A);
+  static const paperDark = Color(0xFF050507);
   static const line = Color(0xFFE9E9DF);
-  static const lineDark = Color(0xFF25252B);
+  static const lineDark = Color(0xFF2E2E36);
   static const success = Color(0xFF16A34A);
   static const danger = Color(0xFFDC2626);
   static const info = Color(0xFF2563EB);
@@ -33,8 +33,8 @@ class AppTheme {
     final isDark = brightness == Brightness.dark;
     final surface = isDark ? AppColors.inkSoft : Colors.white;
     final background = isDark ? AppColors.paperDark : AppColors.paper;
-    final onSurface = isDark ? const Color(0xFFF4F4EE) : AppColors.ink;
-    final muted = isDark ? const Color(0xFF9B9BA3) : AppColors.inkMuted;
+    final onSurface = isDark ? const Color(0xFFFAFAF6) : AppColors.ink;
+    final muted = isDark ? const Color(0xFFB4B4BC) : AppColors.inkMuted;
     final outline = isDark ? AppColors.lineDark : AppColors.line;
 
     final scheme = ColorScheme(
@@ -45,7 +45,7 @@ class AppTheme {
       onPrimaryContainer: isDark ? AppColors.gold : const Color(0xFF5C4A00),
       secondary: isDark ? Colors.white : AppColors.ink,
       onSecondary: isDark ? AppColors.ink : Colors.white,
-      secondaryContainer: isDark ? const Color(0xFF26262C) : const Color(0xFFF0F0E8),
+      secondaryContainer: isDark ? const Color(0xFF2A2A31) : const Color(0xFFF0F0E8),
       onSecondaryContainer: onSurface,
       tertiary: AppColors.info,
       onTertiary: Colors.white,
@@ -53,7 +53,7 @@ class AppTheme {
       onError: Colors.white,
       surface: surface,
       onSurface: onSurface,
-      surfaceContainerHighest: isDark ? const Color(0xFF202027) : const Color(0xFFF0F0EA),
+      surfaceContainerHighest: isDark ? const Color(0xFF26262D) : const Color(0xFFF0F0EA),
       outline: outline,
       outlineVariant: outline,
       shadow: Colors.black,
@@ -119,7 +119,7 @@ class AppTheme {
       dividerTheme: DividerThemeData(color: outline, thickness: 1, space: 1),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: isDark ? const Color(0xFF1B1B20) : Colors.white,
+        fillColor: isDark ? const Color(0xFF212127) : Colors.white,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         hintStyle: base.copyWith(fontSize: 13.5, color: muted),
         labelStyle: base.copyWith(fontSize: 13.5, color: muted),
@@ -198,7 +198,7 @@ class AppTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
-        backgroundColor: isDark ? const Color(0xFF2A2A31) : AppColors.ink,
+        backgroundColor: isDark ? const Color(0xFF34343C) : AppColors.ink,
         contentTextStyle: base.copyWith(fontSize: 13.5, color: Colors.white),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
         insetPadding: const EdgeInsets.all(16),

@@ -56,7 +56,6 @@ Android SDK 36 + NDK) موجودة داخل صورة Docker معرّفة في م
 
 ```bash
 flutter pub get      # يُنفَّذ تلقائياً بعد فتح الحاوية
-flutter test         # الاختبارات
 flutter build apk --release
 ```
 

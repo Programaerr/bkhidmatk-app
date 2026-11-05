@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../auth/push_key.dart';
@@ -510,6 +511,7 @@ class CraftsmanKey extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final worker = this.worker;
+    final night = Theme.of(context).brightness == Brightness.dark;
     final chrome = unit * homeKeyChrome;
     final faceHeight = _craftsmanHeight * unit;
     return Semantics(
@@ -532,16 +534,19 @@ class CraftsmanKey extends StatelessWidget {
           child: PushKey(
             unit: chrome,
             faceHeight: faceHeight,
-            lemon: true,
+            // ليلاً يصير الزر داكناً بأسماء بيضاء، فلا يتعب العين ولا يضيع الاسم على الأصفر.
+            lemon: !night,
+            night: night ? kAlwaysCompleteAnimation : kAlwaysDismissedAnimation,
             faceRadius: _craftsmanRadius,
-            child: ExcludeSemantics(child: _face(worker)),
+            child: ExcludeSemantics(child: _face(worker, night)),
           ),
         ),
       ),
     );
   }
 
-  Widget _face(Worker? worker) {
+  Widget _face(Worker? worker, bool night) {
+    final ink = night ? homeNightInk : homeInk;
     final circle = _craftsmanCircle * unit;
     return Stack(
       children: [
@@ -593,7 +598,7 @@ class CraftsmanKey extends StatelessWidget {
                     fontSize: _craftsmanNameSize * unit,
                     height: 1.25,
                     fontWeight: FontWeight.w700,
-                    color: homeInk,
+                    color: ink,
                   ),
                 ),
                 Padding(
@@ -607,7 +612,7 @@ class CraftsmanKey extends StatelessWidget {
                       fontSize: _craftsmanWorkSize * unit,
                       height: 1.25,
                       fontWeight: FontWeight.w600,
-                      color: homeInk,
+                      color: ink,
                     ),
                   ),
                 ),
@@ -620,7 +625,7 @@ class CraftsmanKey extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.star_rounded, size: _ratingStarSize * unit, color: homeInk),
+                Icon(Icons.star_rounded, size: _ratingStarSize * unit, color: night ? AppColors.gold : homeInk),
                 Text(
                   worker.rating.toStringAsFixed(1),
                   style: TextStyle(
@@ -628,7 +633,7 @@ class CraftsmanKey extends StatelessWidget {
                     fontSize: _ratingSize * unit,
                     height: 1.2,
                     fontWeight: FontWeight.w700,
-                    color: homeInk,
+                    color: ink,
                   ),
                 ),
               ],
