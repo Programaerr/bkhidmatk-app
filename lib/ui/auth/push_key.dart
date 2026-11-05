@@ -435,7 +435,11 @@ class PushKey extends StatefulWidget {
     this.red = false,
     this.round = false,
     this.faceRadius = 4,
+    this.pressable = true,
   });
+
+  /// ينخفض الزر حين يُلمس. مفتاحا الوضع الليلي واللغة لا ينخفضان، فحركتهما في التبديل نفسه.
+  final bool pressable;
 
   /// ارتفاع الجانب الظاهر تحت وجه الزر، بوحدات التصميم.
   static const depth = 12.0;
@@ -480,7 +484,10 @@ class _PushKeyState extends State<PushKey> {
   bool _down = false;
   Offset _downAt = Offset.zero;
 
-  void _setDown(bool down) => setState(() => _down = down);
+  void _setDown(bool down) {
+    if (down && !widget.pressable) return;
+    setState(() => _down = down);
+  }
 
   _KeyStyle get _style => (
         yellow: widget.yellow,

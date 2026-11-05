@@ -329,6 +329,7 @@ class _ProfileTabState extends State<ProfileTab> {
           unit: unit,
           faceHeight: _Design.nightHeight,
           label: 'الوضع الليلي',
+          pressable: false,
           toggled: dark,
           // الشاشة تتحول إلى الليل بتلاشٍ بطيء، والمفتاح ينقلب بسرعته فوقها (طلب المستخدم).
           onPressed: () => ThemeCrossFade.swap(
@@ -378,6 +379,7 @@ class _ProfileTabState extends State<ProfileTab> {
           unit: unit,
           faceHeight: _Design.languageHeight,
           label: 'اللغة',
+          pressable: false,
           value: state.english ? 'English' : 'عربي',
           onPressed: () => state.setEnglish(!state.english),
           child: Row(
@@ -563,6 +565,7 @@ class _WideKey extends StatelessWidget {
     this.red = false,
     this.toggled,
     this.value,
+    this.pressable = true,
   });
 
   final double unit;
@@ -573,6 +576,9 @@ class _WideKey extends StatelessWidget {
   final bool red;
   final bool? toggled;
   final String? value;
+
+  /// ينخفض حين يُلمس، إلا مفتاحَي الوضع الليلي واللغة (طلب المستخدم).
+  final bool pressable;
 
   @override
   Widget build(BuildContext context) {
@@ -594,6 +600,7 @@ class _WideKey extends StatelessWidget {
             faceHeight: faceHeight * unit,
             faceRadius: _Design.keyRadius,
             red: red,
+            pressable: pressable,
             night: night ? kAlwaysCompleteAnimation : kAlwaysDismissedAnimation,
             child: ExcludeSemantics(
               child: Padding(
