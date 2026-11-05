@@ -272,7 +272,7 @@ class _BookingScreenState extends State<BookingScreen> {
             const SizedBox(height: 20),
             const SectionHeader(title: 'موعد الخدمة'),
             SizedBox(
-              height: 76,
+              height: 86,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: _days.length,
