@@ -1,20 +1,17 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme.dart';
-import '../widgets/quick_route.dart';
+import '../auth/push_key.dart';
 import '../widgets/shell_layout.dart';
-import '../widgets/ui.dart';
 import 'admin_bookings.dart';
 import 'admin_dashboard.dart';
 import 'admin_more.dart';
 import 'admin_services.dart';
 import 'admin_works.dart';
-import '../customer/customer_shell.dart';
 
+/// لوحة التحكم: تُفتح من صفحة حساب المدير، ويرجع منها زر الرجوع الاعتيادي إلى التطبيق.
 class AdminShell extends StatefulWidget {
-  const AdminShell({super.key, this.showBackToApp = false});
-
-  final bool showBackToApp;
+  const AdminShell({super.key});
 
   @override
   State<AdminShell> createState() => _AdminShellState();
@@ -39,68 +36,44 @@ class _AdminShellState extends State<AdminShell> {
   late final _pages = [
     AdminDashboard(
       onOpenBookings: () => _go(1),
-      onOpenMessages: () => _go(4),
       onOpenWorks: () => _go(3),
-      onPreviewApp: () => Navigator.push(
-        context,
-        QuickRoute(
-          builder: (_) => CustomerShell(
-            adminPreview: true,
-            onOpenAdminDashboard: () => Navigator.pop(context),
-          ),
-        ),
-      ),
     ),
     const AdminBookings(),
     const AdminServices(),
     const AdminWorks(),
-    AdminMore(onNavigate: _go),
+    const AdminMore(),
   ];
 
   @override
   Widget build(BuildContext context) {
-    return AppShellLayout(
-      index: _index,
-      items: _items,
-      pages: _pages,
-      onSelect: _go,
-      topBanner: widget.showBackToApp
-          ? Material(
-              color: Theme.of(context).colorScheme.surface,
-              child: SafeArea(
-                bottom: false,
-                child: SizedBox(
-                  height: 44,
-                  width: double.infinity,
-                  child: Align(
-                    alignment: AlignmentDirectional.centerStart,
-                    child: IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      tooltip: 'العودة إلى التطبيق',
-                      icon: const Icon(Icons.arrow_forward_rounded),
-                    ),
-                  ),
-                ),
-              ),
-            )
-          : null,
+    // رجوع الهاتف يعود إلى الرئيسية أولاً، ثم يخرج إلى التطبيق.
+    return PopScope(
+      canPop: _index == 0,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _go(0);
+      },
+      child: AppShellLayout(
+        index: _index,
+        items: _items,
+        pages: _pages,
+        onSelect: _go,
+      ),
     );
   }
 }
 
+/// رأس صفحات لوحة التحكم: زر الرجوع إلى التطبيق، والعنوان، والإجراءات.
 class AdminHeader extends StatelessWidget {
   const AdminHeader({
     super.key,
     required this.title,
     this.subtitle,
     this.actions = const [],
-    this.showBack = false,
   });
 
   final String title;
   final String? subtitle;
   final List<Widget> actions;
-  final bool showBack;
 
   @override
   Widget build(BuildContext context) {
@@ -108,18 +81,16 @@ class AdminHeader extends StatelessWidget {
     return SafeArea(
       bottom: false,
       child: Padding(
-        padding: EdgeInsets.fromLTRB(showBack ? 8 : 18, 12, 18, 10),
+        padding: const EdgeInsets.fromLTRB(18, 8, 18, 8),
         child: Row(
           children: [
-            if (showBack)
-              IconButton(
-                icon: const Icon(Icons.arrow_forward_rounded),
-                onPressed: () => Navigator.pop(context),
-              )
-            else
-              const Padding(
-                padding: EdgeInsetsDirectional.only(end: 10),
-                child: BrandLogo(size: 42, radius: 12),
+            if (Navigator.canPop(context))
+              Padding(
+                padding: const EdgeInsetsDirectional.only(end: 10),
+                child: SizedBox(
+                  width: PushKeyBack.width * pushKeyUnit(context),
+                  child: const PushKeyBack(),
+                ),
               ),
             Expanded(
               child: Column(
@@ -134,34 +105,37 @@ class AdminHeader extends StatelessWidget {
                             style: theme.textTheme.titleLarge
                                 ?.copyWith(fontSize: 19)),
                       ),
-                      if (!showBack) ...[
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 7, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: AppColors.gold,
-                            borderRadius: BorderRadius.circular(100),
-                          ),
-                          child: const Text('مدير',
-                              style: TextStyle(
-                                  fontSize: 8.5,
-                                  fontWeight: FontWeight.w900,
-                                  color: AppColors.ink)),
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 7, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.gold,
+                          borderRadius: BorderRadius.circular(100),
                         ),
-                      ],
+                        child: const Text('مدير',
+                            style: TextStyle(
+                                fontSize: 8.5,
+                                fontWeight: FontWeight.w900,
+                                color: AppColors.ink)),
+                      ),
                     ],
                   ),
                   if (subtitle != null) ...[
                     const SizedBox(height: 1),
                     Text(subtitle!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.bodySmall
                             ?.copyWith(fontSize: 10.5)),
                   ],
                 ],
               ),
             ),
-            ...actions,
+            for (final action in actions) ...[
+              const SizedBox(width: 6),
+              action,
+            ],
           ],
         ),
       ),

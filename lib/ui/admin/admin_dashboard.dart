@@ -9,6 +9,7 @@ import '../widgets/quick_route.dart';
 import '../widgets/realtime_refresh.dart';
 import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
+import 'admin_more.dart';
 import 'admin_shell.dart';
 import 'admin_threads.dart';
 
@@ -16,15 +17,11 @@ class AdminDashboard extends StatefulWidget {
   const AdminDashboard({
     super.key,
     required this.onOpenBookings,
-    required this.onOpenMessages,
     required this.onOpenWorks,
-    required this.onPreviewApp,
   });
 
   final VoidCallback onOpenBookings;
-  final VoidCallback onOpenMessages;
   final VoidCallback onOpenWorks;
-  final VoidCallback onPreviewApp;
 
   @override
   State<AdminDashboard> createState() => _AdminDashboardState();
@@ -68,13 +65,8 @@ class _AdminDashboardState extends State<AdminDashboard>
           subtitle: 'مرحباً ${user.name} · إدارة كاملة للتطبيق',
           actions: [
             AppIconButton(
-              icon: Icons.visibility_outlined,
-              tooltip: 'معاينة التطبيق',
-              onTap: widget.onPreviewApp,
-            ),
-            const SizedBox(width: 8),
-            AppIconButton(
               icon: Icons.chat_bubble_outline_rounded,
+              tooltip: 'الرسائل',
               badge: _unread,
               onTap: () => Navigator.push(
                 context,
@@ -186,6 +178,11 @@ class _AdminDashboardState extends State<AdminDashboard>
                           value: '${stats.customers}',
                           icon: Icons.people_alt_rounded,
                           color: AppColors.info,
+                          onTap: () => Navigator.push(
+                            context,
+                            QuickRoute(
+                                builder: (_) => const AdminCustomersScreen()),
+                          ),
                         ),
                         StatTile(
                           label: 'أعمالنا',
@@ -258,35 +255,6 @@ class _AdminDashboardState extends State<AdminDashboard>
                             ),
                           ),
                         ),
-                    const SizedBox(height: 18),
-                    const SectionHeader(title: 'إجراءات سريعة'),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _QuickAction(
-                            icon: Icons.event_note_rounded,
-                            label: 'الحجوزات',
-                            onTap: widget.onOpenBookings,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: _QuickAction(
-                            icon: Icons.video_library_rounded,
-                            label: 'الأعمال',
-                            onTap: widget.onOpenWorks,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: _QuickAction(
-                            icon: Icons.support_agent_rounded,
-                            label: 'الرسائل',
-                            onTap: widget.onOpenMessages,
-                          ),
-                        ),
-                      ],
-                    ),
                   ],
                 ),
               );
@@ -353,40 +321,6 @@ class _WeeklyChart extends StatelessWidget {
             ),
           ),
       ],
-    );
-  }
-}
-
-class _QuickAction extends StatelessWidget {
-  const _QuickAction(
-      {required this.icon, required this.label, required this.onTap});
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return SoftCard(
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      onTap: onTap,
-      child: Column(
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: AppColors.gold.withValues(alpha: .18),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, size: 19),
-          ),
-          const SizedBox(height: 7),
-          Text(label,
-              style:
-                  const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800)),
-        ],
-      ),
     );
   }
 }

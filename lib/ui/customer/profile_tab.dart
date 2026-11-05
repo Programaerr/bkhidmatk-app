@@ -39,7 +39,6 @@ abstract final class _Design {
 
   static const menuHeight = 73.1;
   static const nightHeight = 47.2;
-  static const languageHeight = 51.9;
   static const logoutHeight = 39.0;
 
   // الفراغات كما في التصميم: من أسفل الجهة الصفراء أو من قاعدة الزر إلى وجه الذي بعده.
@@ -64,10 +63,6 @@ abstract final class _Design {
   static const subtitleSize = 10.5;
   static const arrowSize = 22.0;
   static const switchHeight = 22.0;
-  static const pillHeight = 26.0;
-  static const pillPadding = 10.0;
-  static const pillRadius = 8.0;
-  static const pillTextSize = 11.0;
   static const logoutTextSize = 13.0;
   static const logoutIconSize = 18.0;
   static const logoutIconGap = 6.0;
@@ -100,6 +95,14 @@ class ProfileTab extends StatefulWidget {
 }
 
 class _ProfileTabState extends State<ProfileTab> {
+  final _fold = HeaderFold();
+
+  @override
+  void dispose() {
+    _fold.dispose();
+    super.dispose();
+  }
+
   Future<void> _editProfile() async {
     final state = context.read<AppState>();
     final user = state.user!;
@@ -232,24 +235,27 @@ class _ProfileTabState extends State<ProfileTab> {
             return Stack(
               children: [
                 Positioned.fill(
-                  child: ListView(
-                    // يبقى آخر زر فوق شريط التنقل الزجاجي.
-                    padding: EdgeInsets.only(top: hillBottom, bottom: barRoom),
-                    children: [
-                      for (final row in rows) ...[
-                        SizedBox(height: row.gap * spacing * unit),
-                        Center(child: row.key),
+                  child: _fold.track(
+                    child: ListView(
+                      // يبقى آخر زر فوق شريط التنقل الزجاجي.
+                      padding: EdgeInsets.only(top: hillBottom, bottom: barRoom),
+                      children: [
+                        for (final row in rows) ...[
+                          SizedBox(height: row.gap * spacing * unit),
+                          Center(child: row.key),
+                        ],
+                        SizedBox(height: _Design.barMargin * unit),
                       ],
-                      SizedBox(height: _Design.barMargin * unit),
-                    ],
+                    ),
                   ),
                 ),
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  top: 0,
-                  height: hillBottom,
-                  child: HomeHeader(width: width, unit: unit, top: top, title: 'الملف الشخصي'),
+                FoldingHeader(
+                  fold: _fold,
+                  unit: unit,
+                  safeTop: safeTop,
+                  top: top,
+                  builder: (context, metrics) =>
+                      HomeHeader(width: width, metrics: metrics, title: 'الملف الشخصي'),
                 ),
               ],
             );
@@ -325,42 +331,6 @@ class _ProfileTabState extends State<ProfileTab> {
                 width: _Design.switchHeight * 2 * unit,
                 height: _Design.switchHeight * unit,
                 child: DayNightSwitch(night: dark),
-              ),
-            ],
-          ),
-        ),
-      ),
-      (
-        gap: _Design.groupGap,
-        height: _Design.languageHeight,
-        key: _WideKey(
-          unit: unit,
-          faceHeight: _Design.languageHeight,
-          label: 'اللغة',
-          value: state.english ? 'English' : 'عربي',
-          onPressed: () => state.setEnglish(!state.english),
-          child: Row(
-            children: [
-              _Badge(
-                unit: unit,
-                size: _Design.smallBadgeSize,
-                icon: Icons.public,
-                iconSize: _Design.smallIconSize,
-              ),
-              SizedBox(width: _Design.badgeGap * unit),
-              Expanded(
-                child: Text(
-                  'اللغة',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: _text(unit, _Design.titleSize, FontWeight.w800, ink),
-                ),
-              ),
-              Flexible(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: _LanguagePill(unit: unit, english: state.english),
-                ),
               ),
             ],
           ),
@@ -521,7 +491,6 @@ class _WideKey extends StatelessWidget {
     required this.child,
     this.red = false,
     this.toggled,
-    this.value,
   });
 
   final double unit;
@@ -531,7 +500,6 @@ class _WideKey extends StatelessWidget {
   final Widget child;
   final bool red;
   final bool? toggled;
-  final String? value;
 
   @override
   Widget build(BuildContext context) {
@@ -541,7 +509,6 @@ class _WideKey extends StatelessWidget {
       button: true,
       label: label,
       toggled: toggled,
-      value: value,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onPressed,
@@ -653,45 +620,6 @@ class _Badge extends StatelessWidget {
         shape: BoxShape.circle,
       ),
       child: Icon(icon, size: iconSize * unit, color: homeInk),
-    );
-  }
-}
-
-/// اللغتان، والمختارة منهما بلون الجهة الصفراء.
-class _LanguagePill extends StatelessWidget {
-  const _LanguagePill({required this.unit, required this.english});
-
-  final double unit;
-  final bool english;
-
-  @override
-  Widget build(BuildContext context) {
-    final night = Theme.of(context).brightness == Brightness.dark;
-    final ink = night ? homeNightInk : homeInk;
-    final radius = BorderRadius.circular(_Design.pillRadius * unit);
-    Widget option(String text, bool chosen) => Container(
-          height: _Design.pillHeight * unit,
-          padding: EdgeInsets.symmetric(horizontal: _Design.pillPadding * unit),
-          alignment: Alignment.center,
-          decoration: chosen
-              ? BoxDecoration(color: TruckSceneMetrics.hillColor, borderRadius: radius)
-              : null,
-          child: Text(
-            text,
-            style: _text(
-              unit,
-              _Design.pillTextSize,
-              FontWeight.w800,
-              chosen ? homeInk : ink.withValues(alpha: .6),
-            ),
-          ),
-        );
-    return DecoratedBox(
-      decoration: BoxDecoration(color: ink.withValues(alpha: .06), borderRadius: radius),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [option('عربي', !english), option('English', english)],
-      ),
     );
   }
 }

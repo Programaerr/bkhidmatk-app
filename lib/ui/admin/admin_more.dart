@@ -7,6 +7,7 @@ import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
 import '../customer/messages_screen.dart';
+import '../auth/push_key.dart';
 import '../customer/receipts_screen.dart';
 import '../widgets/quick_route.dart';
 import '../widgets/realtime_refresh.dart';
@@ -17,10 +18,10 @@ import 'admin_hires.dart';
 import 'admin_shell.dart';
 import 'admin_threads.dart';
 
+/// «المزيد» في لوحة التحكم: ما لا يملك تبويباً خاصاً به. الحجوزات والخدمات والأعمال في تبويباتها،
+/// والمظهر وتسجيل الخروج في صفحة الحساب، فلا تتكرر هنا.
 class AdminMore extends StatefulWidget {
-  const AdminMore({super.key, required this.onNavigate});
-
-  final ValueChanged<int> onNavigate;
+  const AdminMore({super.key});
 
   @override
   State<AdminMore> createState() => _AdminMoreState();
@@ -28,9 +29,6 @@ class AdminMore extends StatefulWidget {
 
 class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
   Future<AppStats>? _stats;
-
-  /// حالة البانر الرئيسي في الصفحة الرئيسية للزبائن.
-  bool? _showBanner;
 
   @override
   void onRealtimeChange() => _load();
@@ -42,41 +40,8 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
   }
 
   void _load() {
-    final repo = context.read<AppState>().repo;
-    final future = repo.stats();
-    final banner = repo.getSetting('show_hero_banner', fallback: '0');
-    if (mounted) {
-      setState(() {
-        _stats = future;
-      });
-      banner.then((value) {
-        if (mounted) setState(() => _showBanner = value == '1');
-      });
-    }
-  }
-
-  Future<void> _toggleBanner(bool value) async {
-    setState(() => _showBanner = value);
-    await context.read<AppState>().repo.setSetting(
-          'show_hero_banner',
-          value ? '1' : '0',
-        );
-    if (!mounted) return;
-    AppSnack.show(
-      context,
-      value ? 'تم تفعيل البانر الرئيسي' : 'تم إخفاء البانر الرئيسي',
-    );
-  }
-
-  Future<void> _logout() async {
-    final ok = await confirmAction(
-      context,
-      title: 'تسجيل الخروج',
-      message: 'هل تريد الخروج من لوحة التحكم؟',
-      confirmLabel: 'خروج',
-      danger: true,
-    );
-    if (ok && mounted) await context.read<AppState>().logout();
+    final future = context.read<AppState>().repo.stats();
+    if (mounted) setState(() => _stats = future);
   }
 
   @override
@@ -88,9 +53,13 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
       children: [
         AdminHeader(
           title: 'المزيد',
-          subtitle: 'الإدارة، الزبائن، والإعدادات',
+          subtitle: 'الزبائن والتوظيف والإعدادات',
           actions: [
-            AppIconButton(icon: Icons.refresh_rounded, onTap: _load),
+            AppIconButton(
+              icon: Icons.refresh_rounded,
+              tooltip: 'تحديث',
+              onTap: _load,
+            ),
           ],
         ),
         Expanded(
@@ -211,20 +180,6 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
                     ),
                     const Divider(height: 1),
                     _Tile(
-                      icon: Icons.event_note_rounded,
-                      title: 'الحجوزات',
-                      subtitle: 'متابعة وتحديث حالات الحجز',
-                      onTap: () => widget.onNavigate(1),
-                    ),
-                    const Divider(height: 1),
-                    _Tile(
-                      icon: Icons.handyman_rounded,
-                      title: 'الخدمات والفنيون',
-                      subtitle: 'إضافة وتعديل الخدمات والأقسام',
-                      onTap: () => widget.onNavigate(2),
-                    ),
-                    const Divider(height: 1),
-                    _Tile(
                       icon: Icons.person_add_alt_1_rounded,
                       title: 'التوظيف',
                       subtitle: 'إضافة أرقام موظفين ومتابعة التسجيل',
@@ -264,38 +219,6 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
                       title: 'بيانات الدعم',
                       subtitle: 'رقم الدعم الظاهر للزبائن في الوصولات',
                       onTap: () => _editSupportPhone(context),
-                    ),
-                    const Divider(height: 1),
-                    SwitchListTile.adaptive(
-                      value: _showBanner ?? false,
-                      onChanged: _toggleBanner,
-                      secondary: Icon(
-                        (_showBanner ?? false)
-                            ? Icons.web_asset_rounded
-                            : Icons.web_asset_off_rounded,
-                        size: 20,
-                      ),
-                      title: const Text('البانر الرئيسي',
-                          style:
-                              TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-                      subtitle: const Text('إظهار البانر في أعلى الصفحة الرئيسية',
-                          style: TextStyle(fontSize: 10.5)),
-                    ),
-                    const Divider(height: 1),
-                    SwitchListTile.adaptive(
-                      value: state.themeMode == ThemeMode.dark,
-                      onChanged: (v) => state.setTheme(v),
-                      secondary: Icon(
-                        state.themeMode == ThemeMode.dark
-                            ? Icons.dark_mode_rounded
-                            : Icons.light_mode_rounded,
-                        size: 20,
-                      ),
-                      title: const Text('الوضع الليلي',
-                          style:
-                              TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-                      subtitle: const Text('تغيير مظهر التطبيق بالكامل',
-                          style: TextStyle(fontSize: 10.5)),
                     ),
                     const Divider(height: 1),
                     _Tile(
@@ -338,19 +261,6 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
                         style: TextStyle(fontSize: 12, height: 1.8),
                       ),
                     ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                height: 50,
-                child: OutlinedButton.icon(
-                  onPressed: _logout,
-                  icon: const Icon(Icons.logout_rounded, size: 18),
-                  label: const Text('تسجيل الخروج'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.danger,
-                    side: BorderSide(color: AppColors.danger.withValues(alpha: .3)),
                   ),
                 ),
               ),
@@ -560,7 +470,7 @@ class _Tile extends StatelessWidget {
         ),
       ),
       subtitle: Text(subtitle, style: theme.textTheme.bodySmall?.copyWith(fontSize: 10)),
-      trailing: const Icon(Icons.chevron_left_rounded, size: 20),
+      trailing: const Icon(Icons.chevron_right_rounded, size: 20),
     );
   }
 }
@@ -615,13 +525,7 @@ class _AdminCustomersScreenState extends State<AdminCustomersScreen>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('الزبائن'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_forward_rounded),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
+      appBar: const PushKeyAppBar(title: 'الزبائن'),
       body: SafeArea(
         child: Column(
           children: [
@@ -690,18 +594,15 @@ class _AdminCustomersScreenState extends State<AdminCustomersScreen>
                                 ],
                               ),
                             ),
-                            IconButton(
-                              onPressed: () => _call(u.phone),
-                              icon: const Icon(Icons.call_outlined, size: 19),
+                            AppIconButton(
+                              small: true,
+                              onTap: () => _call(u.phone),
+                              icon: Icons.call_outlined,
                               tooltip: 'اتصال',
                             ),
-                            IconButton(
-                              onPressed: () => _sms(u.phone),
-                              icon: const Icon(Icons.sms_outlined, size: 19),
-                              tooltip: 'رسالة',
-                            ),
-                            IconButton(
-                              onPressed: () => Navigator.push(
+                            AppIconButton(
+                              small: true,
+                              onTap: () => Navigator.push(
                                 context,
                                 QuickRoute(
                                   builder: (_) => MessagesScreen(
@@ -711,8 +612,7 @@ class _AdminCustomersScreenState extends State<AdminCustomersScreen>
                                   ),
                                 ),
                               ),
-                              icon: const Icon(Icons.chat_bubble_outline_rounded,
-                                  size: 19),
+                              icon: Icons.chat_bubble_outline_rounded,
                               tooltip: 'محادثة',
                             ),
                           ],
