@@ -38,6 +38,8 @@ flutter:
   assets:
     - assets/images/
     - assets/media/
+  shaders:
+    - shaders/liquid_glass.frag
   fonts:
     - family: Cairo
       fonts:
