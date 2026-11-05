@@ -315,9 +315,10 @@ void main() {
       await tester.pump();
       await pumpRouteFrames(tester);
 
-      await _tapAndOpen(tester, find.text('عرض الكل').last);
-      expect(find.byType(AllCraftsmenScreen), findsOneWidget);
-      await tester.pump();
+      // كل الحرفيين هم تبويب الحرفيين نفسه، فلا تُفتح صفحة ثانية تكرره.
+      await tester.tap(find.text('عرض الكل').last);
+      await tester.pumpAndSettle();
+      expect(find.byType(TechniciansTab), findsOneWidget);
       expect(find.text('حرفي 8'), findsOneWidget);
     });
 

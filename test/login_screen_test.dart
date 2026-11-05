@@ -74,7 +74,7 @@ Finder get _phone => find.byType(TextField).at(0);
 Finder get _password => find.byType(TextField).at(1);
 
 Future<void> _pressLogin(WidgetTester tester) async {
-  await tester.tap(find.byType(PushKeyButton));
+  await tester.tap(find.byType(PushKeyButton).first);
   await tester.pumpAndSettle();
 }
 
@@ -83,7 +83,7 @@ void main() {
     await _pump(tester, _Repo());
     expect(find.byType(RaisedField), findsNWidgets(2));
     expect(find.byType(TextFormField), findsNothing);
-    final key = tester.widget<PushKeyButton>(find.byType(PushKeyButton));
+    final key = tester.widget<PushKeyButton>(find.byType(PushKeyButton).first);
     expect(key.label, 'تسجيل الدخول');
     expect(key.yellow, isTrue);
   });

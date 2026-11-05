@@ -207,6 +207,12 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar> {
     if (mounted && _isDragging != value) setState(() => _isDragging = value);
   }
 
+  // التبويب يُفتح بمجرد اللمس، ويتبع الإصبع إن سحبه على الشريط.
+  void _touchDown(Offset globalPosition) {
+    _setDragging(true);
+    _scrub(globalPosition);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -246,7 +252,7 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar> {
                         return Listener(
                           key: const ValueKey('glass-navigation-bar'),
                           behavior: HitTestBehavior.opaque,
-                          onPointerDown: (_) => _setDragging(true),
+                          onPointerDown: (event) => _touchDown(event.position),
                           onPointerMove: (event) => _scrub(event.position),
                           onPointerUp: (_) => _setDragging(false),
                           onPointerCancel: (_) => _setDragging(false),

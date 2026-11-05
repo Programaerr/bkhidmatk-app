@@ -13,6 +13,7 @@ import '../widgets/quick_route.dart';
 import '../widgets/ui.dart';
 import 'home_keys.dart';
 import 'messages_screen.dart';
+import 'receipts_screen.dart';
 
 /// مقاسات التصميم المعتمد بالبكسل (إطار عرضه 391).
 abstract final class _Design {
@@ -275,6 +276,17 @@ class _ProfileTabState extends State<ProfileTab> {
           title: 'حجوزاتي',
           subtitle: 'كل حجوزاتك وحالتها',
           onPressed: widget.onOpenBookings,
+        ),
+      if (!widget.workerMode)
+        _MenuKey(
+          unit: unit,
+          icon: Icons.receipt_long_rounded,
+          title: 'وصولاتي',
+          subtitle: 'وصولات الدفع القابلة للطباعة',
+          onPressed: () => Navigator.push(
+            context,
+            QuickRoute(builder: (_) => const ReceiptsScreen()),
+          ),
         ),
       if (!widget.workerMode && widget.onOpenAdminDashboard != null)
         _MenuKey(

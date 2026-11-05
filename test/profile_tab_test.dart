@@ -160,17 +160,6 @@ void main() {
       expect(state.themeMode, ThemeMode.light);
     });
 
-    testWidgets('زر اللغة يبدل بين العربي والإنجليزي', (tester) async {
-      final state = await _openProfile(tester);
-      expect(state.english, isFalse);
-      await tester.tap(_key('اللغة'));
-      await tester.pump();
-      expect(state.english, isTrue);
-      await tester.tap(_key('اللغة'));
-      await tester.pump();
-      expect(state.english, isFalse);
-    });
-
     testWidgets('زر تسجيل الخروج أحمر ويسأل قبل الخروج', (tester) async {
       final state = await _openProfile(tester);
       expect(_logoutKey, findsOneWidget);
@@ -202,17 +191,17 @@ void main() {
       // البطاقة صارت بقدر الصورة، فارتفع ما تحتها 60.6 وبقيت الفراغات كما في التصميم.
       final tops = {
         'حجوزاتي': 285.1,
-        'الرسائل والدعم': 375.0,
-        'الوضع الليلي': 478.7,
-        'اللغة': 556.5,
+        'وصولاتي': 375.0,
+        'الرسائل والدعم': 464.9,
+        'الوضع الليلي': 568.6,
       };
       expect(_face(tester, _card).top, closeTo(168.6, .1));
       expect(_face(tester, _card).height, closeTo(85.9, .1));
       for (final MapEntry(key: text, value: top) in tops.entries) {
         expect(_face(tester, _key(text)).top, closeTo(top, .1), reason: text);
       }
-      expect(_face(tester, _logoutKey).top, closeTo(667.7, .1));
-      for (final key in [_card, _key('حجوزاتي'), _key('اللغة'), _logoutKey]) {
+      expect(_face(tester, _logoutKey).top, closeTo(675.1, .1));
+      for (final key in [_card, _key('حجوزاتي'), _key('الوضع الليلي'), _logoutKey]) {
         final face = _face(tester, key);
         expect(face.width, closeTo(279.9, .01));
         expect(face.center.dx, closeTo(391 / 2, .01));

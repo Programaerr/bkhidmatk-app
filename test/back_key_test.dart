@@ -66,7 +66,7 @@ void main() {
     testWidgets('زر الرجوع في «$title» بارتفاع أزرار الصفحة ولونها، وعلى حافة خاناتها', (tester) async {
       await _pump(tester, screen);
       final pageKey = tester.widget<PushKey>(
-        find.descendant(of: find.byType(PushKeyButton).last, matching: find.byType(PushKey)),
+        find.descendant(of: find.byType(PushKeyButton).first, matching: find.byType(PushKey)),
       );
       final backKey = tester.widget<PushKey>(_backKey);
       expect(backKey.unit, pageKey.unit);

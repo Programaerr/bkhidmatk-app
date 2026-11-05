@@ -246,7 +246,7 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
     // الشعار يساراً والأزرار يميناً، على مستوى واحد فوق شريط التنقل مباشرة.
     final bottomClearance = MediaQuery.sizeOf(context).width >= 900
         ? 20.0
-        : MediaQuery.paddingOf(context).bottom;
+        : MediaQuery.paddingOf(context).bottom + 6;
     return ColoredBox(
       color: Colors.black,
       child: Stack(
