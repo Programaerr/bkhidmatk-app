@@ -244,9 +244,13 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     final controller = _controller;
     // الشعار يساراً والأزرار يميناً، على مستوى واحد فوق شريط التنقل مباشرة.
-    final bottomClearance = MediaQuery.sizeOf(context).width >= 900
-        ? 20.0
-        : MediaQuery.paddingOf(context).bottom + 6;
+    final wide = MediaQuery.sizeOf(context).width >= 900;
+    final bottomClearance =
+        wide ? 20.0 : MediaQuery.paddingOf(context).bottom + 6;
+    // شريط التقدم فوق شريط التنقل: الزجاج يبدأ تحت هامش الصفحة بـ 10، فيملأ مكان اللمس
+    // ما بين الزجاج والشعار، والخط الرفيع في وسطه.
+    final progressBottom =
+        wide ? 0.0 : MediaQuery.paddingOf(context).bottom - 10;
     return ColoredBox(
       color: Colors.black,
       child: Stack(
@@ -298,7 +302,7 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
             Positioned(
               left: 0,
               right: 0,
-              bottom: 0,
+              bottom: progressBottom,
               child: ReelProgressBar(controller: controller),
             ),
         ],
@@ -496,11 +500,17 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
   }
 }
 
-/// شريط تقدم الفيديو أسفل الشاشة. في العربية يمتلئ من اليمين، والسحب نحو اليسار يقدّم الفيديو.
+/// شريط تقدم الفيديو فوق شريط التنقل. في العربية يمتلئ من اليمين، والسحب نحو اليسار يقدّم الفيديو.
 class ReelProgressBar extends StatelessWidget {
   const ReelProgressBar({super.key, required this.controller});
 
   final VideoPlayerController controller;
+
+  /// سُمك الخط المرسوم.
+  static const thickness = 2.5;
+
+  /// ارتفاع مكان اللمس حول الخط، ليسهل سحبه وهو رفيع.
+  static const touchHeight = 16.0;
 
   @override
   Widget build(BuildContext context) {
@@ -510,14 +520,18 @@ class ReelProgressBar extends StatelessWidget {
       flipX: Directionality.of(context) == TextDirection.rtl,
       child: Directionality(
         textDirection: TextDirection.ltr,
-        child: VideoProgressIndicator(
-          controller,
-          allowScrubbing: true,
-          padding: EdgeInsets.zero,
-          colors: const VideoProgressColors(
-            playedColor: AppColors.gold,
-            bufferedColor: Colors.white38,
-            backgroundColor: Colors.white24,
+        child: SizedBox(
+          height: touchHeight,
+          child: VideoProgressIndicator(
+            controller,
+            allowScrubbing: true,
+            padding: const EdgeInsets.symmetric(
+                vertical: (touchHeight - thickness) / 2),
+            colors: const VideoProgressColors(
+              playedColor: AppColors.gold,
+              bufferedColor: Colors.white38,
+              backgroundColor: Colors.white24,
+            ),
           ),
         ),
       ),
