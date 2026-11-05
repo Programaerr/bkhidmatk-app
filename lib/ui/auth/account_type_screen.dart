@@ -11,7 +11,8 @@ import 'register_screen.dart';
 import 'thinking_scene.dart';
 
 const _cream = Color(0xFFFFFEE2);
-const _nightGround = Colors.black;
+// أرضية الليل بدرجة أرضية التطبيق.
+const _nightGround = Color(0xFF212121);
 const _privacyInk = Color(0xFF383838);
 const _nightPrivacyInk = Color(0xFFF4F4EE);
 

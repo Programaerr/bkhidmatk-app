@@ -23,8 +23,8 @@ const _label = Color(0xFF383838);
 const _wideLine = Color(0xFFDEDBCA);
 const _shortLine = Color(0xFFBEB9B3);
 
-// الألوان نفسها في الوضع الليلي: جهة السيارة تبقى صفراء، والخانة تحتها سوداء.
-const _nightGround = Colors.black;
+// الألوان نفسها في الوضع الليلي: جهة السيارة تبقى صفراء، والخانة تحتها داكنة بدرجة أرضية التطبيق.
+const _nightGround = Color(0xFF212121);
 const _nightInk = Color(0xFFF4F4EE);
 const _nightDivider = Color(0xFF3A3A40);
 const _nightShortLine = Color(0xFF5F5F66);

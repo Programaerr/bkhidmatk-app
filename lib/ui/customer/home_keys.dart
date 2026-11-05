@@ -11,7 +11,8 @@ import '../widgets/ui.dart';
 import 'craftsman_info_screen.dart';
 
 const homeCream = Color(0xFFFFFEE2);
-const homeNightGround = Colors.black;
+/// أرضية الصفحات ليلاً (#212121 اختيار المستخدم)، والأزرار عليها تبقى على سوادها.
+const homeNightGround = Color(0xFF212121);
 const homeInk = Color(0xFF263238);
 const homeNightInk = Color(0xFFF4F4EE);
 const homeLabel = Color(0xFF383838);
