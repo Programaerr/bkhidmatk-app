@@ -172,9 +172,9 @@ class _AppShellLayoutState extends State<AppShellLayout>
   }
 }
 
-/// شريط التنقل السفلي: لمسة واحدة تفتح التبويب، وتنتقل الفقاعة إليه زجاجاً يكسر ما تحته ثم
-/// يستقر. والبقاء على الفقاعة أو سحبها يحوّلها إلى مجهر يتحرك يميناً ويساراً ويكبّر ما تحته،
-/// ويُفتح التبويب الذي يُترك عليه.
+/// شريط التنقل السفلي: لمسة واحدة تفتح التبويب، وتقفز الفقاعة إليه كالهلام ثم تستقر. والبقاء
+/// على الفقاعة أو سحبها يكبّرها فتتبع الإصبع يميناً ويساراً وتكبّر ما تحتها، ويُفتح التبويب الذي
+/// يُترك عليه.
 /// ارتفاع أعلى زجاج شريط التنقل عن أسفل الشاشة، لما يُرسم فوقه مباشرة (مثل شريط تقدم الفيديو).
 /// تحت الزجاج شريط النظام إن وُجد، ثم 4 بين الزجاج ومكانه.
 double glassBarTop(BuildContext context) =>
@@ -222,11 +222,10 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
     vsync: this,
     duration: const Duration(milliseconds: 200),
   );
-  // رحلة الفقاعة من تبويب إلى آخر كسائل (مثل فينوم، طلب المستخدم): رأسها يسبق إلى التبويب،
-  // وذيلها يلحقه برقبة تَرِقّ ثم يُسحب إليه، وتهتز قليلاً ثم تستقر.
+  // قفزة الفقاعة من تبويب إلى آخر كالهلام (طلب المستخدم بدل حركة فينوم).
   late final _trip = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 640),
+    duration: const Duration(milliseconds: 600),
   );
   // سرعة الإصبع تمطّ الزجاج وتقوّي انكساره، ويعود مستوياً حين يقف الإصبع.
   late final _settle = AnimationController(
@@ -245,6 +244,10 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
   int? _pointer;
   // التبويب الذي فُتح بترك المجهر، فلا رحلة إليه.
   int? _released;
+  // من أين يكبر المجهر: من الفقاعة الساكنة، أو من مكان الفقاعة القافزة إن أُمسكت وهي في الهواء.
+  double _lensFrom = 0;
+  // أُمسكت الفقاعة في قفزتها: لا تظهر الساكنة في آخر الطريق حتى يُترك المجهر.
+  bool _caughtInHop = false;
   double _tripFrom = 0;
   int _tripTo = 0;
   double _width = 0;
@@ -313,11 +316,11 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
     return Directionality.of(context) == TextDirection.rtl ? width - start : start;
   }
 
-  /// رأس الفقاعة السائلة الآن، ومنه تبدأ رحلة جديدة إن ضُغط تبويب آخر قبل أن تصل.
+  /// مكان الفقاعة القافزة الآن، ومنه تبدأ قفزة جديدة إن ضُغط تبويب آخر قبل أن تهبط.
   double _tripCentre(double width) => lerpDouble(
         _tripFrom,
         _tabCenter(_tripTo, width),
-        _GooPainter.lead(_trip.value),
+        _JellyHop.travel(_trip.value),
       )!;
 
   // التبويب يُفتح بمجرد اللمس، والبقاء عليه أو السحب يحوّل فقاعته إلى مجهر.
@@ -358,6 +361,10 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
     _hold?.cancel();
     if (!mounted || _lensOn) return;
     _lensOn = true;
+    _caughtInHop = _trip.isAnimating;
+    _lensFrom = _caughtInHop
+        ? _tripCentre(_width)
+        : _tabCenter(widget.index, _width);
     _trip.stop();
     _finger.value = _barX(globalPosition);
     _lens.forward();
@@ -372,6 +379,7 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
     _setDragging(false);
     if (!_lensOn) return;
     _lensOn = false;
+    _caughtInHop = false;
     _finger.value = _barX(event.position);
     final next = _indexAt(event.position);
     if (next != null && next != widget.index) {
@@ -389,6 +397,7 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
     _setDragging(false);
     if (!_lensOn) return;
     _lensOn = false;
+    _caughtInHop = false;
     _lens.reverse();
   }
 
@@ -403,7 +412,9 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
       final half = itemWidth / 2;
       final finger = _finger.value.clamp(half, width - half);
       return (
-        centre: lerpDouble(_tabCenter(widget.index, width), finger, t)!,
+        // يكبر من مكان الفقاعة إلى الإصبع، وبعد تركه يصغر إلى فقاعة التبويب المختار.
+        centre: lerpDouble(
+            _lensOn ? _lensFrom : _tabCenter(widget.index, width), finger, t)!,
         width: lerpDouble(bubbleWidth, itemWidth + 18, t)! * (1 + stretch),
         height: lerpDouble(bubbleHeight, _height + 16, t)! * (1 - stretch * .4),
         zoom: lerpDouble(1, 1.3, t)!,
@@ -411,7 +422,7 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
         presence: t,
       );
     }
-    // في الرحلة بين التبويبات ترسم الفقاعةَ [_GooPainter]، لا الزجاج.
+    // في القفز بين التبويبات ترسم الفقاعةَ [_JellyPainter]، لا الزجاج.
     return null;
   }
 
@@ -514,7 +525,8 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
                                           child: AnimatedBuilder(
                                             animation: _glass,
                                             builder: (context, bubble) => Opacity(
-                                              opacity: _trip.isAnimating
+                                              opacity: _trip.isAnimating ||
+                                                      _caughtInHop
                                                   ? 0
                                                   : 1 -
                                                       (_drop(width, itemWidth)
@@ -526,7 +538,7 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
                                           ),
                                         ),
                                       ),
-                                      // الفقاعة السائلة في رحلتها، بلون الفقاعة الساكنة وحافتها.
+                                      // الفقاعة في قفزتها، بلون الفقاعة الساكنة وحافتها.
                                       Positioned.fill(
                                         child: IgnorePointer(
                                           child: AnimatedBuilder(
@@ -534,7 +546,7 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
                                             builder: (context, _) =>
                                                 _trip.isAnimating
                                                     ? CustomPaint(
-                                                        painter: _GooPainter(
+                                                        painter: _JellyPainter(
                                                           from: _tripFrom,
                                                           to: _tabCenter(
                                                               _tripTo, width),
@@ -641,6 +653,8 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
   // يكبّر ما تحت الزجاج ويكسره عند حافته. بلا Impeller يبقى التكبير وحده.
   Widget _refraction(Rect rect, double zoom, double refract, bool isDark) {
     final radius = BorderRadius.circular(rect.height / 2);
+    // بلون الفقاعة الساكنة وحافتها: الإصبع يمسك الفقاعة نفسها فتكبر وتتبعه، ولا تختفي من تحته.
+    final glass = Colors.white.withValues(alpha: isDark ? .16 : .34);
     final tint = DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: radius,
@@ -648,13 +662,11 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.white.withValues(alpha: isDark ? .10 : .22),
-            Colors.white.withValues(alpha: isDark ? .02 : .04),
+            glass,
+            Colors.white.withValues(alpha: isDark ? .04 : .10),
           ],
         ),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: isDark ? .14 : .30),
-        ),
+        border: Border.all(color: glass),
       ),
     );
     final program = _glassProgram;
@@ -688,10 +700,44 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
   }
 }
 
-/// الفقاعة وهي تنتقل كسائل: رأس يسبق إلى التبويب الجديد، وذيل يتأخر ثم يُسحب إليه، وبينهما رقبة
-/// تَرِقّ كلما طال المطّ. حين يصل الرأس يهتز قليلاً كالهلام، وفي آخرها تطابق الفقاعة الساكنة تماماً.
-class _GooPainter extends CustomPainter {
-  const _GooPainter({
+/// قفزة الفقاعة الهلامية من تبويب إلى آخر (طلب المستخدم بدل حركة فينوم): تنضغط قبل القفز،
+/// وتطير في قوس صغير داخل الشريط وهي ممطوطة مع اتجاهها، ثم تهبط فتنضغط وتهتز كالهلام حتى تسكن
+/// على شكل الفقاعة الساكنة تماماً.
+abstract final class _JellyHop {
+  /// نهاية الانضغاط قبل القفز، ولحظة الهبوط.
+  static const takeoff = .14;
+  static const land = .64;
+
+  static double _flight(double t) =>
+      ((t - takeoff) / (land - takeoff)).clamp(0.0, 1.0);
+
+  /// كم قطعت من الطريق: صفر قبل القفز، وواحد من لحظة الهبوط.
+  static double travel(double t) => Curves.easeInOutCubic.transform(_flight(t));
+
+  /// ارتفاعها عن مكانها نسبةً إلى أعلى القوس.
+  static double rise(double t) => math.sin(math.pi * _flight(t));
+
+  /// عرضها وارتفاعها نسبةً إلى الفقاعة الساكنة.
+  static (double, double) shape(double t) {
+    if (t < takeoff) {
+      final squash = math.sin(math.pi / 2 * t / takeoff);
+      return (1 + .12 * squash, 1 - .14 * squash);
+    }
+    if (t < land) {
+      final flight = _flight(t);
+      final stretch = math.sin(math.pi * flight);
+      final squash = 1 - (flight / .2).clamp(0.0, 1.0);
+      return (1 + .16 * stretch + .12 * squash, 1 - .2 * stretch - .14 * squash);
+    }
+    final settle = (t - land) / (1 - land);
+    final wobble =
+        math.sin(settle * math.pi * 3) * math.pow(1 - settle, 2).toDouble();
+    return (1 + .14 * wobble, 1 - .16 * wobble);
+  }
+}
+
+class _JellyPainter extends CustomPainter {
+  const _JellyPainter({
     required this.from,
     required this.to,
     required this.t,
@@ -705,78 +751,43 @@ class _GooPainter extends CustomPainter {
   final double itemWidth;
   final bool isDark;
 
-  /// تقدّم الرأس: سريع ثم يهدأ، ويصل عند 70% من الرحلة.
-  static double lead(double t) => Curves.easeOutCubic.transform((t / .7).clamp(0.0, 1.0));
-
-  /// تقدّم الذيل: يتأخر قليلاً ثم يلحق بنعومة، ويصل عند 90%.
-  static double trail(double t) =>
-      Curves.easeInOutCubic.transform(((t - .12) / .78).clamp(0.0, 1.0));
-
-  RRect _pill(double centreX, double centreY, double width, double height) =>
-      RRect.fromRectAndRadius(
-        Rect.fromCenter(center: Offset(centreX, centreY), width: width, height: height),
-        Radius.circular(height / 2),
-      );
-
   @override
   void paint(Canvas canvas, Size size) {
-    final width = itemWidth - 8;
-    final height = size.height - 8;
-    final cy = size.height / 2;
-    final headX = lerpDouble(from, to, lead(t))!;
-    final tailX = lerpDouble(from, to, trail(t))!;
-    // مقدار المطّ: صفر والفقاعة مجتمعة، وواحد حين يبتعد الذيل عن الرأس عرض تبويب.
-    final pull = ((headX - tailX).abs() / itemWidth).clamp(0.0, 1.2);
-    // اهتزاز الهلام بعد وصول الرأس، يخفت حتى يسكن.
-    final settle = ((t - .7) / .3).clamp(0.0, 1.0);
-    final wobble = settle == 0
-        ? 0.0
-        : math.sin(settle * math.pi * 3) * math.pow(1 - settle, 2) * .07;
-
-    final headW = width * (1 - .1 * pull) * (1 + wobble);
-    final headH = height * (1 - .05 * pull) * (1 - wobble * .6);
-    final tailW = width * (1 - .4 * pull);
-    final tailH = height * (1 - .32 * pull);
-    final neckH = height * (1 - .58 * math.min(pull, 1.0));
-    final midX = (headX + tailX) / 2;
-
-    final neck = Path()
-      ..moveTo(tailX, cy - tailH / 2)
-      ..quadraticBezierTo(midX, cy - neckH / 2, headX, cy - headH / 2)
-      ..lineTo(headX, cy + headH / 2)
-      ..quadraticBezierTo(midX, cy + neckH / 2, tailX, cy + tailH / 2)
-      ..close();
-    final goo = Path.combine(
-      PathOperation.union,
-      Path.combine(
-        PathOperation.union,
-        Path()..addRRect(_pill(headX, cy, headW, headH)),
-        Path()..addRRect(_pill(tailX, cy, tailW, tailH)),
-      ),
-      neck,
+    final (stretchX, stretchY) = _JellyHop.shape(t);
+    final width = (itemWidth - 8) * stretchX;
+    final height = (size.height - 8) * stretchY;
+    // تقف على أرض الشريط وهي تنضغط، وتعلو في القفز أكثر كلما بعد التبويب، ولا تخرج من الشريط.
+    final distance = ((to - from).abs() / (itemWidth * 3)).clamp(0.0, 1.0);
+    final bottom = size.height - 4 - (5 + 2 * distance) * _JellyHop.rise(t);
+    final centreX = lerpDouble(from, to, _JellyHop.travel(t))!;
+    final rect = Rect.fromLTRB(
+      centreX - width / 2,
+      bottom - height,
+      centreX + width / 2,
+      bottom,
     );
+    final jelly = RRect.fromRectAndRadius(rect, Radius.circular(height / 2));
 
     // ألوان الفقاعة الساكنة وظلها وحافتها.
     final glass = Colors.white.withValues(alpha: isDark ? .16 : .34);
-    final bounds = goo.getBounds();
     canvas
-      ..drawPath(
-        goo.shift(const Offset(0, 2)),
+      ..drawRRect(
+        jelly.shift(const Offset(0, 2)),
         Paint()
           ..color = Colors.black.withValues(alpha: isDark ? .20 : .08)
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
       )
-      ..drawPath(
-        goo,
+      ..drawRRect(
+        jelly,
         Paint()
           ..shader = LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [glass, Colors.white.withValues(alpha: isDark ? .04 : .10)],
-          ).createShader(bounds),
+          ).createShader(rect),
       )
-      ..drawPath(
-        goo,
+      ..drawRRect(
+        jelly.deflate(.5),
         Paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1
@@ -785,7 +796,7 @@ class _GooPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_GooPainter oldDelegate) =>
+  bool shouldRepaint(_JellyPainter oldDelegate) =>
       oldDelegate.t != t ||
       oldDelegate.from != from ||
       oldDelegate.to != to ||
