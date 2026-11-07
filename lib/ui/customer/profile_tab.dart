@@ -493,6 +493,7 @@ class _ProfileTabState extends State<ProfileTab> {
                 child: PushKeyCircle(
                   diameter: _Design.photoSize * unit,
                   unit: chrome,
+                  onColour: true,
                   label: user.name,
                   onPressed: null,
                   child: PersonFace(
@@ -511,6 +512,7 @@ class _ProfileTabState extends State<ProfileTab> {
             child: PushKeyCircle(
               diameter: _Design.editSize * unit,
               unit: chrome,
+              onColour: true,
               label: 'تعديل الملف الشخصي',
               onPressed: _editProfile,
               child: Icon(Icons.edit_outlined, size: _Design.editIconSize * unit, color: ink),
