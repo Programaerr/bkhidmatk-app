@@ -14,10 +14,17 @@ mixin RealtimeRefresh<T extends StatefulWidget> on State<T> {
   // بعد انتهاء انتقال الصفحة، حتى لا يزاحم التحميل حركتها.
   static const _settle = Duration(milliseconds: 350);
 
+  // الرجوع إلى تبويب حُمّل قبل قليل لا يعيد تحميله: بياناته ما زالت حديثة، وإعادة جلبها
+  // وبنائها مع كل تبديل كانت تثقل السيرفر وتقطّع الحركة. الرجوع من صفحة فُتحت فوقه
+  // يعيد التحميل دائماً، فما تغيّر فيها يظهر فوراً.
+  static const _fresh = Duration(seconds: 30);
+
   ValueListenable<TickerModeData>? _visible;
   StreamSubscription<void>? _liveSub;
   Timer? _reload;
   bool _wasHidden = false;
+  bool _hiddenByPage = false;
+  DateTime _loadedAt = DateTime.now();
 
   /// نفّذ هنا تحميل بيانات الشاشة من جديد.
   void onRealtimeChange();
@@ -46,6 +53,11 @@ mixin RealtimeRefresh<T extends StatefulWidget> on State<T> {
 
   void _onVisibilityChanged() {
     if (!_visible!.value.enabled) {
+      if (!_wasHidden) {
+        // صفحة فُتحت فوقها تخفيها ويبقى الرجوع ممكناً؛ تبديل التبويب يخفيها بلا صفحة فوقها.
+        // البحث عن الـ Navigator لا يربط الصفحة به، فلا تُعاد بناءً مع كل فتح وإغلاق.
+        _hiddenByPage = Navigator.maybeOf(context)?.canPop() ?? false;
+      }
       _wasHidden = true;
       _reload?.cancel();
       _liveSub?.cancel();
@@ -59,8 +71,12 @@ mixin RealtimeRefresh<T extends StatefulWidget> on State<T> {
     }
     if (_wasHidden) {
       _wasHidden = false;
+      final stale = DateTime.now().difference(_loadedAt) >= _fresh;
+      if (!_hiddenByPage && !stale) return;
       _reload = Timer(_settle, () {
-        if (mounted) onRealtimeChange();
+        if (!mounted) return;
+        _loadedAt = DateTime.now();
+        onRealtimeChange();
       });
     }
   }
