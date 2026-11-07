@@ -411,7 +411,7 @@ class PersonFace extends StatelessWidget {
   }
 }
 
-/// زر قسم: دائرة بأيقونة القسم، واسمه تحتها. بلا قسم تظهر الدائرة فارغة إلى أن تصل البيانات.
+/// زر قسم: دائرة بلون الأيقونات القديم (#263238) وأيقونة القسم بيضاء فيها، واسمه تحتها. بلا قسم تظهر الدائرة فارغة إلى أن تصل البيانات.
 class SectionKey extends StatelessWidget {
   const SectionKey({super.key, required this.unit, this.section, this.onOpen});
 
@@ -432,12 +432,13 @@ class SectionKey extends StatelessWidget {
           unit: chrome,
           label: section?.name ?? '',
           onPressed: section == null || onOpen == null ? null : () => onOpen!(section),
+          ink: true,
           child: section == null
               ? const SizedBox.shrink()
               : Icon(
                   appIcon(section.icon),
                   size: _sectionIconSize * unit,
-                  color: night ? homeNightInk : homeInk,
+                  color: night ? homeNightInk : Colors.white,
                 ),
         ),
         SizedBox(height: _sectionLabelGap * unit),

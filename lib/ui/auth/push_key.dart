@@ -42,6 +42,11 @@ const _lemonFaceCenter = AppColors.gold;
 const _lemonFaceEdge = Color(0xFF406D9B);
 const _lemonSide = Color(0xFF3B6590);
 
+// زر القسم بلون أيقوناته القديم (#263238)، والأيقونة عليه بيضاء. ليلاً يأخذ رمادي أزرار الليل.
+const _inkFaceCenter = Color(0xFF263238);
+const _inkFaceEdge = Color(0xFF232E33);
+const _inkSide = Color(0xFF1A2327);
+
 // زر تسجيل الخروج الأحمر، نهاراً وليلاً.
 const _redFaceCenter = Color(0xFFFA4D4D);
 const _redFaceEdge = Color(0xFFF74C4B);
@@ -386,6 +391,7 @@ class PushKeyCircle extends StatelessWidget {
     required this.child,
     this.touchMargin = 0,
     this.onColour = false,
+    this.ink = false,
   });
 
   final double diameter;
@@ -399,6 +405,9 @@ class PushKeyCircle extends StatelessWidget {
 
   /// فوق الجهة الزرقاء، كما في [PushKey.onColour].
   final bool onColour;
+
+  /// بلون أيقونات الأقسام، كما في [PushKey.ink].
+  final bool ink;
 
   @override
   Widget build(BuildContext context) {
@@ -420,6 +429,7 @@ class PushKeyCircle extends StatelessWidget {
               faceHeight: diameter,
               round: true,
               onColour: onColour,
+              ink: ink,
               night: night ? kAlwaysCompleteAnimation : kAlwaysDismissedAnimation,
               child: Center(child: child),
             ),
@@ -446,6 +456,7 @@ class PushKey extends StatefulWidget {
     this.faceRadius = 4,
     this.pressable = true,
     this.onColour = false,
+    this.ink = false,
   });
 
   /// الزر فوق سطح ملوّن مثل الجهة الزرقاء، بلا قاعدة حوله: القاعدة الشفافة تأخذ لون ما تحتها
@@ -481,6 +492,9 @@ class PushKey extends StatefulWidget {
   /// وجه الزر وجانبه باللون الأحمر، مثل زر تسجيل الخروج.
   final bool red;
 
+  /// وجه الزر وجانبه بلون أيقونات الأقسام (#263238) نهاراً، وبرمادي أزرار الليل ليلاً.
+  final bool ink;
+
   /// وجه الزر دائرة، وجانبه وقاعدته حولها.
   final bool round;
 
@@ -496,6 +510,7 @@ typedef _KeyStyle = ({
   bool yellow,
   bool lemon,
   bool red,
+  bool ink,
   bool round,
   double faceRadius,
   bool onColour,
@@ -515,6 +530,7 @@ class _PushKeyState extends State<PushKey> {
         yellow: widget.yellow,
         lemon: widget.lemon,
         red: widget.red,
+        ink: widget.ink,
         round: widget.round,
         faceRadius: widget.faceRadius,
         onColour: widget.onColour,
@@ -780,13 +796,14 @@ class _KeyPainter extends CustomPainter {
 
   Color _tone(Color day, Color dark) => Color.lerp(day, dark, night.value)!;
 
-  Color _keyTone(Color inYellow, Color inLemon, Color inRed, Color day, Color dark) => style.yellow
-      ? inYellow
-      : style.lemon
-          ? inLemon
-          : style.red
-              ? inRed
-              : _tone(day, dark);
+  Color _keyTone(Color inYellow, Color inLemon, Color inRed, Color inInk, Color day, Color dark) =>
+      style.yellow
+          ? inYellow
+          : style.lemon
+              ? inLemon
+              : style.red
+                  ? inRed
+                  : _tone(style.ink ? inInk : day, dark);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -840,7 +857,7 @@ class _KeyPainter extends CustomPainter {
       )
       ..drawRRect(
         side,
-        Paint()..color = _keyTone(_yellowSide, _lemonSide, _redSide, _side, _nightSide),
+        Paint()..color = _keyTone(_yellowSide, _lemonSide, _redSide, _inkSide, _side, _nightSide),
       )
       ..save()
       ..clipRRect(side);
@@ -896,8 +913,9 @@ class _KeyPainter extends CustomPainter {
           face.center,
           face.width * .62,
           [
-            _keyTone(_yellowFaceCenter, _lemonFaceCenter, _redFaceCenter, _faceCenter, _nightFaceCenter),
-            _keyTone(_yellowFaceEdge, _lemonFaceEdge, _redFaceEdge, _faceEdge, _nightFaceEdge),
+            _keyTone(
+              _yellowFaceCenter, _lemonFaceCenter, _redFaceCenter, _inkFaceCenter, _faceCenter, _nightFaceCenter),
+            _keyTone(_yellowFaceEdge, _lemonFaceEdge, _redFaceEdge, _inkFaceEdge, _faceEdge, _nightFaceEdge),
           ],
         ),
     );
