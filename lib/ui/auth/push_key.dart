@@ -80,7 +80,10 @@ double pushKeyUnit(BuildContext context) {
 
 /// زر الرجوع بشكل أزرار الشاشة الأولى، سهم فقط. يملأ مكانه بمساحة اللمس، والزر في طرفه.
 class PushKeyBack extends StatelessWidget {
-  const PushKeyBack({super.key});
+  const PushKeyBack({super.key, this.onColour = false});
+
+  /// فوق الجهة الزرقاء، كما في [PushKey.onColour].
+  final bool onColour;
 
   /// عرض الزر بوحدات التصميم.
   static const width = _backFaceWidth + PushKey.faceInset * 2;
@@ -104,6 +107,7 @@ class PushKeyBack extends StatelessWidget {
             child: PushKey(
               unit: unit,
               faceHeight: faceHeight,
+              onColour: onColour,
               night: night ? kAlwaysCompleteAnimation : kAlwaysDismissedAnimation,
               child: Center(
                 child: Icon(
@@ -381,6 +385,7 @@ class PushKeyCircle extends StatelessWidget {
     required this.onPressed,
     required this.child,
     this.touchMargin = 0,
+    this.onColour = false,
   });
 
   final double diameter;
@@ -391,6 +396,9 @@ class PushKeyCircle extends StatelessWidget {
 
   /// مساحة لمس إضافية حول الزر الصغير.
   final double touchMargin;
+
+  /// فوق الجهة الزرقاء، كما في [PushKey.onColour].
+  final bool onColour;
 
   @override
   Widget build(BuildContext context) {
@@ -411,6 +419,7 @@ class PushKeyCircle extends StatelessWidget {
               unit: unit,
               faceHeight: diameter,
               round: true,
+              onColour: onColour,
               night: night ? kAlwaysCompleteAnimation : kAlwaysDismissedAnimation,
               child: Center(child: child),
             ),
@@ -436,7 +445,12 @@ class PushKey extends StatefulWidget {
     this.round = false,
     this.faceRadius = 4,
     this.pressable = true,
+    this.onColour = false,
   });
+
+  /// الزر فوق سطح ملوّن مثل الجهة الزرقاء: قاعدته شفافة، فتأخذ لون ما تحتها وتظهر هالة باهتة
+  /// كأن الزر ناقص. فوق اللون تُرسم قاعدته على أرضية الصفحة، فيظهر كاملاً كما يظهر فوقها.
+  final bool onColour;
 
   /// ينخفض الزر حين يُلمس. مفتاحا الوضع الليلي واللغة لا ينخفضان، فحركتهما في التبديل نفسه.
   final bool pressable;
@@ -477,7 +491,14 @@ class PushKey extends StatefulWidget {
 }
 
 /// ما يميز شكل الزر ولونه.
-typedef _KeyStyle = ({bool yellow, bool lemon, bool red, bool round, double faceRadius});
+typedef _KeyStyle = ({
+  bool yellow,
+  bool lemon,
+  bool red,
+  bool round,
+  double faceRadius,
+  bool onColour,
+});
 
 class _PushKeyState extends State<PushKey> {
   final _resting = _RestingImages();
@@ -495,6 +516,7 @@ class _PushKeyState extends State<PushKey> {
         red: widget.red,
         round: widget.round,
         faceRadius: widget.faceRadius,
+        onColour: widget.onColour,
       );
 
   Widget _chrome(double pressed, double pixelRatio) {
@@ -775,6 +797,12 @@ class _KeyPainter extends CustomPainter {
   void _paintBase(Canvas canvas, Size size) {
     final baseCorner = style.round ? (size.height - 4 * unit) / 2 : 12 * unit;
     final base = RRect.fromLTRBR(0, 4 * unit, size.width, size.height, Radius.circular(baseCorner));
+    if (style.onColour) {
+      final ground = Paint()..color = _tone(AppColors.paper, AppColors.paperDark);
+      canvas
+        ..drawRRect(base, ground)
+        ..drawRRect(base.shift(Offset(0, unit)), ground);
+    }
     canvas
       ..drawRRect(
         base.shift(Offset(0, unit)),

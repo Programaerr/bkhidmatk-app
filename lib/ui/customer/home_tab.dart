@@ -240,6 +240,7 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
             diameter: smallFace,
             unit: chrome,
             touchMargin: touchMargin,
+            onColour: true,
             label: label,
             onPressed: () => _open(page),
             child: SizedBox.expand(
@@ -274,6 +275,7 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
             PushKeyCircle(
               diameter: profileFace,
               unit: chrome,
+              onColour: true,
               label: 'الملف الشخصي',
               onPressed: widget.onOpenProfile,
               child: PersonFace(
