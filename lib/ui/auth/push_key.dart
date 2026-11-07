@@ -448,8 +448,9 @@ class PushKey extends StatefulWidget {
     this.onColour = false,
   });
 
-  /// الزر فوق سطح ملوّن مثل الجهة الزرقاء: قاعدته شفافة، فتأخذ لون ما تحتها وتظهر هالة باهتة
-  /// كأن الزر ناقص. فوق اللون تُرسم قاعدته على أرضية الصفحة، فيظهر كاملاً كما يظهر فوقها.
+  /// الزر فوق سطح ملوّن مثل الجهة الزرقاء، بلا قاعدة حوله: القاعدة الشفافة تأخذ لون ما تحتها
+  /// فتظهر هالة باهتة كأن الزر ناقص، والقاعدة المصمتة تقطع أسفل الدائرة بخط شبه مستقيم. بلا
+  /// قاعدة يقف الزر دائرة كاملة بجانبها وظلها.
   final bool onColour;
 
   /// ينخفض الزر حين يُلمس. مفتاحا الوضع الليلي واللغة لا ينخفضان، فحركتهما في التبديل نفسه.
@@ -795,14 +796,9 @@ class _KeyPainter extends CustomPainter {
   }
 
   void _paintBase(Canvas canvas, Size size) {
+    if (style.onColour) return;
     final baseCorner = style.round ? (size.height - 4 * unit) / 2 : 12 * unit;
     final base = RRect.fromLTRBR(0, 4 * unit, size.width, size.height, Radius.circular(baseCorner));
-    if (style.onColour) {
-      final ground = Paint()..color = _tone(AppColors.paper, AppColors.paperDark);
-      canvas
-        ..drawRRect(base, ground)
-        ..drawRRect(base.shift(Offset(0, unit)), ground);
-    }
     canvas
       ..drawRRect(
         base.shift(Offset(0, unit)),
