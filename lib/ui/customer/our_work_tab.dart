@@ -54,6 +54,12 @@ class _OurWorkTabState extends State<OurWorkTab> with RealtimeRefresh<OurWorkTab
     }
   }
 
+  /// يجهّز الفيديو التالي وهو يشاهد الحالي، فيبدأ فور الوصول إليه.
+  void _prepareNext(List<OurWork> works) {
+    final next = _currentPage + 1;
+    if (next < works.length) prepareWorkVideo(works[next]);
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<OurWork>>(
@@ -81,6 +87,7 @@ class _OurWorkTabState extends State<OurWorkTab> with RealtimeRefresh<OurWorkTab
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted && widget.isActive) {
               _countView(works[_currentPage]);
+              _prepareNext(works);
             }
           });
         }
@@ -93,6 +100,7 @@ class _OurWorkTabState extends State<OurWorkTab> with RealtimeRefresh<OurWorkTab
             onPageChanged: (index) {
               setState(() => _currentPage = index);
               _countView(works[index]);
+              _prepareNext(works);
             },
             itemBuilder: (context, index) => WorkReel(
               key: ValueKey(works[index].id ?? index),

@@ -17,6 +17,13 @@ import '../widgets/media_view.dart';
 import '../widgets/shell_layout.dart';
 import '../widgets/ui.dart';
 
+/// يستخرج رابط فيديو يوتيوب مسبقاً، فيبدأ تشغيله فوراً حين يصل إليه الزبون.
+void prepareWorkVideo(OurWork work) {
+  if (kIsWeb) return;
+  final id = youtubeIdOf(work.videoUrl.trim());
+  if (id != null) resolveYoutubeStream(id).ignore();
+}
+
 class WorkReel extends StatefulWidget {
   const WorkReel({
     super.key,
