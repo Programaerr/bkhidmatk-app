@@ -129,7 +129,7 @@ class ReceiptDocument extends StatelessWidget {
                   const SizedBox(height: 14),
                   Container(
                     decoration: BoxDecoration(
-                      border: Border.all(color: const Color(0xFFECECE3)),
+                      border: Border.all(color: const Color(0xFFE8E8E8)),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Column(
@@ -138,7 +138,7 @@ class ReceiptDocument extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 8),
                           decoration: const BoxDecoration(
-                            color: Color(0xFFF7F7F1),
+                            color: Color(0xFFF5F5F5),
                             borderRadius:
                                 BorderRadius.vertical(top: Radius.circular(11)),
                           ),
@@ -291,7 +291,7 @@ class ReceiptDocument extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
-                          border: Border.all(color: const Color(0xFFECECE3)),
+                          border: Border.all(color: const Color(0xFFE8E8E8)),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: QrImageView(
@@ -315,7 +315,7 @@ class ReceiptDocument extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 14),
-                  Container(height: 1, color: const Color(0xFFECECE3)),
+                  Container(height: 1, color: const Color(0xFFE8E8E8)),
                   const SizedBox(height: 10),
                   const Row(
                     mainAxisAlignment: MainAxisAlignment.center,

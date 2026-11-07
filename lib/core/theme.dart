@@ -17,7 +17,7 @@ class AppColors {
   static const paper = Color(0xFFFAFAFA);
   /// أرضية الصفحات ليلاً، الدرجة التي اختارها المستخدم. الأزرار تبقى على سوادها.
   static const paperDark = Color(0xFF212121);
-  static const line = Color(0xFFE9E9DF);
+  static const line = Color(0xFFE6E6E6);
   static const lineDark = Color(0xFF2E2E36);
   static const success = Color(0xFF16A34A);
   static const danger = Color(0xFFDC2626);
@@ -52,7 +52,7 @@ class AppTheme {
       onPrimaryContainer: isDark ? const Color(0xFFB4CAE1) : const Color(0xFF1F3A57),
       secondary: isDark ? Colors.white : AppColors.ink,
       onSecondary: isDark ? AppColors.ink : Colors.white,
-      secondaryContainer: isDark ? const Color(0xFF2A2A31) : const Color(0xFFF0F0E8),
+      secondaryContainer: isDark ? const Color(0xFF2A2A31) : const Color(0xFFF0F0F0),
       onSecondaryContainer: onSurface,
       tertiary: AppColors.info,
       onTertiary: Colors.white,
@@ -60,7 +60,7 @@ class AppTheme {
       onError: Colors.white,
       surface: surface,
       onSurface: onSurface,
-      surfaceContainerHighest: isDark ? const Color(0xFF26262D) : const Color(0xFFF0F0EA),
+      surfaceContainerHighest: isDark ? const Color(0xFF26262D) : const Color(0xFFF0F0F0),
       outline: outline,
       outlineVariant: outline,
       shadow: Colors.black,

@@ -20,8 +20,8 @@ import '../widgets/ui.dart';
 const _cream = Color(0xFFFAFAFA);
 const _ink = Color(0xFF263238);
 const _label = Color(0xFF383838);
-const _wideLine = Color(0xFFDEDBCA);
-const _shortLine = Color(0xFFBEB9B3);
+const _wideLine = Color(0xFFDEDEDE);
+const _shortLine = Color(0xFFBDBDBD);
 
 // الألوان نفسها في الوضع الليلي: جهة السيارة تبقى زرقاء، والخانة تحتها داكنة بدرجة أرضية التطبيق.
 const _nightGround = Color(0xFF212121);

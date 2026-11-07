@@ -726,11 +726,11 @@ class _CategoryForm extends StatefulWidget {
 class _CategoryFormState extends State<_CategoryForm> {
   late final TextEditingController _name;
   String _icon = 'handyman';
-  int _color = 0xFFFFC107;
+  int _color = 0xFF416F9E;
   bool _saving = false;
 
   static const _colors = [
-    0xFFFFC107,
+    0xFF416F9E,
     0xFF03A9F4,
     0xFF8BC34A,
     0xFFE91E63,
@@ -747,7 +747,7 @@ class _CategoryFormState extends State<_CategoryForm> {
     super.initState();
     _name = TextEditingController(text: widget.category?.name ?? '');
     _icon = widget.category?.icon ?? 'handyman';
-    _color = widget.category?.color ?? 0xFFFFC107;
+    _color = widget.category?.color ?? 0xFF416F9E;
   }
 
   @override
@@ -809,7 +809,7 @@ class _CategoryFormState extends State<_CategoryForm> {
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: _icon == key ? Color(_color) : const Color(0xFFE9E9DF),
+                          color: _icon == key ? Color(_color) : const Color(0xFFE6E6E6),
                           width: _icon == key ? 2 : 1,
                         ),
                       ),
