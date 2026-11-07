@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/theme.dart';
 import '../../data/models.dart';
 import '../../data/repository.dart';
 import '../../data/sections.dart';
@@ -143,8 +144,8 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
     final user = context.watch<AppState>().user!;
     final safeTop = MediaQuery.viewPaddingOf(context).top;
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      // شريط الحالة فوق الجهة الصفراء دائماً، نهاراً وليلاً.
-      value: appSystemBars(night: false),
+      // شريط الحالة فوق الجهة الزرقاء دائماً، نهاراً وليلاً، فأيقوناته بيضاء.
+      value: appSystemBars(night: true),
       child: ColoredBox(
         color: night ? homeNightGround : homeCream,
         child: LayoutBuilder(
@@ -195,7 +196,7 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
     );
   }
 
-  /// الجهة الصفراء: صورة الحساب واسمه، وزرا الرسائل والإشعارات. تنطوي إلى شريط مع نزول الصفحة،
+  /// الجهة الزرقاء: صورة الحساب واسمه، وزرا الرسائل والإشعارات. تنطوي إلى شريط مع نزول الصفحة،
   /// فيصغر ما فيها بالتحويل لا بتغيير مقاسه، حتى لا تُرسم الأزرار من جديد مع كل إطار.
   Widget _header(
     AppUser user,
@@ -303,7 +304,7 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
                 fontSize: _Design.nameSize * unit * scale,
                 height: 1.2,
                 fontWeight: FontWeight.w700,
-                color: homeInk,
+                color: AppColors.onGold,
               ),
             ),
           ),

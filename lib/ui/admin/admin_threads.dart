@@ -137,7 +137,7 @@ class _AdminThreadsScreenState extends State<AdminThreadsScreen>
                                       style: const TextStyle(
                                         fontSize: 9,
                                         fontWeight: FontWeight.w900,
-                                        color: AppColors.ink,
+                                        color: AppColors.onGold,
                                       ),
                                     ),
                                   ),

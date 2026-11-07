@@ -226,7 +226,7 @@ class SoftCard extends StatelessWidget {
   }
 }
 
-/// الزر الرئيسي في أي صفحة: أصفر بشكل أزرار الصفحة الرئيسية. [tone] يغيّر لونه للأزرار الأخرى.
+/// الزر الرئيسي في أي صفحة: بلون التطبيق بشكل أزرار الصفحة الرئيسية. [tone] يغيّر لونه للأزرار الأخرى.
 class PrimaryButton extends StatelessWidget {
   const PrimaryButton({
     super.key,
@@ -819,7 +819,7 @@ class SegmentedTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // أزرار الاختيار نفسها في الصفحة الرئيسية: المختار بلون الجهة الصفراء، والبقية بيضاء.
+    // أزرار الاختيار نفسها في الصفحة الرئيسية: المختار بلون الجهة الزرقاء، والبقية بيضاء.
     return Row(
       children: [
         for (var i = 0; i < values.length; i++) ...[

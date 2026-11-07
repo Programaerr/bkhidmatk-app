@@ -200,11 +200,11 @@ class _AdminServicesState extends State<AdminServices>
                     width: 42,
                     height: 42,
                     decoration: BoxDecoration(
-                      color: Color(s.categoryColor ?? 0xFFFFD400).withValues(alpha: .16),
+                      color: Color(s.categoryColor ?? 0xFF416F9E).withValues(alpha: .16),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(appIcon(s.categoryIcon ?? 'build'),
-                        size: 20, color: Color(s.categoryColor ?? 0xFFFFD400)),
+                        size: 20, color: Color(s.categoryColor ?? 0xFF416F9E)),
                   ),
                   const SizedBox(width: 10),
                   Expanded(

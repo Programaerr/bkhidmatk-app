@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../auth/push_key.dart';
@@ -10,7 +11,8 @@ import '../widgets/quick_route.dart';
 import '../widgets/ui.dart';
 import 'craftsman_info_screen.dart';
 
-const homeCream = Color(0xFFFFFEE2);
+/// أرضية الصفحات نهاراً (#FAFAFA اختيار المستخدم، كانت كريمية صفراء).
+const homeCream = Color(0xFFFAFAFA);
 /// أرضية الصفحات ليلاً (#212121 اختيار المستخدم)، والأزرار عليها تبقى على سوادها.
 const homeNightGround = Color(0xFF212121);
 const homeInk = Color(0xFF263238);
@@ -26,7 +28,7 @@ double homeUnit(double width) => math.min(width / homeDesignWidth, 1.25);
 /// مقياس جانب الزر وقاعدته: أرفع من الشاشة الأولى حتى لا تتلامس أزرار هذه الصفحة.
 const homeKeyChrome = .75;
 
-// الجهة الصفراء: مستطيل ينتهي بقطع ناقص مركزه أقرب إلى اليسار، فحافتها اليسرى أوطأ من اليمنى.
+// الجهة الزرقاء: مستطيل ينتهي بقطع ناقص مركزه أقرب إلى اليسار، فحافتها اليسرى أوطأ من اليمنى.
 const _hillCenterX = 189.0;
 const _hillCenterY = 79.2;
 const _hillRadiusX = 203.0;
@@ -40,10 +42,10 @@ const _firstKeyTop = 30.85;
 double homePageTop(double safeTop, double unit) =>
     math.max(0.0, safeTop + _statusBarGap - _firstKeyTop * unit);
 
-/// أسفل الجهة الصفراء.
+/// أسفل الجهة الزرقاء.
 double homeHillBottom(double top, double unit) => top + (_hillCenterY + _hillRadiusY) * unit;
 
-// الجهة الصفراء بعد أن تنطوي إلى شريط: ارتفاعه تحت شريط الحالة، وانحناء حافته، ومقياس ما فيه.
+// الجهة الزرقاء بعد أن تنطوي إلى شريط: ارتفاعه تحت شريط الحالة، وانحناء حافته، ومقياس ما فيه.
 const _foldedBar = 54.0;
 const _foldedRadiusY = 9.0;
 const _foldedScale = .8;
@@ -51,7 +53,7 @@ const _foldedScale = .8;
 // أبعد ما يتابعه الطي من تمرير الصفحة، فلا يعاد البناء بعده.
 const _foldTrackLimit = 240.0;
 
-/// حال الجهة الصفراء: مفتوحة بحجمها الكامل في أعلى الصفحة، أو منطوية إلى شريط رفيع حين تنزل الصفحة.
+/// حال الجهة الزرقاء: مفتوحة بحجمها الكامل في أعلى الصفحة، أو منطوية إلى شريط رفيع حين تنزل الصفحة.
 ///
 /// الجهة الكاملة تأخذ خُمس الشاشة في كل تبويب، فتنطوي كلما قرأ الزبون ما تحتها وتعود إذا رجع إلى الأعلى.
 @immutable
@@ -97,7 +99,7 @@ class HomeHeaderMetrics {
   double get _curveCenterY => height - _radiusY;
 }
 
-/// يتابع تمرير الصفحة التي تحت الجهة الصفراء ليطويها.
+/// يتابع تمرير الصفحة التي تحت الجهة الزرقاء ليطويها.
 class HeaderFold extends ValueNotifier<double> {
   HeaderFold() : super(0);
 
@@ -113,7 +115,7 @@ class HeaderFold extends ValueNotifier<double> {
       );
 }
 
-/// الجهة الصفراء في أعلى الصفحة، بارتفاع يتبع طيّها. توضع داخل [Stack] فوق القائمة.
+/// الجهة الزرقاء في أعلى الصفحة، بارتفاع يتبع طيّها. توضع داخل [Stack] فوق القائمة.
 class FoldingHeader extends StatelessWidget {
   const FoldingHeader({
     super.key,
@@ -154,7 +156,7 @@ class FoldingHeader extends StatelessWidget {
   }
 }
 
-// عنوان الصفحة في الجهة الصفراء.
+// عنوان الصفحة في الجهة الزرقاء.
 const _titleCenter = 61.5;
 const _titleHeight = 32.0;
 const _titleSize = 20.3;
@@ -197,7 +199,7 @@ const _ratingRoom = 30.0;
 const _ratingSize = 9.5;
 const _ratingStarSize = 11.0;
 
-/// الجهة الصفراء العليا بحافتها المنحنية من الأسفل.
+/// الجهة الزرقاء العليا بحافتها المنحنية من الأسفل.
 class HomeHill extends StatelessWidget {
   const HomeHill({super.key, required this.width, required this.metrics});
 
@@ -252,7 +254,7 @@ class _HillPainter extends CustomPainter {
       oldDelegate.radiusY != radiusY;
 }
 
-/// الجهة الصفراء وعنوان الصفحة فيها.
+/// الجهة الزرقاء وعنوان الصفحة فيها.
 class HomeHeader extends StatelessWidget {
   const HomeHeader({
     super.key,
@@ -293,7 +295,7 @@ class HomeHeader extends StatelessWidget {
                   fontSize: _titleSize * unit * metrics.scale,
                   height: 1.2,
                   fontWeight: FontWeight.w800,
-                  color: homeLabel,
+                  color: AppColors.onGold,
                 ),
               ),
             ),
@@ -349,7 +351,7 @@ class ChoiceKey extends StatelessWidget {
       fontSize: _choiceTextSize * unit,
       height: 1.2,
       fontWeight: FontWeight.w700,
-      color: night && !selected ? homeNightInk : homeInk,
+      color: selected ? AppColors.onGold : night ? homeNightInk : homeInk,
     );
     return Semantics(
       button: true,
@@ -501,7 +503,7 @@ class SectionGrid extends StatelessWidget {
   }
 }
 
-/// زر حرفي أصفر: صورته، واسمه، ونوع شغله، وتقييمه. بلا حرفي يظهر الزر فارغاً إلى أن تصل البيانات.
+/// زر حرفي بلون التطبيق: صورته، واسمه، ونوع شغله، وتقييمه. بلا حرفي يظهر الزر فارغاً إلى أن تصل البيانات.
 class CraftsmanKey extends StatelessWidget {
   const CraftsmanKey({super.key, required this.unit, this.worker});
 
@@ -534,7 +536,7 @@ class CraftsmanKey extends StatelessWidget {
           child: PushKey(
             unit: chrome,
             faceHeight: faceHeight,
-            // أصفر ليلاً ونهاراً بأسماء داكنة (طلب المستخدم)، وظله وحده يأخذ ألوان الليل.
+            // بلون التطبيق ليلاً ونهاراً بأسماء بيضاء، وظله وحده يأخذ ألوان الليل.
             lemon: true,
             night: night ? kAlwaysCompleteAnimation : kAlwaysDismissedAnimation,
             faceRadius: _craftsmanRadius,
@@ -546,7 +548,7 @@ class CraftsmanKey extends StatelessWidget {
   }
 
   Widget _face(Worker? worker) {
-    const ink = homeInk;
+    const ink = AppColors.onGold;
     final circle = _craftsmanCircle * unit;
     return Stack(
       children: [
@@ -625,7 +627,7 @@ class CraftsmanKey extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.star_rounded, size: _ratingStarSize * unit, color: homeInk),
+                Icon(Icons.star_rounded, size: _ratingStarSize * unit, color: ink),
                 Text(
                   worker.rating.toStringAsFixed(1),
                   style: TextStyle(

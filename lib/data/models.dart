@@ -109,7 +109,7 @@ class Category {
         id: m['id'] as int?,
         name: m['name'] as String? ?? '',
         icon: m['icon'] as String? ?? 'build',
-        color: m['color'] as int? ?? 0xFFFFD400,
+        color: m['color'] as int? ?? 0xFF416F9E,
         sortOrder: m['sort_order'] as int? ?? 0,
       );
 }

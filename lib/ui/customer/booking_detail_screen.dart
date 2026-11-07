@@ -518,7 +518,7 @@ class _Timeline extends StatelessWidget {
                           : steps[i].$3,
                       size: 13,
                       color: i <= activeIndex && !cancelled
-                          ? AppColors.ink
+                          ? (i == activeIndex ? AppColors.onGold : AppColors.ink)
                           : theme.colorScheme.onSurface.withValues(alpha: .35),
                     ),
                   ),

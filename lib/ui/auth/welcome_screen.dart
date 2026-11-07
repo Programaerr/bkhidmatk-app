@@ -17,13 +17,13 @@ import 'social_marks.dart';
 import 'truck_scene.dart';
 import '../widgets/ui.dart';
 
-const _cream = Color(0xFFFFFEE2);
+const _cream = Color(0xFFFAFAFA);
 const _ink = Color(0xFF263238);
 const _label = Color(0xFF383838);
 const _wideLine = Color(0xFFDEDBCA);
 const _shortLine = Color(0xFFBEB9B3);
 
-// الألوان نفسها في الوضع الليلي: جهة السيارة تبقى صفراء، والخانة تحتها داكنة بدرجة أرضية التطبيق.
+// الألوان نفسها في الوضع الليلي: جهة السيارة تبقى زرقاء، والخانة تحتها داكنة بدرجة أرضية التطبيق.
 const _nightGround = Color(0xFF212121);
 const _nightInk = Color(0xFFF4F4EE);
 const _nightDivider = Color(0xFF3A3A40);
@@ -335,8 +335,8 @@ class _WelcomeScreenState extends State<WelcomeScreen>
       builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
         value: SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.dark,
-          statusBarBrightness: Brightness.light,
+          statusBarIconBrightness: Brightness.light,
+          statusBarBrightness: Brightness.dark,
           systemNavigationBarColor:
               Color.lerp(_cream, _nightGround, _night.value),
           systemNavigationBarIconBrightness:
@@ -517,10 +517,10 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                               child: Center(
                                 child: FittedBox(
                                   fit: BoxFit.scaleDown,
-                                  // الزر أصفر نهاراً وليلاً، فكتابته داكنة دائماً.
+                                  // الزر بلون التطبيق نهاراً وليلاً، فكتابته بيضاء دائماً.
                                   child: Text(
                                     words.account,
-                                    style: _textStyle(unit, _ink)
+                                    style: _textStyle(unit, Colors.white)
                                         .copyWith(fontWeight: FontWeight.w800),
                                   ),
                                 ),

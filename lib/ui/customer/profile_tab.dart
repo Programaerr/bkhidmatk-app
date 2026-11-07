@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
@@ -44,7 +45,7 @@ abstract final class _Design {
   static const languageHeight = 51.9;
   static const logoutHeight = 39.0;
 
-  // الفراغات كما في التصميم: من أسفل الجهة الصفراء أو من قاعدة الزر إلى وجه الذي بعده.
+  // الفراغات كما في التصميم: من أسفل الجهة الزرقاء أو من قاعدة الزر إلى وجه الذي بعده.
   static const cardGap = 54.4;
   static const groupGap = 21.6;
   static const rowGap = 7.8;
@@ -229,8 +230,8 @@ class _ProfileTabState extends State<ProfileTab> {
     final safeTop = MediaQuery.viewPaddingOf(context).top;
     final barRoom = MediaQuery.paddingOf(context).bottom;
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      // شريط الحالة فوق الجهة الصفراء دائماً، نهاراً وليلاً.
-      value: appSystemBars(night: false),
+      // شريط الحالة فوق الجهة الزرقاء دائماً، نهاراً وليلاً، فأيقوناته بيضاء.
+      value: appSystemBars(night: true),
       child: ColoredBox(
         color: night ? homeNightGround : homeCream,
         child: LayoutBuilder(
@@ -456,7 +457,7 @@ class _ProfileTabState extends State<ProfileTab> {
     ];
   }
 
-  /// بطاقة الحساب الصفراء: الصورة وزر التعديل، والاسم والرقم والمحافظة.
+  /// بطاقة الحساب بلون التطبيق: الصورة وزر التعديل، والاسم والرقم والمحافظة.
   Widget _card(AppUser user, double unit, bool night) {
     final chrome = unit * homeKeyChrome;
     final inset = PushKey.faceInset * chrome;
@@ -537,25 +538,25 @@ class _ProfileTabState extends State<ProfileTab> {
                       child: Text(
                         user.name,
                         maxLines: 1,
-                        style: _text(unit, _Design.nameSize, FontWeight.w800, homeInk),
+                        style: _text(unit, _Design.nameSize, FontWeight.w800, AppColors.onGold),
                       ),
                     ),
                     Text(
                       user.phone,
                       maxLines: 1,
                       textDirection: TextDirection.ltr,
-                      style: _text(unit, _Design.phoneSize, FontWeight.w700, homeInk),
+                      style: _text(unit, _Design.phoneSize, FontWeight.w700, AppColors.onGold),
                     ),
                     Row(
                       children: [
-                        Icon(Icons.location_on_rounded, size: _Design.cityIconSize * unit, color: homeInk),
+                        Icon(Icons.location_on_rounded, size: _Design.cityIconSize * unit, color: AppColors.onGold),
                         SizedBox(width: 3 * unit),
                         Flexible(
                           child: Text(
                             user.city ?? 'العراق',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: _text(unit, _Design.citySize, FontWeight.w600, homeInk),
+                            style: _text(unit, _Design.citySize, FontWeight.w600, AppColors.onGold),
                           ),
                         ),
                       ],
@@ -632,7 +633,7 @@ class _WideKey extends StatelessWidget {
   }
 }
 
-/// زر أبيض لصفحة أخرى: أيقونة في دائرة صفراء، واسم وشرح، وسهم.
+/// زر أبيض لصفحة أخرى: أيقونة في دائرة زرقاء، واسم وشرح، وسهم.
 class _MenuKey extends StatelessWidget {
   const _MenuKey({
     required this.unit,
@@ -694,7 +695,7 @@ class _MenuKey extends StatelessWidget {
   }
 }
 
-/// أيقونة في دائرة بلون الجهة الصفراء.
+/// أيقونة بيضاء في دائرة بلون الجهة العليا.
 class _Badge extends StatelessWidget {
   const _Badge({
     required this.unit,
@@ -717,12 +718,12 @@ class _Badge extends StatelessWidget {
         color: TruckSceneMetrics.hillColor,
         shape: BoxShape.circle,
       ),
-      child: Icon(icon, size: iconSize * unit, color: homeInk),
+      child: Icon(icon, size: iconSize * unit, color: AppColors.onGold),
     );
   }
 }
 
-/// اللغتان، والمختارة منهما بلون الجهة الصفراء.
+/// اللغتان، والمختارة منهما بلون الجهة الزرقاء.
 class _LanguagePill extends StatelessWidget {
   const _LanguagePill({required this.unit, required this.english});
 
@@ -747,7 +748,7 @@ class _LanguagePill extends StatelessWidget {
               unit,
               _Design.pillTextSize,
               FontWeight.w800,
-              chosen ? homeInk : ink.withValues(alpha: .6),
+              chosen ? AppColors.onGold : ink.withValues(alpha: .6),
             ),
           ),
         );

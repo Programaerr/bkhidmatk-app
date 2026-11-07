@@ -242,7 +242,7 @@ class _Bubble extends StatelessWidget {
             margin: const EdgeInsets.only(bottom: 8),
             padding: const EdgeInsets.fromLTRB(13, 9, 13, 7),
             decoration: BoxDecoration(
-              // رسائلي صفراء بنص أسود ثابت نهاراً وليلاً، فتقرأ بوضوح في الوضعين.
+              // رسائلي بلون التطبيق بنص أبيض ثابت نهاراً وليلاً، فتقرأ بوضوح في الوضعين.
               color: mine ? AppColors.gold : theme.colorScheme.surface,
               borderRadius: BorderRadius.only(
                 topRight: const Radius.circular(16),
@@ -259,7 +259,7 @@ class _Bubble extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12.5,
                       height: 1.7,
-                      color: mine ? AppColors.ink : theme.colorScheme.onSurface,
+                      color: mine ? AppColors.onGold : theme.colorScheme.onSurface,
                     )),
                 const SizedBox(height: 3),
                 Row(
@@ -268,13 +268,13 @@ class _Bubble extends StatelessWidget {
                     Text(fmtTimeOfDay(message.createdAt),
                         style: TextStyle(
                           fontSize: 8.5,
-                          color: (mine ? AppColors.ink : theme.colorScheme.onSurface)
+                          color: (mine ? AppColors.onGold : theme.colorScheme.onSurface)
                               .withValues(alpha: .6),
                         )),
                     if (mine) ...[
                       const SizedBox(width: 3),
                       Icon(Icons.done_all_rounded,
-                          size: 11, color: AppColors.ink.withValues(alpha: .6)),
+                          size: 11, color: AppColors.onGold.withValues(alpha: .6)),
                     ],
                   ],
                 ),

@@ -10,7 +10,7 @@ import 'push_key.dart';
 import 'register_screen.dart';
 import 'thinking_scene.dart';
 
-const _cream = Color(0xFFFFFEE2);
+const _cream = Color(0xFFFAFAFA);
 // أرضية الليل بدرجة أرضية التطبيق.
 const _nightGround = Color(0xFF212121);
 const _privacyInk = Color(0xFF383838);
@@ -81,8 +81,8 @@ class AccountTypeScreen extends StatelessWidget {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark,
-        statusBarBrightness: Brightness.light,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
         systemNavigationBarColor: ground,
         systemNavigationBarIconBrightness: night ? Brightness.light : Brightness.dark,
       ),

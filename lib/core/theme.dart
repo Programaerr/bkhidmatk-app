@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 
-/// «جايك» brand palette, derived from the uploaded yellow/black logo.
+/// «جايك» brand palette.
 class AppColors {
-  static const gold = Color(0xFFFFD400);
-  static const goldDeep = Color(0xFFE8BE00);
-  static const goldSoft = Color(0xFFFFF3BF);
+  /// لون التطبيق الأساسي: كان أصفر، وصار أزرق #416F9E باختيار المستخدم (7 نوفمبر 2026).
+  /// بقي اسمه حتى لا يتغير كل ملف يستعمله.
+  static const gold = Color(0xFF416F9E);
+  static const goldDeep = Color(0xFF345A82);
+  static const goldSoft = Color(0xFFE1EAF3);
+
+  /// الكتابة والأيقونات فوق لون التطبيق: أبيض، لأن الداكن لا يُقرأ على الأزرق.
+  static const onGold = Colors.white;
   static const ink = Color(0xFF0B0B0D);
   static const inkSoft = Color(0xFF1B1B20);
   static const inkMuted = Color(0xFF5F5F66);
@@ -41,9 +46,9 @@ class AppTheme {
     final scheme = ColorScheme(
       brightness: brightness,
       primary: AppColors.gold,
-      onPrimary: AppColors.ink,
-      primaryContainer: isDark ? const Color(0xFF3A3208) : AppColors.goldSoft,
-      onPrimaryContainer: isDark ? AppColors.gold : const Color(0xFF5C4A00),
+      onPrimary: AppColors.onGold,
+      primaryContainer: isDark ? const Color(0xFF1D2C3C) : AppColors.goldSoft,
+      onPrimaryContainer: isDark ? const Color(0xFFB4CAE1) : const Color(0xFF1F3A57),
       secondary: isDark ? Colors.white : AppColors.ink,
       onSecondary: isDark ? AppColors.ink : Colors.white,
       secondaryContainer: isDark ? const Color(0xFF2A2A31) : const Color(0xFFF0F0E8),
@@ -137,7 +142,7 @@ class AppTheme {
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: AppColors.gold,
-          foregroundColor: AppColors.ink,
+          foregroundColor: AppColors.onGold,
           minimumSize: const Size(0, 54),
           elevation: 0,
           textStyle: base.copyWith(fontSize: 15, fontWeight: FontWeight.w800),
@@ -166,7 +171,7 @@ class AppTheme {
         secondaryLabelStyle: base.copyWith(
           fontSize: 12.5,
           fontWeight: FontWeight.w800,
-          color: AppColors.ink,
+          color: AppColors.onGold,
         ),
         side: BorderSide(color: outline),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
@@ -223,7 +228,7 @@ class AppTheme {
       progressIndicatorTheme: const ProgressIndicatorThemeData(color: AppColors.gold),
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith(
-          (states) => states.contains(WidgetState.selected) ? AppColors.ink : muted,
+          (states) => states.contains(WidgetState.selected) ? AppColors.onGold : muted,
         ),
         trackColor: WidgetStateProperty.resolveWith(
           (states) => states.contains(WidgetState.selected)

@@ -183,8 +183,8 @@ class _TechniciansTabState extends State<TechniciansTab> with RealtimeRefresh<Te
     final night = Theme.of(context).brightness == Brightness.dark;
     final safeTop = MediaQuery.viewPaddingOf(context).top;
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      // شريط الحالة فوق الجهة الصفراء دائماً، نهاراً وليلاً.
-      value: appSystemBars(night: false),
+      // شريط الحالة فوق الجهة الزرقاء دائماً، نهاراً وليلاً، فأيقوناته بيضاء.
+      value: appSystemBars(night: true),
       child: ColoredBox(
         color: night ? homeNightGround : homeCream,
         child: LayoutBuilder(

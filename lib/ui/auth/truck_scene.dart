@@ -20,7 +20,8 @@ abstract final class TruckSceneMetrics {
   static const curveRadiusX = 199.0;
   static const curveRadiusY = 36.0;
 
-  static const hillColor = Color(0xFFE2E255);
+  /// لون التطبيق (#416F9E)، كان أصفر.
+  static const hillColor = Color(0xFF416F9E);
 
   /// الجهة الملونة العليا بحافتها المنحنية من الأسفل.
   static Path hill(Size size, double scale) {

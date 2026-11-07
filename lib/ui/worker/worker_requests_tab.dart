@@ -95,7 +95,8 @@ class _WorkerRequestsTabState extends State<WorkerRequestsTab>
     final night = Theme.of(context).brightness == Brightness.dark;
     final safeTop = MediaQuery.viewPaddingOf(context).top;
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: appSystemBars(night: false),
+      // شريط الحالة فوق الجهة الزرقاء، فأيقوناته بيضاء.
+      value: appSystemBars(night: true),
       child: ColoredBox(
         color: night ? homeNightGround : homeCream,
         child: LayoutBuilder(

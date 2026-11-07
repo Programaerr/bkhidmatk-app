@@ -7,9 +7,9 @@ import 'package:flutter/material.dart';
 import '../../core/theme.dart';
 
 const _faceCenter = Colors.white;
-const _faceEdge = Color(0xFFF1F0E9);
+const _faceEdge = Color(0xFFF1F1F1);
 const _faceOutline = Color(0x12000000);
-const _side = Color(0xFFF0EEDF);
+const _side = Color(0xFFEEEEEE);
 const _baseFill = Color(0x14000000);
 const _baseHighlight = Color(0xBFFFFFFF);
 const _baseInnerShadow = Color(0x26000000);
@@ -32,15 +32,15 @@ const _nightSideInnerShadow = Color(0x33000000);
 const _nightSideShine = Color(0x14FFFFFF);
 const _nightSideGlow = Color(0x26FFFFFF);
 
-// الزر الأصفر بلون التطبيق، نهاراً وليلاً.
+// الزر بلون التطبيق (كان أصفر، وصار أزرق #416F9E)، نهاراً وليلاً، والكتابة عليه بيضاء.
 const _yellowFaceCenter = AppColors.gold;
-const _yellowFaceEdge = Color(0xFFF1C800);
-const _yellowSide = AppColors.goldDeep;
+const _yellowFaceEdge = Color(0xFF406D9B);
+const _yellowSide = Color(0xFF3B6590);
 
-// الزر بلون الجهة الصفراء في الصفحة الرئيسية.
-const _lemonFaceCenter = Color(0xFFE2E255);
-const _lemonFaceEdge = Color(0xFFDFDF53);
-const _lemonSide = Color(0xFFCDCD4D);
+// الزر بلون الجهة العليا في الصفحة الرئيسية، وهي بلون التطبيق نفسه الآن.
+const _lemonFaceCenter = AppColors.gold;
+const _lemonFaceEdge = Color(0xFF406D9B);
+const _lemonSide = Color(0xFF3B6590);
 
 // زر تسجيل الخروج الأحمر، نهاراً وليلاً.
 const _redFaceCenter = Color(0xFFFA4D4D);
@@ -161,7 +161,7 @@ class PushKeyAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 }
 
-/// نغمة الزر: أبيض، أو أصفر بلون التطبيق، أو بلون الجهة الصفراء، أو أحمر.
+/// نغمة الزر: أبيض، أو بلون التطبيق، أو بلون الجهة الزرقاء، أو أحمر.
 enum KeyTone { white, yellow, lemon, red }
 
 /// زر بشكل أزرار الشاشة الأولى ومقاساتها، ويأخذ عرض المكان الذي يوضع فيه.
@@ -204,9 +204,9 @@ class PushKeyButton extends StatelessWidget {
     final keyTone = tone ?? (yellow ? KeyTone.yellow : KeyTone.white);
     final faceHeight = (compact ? _compactFaceHeight : _loginFaceHeight) * unit;
     final textSize = (compact ? _compactTextSize : _loginTextSize) * unit;
-    final ink = keyTone == KeyTone.red
+    final ink = keyTone != KeyTone.white
         ? Colors.white
-        : night && keyTone == KeyTone.white
+        : night
             ? _loginNightInk
             : _loginInk;
     final style = TextStyle(
@@ -240,7 +240,7 @@ class PushKeyButton extends StatelessWidget {
             height: 16 * unit,
             child: CircularProgressIndicator(
               strokeWidth: 2,
-              color: keyTone == KeyTone.white ? _loginSpinner : _loginInk,
+              color: keyTone == KeyTone.white ? _loginSpinner : Colors.white,
             ),
           )
         : FittedBox(
@@ -457,10 +457,10 @@ class PushKey extends StatefulWidget {
   /// 0 نهار، و1 ليل. الزر الساكن يتدرج بطبقتين، فلا يُعاد بناؤه ولا رسمه مع كل إطار.
   final Animation<double> night;
 
-  /// وجه الزر وجانبه باللون الأصفر بدل الأبيض.
+  /// وجه الزر وجانبه بلون التطبيق بدل الأبيض.
   final bool yellow;
 
-  /// وجه الزر وجانبه بلون الجهة الصفراء في الصفحة الرئيسية.
+  /// وجه الزر وجانبه بلون الجهة الزرقاء في الصفحة الرئيسية.
   final bool lemon;
 
   /// وجه الزر وجانبه باللون الأحمر، مثل زر تسجيل الخروج.

@@ -111,7 +111,7 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
                               style: TextStyle(
                                 fontSize: 8.5,
                                 fontWeight: FontWeight.w900,
-                                color: AppColors.ink,
+                                color: AppColors.onGold,
                               ),
                             ),
                           ),

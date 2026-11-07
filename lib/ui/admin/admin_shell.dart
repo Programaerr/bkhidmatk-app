@@ -134,7 +134,7 @@ class AdminHeader extends StatelessWidget {
                             style: TextStyle(
                                 fontSize: 8.5,
                                 fontWeight: FontWeight.w900,
-                                color: AppColors.ink)),
+                                color: AppColors.onGold)),
                       ),
                     ],
                   ),

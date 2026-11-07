@@ -587,7 +587,7 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
     );
   }
 
-  // فقاعة التبويب المختار زجاج شفاف، حافتها بلونها نفسه، وأيقونتها وحدها صفراء.
+  // فقاعة التبويب المختار زجاج شفاف، حافتها بلونها نفسه، وأيقونتها وحدها بلون التطبيق.
   Widget _bubble(bool isDark) {
     final glass = Colors.white.withValues(alpha: isDark ? .16 : .34);
     return DecoratedBox(
