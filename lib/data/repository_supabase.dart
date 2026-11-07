@@ -116,13 +116,43 @@ class SupabaseRepository implements Repository {
     return (row['id'] as num).toInt();
   }
 
-  Future<bool> _isAdmin() async {
+  // دور الحساب ورقم ملفه يُسألان مرة بدل كل طلب، فلا ينتظر كل تحميل سؤالاً إضافياً للسيرفر.
+  // يُنسيان حين يتغير الحساب، والدور يُسأل من جديد بعد دقائق إن غيّرته الإدارة.
+  static const _roleKeep = Duration(minutes: 5);
+  String? _rememberedFor;
+  (DateTime, Future<bool>)? _admin;
+  Future<int>? _profileId;
+
+  void _forgetOtherAccount(String authUserId) {
+    if (_rememberedFor == authUserId) return;
+    _rememberedFor = authUserId;
+    _admin = null;
+    _profileId = null;
+  }
+
+  Future<bool> _isAdmin() {
     final authUser = _client.auth.currentUser;
-    if (authUser == null) return false;
+    if (authUser == null) return Future.value(false);
+    _forgetOtherAccount(authUser.id);
+    final remembered = _admin;
+    if (remembered != null &&
+        DateTime.now().difference(remembered.$1) < _roleKeep) {
+      return remembered.$2;
+    }
+    final asked = _askIsAdmin(authUser.id);
+    _admin = (DateTime.now(), asked);
+    // الفشل لا يُحفظ، فالطلب التالي يسأل من جديد.
+    asked.then<void>((_) {}, onError: (Object _) {
+      if (identical(_admin?.$2, asked)) _admin = null;
+    });
+    return asked;
+  }
+
+  Future<bool> _askIsAdmin(String authUserId) async {
     final row = await _client
         .from('app_profiles')
         .select('role')
-        .eq('auth_user_id', authUser.id)
+        .eq('auth_user_id', authUserId)
         .maybeSingle();
     return row?['role'] == 'admin';
   }
@@ -811,26 +841,30 @@ class SupabaseRepository implements Repository {
 
   // Admin-published works, reactions, and comments.
   Future<List<Map<String, dynamic>>> _workRows() async {
-    final works = await _rowsFor('our_works');
+    // الأعمال وتعليقاتها وإعجاباتها ورقم الحساب تُطلب معاً لا واحداً بعد الآخر، فينتظر
+    // التحميل طلباً واحداً بدل أربعة. كل الأعمال تُجلب، فعدّ التعليقات والإعجابات كلها
+    // يعطي العدد نفسه الذي كان يعطيه تصفيتها بأرقام الأعمال.
+    final results = await Future.wait<Object?>([
+      _rowsFor('our_works'),
+      _allRows(
+        (from, to) =>
+            _client.from('work_comments').select('work_id').range(from, to),
+      ),
+      _allRows(
+        (from, to) => _client
+            .from('work_likes')
+            .select('work_id,user_id')
+            .range(from, to),
+      ),
+      _currentProfileId().then<int?>((id) => id, onError: (Object _) => null),
+    ]);
+    final works = results[0] as List<Map<String, dynamic>>;
     if (works.isEmpty) return works;
-    final ids = works.map((row) => (row['id'] as num).toInt()).toList();
-    final comments = await _allRows(
-      (from, to) => _client
-          .from('work_comments')
-          .select('work_id')
-          .inFilter('work_id', ids)
-          .range(from, to),
-    );
-    final likes = await _allRows(
-      (from, to) => _client
-          .from('work_likes')
-          .select('work_id,user_id')
-          .inFilter('work_id', ids)
-          .range(from, to),
-    );
+    final comments = results[1] as List<Map<String, dynamic>>;
+    final likes = results[2] as List<Map<String, dynamic>>;
     final commentCounts = await _countBy(comments, 'work_id');
     final likeCounts = await _countBy(likes, 'work_id');
-    final userId = await _currentProfileId();
+    final userId = results[3] as int?;
     final likedWorkIds = {
       for (final like in likes)
         if (like['user_id'] == userId) (like['work_id'] as num).toInt(),
@@ -1139,14 +1173,28 @@ class SupabaseRepository implements Repository {
   }
 
   // Support messages.
-  Future<int> _currentProfileId() async {
+  Future<int> _currentProfileId() {
     final authUser = _client.auth.currentUser;
-    if (authUser == null) throw StateError('لا توجد جلسة دخول فعالة');
+    if (authUser == null) {
+      return Future.error(StateError('لا توجد جلسة دخول فعالة'));
+    }
+    _forgetOtherAccount(authUser.id);
+    final remembered = _profileId;
+    if (remembered != null) return remembered;
+    final asked = _askProfileId(authUser.id);
+    _profileId = asked;
+    asked.then<void>((_) {}, onError: (Object _) {
+      if (identical(_profileId, asked)) _profileId = null;
+    });
+    return asked;
+  }
+
+  Future<int> _askProfileId(String authUserId) async {
     final rows = _maps(
       await _client
           .from('app_profiles')
           .select('id')
-          .eq('auth_user_id', authUser.id)
+          .eq('auth_user_id', authUserId)
           .limit(1),
     );
     if (rows.isEmpty) throw StateError('تعذر العثور على ملف الحساب');
