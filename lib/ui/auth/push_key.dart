@@ -42,10 +42,11 @@ const _lemonFaceCenter = AppColors.gold;
 const _lemonFaceEdge = Color(0xFF406D9B);
 const _lemonSide = Color(0xFF3B6590);
 
-// زر القسم بلون أيقوناته القديم (#263238)، والأيقونة عليه بيضاء. ليلاً يأخذ رمادي أزرار الليل.
-const _inkFaceCenter = Color(0xFF263238);
-const _inkFaceEdge = Color(0xFF232E33);
-const _inkSide = Color(0xFF1A2327);
+// زر القسم رمادي مزرق أفتح من أيقوناته القديمة (#263238 كان غامقاً جداً)، والأيقونة عليه بيضاء.
+// ليلاً يأخذ رمادي أزرار الليل.
+const _inkFaceCenter = Color(0xFF455A64);
+const _inkFaceEdge = Color(0xFF435861);
+const _inkSide = Color(0xFF3B4D55);
 
 // زر تسجيل الخروج الأحمر، نهاراً وليلاً.
 const _redFaceCenter = Color(0xFFFA4D4D);
@@ -492,7 +493,7 @@ class PushKey extends StatefulWidget {
   /// وجه الزر وجانبه باللون الأحمر، مثل زر تسجيل الخروج.
   final bool red;
 
-  /// وجه الزر وجانبه بلون أيقونات الأقسام (#263238) نهاراً، وبرمادي أزرار الليل ليلاً.
+  /// وجه الزر وجانبه رمادي مزرق (#455A64) لأزرار الأقسام نهاراً، وبرمادي أزرار الليل ليلاً.
   final bool ink;
 
   /// وجه الزر دائرة، وجانبه وقاعدته حولها.

@@ -411,7 +411,7 @@ class PersonFace extends StatelessWidget {
   }
 }
 
-/// زر قسم: دائرة بلون الأيقونات القديم (#263238) وأيقونة القسم بيضاء فيها، واسمه تحتها. بلا قسم تظهر الدائرة فارغة إلى أن تصل البيانات.
+/// زر قسم: دائرة رمادية مزرقة (#455A64) وأيقونة القسم بيضاء فيها، واسمه تحتها. بلا قسم تظهر الدائرة فارغة إلى أن تصل البيانات.
 class SectionKey extends StatelessWidget {
   const SectionKey({super.key, required this.unit, this.section, this.onOpen});
 
