@@ -388,7 +388,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                                     Icon(
                                       Icons.public,
                                       size: _Design.globeSize * unit,
-                                      color: _label,
+                                      color: Colors.white,
                                     ),
                                     SizedBox(width: 4 * unit),
                                     AnimatedSwitcher(
@@ -404,7 +404,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                                           height: 1,
                                           letterSpacing: .8 * unit,
                                           fontWeight: FontWeight.w900,
-                                          color: _label,
+                                          color: Colors.white,
                                         ),
                                       ),
                                     ),
