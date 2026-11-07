@@ -207,7 +207,8 @@ final Future<FragmentProgram?> _liquidGlass = ImageFilter.isShaderFilterSupporte
 
 class _GlassNavigationBarState extends State<_GlassNavigationBar>
     with TickerProviderStateMixin {
-  static const _height = 60.0;
+  // بارتفاع شريط انستغرام (طلب المستخدم): بـ 60 صار الشريط كبيراً.
+  static const _height = 50.0;
   // البقاء على الفقاعة هذه المدة، أو تحريك الإصبع هذه المسافة، يحوّلها إلى مجهر.
   static const _holdDelay = Duration(milliseconds: 180);
   static const _moveToLens = 8.0;
