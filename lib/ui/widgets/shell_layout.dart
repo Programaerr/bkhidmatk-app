@@ -458,23 +458,21 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
                     clipBehavior: Clip.none,
                     children: [
                       Positioned.fill(
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            borderRadius: radius,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black
-                                    .withValues(alpha: isDark ? .25 : .12),
-                                blurRadius: 18,
-                                offset: const Offset(0, 5),
-                              ),
-                            ],
+                        // الظل حول الزجاج فقط: تحته كان يظهر من خلاله رمادياً.
+                        child: CustomPaint(
+                          painter: _BarShadowPainter(
+                            color: Colors.black
+                                .withValues(alpha: isDark ? .25 : .12),
+                            radius: _height / 2,
                           ),
                           child: ClipRRect(
                             borderRadius: radius,
-                            // زجاج: ما خلف الشريط يظهر مغبّشاً من تحت بياض خفيف.
+                            // زجاج صافٍ لا ضبابي (طلب المستخدم): ما خلف الشريط يظهر واضحاً،
+                            // وينكسر عند حافته ويلمع. بلا Impeller يبقى صافياً بلا انكسار.
                             child: BackdropFilter(
-                              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                              enabled: _glassProgram != null,
+                              filter: _barGlass(width) ??
+                                  ImageFilter.blur(sigmaX: 0, sigmaY: 0),
                               child: Listener(
                                 key: const ValueKey('glass-navigation-bar'),
                                 behavior: HitTestBehavior.opaque,
@@ -482,32 +480,35 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
                                 onPointerMove: _touchMove,
                                 onPointerUp: _touchUp,
                                 onPointerCancel: _touchCancel,
-                                child: DecoratedBox(
+                                // حافة زجاج لا إطار أبيض (طلب المستخدم): تلمع من الأعلى وتخفت
+                                // نحو الأسفل.
+                                child: CustomPaint(
+                                  foregroundPainter: _GlassRimPainter(
+                                    radius: _height / 2,
+                                    isDark: isDark,
+                                  ),
+                                  child: DecoratedBox(
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
                                       begin: Alignment.topCenter,
                                       end: Alignment.bottomCenter,
-                                      // ليلاً زجاج شفاف مثل النهار (طلب المستخدم): بياض خفيف فوق
-                                      // التغبيش، لا لوح داكن يخفي ما تحته.
+                                      // لمعة زجاج خفيفة من الأعلى، لا بياض حليبي يخفي ما تحته،
+                                      // وليلاً مثل النهار.
                                       colors: isDark
                                           ? [
                                               Colors.white
-                                                  .withValues(alpha: .12),
+                                                  .withValues(alpha: .10),
                                               Colors.white
-                                                  .withValues(alpha: .06),
+                                                  .withValues(alpha: .03),
                                             ]
                                           : [
                                               Colors.white
-                                                  .withValues(alpha: .50),
+                                                  .withValues(alpha: .24),
                                               Colors.white
-                                                  .withValues(alpha: .32),
+                                                  .withValues(alpha: .08),
                                             ],
                                     ),
                                     borderRadius: radius,
-                                    border: Border.all(
-                                      color: Colors.white
-                                          .withValues(alpha: isDark ? .22 : .70),
-                                    ),
                                   ),
                                   child: Stack(
                                     key: _boundsKey,
@@ -580,6 +581,7 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
                                     ],
                                   ),
                                 ),
+                                ),
                               ),
                             ),
                           ),
@@ -649,6 +651,28 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
         ),
       ),
     );
+  }
+
+  /// زجاج الشريط نفسه: لا تكبير، وانكسار خفيف عند الحافة ولمعتها. الشريط ثابت أسفل الشاشة،
+  /// فمكانه يُحسب من مقاسها: يبعد 4 عن أسفلها فوق شريط النظام، ويتوسطها بعرضه.
+  ImageFilter? _barGlass(double width) {
+    final program = _glassProgram;
+    if (program == null) return null;
+    final ratio = MediaQuery.devicePixelRatioOf(context);
+    final screen = MediaQuery.sizeOf(context);
+    final left = (screen.width - width) / 2;
+    final top =
+        screen.height - MediaQuery.paddingOf(context).bottom - 4 - _height;
+    final shader = program.fragmentShader()
+      ..setFloat(2, left * ratio)
+      ..setFloat(3, top * ratio)
+      ..setFloat(4, width * ratio)
+      ..setFloat(5, _height * ratio)
+      ..setFloat(6, _height / 2 * ratio)
+      ..setFloat(7, 1)
+      ..setFloat(8, .12)
+      ..setFloat(9, ratio);
+    return ImageFilter.shader(shader);
   }
 
   // يكبّر ما تحت الزجاج ويكسره عند حافته. بلا Impeller يبقى التكبير وحده.
@@ -803,6 +827,71 @@ class _JellyPainter extends CustomPainter {
       oldDelegate.to != to ||
       oldDelegate.itemWidth != itemWidth ||
       oldDelegate.isDark != isDark;
+}
+
+/// حافة الزجاج: خط رفيع شبه شفاف يلمع من الأعلى ويخفت نحو الأسفل، بدل الإطار الأبيض المصمت.
+class _GlassRimPainter extends CustomPainter {
+  const _GlassRimPainter({required this.radius, required this.isDark});
+
+  final double radius;
+  final bool isDark;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(rect.deflate(.5), Radius.circular(radius - .5)),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Colors.white.withValues(alpha: isDark ? .32 : .70),
+            Colors.white.withValues(alpha: isDark ? .06 : .14),
+            Colors.white.withValues(alpha: isDark ? .14 : .30),
+          ],
+          stops: const [0, .6, 1],
+        ).createShader(rect),
+    );
+  }
+
+  @override
+  bool shouldRepaint(_GlassRimPainter oldDelegate) =>
+      oldDelegate.radius != radius || oldDelegate.isDark != isDark;
+}
+
+/// ظل الشريط كما كان (تشويش 18 ونزول 5)، مقصوصاً خارج الزجاج حتى لا يعتّم ما يُرى من خلاله.
+class _BarShadowPainter extends CustomPainter {
+  const _BarShadowPainter({required this.color, required this.radius});
+
+  final Color color;
+  final double radius;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final bar =
+        RRect.fromRectAndRadius(Offset.zero & size, Radius.circular(radius));
+    canvas
+      ..save()
+      ..clipPath(Path()
+        ..fillType = PathFillType.evenOdd
+        ..addRect((Offset.zero & size).inflate(60))
+        ..addRRect(bar))
+      ..drawRRect(
+        bar.shift(const Offset(0, 5)),
+        Paint()
+          ..color = color
+          ..maskFilter = MaskFilter.blur(
+              BlurStyle.normal, Shadow.convertRadiusToSigma(18)),
+      )
+      ..restore();
+  }
+
+  @override
+  bool shouldRepaint(_BarShadowPainter oldDelegate) =>
+      oldDelegate.color != color || oldDelegate.radius != radius;
 }
 
 class _GlassNavigationDestination extends StatelessWidget {
