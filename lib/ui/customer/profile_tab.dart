@@ -400,6 +400,7 @@ class _ProfileTabState extends State<ProfileTab> {
           label: tr('اللغة', 'Language'),
           pressable: false,
           value: state.english ? 'English' : 'عربي',
+          // التطبيق كله يتبدل فوراً، بلا خفوت (طلب المستخدم).
           onPressed: () => state.setEnglish(!state.english),
           child: Row(
             children: [

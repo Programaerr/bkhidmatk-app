@@ -122,11 +122,15 @@ class _AppShellLayoutState extends State<AppShellLayout>
         extendBody: extendBody,
         body: body,
         floatingActionButton: floatingActionButton,
-        bottomNavigationBar: _GlassNavigationBar(
-          index: index,
-          items: items,
-          accent: accent,
-          onSelect: onSelect,
+        // الشريط يبقى بترتيبه العربي في اللغتين: الرئيسية في اليمين (طلب المستخدم).
+        bottomNavigationBar: Directionality(
+          textDirection: TextDirection.rtl,
+          child: _GlassNavigationBar(
+            index: index,
+            items: items,
+            accent: accent,
+            onSelect: onSelect,
+          ),
         ),
       );
     }

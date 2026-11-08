@@ -41,7 +41,7 @@ const _sectionNamesEn = {
   'عامل': 'Labor',
   'ابواب و شبابيك': 'Doors & Windows',
   'نقل الاثاث': 'Furniture Moving',
-  'شد و تركيب الاثاث': 'Furniture Assembly',
+  'شد و تركيب الاثاث': 'Furniture Setup',
   'غسيل سيارات': 'Car Wash',
 };
 
