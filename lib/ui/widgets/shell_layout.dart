@@ -43,38 +43,15 @@ class AppShellLayout extends StatefulWidget {
   State<AppShellLayout> createState() => _AppShellLayoutState();
 }
 
-class _AppShellLayoutState extends State<AppShellLayout>
-    with SingleTickerProviderStateMixin {
+class _AppShellLayoutState extends State<AppShellLayout> {
   /// أكثر التبويبات ظهوراً حديثاً يبقى مبنياً، وما سواها يُترك فتتحرر ذاكرته.
   /// التبويب الأحدث في آخر القائمة. تبويبات الزبون الخمسة تبقى كلها: إعادة بناء تبويب
   /// تُرك كانت تعيد رسومه وتحميله فيتقطع الرجوع إليه، والفيديو يتحرر وحده حين يُخفى تبويبه.
   static const _maxAlive = 5;
   final _alive = <int>[];
 
-  // التبويب الجديد يظهر بتلاشٍ وانزلاق قصير، وما خلفه يبقى محفوظاً.
-  late final _entrance = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 260),
-    value: 1,
-  );
-  late final _fade =
-      CurvedAnimation(parent: _entrance, curve: Curves.easeOutCubic);
-  late final _slide = Tween<Offset>(
-    begin: const Offset(0.035, 0),
-    end: Offset.zero,
-  ).animate(CurvedAnimation(parent: _fade, curve: Curves.easeOutCubic));
-
-  @override
-  void didUpdateWidget(AppShellLayout oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.index != widget.index) _entrance.forward(from: 0);
-  }
-
-  @override
-  void dispose() {
-    _entrance.dispose();
-    super.dispose();
-  }
+  // التبويب الجديد يظهر فوراً بلا تلاشٍ ولا انزلاق، مثل إنستغرام (طلب المستخدم)، وما خلفه
+  // يبقى محفوظاً.
 
   @override
   Widget build(BuildContext context) {
@@ -104,15 +81,7 @@ class _AppShellLayoutState extends State<AppShellLayout>
           // ما خلف التبويب الظاهر لا يتحرك ولا يجلب شيئاً.
           TickerMode(
             enabled: i == index,
-            child: FadeTransition(
-              opacity: i == index ? _fade : kAlwaysCompleteAnimation,
-              child: SlideTransition(
-                position: i == index
-                    ? _slide
-                    : const AlwaysStoppedAnimation(Offset.zero),
-                child: _alive.contains(i) ? page : const SizedBox.shrink(),
-              ),
-            ),
+            child: _alive.contains(i) ? page : const SizedBox.shrink(),
           ),
       ],
     );
@@ -273,7 +242,8 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
         ? _tripCentre(_width)
         : _tabCenter(oldWidget.index, _width);
     _tripTo = widget.index;
-    _trip.forward(from: 0);
+    // مثل إنستغرام: الفقاعة تظهر فوراً على التبويب الجديد بلا قفزة (طلب المستخدم). قفزة
+    // الهلام ترجع بتشغيل: _trip.forward(from: 0);
   }
 
   @override
@@ -833,7 +803,8 @@ class _GlassNavigationDestination extends StatelessWidget {
             child: Center(
               child: AnimatedScale(
                 scale: selected ? 1.08 : 1,
-                duration: const Duration(milliseconds: 260),
+                // الأيقونة المختارة تكبر فوراً مثل إنستغرام، بلا حركة بطيئة.
+                duration: Duration.zero,
                 curve: Curves.easeOutCubic,
                 child: Icon(
                   selected ? item.activeIcon : item.icon,
