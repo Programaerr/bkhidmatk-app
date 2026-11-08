@@ -9,8 +9,8 @@ import '../auth/login_screen.dart';
 import '../widgets/quick_route.dart';
 import '../widgets/ui.dart';
 
-/// الضيف يتصفح الرئيسية والحرفيين فقط. الأعمال والرسائل والحجز والحساب تطلب منه تسجيل الدخول
-/// أولاً. ترجع true إن كان للمستخدم حساب.
+/// الضيف يتصفح الرئيسية والأقسام وبطاقات الحرفيين فقط. تفاصيل الحرفي والأعمال والرسائل والحجز
+/// والحساب تطلب منه تسجيل الدخول أولاً. ترجع true إن كان للمستخدم حساب.
 bool hasAccount(BuildContext context) {
   if (context.read<AppState>().user != null) return true;
   unawaited(_askToLogIn(context));

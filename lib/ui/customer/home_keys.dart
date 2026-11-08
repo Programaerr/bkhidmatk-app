@@ -12,6 +12,7 @@ import '../auth/truck_scene.dart';
 import '../widgets/quick_route.dart';
 import '../widgets/ui.dart';
 import 'craftsman_info_screen.dart';
+import 'guest_gate.dart';
 
 /// أرضية الصفحات نهاراً (#FAFAFA اختيار المستخدم، كانت كريمية صفراء).
 const homeCream = Color(0xFFFAFAFA);
@@ -540,10 +541,14 @@ class CraftsmanKey extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         onTap: worker == null
             ? null
-            : () => Navigator.push(
+            : () {
+                // الضيف يرى بطاقات الحرفيين، وتفاصيل الحرفي تطلب منه تسجيل الدخول أولاً.
+                if (!hasAccount(context)) return;
+                Navigator.push(
                   context,
                   QuickRoute(builder: (_) => CraftsmanInfoScreen(worker: worker)),
-                ),
+                );
+              },
         child: SizedBox(
           width: _craftsmanWidth * unit + PushKey.faceInset * 2 * chrome,
           height: faceHeight + PushKey.depth * chrome,
