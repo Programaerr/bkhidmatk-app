@@ -1,11 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/language.dart';
 import '../../state/app_state.dart';
-import '../auth/login_screen.dart';
+import '../auth/account_type_screen.dart';
+import '../auth/auth_route.dart';
 import '../widgets/quick_route.dart';
 import '../widgets/ui.dart';
 
@@ -30,10 +32,17 @@ Future<void> _askToLogIn(BuildContext context) async {
     _asking = false;
   }
   if (!logIn || !context.mounted) return;
-  // التطبيق يرجع إلى الشاشة الأولى، وصفحة الدخول فوقها، وفيها إنشاء حساب جديد.
+  // التطبيق يرجع إلى الشاشة الأولى، وفوقها صفحة الشخصية التي تفكر، فيختار زبوناً أو حرفياً
+  // (طلب المستخدم: لا صفحة «هل لديك حساب»).
+  final night = Theme.of(context).brightness == Brightness.dark;
   final navigator = Navigator.of(context, rootNavigator: true);
   context.read<AppState>().leaveGuest();
-  unawaited(navigator.push(QuickRoute(builder: (_) => const LoginScreen())));
+  unawaited(navigator.push(QuickRoute(
+    builder: (_) => AnnotatedRegion<SystemUiOverlayStyle>(
+      value: appSystemBars(night: night),
+      child: const AccountTypeScreen(),
+    ),
+  )));
 }
 
 Future<bool> _ask(BuildContext context) {

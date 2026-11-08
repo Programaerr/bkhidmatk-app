@@ -363,8 +363,15 @@ class _TechniciansTabState extends State<TechniciansTab>
           )
         else
           Center(
-            child: CraftsmanGrid(
-                unit: unit, workers: shown, lefts: _Design.gridLefts),
+            // الضيف لا تظهر له بطاقات فارغة ثم تختفي، فالسيرفر قد لا يعطيه حرفيين (طلب المستخدم).
+            child: context.watch<AppState>().user == null
+                ? CraftsmanGrid(
+                    unit: unit,
+                    workers: shown,
+                    lefts: _Design.gridLefts,
+                    placeholders: 0)
+                : CraftsmanGrid(
+                    unit: unit, workers: shown, lefts: _Design.gridLefts),
           ),
         SizedBox(height: _Design.pageBottom * unit),
       ],
