@@ -9,6 +9,7 @@ import '../auth/push_key.dart';
 import '../widgets/quick_route.dart';
 import '../widgets/ui.dart';
 import 'booking_flow.dart';
+import 'guest_gate.dart';
 import 'home_keys.dart';
 import 'messages_screen.dart';
 
@@ -165,10 +166,14 @@ class _CraftsmanInfoScreenState extends State<CraftsmanInfoScreen> {
                     SecondaryButton(
                       label: tr('مراسلة جايك', 'Message Jaik'),
                       icon: Icons.chat_bubble_outline_rounded,
-                      onPressed: () => Navigator.push(
-                        context,
-                        QuickRoute(builder: (_) => const MessagesScreen()),
-                      ),
+                      onPressed: () {
+                        // الضيف لا يراسل، فيُطلب منه تسجيل الدخول أولاً.
+                        if (!hasAccount(context)) return;
+                        Navigator.push(
+                          context,
+                          QuickRoute(builder: (_) => const MessagesScreen()),
+                        );
+                      },
                     ),
                   ],
                 );

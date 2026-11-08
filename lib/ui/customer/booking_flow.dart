@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/language.dart';
 import '../../data/models.dart';
 import '../../core/utils.dart';
 import '../../state/app_state.dart';
 import '../widgets/quick_route.dart';
-import '../widgets/ui.dart';
 import 'booking_screen.dart';
+import 'guest_gate.dart';
 import 'profile_completion_screen.dart';
 
 /// يبدأ حجز [service]: يكمل بيانات الزبون إن نقصت، ثم يفتح صفحة الحجز. [workerId] هو الحرفي
@@ -18,8 +17,9 @@ Future<void> startServiceBooking(
   int? workerId,
 }) async {
   final user = context.read<AppState>().user;
+  // الضيف يُطلب منه تسجيل الدخول أولاً.
   if (user == null) {
-    AppSnack.show(context, tr('سجل الدخول أولاً لإتمام الحجز', 'Log in first to complete the booking'), error: true);
+    hasAccount(context);
     return;
   }
 

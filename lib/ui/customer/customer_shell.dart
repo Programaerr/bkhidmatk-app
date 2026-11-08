@@ -4,6 +4,7 @@ import '../../core/language.dart';
 import '../../data/models.dart';
 import '../widgets/shell_layout.dart';
 import 'bookings_tab.dart';
+import 'guest_gate.dart';
 import 'home_tab.dart';
 import 'our_work_tab.dart';
 import 'profile_tab.dart';
@@ -40,6 +41,8 @@ class _CustomerShellState extends State<CustomerShell> {
   }
 
   void _go(int index) {
+    // الضيف يتصفح الرئيسية والحرفيين فقط، وبقية التبويبات تطلب منه تسجيل الدخول.
+    if (index > 1 && !hasAccount(context)) return;
     // لوحة المفاتيح لا تبقى مفتوحة فوق تبويب آخر.
     FocusManager.instance.primaryFocus?.unfocus();
     setState(() => _index = index);

@@ -12,6 +12,7 @@ import '../auth/auth_route.dart';
 import '../auth/push_key.dart';
 import '../widgets/quick_route.dart';
 import '../widgets/realtime_refresh.dart';
+import 'guest_gate.dart';
 import 'home_keys.dart';
 import 'home_lists_screens.dart';
 import 'messages_screen.dart';
@@ -98,18 +99,19 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
 
   void _load() {
     final state = context.read<AppState>();
-    final user = state.user!;
+    final user = state.user;
     setState(() {
-      _future = _fetch(state, state.repo, user.id!);
+      _future = _fetch(state, state.repo, user?.id);
     });
   }
 
-  Future<_HomeData> _fetch(AppState state, Repository repo, int userId) async {
+  Future<_HomeData> _fetch(AppState state, Repository repo, int? userId) async {
+    // الضيف بلا حساب، فلا رسائل له ولا إشعارات.
     final results = await Future.wait([
       repo.listCategories(),
       repo.listWorkers(onlyAvailable: true),
-      repo.unreadForCustomer(userId),
-      _unreadNotifications(state),
+      userId == null ? Future.value(0) : repo.unreadForCustomer(userId),
+      userId == null ? Future.value(0) : _unreadNotifications(state),
     ]);
     final sections = customerSections(results[0] as List<Category>);
     final craftsmen = results[1] as List<Worker>;
@@ -142,7 +144,7 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
   @override
   Widget build(BuildContext context) {
     final night = Theme.of(context).brightness == Brightness.dark;
-    final user = context.watch<AppState>().user!;
+    final user = context.watch<AppState>().user;
     final safeTop = MediaQuery.viewPaddingOf(context).top;
     return AnnotatedRegion<SystemUiOverlayStyle>(
       // شريط الحالة فوق الجهة الزرقاء دائماً، نهاراً وليلاً، فأيقوناته بيضاء.
@@ -200,7 +202,7 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
   /// الجهة الزرقاء: صورة الحساب واسمه، وزرا الرسائل والإشعارات. تنطوي إلى شريط مع نزول الصفحة،
   /// فيصغر ما فيها بالتحويل لا بتغيير مقاسه، حتى لا تُرسم الأزرار من جديد مع كل إطار.
   Widget _header(
-    AppUser user,
+    AppUser? user,
     _HomeData? data,
     double width,
     double left,
@@ -243,7 +245,9 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
             touchMargin: touchMargin,
             onColour: true,
             label: label,
-            onPressed: () => _open(page),
+            onPressed: () {
+              if (hasAccount(context)) _open(page);
+            },
             child: SizedBox.expand(
               child: Stack(
                 alignment: Alignment.center,
@@ -280,8 +284,8 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
               label: tr('الملف الشخصي', 'Profile'),
               onPressed: widget.onOpenProfile,
               child: PersonFace(
-                name: user.name,
-                imagePath: user.avatarPath,
+                name: user?.name ?? '',
+                imagePath: user?.avatarPath,
                 size: profileFace,
                 color: ink,
               ),
@@ -299,7 +303,7 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
           child: Align(
             alignment: AlignmentDirectional.centerStart,
             child: Text(
-              user.name,
+              user?.name ?? tr('ضيف', 'Guest'),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(

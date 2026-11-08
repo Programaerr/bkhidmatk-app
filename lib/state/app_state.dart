@@ -45,6 +45,20 @@ class AppState extends ChangeNotifier {
   /// موظف بالتوضيف: يظهر له فقط ما تسمح به الإدارة (أعمالنا + حسابه).
   bool get isWorker => user?.isWorker ?? false;
 
+  /// يتصفح بلا حساب: يرى الرئيسية والحرفيين فقط، وما سواهما يطلب منه تسجيل الدخول.
+  bool guest = false;
+
+  void enterAsGuest() {
+    guest = true;
+    notifyListeners();
+  }
+
+  void leaveGuest() {
+    if (!guest) return;
+    guest = false;
+    notifyListeners();
+  }
+
   Future<void> boot() async {
     final prefs = await SharedPreferences.getInstance();
     _prefs = prefs;

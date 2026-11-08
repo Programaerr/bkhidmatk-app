@@ -60,7 +60,10 @@ class _RootGate extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
     if (state.booting) return const SplashScreen();
-    if (state.user == null) return const WelcomeScreen();
+    if (state.user == null) {
+      // الضيف يدخل التطبيق بلا حساب ليتصفح فقط.
+      return state.guest ? const CustomerShell() : const WelcomeScreen();
+    }
     if (state.isAdmin) {
       return CustomerShell(
         onOpenAdminDashboard: () => Navigator.push(

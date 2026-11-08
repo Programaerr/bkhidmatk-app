@@ -60,33 +60,38 @@ abstract final class _Design {
   static const accountTop = buttonBottom + 4.8;
   static const accountBottom = accountTop + keyHeight;
 
+  // زر الدخول كضيف تحت زر الحساب وبمقاسه، وما تحته ينزل بقدر صفه.
+  static const guestTop = accountBottom + 4.8;
+  static const guestBottom = guestTop + keyHeight;
+  static const _guestRow = guestBottom - accountBottom;
+
   static const wideLineLeft = 92.63;
   static const wideLineRight = 299.46;
-  static const wideLineTop = accountBottom + 6.74;
+  static const wideLineTop = guestBottom + 6.74;
   static const wideLineHeight = 2.0;
 
   static const privacySize = 11.2;
   static const privacyCenterX = 191.2;
-  static const privacyCenterY = 601.68;
+  static const privacyCenterY = 601.68 + _guestRow;
 
   static const shortLineLeft = 172.64;
   static const shortLineRight = 213.79;
-  static const privacyLineTop = 622.18;
+  static const privacyLineTop = 622.18 + _guestRow;
 
   // من اليمين: فيسبوك ثم انستغرام ثم تيك توك، وبين قواعد الأزرار مسافة واضحة.
   static const socialCenters = [250.0, 193.0, 136.0];
   static const socialFaceWidth = 34.0;
-  static const socialTop = 636.18;
+  static const socialTop = 636.18 + _guestRow;
   static const socialFaceHeight = 35.7;
   static const socialBottom = socialTop + socialFaceHeight + PushKey.depth;
   static const socialMarkSize = 19.0;
 
   static const contactSize = 10.0;
   static const contactCenterX = 191.2;
-  static const contactCenterY = 694.18;
+  static const contactCenterY = 694.18 + _guestRow;
 
   /// لا يظهر هذا الخط في الصورة، وطلبته الملاحظة: بُعده عن الكلام كبُعد خط الخصوصية.
-  static const contactLineTop = 713.18;
+  static const contactLineTop = 713.18 + _guestRow;
   static const contentBottom = contactLineTop + 1;
 
   /// لا تصغر الخانات عن هذا الحد في الهواتف الضيقة حتى تبقى مقروءة.
@@ -102,6 +107,7 @@ class _Words {
     required this.customer,
     required this.craftsman,
     required this.account,
+    required this.guest,
     required this.privacy,
     required this.contact,
     required this.socials,
@@ -114,6 +120,7 @@ class _Words {
   final String customer;
   final String craftsman;
   final String account;
+  final String guest;
   final String privacy;
   final String contact;
   final List<String> socials;
@@ -133,6 +140,7 @@ const _arabic = _Words(
   customer: 'زبون',
   craftsman: 'حرفي',
   account: 'هل لديك حساب',
+  guest: 'أدخل كضيف',
   privacy: 'سياسة و الخصوصية',
   contact: 'تواصلوا معنى',
   socials: ['فيسبوك', 'انستغرام', 'تيك توك'],
@@ -146,6 +154,7 @@ const _english = _Words(
   customer: 'Customer',
   craftsman: 'Craftsman',
   account: 'Have an account?',
+  guest: 'Enter as guest',
   privacy: 'Privacy Policy',
   contact: 'Contact us',
   socials: ['Facebook', 'Instagram', 'TikTok'],
@@ -523,6 +532,38 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                                     words.account,
                                     style: _textStyle(unit, Colors.white)
                                         .copyWith(fontWeight: FontWeight.w800),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        // الضيف يدخل بلا حساب ليتصفح فقط، والزر أبيض مثل زر الزبون بمقاس زر الحساب.
+                        _touchArea(
+                          left: x(_Design.craftsmanLeft),
+                          right: x(_Design.buttonRight),
+                          top: y(_Design.guestTop),
+                          bottom: y(_Design.guestBottom),
+                          above: touchMargin,
+                          below: touchMargin,
+                          onTap: () => context.read<AppState>().enterAsGuest(),
+                          child: PushKey(
+                            unit: unit,
+                            faceHeight: faceHeight,
+                            night: _night,
+                            child: Semantics(
+                              button: true,
+                              child: Center(
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: _dayNight(
+                                    (night) => Text(
+                                      words.guest,
+                                      style: _textStyle(
+                                              unit, night ? _nightInk : _ink)
+                                          .copyWith(
+                                              fontWeight: FontWeight.w800),
+                                    ),
                                   ),
                                 ),
                               ),
