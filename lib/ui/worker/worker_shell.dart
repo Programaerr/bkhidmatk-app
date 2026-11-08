@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 
 import '../../core/language.dart';
@@ -26,11 +27,17 @@ class _WorkerShellState extends State<WorkerShell> {
     onOpenBookings: () => _go(0),
   );
 
-  // تُبنى مع كل بناء، فتتبع لغة التطبيق.
+  // تُبنى مع كل بناء، فتتبع لغة التطبيق. أيقونات بأشكال رموز آبل، وعلى الآيفون الرموز نفسها.
   static List<NavItem> get _items => [
-    NavItem(tr('طلباتي', 'My requests'), Icons.assignment_outlined, Icons.assignment_rounded),
-    NavItem(tr('أعمالنا', 'Our work'), Icons.video_library_outlined, Icons.video_library_rounded),
-    NavItem(tr('حسابي', 'My account'), Icons.person_outline_rounded, Icons.person_rounded),
+    NavItem(tr('طلباتي', 'My requests'), CupertinoIcons.tray_full,
+        CupertinoIcons.tray_full_fill,
+        symbol: 'tray.full.fill'),
+    NavItem(tr('أعمالنا', 'Our work'), CupertinoIcons.play_rectangle,
+        CupertinoIcons.play_rectangle_fill,
+        symbol: 'play.rectangle.fill', minimizeOnScroll: false),
+    NavItem(tr('حسابي', 'My account'), CupertinoIcons.person_crop_circle,
+        CupertinoIcons.person_crop_circle_fill,
+        symbol: 'person.crop.circle.fill'),
   ];
 
   @override

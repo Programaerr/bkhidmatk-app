@@ -986,6 +986,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.4.0"
+  uikit_tab_bar:
+    dependency: "direct main"
+    description:
+      name: uikit_tab_bar
+      sha256: "2d7cdba745c36b88fda89ae356b7b5fb09b1a6a4a3711713b63a7da00eccfefc"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.1"
   unicode:
     dependency: transitive
     description:

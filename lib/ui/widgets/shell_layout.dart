@@ -2,7 +2,9 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' show FragmentProgram, ImageFilter, lerpDouble;
 
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:uikit_tab_bar/uikit_tab_bar.dart';
 
 import '../../core/language.dart';
 import '../../core/theme.dart';
@@ -10,11 +12,31 @@ import '../auth/push_key.dart';
 
 /// A single bottom-navigation destination definition used by all shells.
 class NavItem {
-  const NavItem(this.label, this.icon, this.activeIcon);
+  const NavItem(
+    this.label,
+    this.icon,
+    this.activeIcon, {
+    required this.symbol,
+    this.minimizeOnScroll = true,
+  });
   final String label;
+
+  /// أيقونة التبويب غير المختار: خطوط Cupertino بأشكال رموز آبل.
   final IconData icon;
+
+  /// أيقونته مختاراً، ممتلئة. شريط iOS الأقدم يعرضها للتبويبات كلها كما تفعل آبل.
   final IconData activeIcon;
+
+  /// اسم الرمز في SF Symbols لشريط آبل الأصلي (iOS 26 وما بعده)، بالشكل الممتلئ الذي توصي به آبل
+  /// لأشرطة التبويب.
+  final String symbol;
+
+  /// شريط آبل ينكمش مع النزول في هذه الصفحة. لا في صفحة الفيديو.
+  final bool minimizeOnScroll;
 }
+
+/// الآيفون يأخذ شريط آبل (انظر [_AppleTabLayout])، وأندرويد يبقى على الشريط الزجاجي.
+bool get _appleBar => !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 
 class AppShellLayout extends StatefulWidget {
   const AppShellLayout({
@@ -87,6 +109,17 @@ class _AppShellLayoutState extends State<AppShellLayout> {
     );
 
     if (!wide) {
+      if (_appleBar) {
+        return _AppleTabLayout(
+          index: index,
+          items: items,
+          body: body,
+          onSelect: onSelect,
+          accent: accent,
+          extendBody: extendBody,
+          floatingActionButton: floatingActionButton,
+        );
+      }
       return Scaffold(
         extendBody: extendBody,
         body: body,
@@ -146,11 +179,135 @@ class _AppShellLayoutState extends State<AppShellLayout> {
 /// على الفقاعة أو سحبها يكبّرها فتتبع الإصبع يميناً ويساراً وتكبّر ما تحتها، ويُفتح التبويب الذي
 /// يُترك عليه.
 /// ارتفاع أعلى زجاج شريط التنقل عن أسفل الشاشة، لما يُرسم فوقه مباشرة (مثل شريط تقدم الفيديو).
-/// تحت الزجاج شريط النظام إن وُجد، ثم 4 بين الزجاج ومكانه.
-double glassBarTop(BuildContext context) =>
-    MediaQuery.viewPaddingOf(context).bottom +
-    _GlassNavigationBarState._height +
-    4;
+/// تحت الزجاج شريط النظام إن وُجد، ثم 4 بين الزجاج ومكانه. على الآيفون يقيسه شريط آبل نفسه.
+double glassBarTop(BuildContext context) {
+  final apple = context.dependOnInheritedWidgetOfExactType<_AppleBarTop>();
+  if (apple != null) {
+    return apple.top > 0 ? apple.top : MediaQuery.paddingOf(context).bottom;
+  }
+  return MediaQuery.viewPaddingOf(context).bottom +
+      _GlassNavigationBarState._height +
+      4;
+}
+
+/// شريط آبل على الآيفون (طلب المستخدم). على iOS 26 وما بعده هو شريط النظام نفسه:
+/// UITabBarController بزجاج Liquid Glass من آبل، لا تقليد له. يطفو فوق الصفحات، ويتبع الوضع
+/// الفاتح والداكن وإعدادات الوصول، وحركته ولمسه من النظام، وينكمش مع النزول في الصفحة كما في
+/// تطبيقات آبل. وعلى iOS الأقدم شريط Cupertino المعتاد. الصفحات تمتد خلفه وتعرف ارتفاعه من
+/// هامشها السفلي، كما مع الشريط الزجاجي.
+class _AppleTabLayout extends StatefulWidget {
+  const _AppleTabLayout({
+    required this.index,
+    required this.items,
+    required this.body,
+    required this.onSelect,
+    required this.accent,
+    required this.extendBody,
+    this.floatingActionButton,
+  });
+
+  final int index;
+  final List<NavItem> items;
+  final Widget body;
+  final ValueChanged<int> onSelect;
+  final Color accent;
+  final bool extendBody;
+  final Widget? floatingActionButton;
+
+  @override
+  State<_AppleTabLayout> createState() => _AppleTabLayoutState();
+}
+
+class _AppleTabLayoutState extends State<_AppleTabLayout> {
+  final _bar = UIKitTabBarController();
+
+  @override
+  void dispose() {
+    _bar.dispose();
+    super.dispose();
+  }
+
+  /// أعلى زجاج الشريط عن أسفل الشاشة، وصفر قبل أن يرسمه النظام أول مرة.
+  static double _glassTop(UIKitTabBarGeometry geometry) {
+    final bar = geometry.barRect;
+    final glass = geometry.hitRects;
+    if (bar == null || glass.isEmpty) return geometry.bottomInset;
+    return bar.bottom - glass.map((rect) => rect.top).reduce(math.min);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final _AppleTabLayout(:index, :items, :onSelect, :accent, :extendBody) =
+        widget;
+    // ينكمش مع النزول في الصفحة، إلا فوق الفيديو، وفي الصفحات التي لا تمتد خلفه، وما دامت فوقه
+    // صفحة أو نافذة: السحب فيها لا يخصه.
+    final shrinks = extendBody &&
+        items[index].minimizeOnScroll &&
+        (ModalRoute.isCurrentOf(context) ?? true);
+    return UIKitTabScaffold(
+      controller: _bar,
+      tabBar: UIKitTabBar(
+        tabs: [
+          for (final (i, item) in items.indexed)
+            UIKitTab(
+              id: '$i',
+              label: item.label,
+              icon: UIKitTabIcon.symbol(item.symbol),
+              // في شريط iOS الأقدم الأيقونات كلها ممتلئة، والمختارة بلون التطبيق، كما عند آبل.
+              fallbackIcon: Icon(item.activeIcon),
+            ),
+        ],
+        selectedId: '$index',
+        // إن مُنع التبويب (الضيف) بقي المختار كما هو، فيرجع الشريط إليه.
+        onSelected: (id) => onSelect(int.parse(id)),
+        minimizeBehavior: shrinks
+            ? UIKitTabBarMinimizeBehavior.onScrollDown
+            : UIKitTabBarMinimizeBehavior.never,
+        style: UIKitTabBarStyle(
+          tintColor: accent,
+          // يتبع وضع التطبيق الليلي، وهو يتبع وضع الآيفون ما لم يُختر غيره.
+          brightness: Theme.of(context).brightness,
+        ),
+      ),
+      body: ValueListenableBuilder<UIKitTabBarGeometry>(
+        valueListenable: _bar.geometry,
+        builder: (context, geometry, page) =>
+            _AppleBarTop(top: _glassTop(geometry), child: page!),
+        child: Scaffold(
+          body: extendBody ? widget.body : _AboveAppleBar(child: widget.body),
+          floatingActionButton: widget.floatingActionButton,
+        ),
+      ),
+    );
+  }
+}
+
+/// أعلى زجاج شريط آبل، لما يُرسم فوقه مباشرة. انظر [glassBarTop].
+class _AppleBarTop extends InheritedWidget {
+  const _AppleBarTop({required this.top, required super.child});
+
+  final double top;
+
+  @override
+  bool updateShouldNotify(_AppleBarTop oldWidget) => oldWidget.top != top;
+}
+
+/// صفحة تقف فوق شريط آبل ولا تمتد خلفه، مثل قوائم لوحة التحكم.
+class _AboveAppleBar extends StatelessWidget {
+  const _AboveAppleBar({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
+        child: MediaQuery.removePadding(
+          context: context,
+          removeBottom: true,
+          child: child,
+        ),
+      );
+}
 
 class _GlassNavigationBar extends StatefulWidget {
   const _GlassNavigationBar({

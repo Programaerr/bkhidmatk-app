@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 
 import '../../core/language.dart';
@@ -68,14 +69,20 @@ class _CustomerShellState extends State<CustomerShell> {
     onOpenAdminDashboard: widget.onOpenAdminDashboard,
   );
 
-  // تُبنى مع كل بناء، فتتبع لغة التطبيق.
+  // تُبنى مع كل بناء، فتتبع لغة التطبيق. أيقونات بأشكال رموز آبل، وعلى الآيفون الرموز نفسها.
   static List<NavItem> get _items => [
-    NavItem(tr('الرئيسية', 'Home'), Icons.home_outlined, Icons.home_rounded),
-    NavItem(tr('الحرفيين', 'Craftsmen'), Icons.groups_outlined, Icons.groups_rounded),
-    NavItem(tr('حجوزاتي', 'My bookings'), Icons.event_note_outlined, Icons.event_note_rounded),
-    NavItem(
-        tr('أعمالنا', 'Our work'), Icons.video_library_outlined, Icons.video_library_rounded),
-    NavItem(tr('حسابي', 'My account'), Icons.person_outline_rounded, Icons.person_rounded),
+    NavItem(tr('الرئيسية', 'Home'), CupertinoIcons.house, CupertinoIcons.house_fill,
+        symbol: 'house.fill'),
+    NavItem(tr('الحرفيين', 'Craftsmen'), CupertinoIcons.hammer, CupertinoIcons.hammer_fill,
+        symbol: 'hammer.fill'),
+    NavItem(tr('حجوزاتي', 'My bookings'), CupertinoIcons.calendar, CupertinoIcons.calendar,
+        symbol: 'calendar'),
+    NavItem(tr('أعمالنا', 'Our work'), CupertinoIcons.play_rectangle,
+        CupertinoIcons.play_rectangle_fill,
+        symbol: 'play.rectangle.fill', minimizeOnScroll: false),
+    NavItem(tr('حسابي', 'My account'), CupertinoIcons.person_crop_circle,
+        CupertinoIcons.person_crop_circle_fill,
+        symbol: 'person.crop.circle.fill'),
   ];
 
   @override

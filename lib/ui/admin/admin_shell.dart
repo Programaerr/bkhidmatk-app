@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 
 
@@ -22,15 +23,21 @@ class AdminShell extends StatefulWidget {
 class _AdminShellState extends State<AdminShell> {
   int _index = 0;
 
-  // تُبنى مع كل بناء، فتتبع لغة التطبيق.
+  // تُبنى مع كل بناء، فتتبع لغة التطبيق. أيقونات بأشكال رموز آبل، وعلى الآيفون الرموز نفسها.
   static List<NavItem> get _items => [
-    NavItem(tr('الرئيسية', 'Home'), Icons.space_dashboard_outlined,
-        Icons.space_dashboard_rounded),
-    NavItem(tr('الحجوزات', 'Bookings'), Icons.event_note_outlined, Icons.event_note_rounded),
-    NavItem(tr('الخدمات', 'Services'), Icons.handyman_outlined, Icons.handyman_rounded),
-    NavItem(
-        tr('الأعمال', 'Works'), Icons.video_library_outlined, Icons.video_library_rounded),
-    NavItem(tr('المزيد', 'More'), Icons.more_horiz_rounded, Icons.more_horiz_rounded),
+    NavItem(tr('الرئيسية', 'Home'), CupertinoIcons.square_grid_2x2,
+        CupertinoIcons.square_grid_2x2_fill,
+        symbol: 'square.grid.2x2.fill'),
+    NavItem(tr('الحجوزات', 'Bookings'), CupertinoIcons.calendar, CupertinoIcons.calendar,
+        symbol: 'calendar'),
+    NavItem(tr('الخدمات', 'Services'), CupertinoIcons.wrench, CupertinoIcons.wrench_fill,
+        symbol: 'wrench.and.screwdriver.fill'),
+    NavItem(tr('الأعمال', 'Works'), CupertinoIcons.play_rectangle,
+        CupertinoIcons.play_rectangle_fill,
+        symbol: 'play.rectangle.fill'),
+    NavItem(tr('المزيد', 'More'), CupertinoIcons.ellipsis_circle,
+        CupertinoIcons.ellipsis_circle_fill,
+        symbol: 'ellipsis.circle.fill'),
   ];
 
   void _go(int index) => setState(() => _index = index);
