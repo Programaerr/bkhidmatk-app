@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
@@ -231,9 +232,13 @@ const _pleased = WorkerFace(browLift: .9, browKnit: -.1, happy: 1, grin: 1);
 /// وضع العاملين في لحظة. كل واحد يكرر قصة إصلاح: ينزل مؤشر عداده فينتبه، ثم يصلح
 /// ويتعب، ثم يرجع المؤشر إلى علامته فيفرح، ثم يهدأ على شكله في الرسم.
 class WorkersPose {
-  const WorkersPose(this.time);
+  const WorkersPose(this.time, [double? kneelingTime]) : kneelingTime = kneelingTime ?? time;
 
+  /// ساعة العامل الواقف.
   final double time;
+
+  /// ساعة العامل الجالس. كل منهما يرتاح بين حكاية وأخرى في وضعه الهادئ، فلكل منهما ساعته.
+  final double kneelingTime;
 
   static const standingCycle = 9.0;
   static const kneelingCycle = 8.0;
@@ -316,14 +321,16 @@ class WorkersPose {
   ];
 
   double get _standing => time % standingCycle;
-  double get _kneeling => time % kneelingCycle;
+  double get _kneeling => kneelingTime % kneelingCycle;
 
   double _wave(double period, [double shift = 0]) =>
       math.sin(2 * math.pi * time / period + shift);
 
+  double _kneelingWave(double period) => math.sin(2 * math.pi * kneelingTime / period);
+
   /// إغماضة قصيرة في كل دورة: 1 مغمضتان.
-  double _blink(double cycle, double at) {
-    final t = (time % cycle) - at;
+  double _blink(double cycle, double at, [double? clock]) {
+    final t = ((clock ?? time) % cycle) - at;
     if (t <= 0 || t >= .18) return 0;
     return math.sin(math.pi * t / .18);
   }
@@ -424,21 +431,22 @@ class WorkersPose {
   }
 
   // يرجع فرحاً ويتنفس، ولا يميل وهو يضبط حتى تبقى أصابعه على العداد.
-  double get kneelingLean => .006 * _kneelingPleased + .003 * _wave(3.6);
+  double get kneelingLean => .006 * _kneelingPleased + .003 * _kneelingWave(3.6);
   double get kneelingHead => _through(_kneeling, _kneelingHeads, _lerp);
   double get reachingArm => .02 * _twist;
   double get smallNeedle => -1.0 * _kneelingDrop(0);
-  double get holdingArm => .045 * _reading + .006 * _wave(2.2);
-  double get meterTilt => -.15 * _reading + .02 * _wave(2.2);
+  double get holdingArm => .045 * _reading + .006 * _kneelingWave(2.2);
+  double get meterTilt => -.15 * _reading + .02 * _kneelingWave(2.2);
 
   double get tallNeedle {
     final t = _kneeling - (_twists.last.$2 + .3);
     final settle = t > 0 ? .14 * math.exp(-3.5 * t) * math.sin(11 * t) : 0.0;
     final drop = _kneelingDrop(.3);
-    return -1.2 * drop + settle + .02 * (1 - drop) * _wave(1.3);
+    return -1.2 * drop + settle + .02 * (1 - drop) * _kneelingWave(1.3);
   }
 
-  double get kneelingBlink => math.max(_blink(kneelingCycle, .25), _blink(kneelingCycle, 6.9));
+  double get kneelingBlink =>
+      math.max(_blink(kneelingCycle, .25, kneelingTime), _blink(kneelingCycle, 6.9, kneelingTime));
 
   WorkerFace get kneelingFace => _through(_kneeling, _kneelingFaces, WorkerFace.lerp);
 
@@ -648,30 +656,82 @@ class WorkersScene extends StatefulWidget {
   State<WorkersScene> createState() => _WorkersSceneState();
 }
 
+// كل عامل يمثل حكايته مرة حين تظهر الرئيسية أو تُلمس، ثم يرتاح في وضعه الهادئ الذي تبدأ وتنتهي به
+// حكايته. وهما مرتاحان لا يُرسم شيء، فلا تبقى الرئيسية تشغّل المعالج وهي ساكنة (طلب المستخدم:
+// «تقلل حركه العمال»). كانت الحركة دائمة، فبقي المعالج مشغولاً نحو 70% طول بقاء الرئيسية.
 class _WorkersSceneState extends State<WorkersScene> with SingleTickerProviderStateMixin {
   final _art = WorkersArt();
-  final _time = ValueNotifier<double>(0);
+
+  /// ساعتا العامل الواقف والعامل الجالس.
+  final _time = ValueNotifier<(double, double)>((0, 0));
   late final Ticker _ticker = createTicker(_onTick);
   Duration _lastTick = Duration.zero;
 
-  void _onTick(Duration elapsed) {
-    _time.value += steadyStep(elapsed - _lastTick);
-    _lastTick = elapsed;
+  /// طُلب من كل عامل مرتاح أن يمثل حكايته مرة.
+  bool _wanted = false;
+  bool _shown = false;
+  bool _reduceMotion = false;
+
+  /// ساعة عامل بعد خطوة: تمشي حتى آخر حكايته ثم تقف عليه، ولا تبدأ من جديد إلا إذا طُلب ذلك.
+  static double _advance(double clock, double step, double cycle, bool start) {
+    if (clock % cycle == 0 && !start) return clock;
+    return math.min(clock + step, (clock ~/ cycle + 1) * cycle);
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (MediaQuery.disableAnimationsOf(context)) {
-      if (_ticker.isActive) _ticker.stop();
-    } else if (!_ticker.isActive) {
+  void _onTick(Duration elapsed) {
+    final step = steadyStep(elapsed - _lastTick);
+    _lastTick = elapsed;
+    if (step == 0) return;
+    final (standing, kneeling) = _time.value;
+    final start = _wanted;
+    _wanted = false;
+    final next = (
+      _advance(standing, step, WorkersPose.standingCycle, start),
+      _advance(kneeling, step, WorkersPose.kneelingCycle, start),
+    );
+    _time.value = next;
+    if (next.$1 % WorkersPose.standingCycle == 0 && next.$2 % WorkersPose.kneelingCycle == 0) {
+      _ticker.stop();
+    }
+  }
+
+  void _wake() {
+    if (_reduceMotion || !_shown) return;
+    _wanted = true;
+    if (!_ticker.isActive) {
       _lastTick = Duration.zero;
       _ticker.start();
     }
   }
 
+  void _onPointer(PointerEvent event) {
+    if (event is PointerDownEvent) _wake();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    GestureBinding.instance.pointerRouter.addGlobalRoute(_onPointer);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _reduceMotion = MediaQuery.disableAnimationsOf(context);
+    // تبويب مخفي أو صفحة فوق الرئيسية تعطّل حركتها، فلا يوقظها لمس تلك الصفحات.
+    final shown = TickerMode.valuesOf(context).enabled;
+    final appeared = shown && !_shown;
+    _shown = shown;
+    if (_reduceMotion) {
+      if (_ticker.isActive) _ticker.stop();
+    } else if (appeared) {
+      _wake();
+    }
+  }
+
   @override
   void dispose() {
+    GestureBinding.instance.pointerRouter.removeGlobalRoute(_onPointer);
     _ticker.dispose();
     _time.dispose();
     _art.dispose();
@@ -710,7 +770,9 @@ class WorkersScenePainter extends CustomPainter {
   }) : super(repaint: time);
 
   final WorkersArt art;
-  final ValueListenable<double> time;
+
+  /// ساعتا العامل الواقف والعامل الجالس.
+  final ValueListenable<(double, double)> time;
   final double scale;
   final double left;
   final double pixelRatio;
@@ -720,7 +782,8 @@ class WorkersScenePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final pose = WorkersPose(time.value);
+    final (standing, kneeling) = time.value;
+    final pose = WorkersPose(standing, kneeling);
     final unit = scale * _artScale;
     final origin = Offset(left + _artLeft * scale, 0);
     art._prepare(origin, unit, pixelRatio);
