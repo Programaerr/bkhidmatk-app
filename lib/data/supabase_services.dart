@@ -72,7 +72,12 @@ class SupabaseServices {
         'and --dart-define=SUPABASE_PUBLISHABLE_KEY=... .',
       );
     }
-    await Supabase.initialize(url: _url, publishableKey: _publishableKey);
+    // التطبيق لا يستقبل روابط دخول (لا روابط له في AndroidManifest)، فلا ينتظر فحصها عند الفتح.
+    await Supabase.initialize(
+      url: _url,
+      publishableKey: _publishableKey,
+      authOptions: const FlutterAuthClientOptions(detectSessionInUri: false),
+    );
     return SupabaseServices._(Supabase.instance.client);
   }
 

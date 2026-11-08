@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -17,7 +18,9 @@ class AppState extends ChangeNotifier {
       : repo = repository ??
             (cloudServices == null
                 ? LocalRepository()
-                : SupabaseRepository(cloudServices.client));
+                : SupabaseRepository(cloudServices.client)) {
+    if (cloudServices != null) addListener(_rememberProfile);
+  }
 
   final Repository repo;
   final SupabaseServices? cloudServices;
@@ -26,6 +29,11 @@ class AppState extends ChangeNotifier {
 
   AppUser? user;
   bool booting = true;
+
+  // الحساب السحابي محفوظ على الجهاز من آخر مرة، فيفتح التطبيق عليه فوراً ويحدّثه السيرفر خلفه.
+  static const _profileKey = 'cloud_profile';
+  SharedPreferences? _prefs;
+  String? _rememberedProfile;
   ThemeMode themeMode = ThemeMode.light;
 
   /// لغة التطبيق كله: الإنجليزية أو العربية.
@@ -39,13 +47,20 @@ class AppState extends ChangeNotifier {
 
   Future<void> boot() async {
     final prefs = await SharedPreferences.getInstance();
+    _prefs = prefs;
     final savedTheme = prefs.getString('theme');
     themeMode = savedTheme == 'dark' ? ThemeMode.dark : ThemeMode.light;
     appEnglish = prefs.getBool('english') ?? false;
 
     if (cloudServices != null) {
       if (cloudServices!.isSignedIn) {
-        // انتظار السيرفر لا يؤخر فتح التطبيق: تظهر شاشة البداية حتى يصل الحساب.
+        // الحساب المحفوظ من آخر مرة يفتح التطبيق فوراً، والسيرفر يحدّثه خلفه. بلا حساب محفوظ
+        // تظهر شاشة البداية حتى يصل.
+        final remembered = _rememberedUser(prefs);
+        if (remembered != null) {
+          user = remembered;
+          booting = false;
+        }
         unawaited(_restoreCloudSession());
         return;
       }
@@ -72,10 +87,40 @@ class AppState extends ChangeNotifier {
       debugPrint('Failed to restore Supabase session: $error');
       debugPrintStack(stackTrace: stackTrace);
       await cloudServices!.signOut();
+      // الحساب المحفوظ يسقط أيضاً، فتنتهي الحال كما كانت: خارج الحساب.
+      user = null;
     } finally {
       booting = false;
       notifyListeners();
     }
+  }
+
+  AppUser? _rememberedUser(SharedPreferences prefs) {
+    final saved = prefs.getString(_profileKey);
+    final authId = cloudServices?.client.auth.currentUser?.id;
+    if (saved == null || authId == null) return null;
+    try {
+      final map = jsonDecode(saved) as Map<String, Object?>;
+      if (map['auth'] != authId) return null;
+      _rememberedProfile = saved;
+      return AppUser.fromMap(map);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// يحفظ الحساب السحابي كلما تغير، ويمحوه عند الخروج.
+  void _rememberProfile() {
+    final prefs = _prefs;
+    if (prefs == null) return;
+    final current = user;
+    final authId = cloudServices?.client.auth.currentUser?.id;
+    final saved = current == null || authId == null
+        ? null
+        : jsonEncode({...current.toMap(), 'auth': authId});
+    if (saved == _rememberedProfile) return;
+    _rememberedProfile = saved;
+    unawaited(saved == null ? prefs.remove(_profileKey) : prefs.setString(_profileKey, saved));
   }
 
   Future<String?> login(String phone, String password) async {

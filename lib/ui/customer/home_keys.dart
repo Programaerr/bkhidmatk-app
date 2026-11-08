@@ -329,15 +329,26 @@ class ChoiceKey extends StatelessWidget {
   final double unit;
   final VoidCallback onPressed;
 
+  // عرض كل اسم يُقاس مرة واحدة، لا مع كل بناء لصفحة الحرفيين.
+  static final _textWidths = <(String, double, double), double>{};
+
   double _faceWidth(BuildContext context, TextStyle style) {
-    final text = TextPainter(
-      text: TextSpan(text: label, style: style),
-      textDirection: TextDirection.rtl,
-      textScaler: MediaQuery.textScalerOf(context),
-      maxLines: 1,
-    )..layout();
-    final needed = text.width + _choicePadding * 2 * unit;
-    text.dispose();
+    final scaler = MediaQuery.textScalerOf(context);
+    final key = (label, unit, scaler.scale(style.fontSize ?? 14));
+    var width = _textWidths[key];
+    if (width == null) {
+      final text = TextPainter(
+        text: TextSpan(text: label, style: style),
+        textDirection: TextDirection.rtl,
+        textScaler: scaler,
+        maxLines: 1,
+      )..layout();
+      width = text.width;
+      text.dispose();
+      if (_textWidths.length > 300) _textWidths.clear();
+      _textWidths[key] = width;
+    }
+    final needed = width + _choicePadding * 2 * unit;
     if (needed <= _choiceMinWidth * unit) return _choiceMinWidth * unit;
     final step = _choiceWidthStep * unit;
     return (needed / step).ceil() * step;

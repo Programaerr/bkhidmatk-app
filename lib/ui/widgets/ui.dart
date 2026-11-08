@@ -361,9 +361,10 @@ class AvatarCircle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cacheSize = (size * MediaQuery.devicePixelRatioOf(context)).round();
-    final hasImage = fileExists(imagePath);
     final isNetwork = imagePath != null &&
         (imagePath!.startsWith('http://') || imagePath!.startsWith('https://'));
+    // فحص الملف يقرأ القرص مع كل بناء، فلا يُفحص رابط الإنترنت.
+    final hasImage = !isNetwork && fileExists(imagePath);
     Widget image = _initials(context);
     if (isNetwork) {
       image = Image.network(
