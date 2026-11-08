@@ -2,5 +2,5 @@
 <resources>
     <color name="launch_bg">#000000</color>
     <color name="launch_bg_dark">#0B0B0D</color>
-    <color name="ic_launcher_background">#000000</color>
+    <color name="ic_launcher_background">#396DA1</color>
 </resources>
