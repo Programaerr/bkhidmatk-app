@@ -100,13 +100,33 @@ class AppState extends ChangeNotifier {
     } catch (error, stackTrace) {
       debugPrint('Failed to restore Supabase session: $error');
       debugPrintStack(stackTrace: stackTrace);
-      await cloudServices!.signOut();
-      // الحساب المحفوظ يسقط أيضاً، فتنتهي الحال كما كانت: خارج الحساب.
-      user = null;
+      // انقطاع الإنترنت عند الفتح لا يُخرج المستخدم من حسابه: يبقى على حسابه المحفوظ إن وُجد،
+      // ويُفحص الحساب من جديد في الفتح القادم. خطأ الحساب نفسه وحده يُخرجه كما كان.
+      if (!_isConnectionError(error)) {
+        await cloudServices!.signOut();
+        // الحساب المحفوظ يسقط أيضاً، فتنتهي الحال كما كانت: خارج الحساب.
+        user = null;
+      }
     } finally {
       booting = false;
       notifyListeners();
     }
+  }
+
+  /// خطأ اتصال بالإنترنت، لا خطأ في الحساب نفسه.
+  static bool _isConnectionError(Object error) {
+    if (error is TimeoutException) return true;
+    final text = error.toString();
+    return const [
+      'SocketException',
+      'ClientException',
+      'HandshakeException',
+      'Failed host lookup',
+      'Connection refused',
+      'Connection closed',
+      'Connection reset',
+      'Network is unreachable',
+    ].any(text.contains);
   }
 
   AppUser? _rememberedUser(SharedPreferences prefs) {
