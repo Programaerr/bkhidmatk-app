@@ -29,7 +29,7 @@ class _AdminShellState extends State<AdminShell> {
     NavItem(tr('الحجوزات', 'Bookings'), Icons.event_note_outlined, Icons.event_note_rounded),
     NavItem(tr('الخدمات', 'Services'), Icons.handyman_outlined, Icons.handyman_rounded),
     NavItem(
-        tr('الأعمال', 'Works'), Icons.video_library_outlined, Icons.video_library_rounded, darkBar: true),
+        tr('الأعمال', 'Works'), Icons.video_library_outlined, Icons.video_library_rounded),
     NavItem(tr('المزيد', 'More'), Icons.more_horiz_rounded, Icons.more_horiz_rounded),
   ];
 

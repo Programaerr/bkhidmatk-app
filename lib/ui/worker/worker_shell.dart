@@ -29,7 +29,7 @@ class _WorkerShellState extends State<WorkerShell> {
   // تُبنى مع كل بناء، فتتبع لغة التطبيق.
   static List<NavItem> get _items => [
     NavItem(tr('طلباتي', 'My requests'), Icons.assignment_outlined, Icons.assignment_rounded),
-    NavItem(tr('أعمالنا', 'Our work'), Icons.video_library_outlined, Icons.video_library_rounded, darkBar: true),
+    NavItem(tr('أعمالنا', 'Our work'), Icons.video_library_outlined, Icons.video_library_rounded),
     NavItem(tr('حسابي', 'My account'), Icons.person_outline_rounded, Icons.person_rounded),
   ];
 

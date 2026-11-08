@@ -74,7 +74,7 @@ class _CustomerShellState extends State<CustomerShell> {
     NavItem(tr('الحرفيين', 'Craftsmen'), Icons.groups_outlined, Icons.groups_rounded),
     NavItem(tr('حجوزاتي', 'My bookings'), Icons.event_note_outlined, Icons.event_note_rounded),
     NavItem(
-        tr('أعمالنا', 'Our work'), Icons.video_library_outlined, Icons.video_library_rounded, darkBar: true),
+        tr('أعمالنا', 'Our work'), Icons.video_library_outlined, Icons.video_library_rounded),
     NavItem(tr('حسابي', 'My account'), Icons.person_outline_rounded, Icons.person_rounded),
   ];
 
