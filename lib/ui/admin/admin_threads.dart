@@ -126,7 +126,7 @@ class _AdminThreadsScreenState extends State<AdminThreadsScreen>
                                 ),
                                 if (t.unread > 0)
                                   Container(
-                                    margin: const EdgeInsetsDirectional.only(start: 6),
+                                    margin: const EdgeInsets.only(right: 6),
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 6, vertical: 1),
                                     decoration: BoxDecoration(

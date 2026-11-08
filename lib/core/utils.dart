@@ -62,7 +62,8 @@ String fmtMoney(num value) {
     if (i > 0 && (s.length - i) % 3 == 0) buf.write(',');
     buf.write(s[i]);
   }
-  return '${n < 0 ? '-' : ''}$buf ${tr('د.ع', 'IQD')}';
+  final amount = '${n < 0 ? '-' : ''}$buf';
+  return tr('$amount د.ع', '$amount IQD');
 }
 
 String fmtNumber(num value) {
@@ -75,8 +76,10 @@ String fmtNumber(num value) {
   return buf.toString();
 }
 
-String fmtDate(DateTime d) =>
-    '${d.day} ${(appEnglish ? _monthsEn : _months)[d.month - 1]} ${d.year}';
+String fmtDate(DateTime d) => tr(
+      '${d.day} ${_months[d.month - 1]} ${d.year}',
+      '${d.day} ${_monthsEn[d.month - 1]} ${d.year}',
+    );
 
 String fmtDateShort(DateTime d) =>
     '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
@@ -87,7 +90,7 @@ String fmtTimeOfDay(DateTime d) {
   final h24 = d.hour;
   final h = h24 % 12 == 0 ? 12 : h24 % 12;
   final m = d.minute.toString().padLeft(2, '0');
-  return '$h:$m ${h24 < 12 ? tr('ص', 'AM') : tr('م', 'PM')}';
+  return tr('$h:$m ${h24 < 12 ? 'ص' : 'م'}', '$h:$m ${h24 < 12 ? 'AM' : 'PM'}');
 }
 
 String fmtDateTime(DateTime d) => '${fmtDate(d)} • ${fmtTimeOfDay(d)}';
@@ -119,14 +122,14 @@ String fmtSlot(String slot) {
   final h24 = int.tryParse(parts[0]) ?? 0;
   final m = parts[1];
   final h = h24 % 12 == 0 ? 12 : h24 % 12;
-  return '$h:$m ${h24 < 12 ? tr('ص', 'AM') : tr('م', 'PM')}';
+  return tr('$h:$m ${h24 < 12 ? 'ص' : 'م'}', '$h:$m ${h24 < 12 ? 'AM' : 'PM'}');
 }
 
 String invoiceNumber(int id, DateTime date) =>
     'BKD-${date.year}-${id.toString().padLeft(5, '0')}';
 
 String initialsOf(String name) {
-  final parts = name.trim().split(RegExp(r'\s+')).where((e) => e.isNotEmpty).toList();
+  final parts = withoutDirectionMarks(name).trim().split(RegExp(r'\s+')).where((e) => e.isNotEmpty).toList();
   if (parts.isEmpty) return '؟';
   final first = parts.first.substring(0, 1);
   if (parts.length == 1) return first;

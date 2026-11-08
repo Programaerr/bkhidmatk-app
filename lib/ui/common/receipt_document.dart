@@ -27,7 +27,7 @@ class ReceiptDocument extends StatelessWidget {
   Widget build(BuildContext context) {
     final isCard = receipt.method == 'card';
     return Directionality(
-      textDirection: appTextDirection,
+      textDirection: TextDirection.rtl,
       child: Container(
         width: width,
         color: Colors.white,

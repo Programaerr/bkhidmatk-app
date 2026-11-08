@@ -236,9 +236,9 @@ class _TechniciansTabState extends State<TechniciansTab> with RealtimeRefresh<Te
       children: [
         SizedBox(height: top + _Design.searchTop * unit),
         Align(
-          alignment: AlignmentDirectional.topEnd,
+          alignment: Alignment.topLeft,
           child: Padding(
-            padding: EdgeInsetsDirectional.only(end: left + _Design.searchLeft * unit - chromeInset),
+            padding: EdgeInsets.only(left: left + _Design.searchLeft * unit - chromeInset),
             child: _searchKey(unit, night),
           ),
         ),

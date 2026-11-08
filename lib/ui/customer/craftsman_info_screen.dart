@@ -204,10 +204,7 @@ class _ServiceRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return SoftCard(
-      // الهامش الأوسع في آخر السطر، فينعكس مع الإنجليزية.
-      padding: appEnglish
-          ? const EdgeInsets.fromLTRB(10, 10, 14, 10)
-          : const EdgeInsets.fromLTRB(14, 10, 10, 10),
+      padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),
       child: Row(
         children: [
           Expanded(

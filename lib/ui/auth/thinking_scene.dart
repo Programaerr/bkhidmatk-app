@@ -198,7 +198,7 @@ class ThinkingArt {
           height: 1,
         ),
       ),
-      textDirection: appTextDirection,
+      textDirection: TextDirection.rtl,
     )..layout();
     text.paint(Canvas(recorder), _answerCenter - Offset(text.width / 2, text.height / 2));
     text.dispose();

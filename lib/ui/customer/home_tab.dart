@@ -232,9 +232,8 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
       required int badge,
       required Widget page,
     }) {
-      // المواضع مقيسة من يسار التصميم العربي، فتنعكس مع الإنجليزية.
-      return PositionedDirectional(
-        end: left + centerX * unit - smallFace / 2 - inset - touchMargin,
+      return Positioned(
+        left: left + centerX * unit - smallFace / 2 - inset - touchMargin,
         top: metrics.centerY(_Design.smallCenter) - smallFace / 2 - touchMargin,
         child: shrunk(
           smallFace,
@@ -269,8 +268,8 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
       fit: StackFit.expand,
       children: [
         HomeHill(width: width, metrics: metrics),
-        PositionedDirectional(
-          start: profileRight - inset,
+        Positioned(
+          right: profileRight - inset,
           top: profileTop,
           child: shrunk(
             profileFace,
@@ -290,9 +289,9 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
           ),
         ),
         // الاسم في وسط الدائرة كلها، بوجهها وحلقتها، وبعيد عن حلقتها.
-        PositionedDirectional(
-          start: profileRight + profileFace * scale + inset + _Design.nameGap * unit,
-          end: left +
+        Positioned(
+          right: profileRight + profileFace * scale + inset + _Design.nameGap * unit,
+          left: left +
               (_Design.messagesCenterX + _Design.smallFace / 2 + _Design.nameMargin) * unit +
               inset,
           top: profileTop,
@@ -353,8 +352,8 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
     );
 
     // «عرض الكل» وسهمه في وسط الدائرة اليسرى.
-    Widget showAll(double center, VoidCallback onPressed) => PositionedDirectional(
-          end: left + (homeSectionLeftCenter - _Design.allWidth / 2) * unit,
+    Widget showAll(double center, VoidCallback onPressed) => Positioned(
+          left: left + (homeSectionLeftCenter - _Design.allWidth / 2) * unit,
           width: _Design.allWidth * unit,
           top: top + (center - _Design.allHeight / 2) * unit,
           height: _Design.allHeight * unit,
@@ -384,9 +383,9 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
                       ),
                     ),
                     SizedBox(width: _Design.allArrowGap * unit),
-                    // يتجه نحو آخر السطر: إلى اليسار بالعربية، وإلى اليمين بالإنجليزية.
+                    // يتجه إلى اليسار دائماً، فلا ينعكس مع اتجاه الكتابة.
                     Icon(
-                      appEnglish ? Icons.arrow_forward : Icons.arrow_back,
+                      Icons.arrow_back,
                       size: _Design.allArrowSize * unit,
                       color: ink,
                       textDirection: TextDirection.ltr,
@@ -410,8 +409,8 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
             child: WorkersScene(scale: unit, left: left),
           ),
           // «الأقسام» في وسط الدائرة اليمنى.
-          PositionedDirectional(
-            end: left + (homeSectionRightCenter - _Design.sectionsTitleWidth / 2) * unit,
+          Positioned(
+            left: left + (homeSectionRightCenter - _Design.sectionsTitleWidth / 2) * unit,
             width: _Design.sectionsTitleWidth * unit,
             top: top + (_Design.sectionsTitleCenter - _Design.titleHeight / 2) * unit,
             height: _Design.titleHeight * unit,
@@ -439,9 +438,9 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
               onOpen: (section) => widget.onOpenSection?.call(section.name),
             ),
           ),
-          PositionedDirectional(
-            start: right + _Design.craftsmenTitleRight * unit,
-            end: left + _Design.titleRoom * unit,
+          Positioned(
+            right: right + _Design.craftsmenTitleRight * unit,
+            left: left + _Design.titleRoom * unit,
             top: top + (_Design.craftsmenTitleCenter - _Design.titleHeight / 2) * unit,
             height: _Design.titleHeight * unit,
             child: Align(

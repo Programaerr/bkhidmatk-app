@@ -122,15 +122,11 @@ class _AppShellLayoutState extends State<AppShellLayout>
         extendBody: extendBody,
         body: body,
         floatingActionButton: floatingActionButton,
-        // الشريط يبقى بترتيبه العربي في اللغتين: الرئيسية في اليمين (طلب المستخدم).
-        bottomNavigationBar: Directionality(
-          textDirection: TextDirection.rtl,
-          child: _GlassNavigationBar(
-            index: index,
-            items: items,
-            accent: accent,
-            onSelect: onSelect,
-          ),
+        bottomNavigationBar: _GlassNavigationBar(
+          index: index,
+          items: items,
+          accent: accent,
+          onSelect: onSelect,
         ),
       );
     }
@@ -142,7 +138,7 @@ class _AppShellLayoutState extends State<AppShellLayout>
             width: 92,
             decoration: BoxDecoration(
               border:
-                  BorderDirectional(end: BorderSide(color: theme.colorScheme.outline)),
+                  Border(left: BorderSide(color: theme.colorScheme.outline)),
             ),
             child: SafeArea(
               child: NavigationRail(

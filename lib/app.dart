@@ -42,7 +42,8 @@ class JaikApp extends StatelessWidget {
           minScaleFactor: .9,
           maxScaleFactor: 1.3,
           child: Directionality(
-            textDirection: state.english ? TextDirection.ltr : TextDirection.rtl,
+            // من اليمين في اللغتين، فلا يتغير مكان شيء مع الإنجليزية (طلب المستخدم).
+            textDirection: TextDirection.rtl,
             child: ThemeCrossFade(child: child!),
           ),
         ),

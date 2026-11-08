@@ -235,7 +235,7 @@ class PushKeyButton extends StatelessWidget {
     if (!expand) {
       final text = TextPainter(
         text: TextSpan(text: label, style: style),
-        textDirection: appTextDirection,
+        textDirection: TextDirection.rtl,
         textScaler: MediaQuery.textScalerOf(context),
         maxLines: 1,
       )..layout();
