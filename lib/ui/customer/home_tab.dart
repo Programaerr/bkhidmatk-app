@@ -106,10 +106,16 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
   }
 
   Future<_HomeData> _fetch(AppState state, Repository repo, int? userId) async {
-    // الضيف بلا حساب، فلا رسائل له ولا إشعارات.
+    // الضيف بلا حساب، فلا رسائل له ولا إشعارات. والسيرفر قد يمنعه من قراءة الأقسام والحرفيين،
+    // فتظهر الأقسام من قائمة التطبيق نفسها بأيقوناتها، ولا يبقى الحرفيون أزراراً فارغة.
+    final guest = userId == null;
     final results = await Future.wait([
-      repo.listCategories(),
-      repo.listWorkers(onlyAvailable: true),
+      guest
+          ? repo.listCategories().catchError((Object _) => <Category>[])
+          : repo.listCategories(),
+      guest
+          ? repo.listWorkers(onlyAvailable: true).catchError((Object _) => <Worker>[])
+          : repo.listWorkers(onlyAvailable: true),
       userId == null ? Future.value(0) : repo.unreadForCustomer(userId),
       userId == null ? Future.value(0) : _unreadNotifications(state),
     ]);
