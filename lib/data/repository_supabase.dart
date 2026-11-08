@@ -180,9 +180,10 @@ class SupabaseRepository implements Repository {
           localPath);
     }
     final authUser = _client.auth.currentUser;
-    if (authUser == null)
+    if (authUser == null) {
       throw StateError(tr('يلزم تسجيل الدخول لرفع الملفات',
           'You need to sign in to upload files'));
+    }
     final extension = path.extension(localPath).toLowerCase();
     final objectPath =
         '$folder/${authUser.id}/${DateTime.now().microsecondsSinceEpoch}$extension';
@@ -256,9 +257,10 @@ class SupabaseRepository implements Repository {
   @override
   Future<void> updateUser(AppUser user) async {
     final authUser = _client.auth.currentUser;
-    if (authUser == null)
+    if (authUser == null) {
       throw StateError(
           tr('لا توجد جلسة دخول فعالة', 'No active sign-in session'));
+    }
     await _client.from('app_profiles').update({
       'name': user.name,
       'city': user.city,
@@ -1233,9 +1235,10 @@ class SupabaseRepository implements Repository {
           .eq('auth_user_id', authUserId)
           .limit(1),
     );
-    if (rows.isEmpty)
+    if (rows.isEmpty) {
       throw StateError(tr(
           'تعذر العثور على ملف الحساب', 'Could not find the account profile'));
+    }
     return (rows.first['id'] as num).toInt();
   }
 

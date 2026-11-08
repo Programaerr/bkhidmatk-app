@@ -366,11 +366,12 @@ class _BookingSheetState extends State<_BookingSheet> {
       builder: (ctx) => _EditBookingForm(booking: booking, repo: _repo),
     );
     if (saved == true) {
-      if (mounted)
+      if (mounted) {
         AppSnack.show(
             context,
             tr('تم التعديل وأُرسل إلى الزبون ليوافق عليه',
                 'The change was saved and sent to the customer to approve'));
+      }
       await _load();
     }
   }
@@ -378,10 +379,11 @@ class _BookingSheetState extends State<_BookingSheet> {
   Future<void> _call(String? phone) async {
     if (phone == null || phone.isEmpty) return;
     if (!await launchUrl(Uri.parse('tel:${phoneForCall(phone)}'))) {
-      if (mounted)
+      if (mounted) {
         AppSnack.show(context,
             tr('تعذر فتح تطبيق الاتصال', "Couldn't open the phone app"),
             error: true);
+      }
     }
   }
 
@@ -445,27 +447,30 @@ class _BookingSheetState extends State<_BookingSheet> {
     if (amount == null) return;
     try {
       await _repo.setBookingPrice(b.id!, amount);
-      if (mounted)
+      if (mounted) {
         AppSnack.show(
             context,
             tr('تم تحديد السعر وإضافته إلى وصل الزبون',
                 "The price was set and added to the customer's receipt"));
+      }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         AppSnack.show(
             context,
             tr('تعذر حفظ السعر، حاول مرة أخرى',
                 "Couldn't save the price, please try again"),
             error: true);
+      }
     }
     await _load();
   }
 
   Future<void> _markPaid(Receipt receipt) async {
     await _repo.markReceiptPaid(receipt.id!, true);
-    if (mounted)
+    if (mounted) {
       AppSnack.show(context,
           tr('تم تعليم الوصل مدفوعاً', 'The receipt was marked as paid'));
+    }
     await _load();
   }
 
@@ -987,7 +992,7 @@ class _EditBookingFormState extends State<_EditBookingForm> {
       firstDate: first,
       lastDate: first.add(const Duration(days: 180)),
     );
-    if (picked != null) setState(() => _day = picked);
+    if (picked != null && mounted) setState(() => _day = picked);
   }
 
   Future<void> _save() async {

@@ -5,6 +5,7 @@ import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
+import '../../data/repository.dart';
 import '../../state/app_state.dart';
 import '../widgets/ui.dart';
 import 'push_key.dart';
@@ -98,6 +99,16 @@ class _CraftsmanScreenState extends State<CraftsmanScreen> {
     });
     final repo = context.read<AppState>().repo;
     final phone = phoneFromInput(_phone.text);
+    try {
+      await _send(repo, phone);
+    } catch (_) {
+      // فشل الإرسال لا يترك الزر يدور للأبد، فيمكن إعادة المحاولة.
+      if (mounted) setState(() => _loading = false);
+      rethrow;
+    }
+  }
+
+  Future<void> _send(Repository repo, String phone) async {
     if (await repo.hasPendingApplication(phone)) {
       if (!mounted) return;
       setState(() {

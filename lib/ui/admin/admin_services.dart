@@ -497,19 +497,25 @@ class _ServiceFormState extends State<_ServiceForm> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate() || _categoryId == null) return;
     setState(() => _saving = true);
-    await context.read<AppState>().repo.saveService(Service(
-          id: widget.service?.id,
-          categoryId: _categoryId!,
-          workerId: _workerId,
-          title: _title.text.trim(),
-          description: _desc.text.trim(),
-          // السعر يُتفق عليه لكل حجز، فلا سعر للخدمة نفسها.
-          price: widget.service?.price ?? 0,
-          durationMinutes: int.tryParse(_duration.text) ?? 60,
-          rating: widget.service?.rating ?? 4.8,
-          active: _active,
-          createdAt: widget.service?.createdAt ?? DateTime.now(),
-        ));
+    // فشل الحفظ لا يترك الزر يدور للأبد، فيمكن إعادة المحاولة.
+    try {
+      await context.read<AppState>().repo.saveService(Service(
+            id: widget.service?.id,
+            categoryId: _categoryId!,
+            workerId: _workerId,
+            title: _title.text.trim(),
+            description: _desc.text.trim(),
+            // السعر يُتفق عليه لكل حجز، فلا سعر للخدمة نفسها.
+            price: widget.service?.price ?? 0,
+            durationMinutes: int.tryParse(_duration.text) ?? 60,
+            rating: widget.service?.rating ?? 4.8,
+            active: _active,
+            createdAt: widget.service?.createdAt ?? DateTime.now(),
+          ));
+    } catch (_) {
+      if (mounted) setState(() => _saving = false);
+      rethrow;
+    }
     if (mounted) Navigator.pop(context, true);
   }
 
@@ -700,18 +706,24 @@ class _WorkerFormState extends State<_WorkerForm> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
-    await context.read<AppState>().repo.saveWorker(Worker(
-          id: widget.worker?.id,
-          name: _name.text.trim(),
-          phone: normalizePhone(_phone.text),
-          specialty: _specialty.text.trim(),
-          categoryId: _categoryId,
-          rating: widget.worker?.rating ?? 4.8,
-          jobsDone: widget.worker?.jobsDone ?? 0,
-          bio: _bio.text.trim(),
-          available: _available,
-          city: _city,
-        ));
+    // فشل الحفظ لا يترك الزر يدور للأبد، فيمكن إعادة المحاولة.
+    try {
+      await context.read<AppState>().repo.saveWorker(Worker(
+            id: widget.worker?.id,
+            name: _name.text.trim(),
+            phone: normalizePhone(_phone.text),
+            specialty: _specialty.text.trim(),
+            categoryId: _categoryId,
+            rating: widget.worker?.rating ?? 4.8,
+            jobsDone: widget.worker?.jobsDone ?? 0,
+            bio: _bio.text.trim(),
+            available: _available,
+            city: _city,
+          ));
+    } catch (_) {
+      if (mounted) setState(() => _saving = false);
+      rethrow;
+    }
     if (mounted) Navigator.pop(context, true);
   }
 
@@ -875,13 +887,19 @@ class _CategoryFormState extends State<_CategoryForm> {
       return;
     }
     setState(() => _saving = true);
-    await context.read<AppState>().repo.saveCategory(Category(
-          id: widget.category?.id,
-          name: _name.text.trim(),
-          icon: _icon,
-          color: _color,
-          sortOrder: widget.category?.sortOrder ?? 99,
-        ));
+    // فشل الحفظ لا يترك الزر يدور للأبد، فيمكن إعادة المحاولة.
+    try {
+      await context.read<AppState>().repo.saveCategory(Category(
+            id: widget.category?.id,
+            name: _name.text.trim(),
+            icon: _icon,
+            color: _color,
+            sortOrder: widget.category?.sortOrder ?? 99,
+          ));
+    } catch (_) {
+      if (mounted) setState(() => _saving = false);
+      rethrow;
+    }
     if (mounted) Navigator.pop(context, true);
   }
 

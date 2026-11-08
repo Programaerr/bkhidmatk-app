@@ -211,6 +211,8 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
       builder: (_) => WorkCommentsSheet(
         work: _work,
         onCommentAdded: () {
+          // الصفحة قد تُغلق والتعليقات مفتوحة.
+          if (!mounted) return;
           setState(() => _work = _work.copyWith(
                 commentCount: _work.commentCount + 1,
               ));

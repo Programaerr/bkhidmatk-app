@@ -437,8 +437,9 @@ class PersonFace extends StatelessWidget {
     final path = imagePath;
     final hasImage =
         path != null && (path.startsWith('http') || fileExists(path));
-    if (!hasImage)
+    if (!hasImage) {
       return Icon(Icons.person_rounded, size: size * .62, color: color);
+    }
     return AvatarCircle(
         name: name, size: size, imagePath: path, bg: Colors.white);
   }

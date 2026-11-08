@@ -395,8 +395,9 @@ class LocalRepository implements Repository {
       if (old.address != address.trim()) 'العنوان تغيّر.',
       if ((old.notes ?? '') != (notes ?? '').trim()) 'الملاحظات تغيّرت.',
     ];
-    if (changes.isEmpty && (old.adminNote ?? '') == (adminNote ?? '').trim())
+    if (changes.isEmpty && (old.adminNote ?? '') == (adminNote ?? '').trim()) {
       return;
+    }
     final scheduleChanged =
         day(old.scheduledAt) != day(scheduledAt) || old.slot != slot;
     await db.update(

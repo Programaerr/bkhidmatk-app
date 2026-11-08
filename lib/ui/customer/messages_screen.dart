@@ -89,16 +89,20 @@ class _MessagesScreenState extends State<MessagesScreen>
     if (text.isEmpty) return;
     final state = context.read<AppState>();
     setState(() => _sending = true);
-    await state.repo.sendMessage(ChatMessage(
-      threadId: _threadId,
-      senderId: state.user!.id!,
-      senderRole: _asAdmin ? 'admin' : 'customer',
-      body: text,
-      createdAt: DateTime.now(),
-    ));
-    _input.clear();
-    await _load();
-    if (mounted) setState(() => _sending = false);
+    // فشل الإرسال لا يقفل زر الإرسال، والرسالة تبقى مكتوبة لإعادة المحاولة.
+    try {
+      await state.repo.sendMessage(ChatMessage(
+        threadId: _threadId,
+        senderId: state.user!.id!,
+        senderRole: _asAdmin ? 'admin' : 'customer',
+        body: text,
+        createdAt: DateTime.now(),
+      ));
+      _input.clear();
+      await _load();
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
   }
 
   Future<void> _call() async {
