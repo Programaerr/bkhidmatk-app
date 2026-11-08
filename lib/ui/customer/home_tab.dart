@@ -351,7 +351,9 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
     final ink = night ? homeNightInk : homeLabel;
     final sections = data?.sections.take(_homeSections).toList();
     final craftsmen = data?.craftsmen.take(_homeCraftsmen).toList();
-    final craftsmenRows = CraftsmanGrid.heightOf(craftsmen?.length ?? _homeCraftsmen, unit);
+    // الضيف قد لا يصله حرفيون من السيرفر، فلا تظهر له بطاقات فارغة ثم تختفي (طلب المستخدم).
+    final placeholders = context.watch<AppState>().user == null ? 0 : _homeCraftsmen;
+    final craftsmenRows = CraftsmanGrid.heightOf(craftsmen?.length ?? placeholders, unit);
     final right = width - left - homeDesignWidth * unit;
     final titleStyle = TextStyle(
       fontFamily: 'Cairo',
@@ -481,7 +483,7 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
                       ),
                     ),
                   )
-                : CraftsmanGrid(unit: unit, workers: craftsmen, placeholders: _homeCraftsmen),
+                : CraftsmanGrid(unit: unit, workers: craftsmen, placeholders: placeholders),
           ),
         ],
       ),
