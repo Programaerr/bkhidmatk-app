@@ -47,10 +47,27 @@ class JaikApp extends StatelessWidget {
             child: ThemeCrossFade(child: child!),
           ),
         ),
+        // التمرير في التطبيق كله مثل الآيفون (طلب المستخدم).
+        scrollBehavior: const _IosScrollBehavior(),
         home: const _RootGate(),
       ),
     );
   }
+}
+
+/// تمرير مثل الآيفون في كل الصفحات: ارتداد ناعم عند الطرفين وتباطؤ iOS نفسه، بلا تمدد أندرويد.
+/// السحب للتحديث يبقى يعمل، فهو يبدأ التحديث حين ترتد القائمة.
+class _IosScrollBehavior extends MaterialScrollBehavior {
+  const _IosScrollBehavior();
+
+  @override
+  ScrollPhysics getScrollPhysics(BuildContext context) =>
+      const BouncingScrollPhysics(parent: RangeMaintainingScrollPhysics());
+
+  @override
+  Widget buildOverscrollIndicator(
+          BuildContext context, Widget child, ScrollableDetails details) =>
+      child;
 }
 
 class _RootGate extends StatelessWidget {
