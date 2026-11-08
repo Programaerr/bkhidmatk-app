@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
+import '../../core/language.dart';
 import 'thinking_art.dart';
 import 'truck_art.dart';
 import 'truck_scene.dart';
@@ -187,8 +188,8 @@ class ThinkingArt {
   static ui.Picture _recordAnswer() {
     final recorder = ui.PictureRecorder();
     final text = TextPainter(
-      text: const TextSpan(
-        text: 'ها فكرت',
+      text: TextSpan(
+        text: tr('ها فكرت', 'Got it!'),
         style: TextStyle(
           fontFamily: 'Cairo',
           fontSize: 19,
@@ -197,7 +198,7 @@ class ThinkingArt {
           height: 1,
         ),
       ),
-      textDirection: TextDirection.rtl,
+      textDirection: appTextDirection,
     )..layout();
     text.paint(Canvas(recorder), _answerCenter - Offset(text.width / 2, text.height / 2));
     text.dispose();
@@ -273,7 +274,7 @@ class _ThinkingSceneState extends State<ThinkingScene> with TickerProviderStateM
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      label: 'سائق جايك يفكر ويده على ذقنه، اضغط عليه لتأتيه الفكرة',
+      label: tr('سائق جايك يفكر ويده على ذقنه، اضغط عليه لتأتيه الفكرة', 'The Jaik driver thinking with his hand on his chin. Tap him to get the idea'),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: _showAnswer,

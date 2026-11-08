@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
+import 'core/language.dart';
 import 'core/theme.dart';
 import 'state/app_state.dart';
 import 'ui/admin/admin_shell.dart';
@@ -22,7 +23,7 @@ class JaikApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<AppState>(
       builder: (context, state, _) => MaterialApp(
-        title: 'جايك',
+        title: tr('جايك', 'Jaik'),
         debugShowCheckedModeBanner: false,
         theme: _lightTheme,
         darkTheme: _darkTheme,
@@ -30,7 +31,7 @@ class JaikApp extends StatelessWidget {
         // الشاشة الأولى تتدرج بألوانها الخاصة، فلا حاجة إلى حركة الثيم فوقها.
         themeAnimationDuration:
             state.user == null ? Duration.zero : kThemeAnimationDuration,
-        locale: const Locale('ar'),
+        locale: state.english ? const Locale('en') : const Locale('ar'),
         supportedLocales: const [Locale('ar'), Locale('en')],
         localizationsDelegates: const [
           GlobalMaterialLocalizations.delegate,
@@ -41,7 +42,7 @@ class JaikApp extends StatelessWidget {
           minScaleFactor: .9,
           maxScaleFactor: 1.3,
           child: Directionality(
-            textDirection: TextDirection.rtl,
+            textDirection: state.english ? TextDirection.ltr : TextDirection.rtl,
             child: ThemeCrossFade(child: child!),
           ),
         ),

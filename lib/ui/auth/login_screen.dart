@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../state/app_state.dart';
@@ -64,7 +65,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final theme = Theme.of(context);
     final usesCloudAuth = context.watch<AppState>().usesCloudAuth;
     return Scaffold(
-      appBar: const PushKeyAppBar(title: 'تسجيل الدخول'),
+      appBar: PushKeyAppBar(title: tr('تسجيل الدخول', 'Log in')),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(22, 8, 22, 24),
@@ -76,7 +77,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    RequiredFieldLabel('رقم الهاتف', controller: _phone),
+                    RequiredFieldLabel(tr('رقم الهاتف', 'Phone number'), controller: _phone),
                     RaisedField(
                       controller: _phone,
                       hint: '07XX XXX XXXX',
@@ -86,25 +87,25 @@ class _LoginScreenState extends State<LoginScreen> {
                       textAlign: TextAlign.right,
                       onTyped: _clearLoginError,
                       validator: (v) {
-                        if (v.trim().isEmpty) return 'أدخل رقم الهاتف';
+                        if (v.trim().isEmpty) return tr('أدخل رقم الهاتف', 'Enter the phone number');
                         if (!validIraqiPhone(phoneFromInput(v))) {
-                          return 'رقم غير صالح (11 رقم يبدأ بـ 07)';
+                          return tr('رقم غير صالح (11 رقم يبدأ بـ 07)', 'Invalid number (11 digits starting with 07)');
                         }
                         return null;
                       },
                     ),
                     const SizedBox(height: 14),
-                    RequiredFieldLabel('كلمة المرور', controller: _password),
+                    RequiredFieldLabel(tr('كلمة المرور', 'Password'), controller: _password),
                     RaisedField(
                       controller: _password,
-                      hint: 'أدخل كلمة المرور',
+                      hint: tr('أدخل كلمة المرور', 'Enter the password'),
                       obscureText: _obscure,
                       onToggleObscure: () =>
                           setState(() => _obscure = !_obscure),
                       onTyped: _clearLoginError,
                       onSubmitted: (_) => _submit(),
                       validator: (v) =>
-                          v.length < 6 ? 'كلمة المرور 6 أحرف على الأقل' : null,
+                          v.length < 6 ? tr('كلمة المرور 6 أحرف على الأقل', 'The password must be at least 6 characters') : null,
                     ),
                   ],
                 ),
@@ -135,7 +136,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ],
               const SizedBox(height: 17),
               PushKeyButton(
-                label: 'تسجيل الدخول',
+                label: tr('تسجيل الدخول', 'Log in'),
                 onPressed: _submit,
                 loading: _loading,
                 yellow: true,
@@ -146,14 +147,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   alignment: WrapAlignment.center,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    Text('ليس لديك حساب؟', style: theme.textTheme.bodySmall),
+                    Text(tr('ليس لديك حساب؟', "Don't have an account?"), style: theme.textTheme.bodySmall),
                     TextButton(
                       onPressed: () => openAuthPage(
                         context,
                         const AccountTypeScreen(),
                         night: theme.brightness == Brightness.dark,
                       ),
-                      child: const Text('إنشاء حساب جديد'),
+                      child: Text(tr('إنشاء حساب جديد', 'Create a new account')),
                     ),
                   ],
                 ),
@@ -176,7 +177,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           const SizedBox(width: 6),
                           Flexible(
                             child: Text(
-                              'دخول تجريبي سريع',
+                              tr('دخول تجريبي سريع', 'Quick demo login'),
                               overflow: TextOverflow.ellipsis,
                               style: theme.textTheme.bodySmall?.copyWith(
                                   fontWeight: FontWeight.w800,
@@ -190,7 +191,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         children: [
                           Expanded(
                             child: PushKeyButton(
-                              label: 'زبون',
+                              label: tr('زبون', 'Customer'),
                               compact: true,
                               onPressed: _loading
                                   ? null
@@ -200,7 +201,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: PushKeyButton(
-                              label: 'مدير',
+                              label: tr('مدير', 'Admin'),
                               compact: true,
                               onPressed: _loading
                                   ? null

@@ -1,3 +1,4 @@
+import '../core/language.dart';
 import 'models.dart';
 
 /// أقسام الخدمات بترتيب عرضها: الاسم، والأيقونة، واللون.
@@ -21,6 +22,34 @@ const appSections = <(String, String, int)>[
   ('شد و تركيب الاثاث', 'handyman', 0xFFA1887F),
   ('غسيل سيارات', 'local_car_wash', 0xFF2196F3),
 ];
+
+/// أسماء الأقسام بالإنجليزية. القسم يبقى باسمه العربي في السيرفر وفي البحث.
+const _sectionNamesEn = {
+  'سبالت': 'AC Units',
+  'كهرباء': 'Electrical',
+  'سباكة': 'Plumbing',
+  'صباغ': 'Painting',
+  'التنظيف': 'Cleaning',
+  'اجهزة المنزل': 'Home Appliances',
+  'مجاري': 'Drains',
+  'نجار': 'Carpentry',
+  'حداد': 'Metalwork',
+  'ديكورات': 'Decor',
+  'تركيب كامرات': 'Cameras',
+  'حدائق': 'Gardens',
+  'طاقة شمسية': 'Solar Power',
+  'عامل': 'Labor',
+  'ابواب و شبابيك': 'Doors & Windows',
+  'نقل الاثاث': 'Furniture Moving',
+  'شد و تركيب الاثاث': 'Furniture Assembly',
+  'غسيل سيارات': 'Car Wash',
+};
+
+/// اسم القسم بلغة التطبيق. ما أضافه المدير يبقى بالاسم الذي كتبه.
+String sectionLabel(String name) {
+  final current = currentSectionName(name) ?? name;
+  return appEnglish ? (_sectionNamesEn[current] ?? current) : current;
+}
 
 /// الأقسام القديمة تأخذ اسمها الجديد، فتبقى خدماتها وحرفيوها معها.
 const renamedSections = {

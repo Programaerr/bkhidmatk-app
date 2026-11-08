@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
@@ -41,7 +42,7 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen>
 
   Future<void> _call(String phone) async {
     if (!await launchUrl(Uri.parse('tel:${phoneForCall(phone)}'))) {
-      if (mounted) AppSnack.show(context, 'تعذر فتح الاتصال', error: true);
+      if (mounted) AppSnack.show(context, tr('تعذر فتح الاتصال', "Couldn't open the call"), error: true);
     }
   }
 
@@ -59,27 +60,27 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen>
               const SizedBox(height: 10),
               InfoRow(
                 icon: Icons.phone_iphone_rounded,
-                label: 'رقم الهاتف',
+                label: tr('رقم الهاتف', 'Phone number'),
                 value: a.phone,
                 trailing: AppIconButton(
                   small: true,
                   onTap: () => _call(a.phone),
                   icon: Icons.call_rounded,
-                  tooltip: 'اتصال',
+                  tooltip: tr('اتصال', 'Call'),
                 ),
               ),
-              InfoRow(icon: Icons.cake_outlined, label: 'العمر', value: '${a.age} سنة'),
-              InfoRow(icon: Icons.location_city_rounded, label: 'المحافظة', value: a.city),
-              InfoRow(icon: Icons.location_on_outlined, label: 'العنوان', value: a.address),
+              InfoRow(icon: Icons.cake_outlined, label: tr('العمر', 'Age'), value: tr('${a.age} سنة', '${a.age} years')),
+              InfoRow(icon: Icons.location_city_rounded, label: tr('المحافظة', 'Province'), value: cityLabel(a.city)),
+              InfoRow(icon: Icons.location_on_outlined, label: tr('العنوان', 'Address'), value: a.address),
               InfoRow(
                 icon: Icons.workspace_premium_outlined,
-                label: 'سنوات الخبرة',
+                label: tr('سنوات الخبرة', 'Years of experience'),
                 value: '${a.experienceYears}',
               ),
-              InfoRow(icon: Icons.notes_rounded, label: 'نبذة عن خبرته', value: a.about),
+              InfoRow(icon: Icons.notes_rounded, label: tr('نبذة عن خبرته', 'About their experience'), value: a.about),
               InfoRow(
                 icon: Icons.event_rounded,
-                label: 'تاريخ التقديم',
+                label: tr('تاريخ التقديم', 'Applied on'),
                 value: fmtDate(a.createdAt),
               ),
               if (a.isPending) ...[
@@ -88,7 +89,7 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen>
                   children: [
                     Expanded(
                       child: SecondaryButton(
-                        label: 'رفض',
+                        label: tr('رفض', 'Reject'),
                         danger: true,
                         onPressed: () => Navigator.pop(ctx, false),
                       ),
@@ -96,7 +97,7 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen>
                     const SizedBox(width: 10),
                     Expanded(
                       child: PrimaryButton(
-                        label: 'قبول',
+                        label: tr('قبول', 'Accept'),
                         onPressed: () => Navigator.pop(ctx, true),
                       ),
                     ),
@@ -118,7 +119,7 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen>
     if (!mounted) return;
     AppSnack.show(
       context,
-      accepted ? 'تم القبول — يصبح حسابه (حرفي) عند التسجيل بهذا الرقم' : 'تم رفض الطلب',
+      accepted ? tr('تم القبول — يصبح حسابه (حرفي) عند التسجيل بهذا الرقم', 'Accepted. Their account becomes (craftsman) when they sign up with this number') : tr('تم رفض الطلب', 'The request was rejected'),
     );
     _load();
   }
@@ -127,7 +128,7 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: const PushKeyAppBar(title: 'طلبات الحرفيين'),
+      appBar: PushKeyAppBar(title: tr('طلبات الحرفيين', 'Craftsman applications')),
       body: SafeArea(
         child: FutureBuilder<List<CraftsmanApplication>>(
           future: _future,
@@ -137,10 +138,10 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen>
             }
             final applications = snapshot.data ?? const <CraftsmanApplication>[];
             if (applications.isEmpty) {
-              return const EmptyState(
+              return EmptyState(
                 icon: Icons.assignment_ind_outlined,
-                title: 'لا توجد طلبات',
-                subtitle: 'تظهر هنا معلومات من يقدّم كحرفي من الشاشة الأولى.',
+                title: tr('لا توجد طلبات', 'No applications'),
+                subtitle: tr('تظهر هنا معلومات من يقدّم كحرفي من الشاشة الأولى.', 'Details of anyone who applies as a craftsman from the first screen appear here.'),
               );
             }
             return RefreshIndicator(
@@ -169,7 +170,7 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen>
                                 style: theme.textTheme.titleSmall?.copyWith(fontSize: 13),
                               ),
                               Text(
-                                '${a.trade} • خبرة ${a.experienceYears} سنة',
+                                tr('${a.trade} • خبرة ${a.experienceYears} سنة', '${a.trade} • ${a.experienceYears} years of experience'),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: theme.textTheme.bodySmall?.copyWith(fontSize: 10.5),

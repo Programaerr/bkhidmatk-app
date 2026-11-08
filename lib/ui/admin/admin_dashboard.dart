@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
@@ -62,12 +63,12 @@ class _AdminDashboardState extends State<AdminDashboard>
     return Column(
       children: [
         AdminHeader(
-          title: 'لوحة التحكم',
-          subtitle: 'مرحباً ${user.name} · إدارة كاملة للتطبيق',
+          title: tr('لوحة التحكم', 'Dashboard'),
+          subtitle: tr('مرحباً ${user.name} · إدارة كاملة للتطبيق', 'Welcome ${user.name} · Full app management'),
           actions: [
             AppIconButton(
               icon: Icons.notifications_none_rounded,
-              tooltip: 'الإشعارات',
+              tooltip: tr('الإشعارات', 'Notifications'),
               onTap: () => Navigator.push(
                 context,
                 QuickRoute(builder: (_) => const NotificationsScreen()),
@@ -75,7 +76,7 @@ class _AdminDashboardState extends State<AdminDashboard>
             ),
             AppIconButton(
               icon: Icons.chat_bubble_outline_rounded,
-              tooltip: 'الرسائل',
+              tooltip: tr('الرسائل', 'Messages'),
               badge: _unread,
               onTap: () => Navigator.push(
                 context,
@@ -113,7 +114,7 @@ class _AdminDashboardState extends State<AdminDashboard>
                           Row(
                             children: [
                               Flexible(
-                                child: Text('إيرادات آخر 7 أيام',
+                                child: Text(tr('إيرادات آخر 7 أيام', 'Revenue, last 7 days'),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
@@ -127,12 +128,12 @@ class _AdminDashboardState extends State<AdminDashboard>
                                   color: AppColors.gold.withValues(alpha: .16),
                                   borderRadius: BorderRadius.circular(100),
                                 ),
-                                child: const Row(
+                                child: Row(
                                   children: [
                                     Icon(Icons.trending_up_rounded,
                                         color: AppColors.gold, size: 12),
                                     SizedBox(width: 3),
-                                    Text('نشط',
+                                    Text(tr('نشط', 'Active'),
                                         style: TextStyle(
                                             color: AppColors.gold,
                                             fontSize: 8.5)),
@@ -166,20 +167,20 @@ class _AdminDashboardState extends State<AdminDashboard>
                       childAspectRatio: 1.65,
                       children: [
                         StatTile(
-                          label: 'حجوزات اليوم',
+                          label: tr('حجوزات اليوم', "Today's bookings"),
                           value: '${stats.bookingsToday}',
                           icon: Icons.event_available_rounded,
                           onTap: () => widget.onOpenBookings(null),
                         ),
                         StatTile(
-                          label: 'طلبات بانتظار موافقتك',
+                          label: tr('طلبات بانتظار موافقتك', 'Requests awaiting your approval'),
                           value: '${stats.pending}',
                           icon: Icons.pending_actions_rounded,
                           color: const Color(0xFFF59E0B),
                           onTap: () => widget.onOpenBookings(BookingStatus.pending),
                         ),
                         StatTile(
-                          label: 'الزبائن',
+                          label: tr('الزبائن', 'Customers'),
                           value: '${stats.customers}',
                           icon: Icons.people_alt_rounded,
                           color: AppColors.info,
@@ -190,7 +191,7 @@ class _AdminDashboardState extends State<AdminDashboard>
                           ),
                         ),
                         StatTile(
-                          label: 'أعمالنا',
+                          label: tr('أعمالنا', 'Our work'),
                           value: '$works',
                           icon: Icons.video_library_rounded,
                           color: AppColors.violet,
@@ -200,13 +201,13 @@ class _AdminDashboardState extends State<AdminDashboard>
                     ),
                     const SizedBox(height: 18),
                     SectionHeader(
-                      title: 'أحدث الحجوزات',
-                      actionLabel: 'إدارة الكل',
+                      title: tr('أحدث الحجوزات', 'Latest bookings'),
+                      actionLabel: tr('إدارة الكل', 'Manage all'),
                       onAction: () => widget.onOpenBookings(null),
                     ),
                     if (bookings.isEmpty)
-                      const SoftCard(
-                        child: Text('لا توجد حجوزات بعد.',
+                      SoftCard(
+                        child: Text(tr('لا توجد حجوزات بعد.', 'No bookings yet.'),
                             style: TextStyle(fontSize: 12),
                             textAlign: TextAlign.center),
                       )
@@ -220,20 +221,20 @@ class _AdminDashboardState extends State<AdminDashboard>
                             child: Row(
                               children: [
                                 AvatarCircle(
-                                    name: b.customerName ?? 'زبون', size: 38),
+                                    name: b.customerName ?? tr('زبون', 'Customer'), size: 38),
                                 const SizedBox(width: 9),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Text(b.customerName ?? 'زبون',
+                                      Text(b.customerName ?? tr('زبون', 'Customer'),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                           style: theme.textTheme.titleSmall
                                               ?.copyWith(fontSize: 12.5)),
                                       Text(
-                                        '${b.serviceTitle ?? 'خدمة'} · ${fmtSlot(b.slot)}',
+                                        tr('${b.serviceTitle ?? 'خدمة'} · ${fmtSlot(b.slot)}', "${b.serviceTitle ?? 'Service'} · ${fmtSlot(b.slot)}"),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: theme.textTheme.bodySmall
@@ -301,13 +302,13 @@ class _WeeklyChart extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(
                     [
-                      'إث',
-                      'ثل',
-                      'أر',
-                      'خم',
-                      'جم',
-                      'سب',
-                      'أح'
+                      tr('إث', 'Mon'),
+                      tr('ثل', 'Tue'),
+                      tr('أر', 'Wed'),
+                      tr('خم', 'Thu'),
+                      tr('جم', 'Fri'),
+                      tr('سب', 'Sat'),
+                      tr('أح', 'Sun')
                     ][p.day.weekday % 7],
                     style:
                         const TextStyle(color: Colors.white38, fontSize: 8.5),

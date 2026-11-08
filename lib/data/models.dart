@@ -1,3 +1,5 @@
+import '../core/language.dart';
+
 /// يقرأ التاريخ من الخادم (UTC) ويحوّله إلى توقيت الجهاز.
 DateTime? _date(Object? value) {
   if (value is! String || value.isEmpty) return null;
@@ -425,12 +427,12 @@ class BookingStatus {
   static const all = [pending, confirmed, dispatched, inProgress, completed, cancelled];
 
   static String label(String s) => switch (s) {
-        pending => 'بانتظار الموافقة',
-        confirmed => 'تمت الموافقة',
-        dispatched => 'الحرفي في الطريق',
-        inProgress => 'قيد التنفيذ',
-        completed => 'مكتمل',
-        cancelled => 'ملغي',
+        pending => tr('بانتظار الموافقة', 'Awaiting approval'),
+        confirmed => tr('تمت الموافقة', 'Approved'),
+        dispatched => tr('الحرفي في الطريق', 'Craftsman on the way'),
+        inProgress => tr('قيد التنفيذ', 'In progress'),
+        completed => tr('مكتمل', 'Completed'),
+        cancelled => tr('ملغي', 'Cancelled'),
         _ => s,
       };
 }
@@ -442,9 +444,9 @@ class WorkerResponse {
   static const declined = 'declined';
 
   static String label(String s) => switch (s) {
-        accepted => 'الحرفي وافق',
-        declined => 'الحرفي اعتذر',
-        _ => 'بانتظار رد الحرفي',
+        accepted => tr('الحرفي وافق', 'Craftsman accepted'),
+        declined => tr('الحرفي اعتذر', 'Craftsman declined'),
+        _ => tr('بانتظار رد الحرفي', "Awaiting the craftsman's reply"),
       };
 }
 
@@ -790,9 +792,9 @@ class CraftsmanApplication {
   bool get isPending => status == pending;
 
   String get statusLabel => switch (status) {
-        accepted => 'مقبول',
-        rejected => 'مرفوض',
-        _ => 'قيد المراجعة',
+        accepted => tr('مقبول', 'Accepted'),
+        rejected => tr('مرفوض', 'Rejected'),
+        _ => tr('قيد المراجعة', 'Under review'),
       };
 
   Map<String, Object?> toMap() => {
@@ -962,7 +964,7 @@ class Receipt {
         invoiceNo: m['invoice_no'] as String? ?? '',
         bookingId: m['booking_id'] as int?,
         userId: m['user_id'] as int? ?? 0,
-        title: m['title'] as String? ?? 'وصل خدمة',
+        title: m['title'] as String? ?? tr('وصل خدمة', 'Service receipt'),
         serviceTitle: m['service_title'] as String?,
         workerName: m['worker_name'] as String?,
         amount: (m['amount'] as num?)?.toDouble() ?? 0,
@@ -1032,9 +1034,9 @@ class CustomerAck {
   static const declined = 'declined';
 
   static String label(String s) => switch (s) {
-        pending => 'بانتظار موافقة الزبون',
-        approved => 'وافق الزبون على التعديل',
-        declined => 'رفض الزبون التعديل',
+        pending => tr('بانتظار موافقة الزبون', "Awaiting the customer's approval"),
+        approved => tr('وافق الزبون على التعديل', 'The customer approved the change'),
+        declined => tr('رفض الزبون التعديل', 'The customer declined the change'),
         _ => '',
       };
 }

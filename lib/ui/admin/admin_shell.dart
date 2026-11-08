@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 
+import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../auth/push_key.dart';
 import '../widgets/shell_layout.dart';
@@ -21,14 +22,15 @@ class AdminShell extends StatefulWidget {
 class _AdminShellState extends State<AdminShell> {
   int _index = 0;
 
-  static const _items = [
-    NavItem('الرئيسية', Icons.space_dashboard_outlined,
+  // تُبنى مع كل بناء، فتتبع لغة التطبيق.
+  static List<NavItem> get _items => [
+    NavItem(tr('الرئيسية', 'Home'), Icons.space_dashboard_outlined,
         Icons.space_dashboard_rounded),
-    NavItem('الحجوزات', Icons.event_note_outlined, Icons.event_note_rounded),
-    NavItem('الخدمات', Icons.handyman_outlined, Icons.handyman_rounded),
+    NavItem(tr('الحجوزات', 'Bookings'), Icons.event_note_outlined, Icons.event_note_rounded),
+    NavItem(tr('الخدمات', 'Services'), Icons.handyman_outlined, Icons.handyman_rounded),
     NavItem(
-        'الأعمال', Icons.video_library_outlined, Icons.video_library_rounded),
-    NavItem('المزيد', Icons.more_horiz_rounded, Icons.more_horiz_rounded),
+        tr('الأعمال', 'Works'), Icons.video_library_outlined, Icons.video_library_rounded),
+    NavItem(tr('المزيد', 'More'), Icons.more_horiz_rounded, Icons.more_horiz_rounded),
   ];
 
   void _go(int index) => setState(() => _index = index);
@@ -130,7 +132,7 @@ class AdminHeader extends StatelessWidget {
                           color: AppColors.gold,
                           borderRadius: BorderRadius.circular(100),
                         ),
-                        child: const Text('مدير',
+                        child: Text(tr('مدير', 'Admin'),
                             style: TextStyle(
                                 fontSize: 8.5,
                                 fontWeight: FontWeight.w900,

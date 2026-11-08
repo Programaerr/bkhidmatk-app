@@ -2,9 +2,11 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
+import '../../data/sections.dart';
 import '../auth/push_key.dart';
 import '../auth/truck_scene.dart';
 import '../widgets/quick_route.dart';
@@ -430,7 +432,7 @@ class SectionKey extends StatelessWidget {
         PushKeyCircle(
           diameter: _sectionFace * unit,
           unit: chrome,
-          label: section?.name ?? '',
+          label: section == null ? '' : sectionLabel(section.name),
           onPressed: section == null || onOpen == null ? null : () => onOpen!(section),
           ink: true,
           child: section == null
@@ -445,7 +447,7 @@ class SectionKey extends StatelessWidget {
         if (section != null)
           ExcludeSemantics(
             child: Text(
-              section.name,
+              sectionLabel(section.name),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
@@ -522,7 +524,7 @@ class CraftsmanKey extends StatelessWidget {
       enabled: worker != null,
       label: worker == null
           ? ''
-          : '${worker.name}، ${worker.specialty}، التقييم ${worker.rating.toStringAsFixed(1)}',
+          : tr('${worker.name}، ${worker.specialty}، التقييم ${worker.rating.toStringAsFixed(1)}', '${worker.name}, ${worker.specialty}, rating ${worker.rating.toStringAsFixed(1)}'),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: worker == null

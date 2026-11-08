@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../core/language.dart';
 import '../data/database.dart';
 import '../data/models.dart';
 import '../data/repository.dart';
@@ -27,8 +28,8 @@ class AppState extends ChangeNotifier {
   bool booting = true;
   ThemeMode themeMode = ThemeMode.light;
 
-  /// لغة الشاشة الأولى؛ بقية الشاشات عربية حالياً.
-  bool english = false;
+  /// لغة التطبيق كله: الإنجليزية أو العربية.
+  bool get english => appEnglish;
 
   bool get isLoggedIn => user != null;
   bool get isAdmin => user?.isAdmin ?? false;
@@ -40,7 +41,7 @@ class AppState extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     final savedTheme = prefs.getString('theme');
     themeMode = savedTheme == 'dark' ? ThemeMode.dark : ThemeMode.light;
-    english = prefs.getBool('english') ?? false;
+    appEnglish = prefs.getBool('english') ?? false;
 
     if (cloudServices != null) {
       if (cloudServices!.isSignedIn) {
@@ -90,14 +91,14 @@ class AppState extends ChangeNotifier {
       } catch (error, stackTrace) {
         debugPrint('Supabase login failed: $error');
         debugPrintStack(stackTrace: stackTrace);
-        return 'تعذر الاتصال بقاعدة البيانات. تحقق من الإنترنت وحاول مجدداً.';
+        return tr('تعذر الاتصال بقاعدة البيانات. تحقق من الإنترنت وحاول مجدداً.', "Couldn't reach the database. Check your internet and try again.");
       }
     }
 
     final found = await repo.findUserByPhone(phone);
-    if (found == null) return 'لا يوجد حساب مسجل بهذا الرقم';
+    if (found == null) return tr('لا يوجد حساب مسجل بهذا الرقم', 'No account is registered with this number');
     if (found.passwordHash != hashPassword(password)) {
-      return 'كلمة المرور غير صحيحة';
+      return tr('كلمة المرور غير صحيحة', 'Incorrect password');
     }
     user = found;
     final prefs = await SharedPreferences.getInstance();
@@ -129,11 +130,11 @@ class AppState extends ChangeNotifier {
       } catch (error, stackTrace) {
         debugPrint('Supabase registration failed: $error');
         debugPrintStack(stackTrace: stackTrace);
-        return 'تعذر إنشاء الحساب. تحقق من الاتصال وإعدادات Supabase.';
+        return tr('تعذر إنشاء الحساب. تحقق من الاتصال وإعدادات Supabase.', "Couldn't create the account. Check the connection and the Supabase settings.");
       }
     }
 
-    if (await repo.phoneExists(phone)) return 'رقم الهاتف مستخدم مسبقاً';
+    if (await repo.phoneExists(phone)) return tr('رقم الهاتف مستخدم مسبقاً', 'This phone number is already in use');
     // الرقم المُضاف من الإدارة للتوظيف → الحساب يُسجّل كـ (حرفي).
     final hired = await repo.isHiredPhone(phone);
     final role = hired ? 'worker' : 'customer';
@@ -177,10 +178,12 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> setEnglish(bool value) async {
-    english = value;
+    appEnglish = value;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('english', value);
     notifyListeners();
+    // الصفحات المحفوظة خلف غيرها تُبنى من جديد أيضاً، فلا يبقى فيها نص بلغة سابقة.
+    rebuildForLanguage();
   }
 
   Future<void> logout() async {

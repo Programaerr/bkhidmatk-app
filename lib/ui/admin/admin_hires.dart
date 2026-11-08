@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
@@ -42,15 +43,15 @@ class _AdminHiresScreenState extends State<AdminHiresScreen>
     if (hire.id == null) return;
     final ok = await confirmAction(
       context,
-      title: 'حذف الرقم؟',
-      message: 'سيتم حذف ${hire.phone} من قائمة التوظيف، ويعود صاحبه زبوناً عادياً.',
-      confirmLabel: 'حذف',
+      title: tr('حذف الرقم؟', 'Delete the number?'),
+      message: tr('سيتم حذف ${hire.phone} من قائمة التوظيف، ويعود صاحبه زبوناً عادياً.', '${hire.phone} will be removed from the hiring list, and its owner goes back to being a regular customer.'),
+      confirmLabel: tr('حذف', 'Delete'),
       danger: true,
     );
     if (!ok || !mounted) return;
     await context.read<AppState>().repo.deleteHire(hire.id!);
     if (mounted) {
-      AppSnack.show(context, 'تم حذف الرقم');
+      AppSnack.show(context, tr('تم حذف الرقم', 'The number was deleted'));
       _load();
     }
   }
@@ -71,35 +72,35 @@ class _AdminHiresScreenState extends State<AdminHiresScreen>
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SheetHeader(
-                  title: 'إضافة رقم للتوظيف',
-                  subtitle: 'عند تسجيل هذا الرقم في التطبيق يصبح حسابه (حرفي)',
+                SheetHeader(
+                  title: tr('إضافة رقم للتوظيف', 'Add a number for hiring'),
+                  subtitle: tr('عند تسجيل هذا الرقم في التطبيق يصبح حسابه (حرفي)', 'When this number signs up in the app, its account becomes (craftsman)'),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: phone,
                   keyboardType: TextInputType.phone,
                   textDirection: TextDirection.ltr,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     hintText: '07XXXXXXXXX',
-                    labelText: 'رقم الهاتف',
+                    labelText: tr('رقم الهاتف', 'Phone number'),
                     prefixIcon: Icon(Icons.phone_iphone_rounded, size: 20),
                   ),
                   validator: (v) =>
-                      validIraqiPhone(v ?? '') ? null : 'أدخل رقم عراقي صحيح',
+                      validIraqiPhone(v ?? '') ? null : tr('أدخل رقم عراقي صحيح', 'Enter a valid Iraqi number'),
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: note,
                   textInputAction: TextInputAction.done,
-                  decoration: const InputDecoration(
-                    labelText: 'ملاحظة (المسمى الوظيفي مثلاً)',
+                  decoration: InputDecoration(
+                    labelText: tr('ملاحظة (المسمى الوظيفي مثلاً)', 'Note (job title, for example)'),
                     prefixIcon: Icon(Icons.badge_outlined, size: 20),
                   ),
                 ),
                 const SizedBox(height: 20),
                 PrimaryButton(
-                  label: 'إضافة الرقم',
+                  label: tr('إضافة الرقم', 'Add number'),
                   onPressed: () {
                     if (formKey.currentState?.validate() ?? false) {
                       Navigator.pop(ctx, true);
@@ -131,8 +132,8 @@ class _AdminHiresScreenState extends State<AdminHiresScreen>
     AppSnack.show(
       context,
       existing != null
-          ? 'تمت الإضافة وتم تحويل الحساب الموجود إلى (حرفي)'
-          : 'تمت إضافة الرقم — سيصبح (حرفياً) عند التسجيل',
+          ? tr('تمت الإضافة وتم تحويل الحساب الموجود إلى (حرفي)', 'Added, and the existing account was changed to (craftsman)')
+          : tr('تمت إضافة الرقم — سيصبح (حرفياً) عند التسجيل', 'Number added. It becomes a (craftsman) on sign-up'),
     );
     _load();
   }
@@ -142,12 +143,12 @@ class _AdminHiresScreenState extends State<AdminHiresScreen>
     final theme = Theme.of(context);
     return Scaffold(
       appBar: PushKeyAppBar(
-        title: 'التوظيف',
+        title: tr('التوظيف', 'Hiring'),
         actions: [
           AppIconButton(
             onTap: _add,
             icon: Icons.person_add_alt_1_rounded,
-            tooltip: 'إضافة رقم',
+            tooltip: tr('إضافة رقم', 'Add number'),
           ),
         ],
       ),
@@ -171,9 +172,9 @@ class _AdminHiresScreenState extends State<AdminHiresScreen>
                       child: const Icon(Icons.info_outline_rounded, size: 19),
                     ),
                     const SizedBox(width: 10),
-                    const Expanded(
+                    Expanded(
                       child: Text(
-                        'أضف رقم الشخص الذي تريد توظيفه. عند تسجيله بالتطبيق يظهر له فقط ما تسمح به الإدارة من الأقسام.',
+                        tr('أضف رقم الشخص الذي تريد توظيفه. عند تسجيله بالتطبيق يظهر له فقط ما تسمح به الإدارة من الأقسام.', 'Add the number of the person you want to hire. When they sign up in the app, they only see the sections the admin allows.'),
                         style: TextStyle(fontSize: 11.5, height: 1.7),
                       ),
                     ),
@@ -191,10 +192,10 @@ class _AdminHiresScreenState extends State<AdminHiresScreen>
                   }
                   final hires = snapshot.data ?? const <Hire>[];
                   if (hires.isEmpty) {
-                    return const EmptyState(
+                    return EmptyState(
                       icon: Icons.badge_outlined,
-                      title: 'لا توجد أرقام توظيف',
-                      subtitle: 'اضغط (+) لإضافة رقم أول شخص للتوظيف.',
+                      title: tr('لا توجد أرقام توظيف', 'No hiring numbers'),
+                      subtitle: tr('اضغط (+) لإضافة رقم أول شخص للتوظيف.', 'Tap (+) to add the first person to hire.'),
                     );
                   }
                   return RefreshIndicator(
@@ -219,7 +220,7 @@ class _AdminHiresScreenState extends State<AdminHiresScreen>
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      h.userName ?? 'بانتظار التسجيل',
+                                      h.userName ?? tr('بانتظار التسجيل', 'Waiting for sign-up'),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: theme.textTheme.titleSmall
@@ -255,7 +256,7 @@ class _AdminHiresScreenState extends State<AdminHiresScreen>
                                       borderRadius: BorderRadius.circular(100),
                                     ),
                                     child: Text(
-                                      h.registered ? 'مسجّل' : 'بانتظار',
+                                      h.registered ? tr('مسجّل', 'Registered') : tr('بانتظار', 'Waiting'),
                                       style: TextStyle(
                                         fontSize: 9,
                                         fontWeight: FontWeight.w900,
@@ -271,7 +272,7 @@ class _AdminHiresScreenState extends State<AdminHiresScreen>
                                     onTap: () => _delete(h),
                                     icon: Icons.delete_outline_rounded,
                                     color: AppColors.danger,
-                                    tooltip: 'حذف',
+                                    tooltip: tr('حذف', 'Delete'),
                                   ),
                                 ],
                               ),

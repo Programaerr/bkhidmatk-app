@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
@@ -134,12 +135,12 @@ class _ProfileTabState extends State<ProfileTab> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const SheetHeader(title: 'تعديل الملف الشخصي'),
+                SheetHeader(title: tr('تعديل الملف الشخصي', 'Edit profile')),
                 const SizedBox(height: 16),
                 TextField(
                   controller: name,
-                  decoration: const InputDecoration(
-                    labelText: 'الاسم',
+                  decoration: InputDecoration(
+                    labelText: tr('الاسم', 'Name'),
                     prefixIcon: Icon(Icons.person_outline_rounded, size: 20),
                   ),
                 ),
@@ -152,9 +153,9 @@ class _ProfileTabState extends State<ProfileTab> {
                         constraints: const BoxConstraints(maxHeight: 440),
                         child: Column(
                           children: [
-                            const Padding(
+                            Padding(
                               padding: EdgeInsets.fromLTRB(20, 0, 20, 6),
-                              child: SheetHeader(title: 'المحافظة'),
+                              child: SheetHeader(title: tr('المحافظة', 'Province')),
                             ),
                             Expanded(
                               child: ListView(
@@ -163,7 +164,7 @@ class _ProfileTabState extends State<ProfileTab> {
                                 children: [
                                   for (final c in iraqCities)
                                     ListTile(
-                                      title: Text(c),
+                                      title: Text(cityLabel(c)),
                                       onTap: () => Navigator.pop(ctx, c),
                                     ),
                                 ],
@@ -180,21 +181,21 @@ class _ProfileTabState extends State<ProfileTab> {
                       prefixIcon: Icon(Icons.location_city_rounded, size: 20),
                       suffixIcon: Icon(Icons.expand_more_rounded, size: 20),
                     ),
-                    child: Text(city),
+                    child: Text(cityLabel(city)),
                   ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: address,
                   maxLines: 2,
-                  decoration: const InputDecoration(
-                    labelText: 'العنوان',
+                  decoration: InputDecoration(
+                    labelText: tr('العنوان', 'Address'),
                     prefixIcon: Icon(Icons.location_on_outlined, size: 20),
                   ),
                 ),
                 const SizedBox(height: 20),
                 PrimaryButton(
-                  label: 'حفظ التغييرات',
+                  label: tr('حفظ التغييرات', 'Save changes'),
                   onPressed: () => Navigator.pop(ctx, true),
                 ),
               ],
@@ -210,15 +211,15 @@ class _ProfileTabState extends State<ProfileTab> {
         city: city,
         address: address.text.trim(),
       ));
-      if (mounted) AppSnack.show(context, 'تم تحديث بياناتك');
+      if (mounted) AppSnack.show(context, tr('تم تحديث بياناتك', 'Your details were updated'));
     }
   }
 
   Future<void> _logout() async {
     final ok = await confirmAction(context,
-        title: 'تسجيل الخروج',
-        message: 'هل تريد تسجيل الخروج من حسابك؟',
-        confirmLabel: 'خروج',
+        title: tr('تسجيل الخروج', 'Log out'),
+        message: tr('هل تريد تسجيل الخروج من حسابك؟', 'Do you want to log out of your account?'),
+        confirmLabel: tr('خروج', 'Log out'),
         danger: true);
     if (ok && mounted) await context.read<AppState>().logout();
   }
@@ -270,7 +271,7 @@ class _ProfileTabState extends State<ProfileTab> {
                   safeTop: safeTop,
                   top: top,
                   builder: (context, metrics) =>
-                      HomeHeader(width: width, metrics: metrics, title: 'الملف الشخصي'),
+                      HomeHeader(width: width, metrics: metrics, title: tr('الملف الشخصي', 'Profile')),
                 ),
               ],
             );
@@ -287,16 +288,16 @@ class _ProfileTabState extends State<ProfileTab> {
         _MenuKey(
           unit: unit,
           icon: Icons.event_note_rounded,
-          title: 'حجوزاتي',
-          subtitle: 'كل حجوزاتك وحالتها',
+          title: tr('حجوزاتي', 'My bookings'),
+          subtitle: tr('كل حجوزاتك وحالتها', 'All your bookings and their status'),
           onPressed: widget.onOpenBookings,
         ),
       if (!widget.workerMode)
         _MenuKey(
           unit: unit,
           icon: Icons.receipt_long_rounded,
-          title: 'وصولاتي',
-          subtitle: 'وصولات الدفع القابلة للطباعة',
+          title: tr('وصولاتي', 'My receipts'),
+          subtitle: tr('وصولات الدفع القابلة للطباعة', 'Printable payment receipts'),
           onPressed: () => Navigator.push(
             context,
             QuickRoute(builder: (_) => const ReceiptsScreen()),
@@ -306,15 +307,15 @@ class _ProfileTabState extends State<ProfileTab> {
         _MenuKey(
           unit: unit,
           icon: Icons.space_dashboard_rounded,
-          title: 'لوحة التحكم',
-          subtitle: 'إدارة التطبيق والحجوزات',
+          title: tr('لوحة التحكم', 'Dashboard'),
+          subtitle: tr('إدارة التطبيق والحجوزات', 'Manage the app and bookings'),
           onPressed: widget.onOpenAdminDashboard!,
         ),
       _MenuKey(
         unit: unit,
         icon: Icons.support_agent_rounded,
-        title: 'الرسائل والدعم',
-        subtitle: 'تواصل مع إدارة جايك',
+        title: tr('الرسائل والدعم', 'Messages & support'),
+        subtitle: tr('تواصل مع إدارة جايك', 'Contact the Jaik team'),
         onPressed: () => Navigator.push(
           context,
           QuickRoute(builder: (_) => const MessagesScreen()),
@@ -334,7 +335,7 @@ class _ProfileTabState extends State<ProfileTab> {
         key: Semantics(
           header: true,
           child: Text(
-            'الإعدادات',
+            tr('الإعدادات', 'Settings'),
             textAlign: TextAlign.center,
             style: _text(unit, _Design.settingsTitleSize, FontWeight.w800, ink),
           ),
@@ -346,7 +347,7 @@ class _ProfileTabState extends State<ProfileTab> {
         key: _WideKey(
           unit: unit,
           faceHeight: _Design.nightHeight,
-          label: 'الوضع الليلي',
+          label: tr('الوضع الليلي', 'Night mode'),
           pressable: false,
           toggled: dark,
           // الشاشة تتحول إلى الليل بتلاشٍ بطيء، والمفتاح ينقلب بسرعته فوقها (طلب المستخدم).
@@ -372,7 +373,7 @@ class _ProfileTabState extends State<ProfileTab> {
               SizedBox(width: _Design.badgeGap * unit),
               Expanded(
                 child: Text(
-                  'الوضع الليلي',
+                  tr('الوضع الليلي', 'Night mode'),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: _text(unit, _Design.titleSize, FontWeight.w800, ink),
@@ -396,7 +397,7 @@ class _ProfileTabState extends State<ProfileTab> {
         key: _WideKey(
           unit: unit,
           faceHeight: _Design.languageHeight,
-          label: 'اللغة',
+          label: tr('اللغة', 'Language'),
           pressable: false,
           value: state.english ? 'English' : 'عربي',
           onPressed: () => state.setEnglish(!state.english),
@@ -411,7 +412,7 @@ class _ProfileTabState extends State<ProfileTab> {
               SizedBox(width: _Design.badgeGap * unit),
               Expanded(
                 child: Text(
-                  'اللغة',
+                  tr('اللغة', 'Language'),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: _text(unit, _Design.titleSize, FontWeight.w800, ink),
@@ -433,7 +434,7 @@ class _ProfileTabState extends State<ProfileTab> {
         key: _WideKey(
           unit: unit,
           faceHeight: _Design.logoutHeight,
-          label: 'تسجيل الخروج',
+          label: tr('تسجيل الخروج', 'Log out'),
           red: true,
           onPressed: _logout,
           child: Center(
@@ -445,7 +446,7 @@ class _ProfileTabState extends State<ProfileTab> {
                   Icon(Icons.logout_rounded, size: _Design.logoutIconSize * unit, color: Colors.white),
                   SizedBox(width: _Design.logoutIconGap * unit),
                   Text(
-                    'تسجيل الخروج',
+                    tr('تسجيل الخروج', 'Log out'),
                     style: _text(unit, _Design.logoutTextSize, FontWeight.w800, Colors.white),
                   ),
                 ],
@@ -513,7 +514,7 @@ class _ProfileTabState extends State<ProfileTab> {
               diameter: _Design.editSize * unit,
               unit: chrome,
               onColour: true,
-              label: 'تعديل الملف الشخصي',
+              label: tr('تعديل الملف الشخصي', 'Edit profile'),
               onPressed: _editProfile,
               child: Icon(Icons.edit_outlined, size: _Design.editIconSize * unit, color: ink),
             ),
@@ -555,7 +556,7 @@ class _ProfileTabState extends State<ProfileTab> {
                         SizedBox(width: 3 * unit),
                         Flexible(
                           child: Text(
-                            user.city ?? 'العراق',
+                            user.city == null ? tr('العراق', 'Iraq') : cityLabel(user.city!),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: _text(unit, _Design.citySize, FontWeight.w600, AppColors.onGold),

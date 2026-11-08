@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../core/language.dart';
 import '../core/utils.dart';
 import 'models.dart';
 
@@ -80,7 +81,7 @@ class SupabaseServices {
   static String phoneE164(String phone) {
     final normalized = normalizePhone(phone);
     if (!validIraqiPhone(normalized)) {
-      throw const FormatException('أدخل رقم هاتف عراقي صحيح يبدأ بـ 07');
+      throw FormatException(tr('أدخل رقم هاتف عراقي صحيح يبدأ بـ 07', 'Enter a valid Iraqi phone number starting with 07'));
     }
     return '+964${normalized.substring(1)}';
   }
@@ -90,7 +91,7 @@ class SupabaseServices {
   static String emailForPhone(String phone) {
     final normalized = normalizePhone(phone);
     if (!validIraqiPhone(normalized)) {
-      throw const FormatException('أدخل رقم هاتف عراقي صحيح يبدأ بـ 07');
+      throw FormatException(tr('أدخل رقم هاتف عراقي صحيح يبدأ بـ 07', 'Enter a valid Iraqi phone number starting with 07'));
     }
     return '$normalized@jaik.app';
   }
@@ -104,7 +105,7 @@ class SupabaseServices {
       );
       if (response.session == null) {
         throw CloudAuthException(
-          'تعذر إنشاء جلسة الدخول. تحقق من إعدادات Supabase.',
+          tr('تعذر إنشاء جلسة الدخول. تحقق من إعدادات Supabase.', "Couldn't start the sign-in session. Check the Supabase settings."),
         );
       }
       return await currentProfile();
@@ -134,9 +135,9 @@ class SupabaseServices {
       );
       if (response.session == null) {
         throw CloudAuthException(
-          'الحساب أُنشئ لكنه ينتظر تأكيد البريد الداخلي. في Supabase افتح '
+          tr('الحساب أُنشئ لكنه ينتظر تأكيد البريد الداخلي. في Supabase افتح '
           'Authentication ← Sign In / Providers ← Email وأوقف '
-          '«Confirm email»، ثم سجّل الدخول.',
+          '«Confirm email»، ثم سجّل الدخول.', 'The account was created but is waiting for internal email confirmation. In Supabase open Authentication → Sign In / Providers → Email and turn off "Confirm email", then sign in.'),
         );
       }
       return await currentProfile();
@@ -152,30 +153,30 @@ class SupabaseServices {
     String? arabic;
     if (text.contains('invalid login credentials') ||
         text.contains('invalid credentials')) {
-      arabic = 'رقم الهاتف أو كلمة المرور غير صحيحة';
+      arabic = tr('رقم الهاتف أو كلمة المرور غير صحيحة', 'Incorrect phone number or password');
     } else if (text.contains('already registered') ||
         text.contains('already exists') ||
         text.contains('user already')) {
-      arabic = 'هذا الرقم مسجل مسبقاً — استخدم «تسجيل الدخول»';
+      arabic = tr('هذا الرقم مسجل مسبقاً — استخدم «تسجيل الدخول»', 'This number is already registered. Use "Log in".');
     } else if (text.contains('password') &&
         (text.contains('6') || text.contains('short'))) {
-      arabic = 'كلمة المرور 6 أحرف على الأقل';
+      arabic = tr('كلمة المرور 6 أحرف على الأقل', 'The password must be at least 6 characters');
     } else if (text.contains('email not confirmed') ||
         text.contains('confirmation') ||
         text.contains('confirm')) {
-      arabic = 'الحساب ينتظر تأكيد البريد الداخلي. في Supabase افتح '
+      arabic = tr('الحساب ينتظر تأكيد البريد الداخلي. في Supabase افتح '
           'Authentication ← Sign In / Providers ← Email وأوقف '
-          '«Confirm email»، ثم أعد المحاولة.';
+          '«Confirm email»، ثم أعد المحاولة.', 'The account is waiting for internal email confirmation. In Supabase open Authentication → Sign In / Providers → Email and turn off "Confirm email", then try again.');
     } else if (text.contains('email provider') ||
         text.contains('email signups are disabled')) {
-      arabic = 'فعّل مزوّد Email في Supabase ← Authentication ← '
-          'Sign In / Providers.';
+      arabic = tr('فعّل مزوّد Email في Supabase ← Authentication ← '
+          'Sign In / Providers.', 'Enable the Email provider in Supabase → Authentication → Sign In / Providers.');
     } else if (text.contains('database error') ||
         text.contains('saving new user')) {
-      arabic = 'تعذر إنشاء ملف الحساب. تأكد من تنفيذ supabase/setup.sql كاملاً '
-          'ومن وجود trigger «on_auth_user_created_jaik».';
+      arabic = tr('تعذر إنشاء ملف الحساب. تأكد من تنفيذ supabase/setup.sql كاملاً '
+          'ومن وجود trigger «on_auth_user_created_jaik».', 'Could not create the account profile. Make sure supabase/setup.sql ran completely and the trigger "on_auth_user_created_jaik" exists.');
     } else if (text.contains('rate limit') || text.contains('too many')) {
-      arabic = 'محاولات كثيرة. انتظر دقيقة ثم أعد المحاولة.';
+      arabic = tr('محاولات كثيرة. انتظر دقيقة ثم أعد المحاولة.', 'Too many attempts. Wait a minute and try again.');
     }
     return arabic == null
         ? CloudAuthException(raw)
@@ -184,7 +185,7 @@ class SupabaseServices {
 
   Future<AppUser> currentProfile() async {
     final authUser = client.auth.currentUser;
-    if (authUser == null) throw StateError('لا توجد جلسة دخول فعالة');
+    if (authUser == null) throw StateError(tr('لا توجد جلسة دخول فعالة', 'No active sign-in session'));
     final row = await client
         .from('app_profiles')
         .select()
@@ -192,7 +193,7 @@ class SupabaseServices {
         .maybeSingle();
     if (row == null) {
       throw StateError(
-        'تعذر العثور على ملف الحساب. تحقق من تشغيل ملف setup.sql في Supabase.',
+        tr('تعذر العثور على ملف الحساب. تحقق من تشغيل ملف setup.sql في Supabase.', 'Could not find the account profile. Check that setup.sql ran in Supabase.'),
       );
     }
     return AppUser(
@@ -210,7 +211,7 @@ class SupabaseServices {
 
   Future<void> updateProfile(AppUser user) async {
     final authUser = client.auth.currentUser;
-    if (authUser == null) throw StateError('لا توجد جلسة دخول فعالة');
+    if (authUser == null) throw StateError(tr('لا توجد جلسة دخول فعالة', 'No active sign-in session'));
     await client.from('app_profiles').update({
       'name': user.name,
       'city': user.city,

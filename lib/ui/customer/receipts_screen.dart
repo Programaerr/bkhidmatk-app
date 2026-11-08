@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
@@ -47,7 +48,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: PushKeyAppBar(title: widget.adminMode ? 'كل الوصولات' : 'وصولاتي'),
+      appBar: PushKeyAppBar(title: widget.adminMode ? tr('كل الوصولات', 'All receipts') : tr('وصولاتي', 'My receipts')),
       body: SafeArea(
         child: FutureBuilder<List<Receipt>>(
           future: _future,
@@ -57,10 +58,10 @@ class _ReceiptsScreenState extends State<ReceiptsScreen>
             }
             final receipts = snapshot.data ?? const <Receipt>[];
             if (receipts.isEmpty) {
-              return const EmptyState(
+              return EmptyState(
                 icon: Icons.receipt_long_outlined,
-                title: 'لا توجد وصولات بعد',
-                subtitle: 'ستظهر هنا جميع وصولات الدفع الخاصة بك بعد الحجز.',
+                title: tr('لا توجد وصولات بعد', 'No receipts yet'),
+                subtitle: tr('ستظهر هنا جميع وصولات الدفع الخاصة بك بعد الحجز.', 'All your payment receipts will appear here after you book.'),
               );
             }
             final total = receipts.fold<double>(0, (s, r) => s + r.amount);
@@ -89,7 +90,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen>
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('إجمالي المدفوعات',
+                          Text(tr('إجمالي المدفوعات', 'Total payments'),
                               style: TextStyle(color: Colors.white60, fontSize: 10.5)),
                           const SizedBox(height: 2),
                           Text(fmtMoney(total),
@@ -107,7 +108,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen>
                           color: Colors.white.withValues(alpha: .08),
                           borderRadius: BorderRadius.circular(100),
                         ),
-                        child: Text('${receipts.length} وصل',
+                        child: Text(tr('${receipts.length} وصل', receipts.length == 1 ? '1 receipt' : '${receipts.length} receipts'),
                             style: const TextStyle(color: Colors.white70, fontSize: 9.5)),
                       ),
                     ],
@@ -168,7 +169,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen>
                                       style: theme.textTheme.titleSmall?.copyWith(fontSize: 12.5)),
                                   const SizedBox(height: 2),
                                   Text(
-                                    r.paid ? 'مدفوع' : 'غير مدفوع',
+                                    r.paid ? tr('مدفوع', 'Paid') : tr('غير مدفوع', 'Unpaid'),
                                     style: TextStyle(
                                       fontSize: 9.5,
                                       fontWeight: FontWeight.w800,
@@ -189,7 +190,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen>
                                   method: r.method, brand: r.cardBrand, last4: r.last4),
                               const Spacer(),
                               SecondaryButton(
-                                label: 'معاينة',
+                                label: tr('معاينة', 'Preview'),
                                 icon: Icons.visibility_outlined,
                                 compact: true,
                                 expand: false,
@@ -204,7 +205,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen>
                                 small: true,
                                 onTap: () => ReceiptActions.print(context, r),
                                 icon: Icons.print_rounded,
-                                tooltip: 'طباعة',
+                                tooltip: tr('طباعة', 'Print'),
                               ),
                             ],
                           ),

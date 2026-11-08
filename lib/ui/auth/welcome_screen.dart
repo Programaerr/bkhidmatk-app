@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/language.dart';
 import '../../state/app_state.dart';
 import 'auth_route.dart';
 import 'craftsman_screen.dart';
@@ -211,7 +212,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
       debugPrint('Failed to load contact links: $error');
       debugPrintStack(stackTrace: stackTrace);
       if (mounted) {
-        AppSnack.show(context, 'تعذر تحميل روابط التواصل', error: true);
+        AppSnack.show(context, tr('تعذر تحميل روابط التواصل', "Couldn't load the social links"), error: true);
       }
     }
   }
@@ -222,19 +223,19 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     if (uri == null ||
         !{'http', 'https'}.contains(uri.scheme.toLowerCase()) ||
         uri.host.isEmpty) {
-      AppSnack.show(context, 'رابط التواصل غير صالح', error: true);
+      AppSnack.show(context, tr('رابط التواصل غير صالح', 'The social link is not valid'), error: true);
       return;
     }
     try {
       if (await launchUrl(uri, mode: LaunchMode.externalApplication)) return;
       if (mounted) {
-        AppSnack.show(context, 'تعذر فتح رابط التواصل', error: true);
+        AppSnack.show(context, tr('تعذر فتح رابط التواصل', "Couldn't open the social link"), error: true);
       }
     } catch (error, stackTrace) {
       debugPrint('Failed to open contact link: $error');
       debugPrintStack(stackTrace: stackTrace);
       if (mounted) {
-        AppSnack.show(context, 'تعذر فتح رابط التواصل', error: true);
+        AppSnack.show(context, tr('تعذر فتح رابط التواصل', "Couldn't open the social link"), error: true);
       }
     }
   }

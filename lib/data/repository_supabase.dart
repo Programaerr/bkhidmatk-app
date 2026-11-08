@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart' show debugPrint, debugPrintStack;
 import 'package:path/path.dart' as path;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../core/language.dart';
 import '../core/utils.dart';
 import 'models.dart';
 import 'repository.dart';
@@ -169,14 +170,14 @@ class SupabaseRepository implements Repository {
       return localPath;
     }
     if (localPath.startsWith('asset:')) {
-      throw ArgumentError('لا يمكن رفع ملفات assets المضمنة كملفات مستخدمين');
+      throw ArgumentError(tr('لا يمكن رفع ملفات assets المضمنة كملفات مستخدمين', 'Built-in asset files cannot be uploaded as user files'));
     }
     final file = File(localPath);
     if (!await file.exists()) {
-      throw FileSystemException('الملف المحدد غير موجود', localPath);
+      throw FileSystemException(tr('الملف المحدد غير موجود', 'The selected file does not exist'), localPath);
     }
     final authUser = _client.auth.currentUser;
-    if (authUser == null) throw StateError('يلزم تسجيل الدخول لرفع الملفات');
+    if (authUser == null) throw StateError(tr('يلزم تسجيل الدخول لرفع الملفات', 'You need to sign in to upload files'));
     final extension = path.extension(localPath).toLowerCase();
     final objectPath =
         '$folder/${authUser.id}/${DateTime.now().microsecondsSinceEpoch}$extension';
@@ -242,14 +243,14 @@ class SupabaseRepository implements Repository {
   @override
   Future<int> createUser(AppUser user) async {
     throw UnsupportedError(
-      'إنشاء حساب Supabase يتم بتأكيد رقم الهاتف عبر رمز OTP.',
+      tr('إنشاء حساب Supabase يتم بتأكيد رقم الهاتف عبر رمز OTP.', 'Supabase accounts are created by confirming the phone number with an OTP code.'),
     );
   }
 
   @override
   Future<void> updateUser(AppUser user) async {
     final authUser = _client.auth.currentUser;
-    if (authUser == null) throw StateError('لا توجد جلسة دخول فعالة');
+    if (authUser == null) throw StateError(tr('لا توجد جلسة دخول فعالة', 'No active sign-in session'));
     await _client.from('app_profiles').update({
       'name': user.name,
       'city': user.city,
@@ -1176,7 +1177,7 @@ class SupabaseRepository implements Repository {
   Future<int> _currentProfileId() {
     final authUser = _client.auth.currentUser;
     if (authUser == null) {
-      return Future.error(StateError('لا توجد جلسة دخول فعالة'));
+      return Future.error(StateError(tr('لا توجد جلسة دخول فعالة', 'No active sign-in session')));
     }
     _forgetOtherAccount(authUser.id);
     final remembered = _profileId;
@@ -1197,7 +1198,7 @@ class SupabaseRepository implements Repository {
           .eq('auth_user_id', authUserId)
           .limit(1),
     );
-    if (rows.isEmpty) throw StateError('تعذر العثور على ملف الحساب');
+    if (rows.isEmpty) throw StateError(tr('تعذر العثور على ملف الحساب', 'Could not find the account profile'));
     return (rows.first['id'] as num).toInt();
   }
 
@@ -1288,7 +1289,7 @@ class SupabaseRepository implements Repository {
         threadId,
         () => ChatThread(
           customerId: threadId,
-          customerName: profile?['name'] as String? ?? 'زبون',
+          customerName: profile?['name'] as String? ?? tr('زبون', 'Customer'),
           customerPhone: profile?['phone'] as String? ?? '',
           lastMessage: row['body'] as String? ?? '',
           lastAt: DateTime.parse(row['created_at'] as String).toLocal(),
@@ -1479,7 +1480,7 @@ class SupabaseRepository implements Repository {
   @override
   Future<void> resetDemoData() async {
     throw UnsupportedError(
-      'إعادة الضبط غير متاحة في الوضع السحابي حتى لا تُحذف بيانات المستخدمين.',
+      tr('إعادة الضبط غير متاحة في الوضع السحابي حتى لا تُحذف بيانات المستخدمين.', "Reset is not available in cloud mode, so that users' data is not deleted."),
     );
   }
 

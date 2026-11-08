@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
@@ -103,14 +104,14 @@ class _MessagesScreenState extends State<MessagesScreen>
   Future<void> _call() async {
     final phone = widget.threadPhone ?? _adminPhone;
     if (!await launchUrl(Uri.parse('tel:${phoneForCall(phone)}'))) {
-      if (mounted) AppSnack.show(context, 'تعذر فتح تطبيق الاتصال', error: true);
+      if (mounted) AppSnack.show(context, tr('تعذر فتح تطبيق الاتصال', "Couldn't open the phone app"), error: true);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final title = _asAdmin ? (widget.threadName ?? 'محادثة زبون') : 'الدعم الفني';
+    final title = _asAdmin ? (widget.threadName ?? tr('محادثة زبون', 'Customer chat')) : tr('الدعم الفني', 'Support');
     return Scaffold(
       appBar: PushKeyAppBar(
         titleWidget: Row(
@@ -130,7 +131,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(title, style: theme.textTheme.titleSmall?.copyWith(fontSize: 14)),
-                  Text(_asAdmin ? 'محادثة زبون' : 'فريق جايك',
+                  Text(_asAdmin ? tr('محادثة زبون', 'Customer chat') : tr('فريق جايك', 'Jaik team'),
                       style: theme.textTheme.bodySmall?.copyWith(fontSize: 9.5)),
                 ],
               ),
@@ -141,7 +142,7 @@ class _MessagesScreenState extends State<MessagesScreen>
           AppIconButton(
             icon: Icons.call_outlined,
             onTap: _call,
-            tooltip: 'اتصال',
+            tooltip: tr('اتصال', 'Call'),
           ),
         ],
       ),
@@ -155,10 +156,10 @@ class _MessagesScreenState extends State<MessagesScreen>
                   : _messages.isEmpty
                       ? EmptyState(
                           icon: Icons.forum_outlined,
-                          title: 'ابدأ المحادثة',
+                          title: tr('ابدأ المحادثة', 'Start the conversation'),
                           subtitle: _asAdmin
-                              ? 'أرسل رسالة ترحيبية للزبون.'
-                              : 'فريق جايك جاهز للإجابة على استفساراتك.\nلضمان حقوقك، التواصل يتم عبر التطبيق.',
+                              ? tr('أرسل رسالة ترحيبية للزبون.', 'Send the customer a welcome message.')
+                              : tr('فريق جايك جاهز للإجابة على استفساراتك.\nلضمان حقوقك، التواصل يتم عبر التطبيق.', 'The Jaik team is ready to answer your questions.\nTo protect your rights, all contact happens in the app.'),
                         )
                       : ListView.builder(
                           controller: _scroll,
@@ -193,8 +194,8 @@ class _MessagesScreenState extends State<MessagesScreen>
                         maxLines: 4,
                         textInputAction: TextInputAction.send,
                         onSubmitted: (_) => _send(),
-                        decoration: const InputDecoration(
-                          hintText: 'اكتب رسالتك...',
+                        decoration: InputDecoration(
+                          hintText: tr('اكتب رسالتك...', 'Type your message...'),
                           contentPadding:
                               EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                         ),
@@ -204,7 +205,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                     AppIconButton(
                       onTap: _sending ? null : _send,
                       icon: _sending ? Icons.more_horiz_rounded : Icons.send_rounded,
-                      tooltip: 'إرسال',
+                      tooltip: tr('إرسال', 'Send'),
                     ),
                   ],
                 ),

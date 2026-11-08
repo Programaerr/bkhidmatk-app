@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
@@ -44,9 +45,9 @@ class _AdminThreadsScreenState extends State<AdminThreadsScreen>
     final theme = Theme.of(context);
     return Scaffold(
       appBar: PushKeyAppBar(
-        title: 'الرسائل',
+        title: tr('الرسائل', 'Messages'),
         actions: [
-          AppIconButton(icon: Icons.refresh_rounded, tooltip: 'تحديث', onTap: _load),
+          AppIconButton(icon: Icons.refresh_rounded, tooltip: tr('تحديث', 'Refresh'), onTap: _load),
         ],
       ),
       body: SafeArea(
@@ -58,10 +59,10 @@ class _AdminThreadsScreenState extends State<AdminThreadsScreen>
             }
             final threads = snapshot.data ?? const <ChatThread>[];
             if (threads.isEmpty) {
-              return const EmptyState(
+              return EmptyState(
                 icon: Icons.forum_outlined,
-                title: 'لا توجد محادثات',
-                subtitle: 'ستظهر هنا رسائل الزبائن فور إرسالها.',
+                title: tr('لا توجد محادثات', 'No conversations'),
+                subtitle: tr('ستظهر هنا رسائل الزبائن فور إرسالها.', "Customers' messages will appear here as soon as they're sent."),
               );
             }
             return ListView.separated(

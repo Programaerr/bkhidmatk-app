@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/language.dart';
 import '../../data/models.dart';
 import '../../data/sections.dart';
 import '../../state/app_state.dart';
@@ -37,7 +38,7 @@ class _AllSectionsScreenState extends State<AllSectionsScreen> {
     final ground = _ground(context);
     return Scaffold(
       backgroundColor: ground,
-      appBar: PushKeyAppBar(title: 'الأقسام', backgroundColor: ground),
+      appBar: PushKeyAppBar(title: tr('الأقسام', 'Categories'), backgroundColor: ground),
       body: LayoutBuilder(
         builder: (context, constraints) {
           final unit = homeUnit(constraints.maxWidth);

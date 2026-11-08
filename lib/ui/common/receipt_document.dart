@@ -8,6 +8,7 @@ import 'package:printing/printing.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:screenshot/screenshot.dart';
 
+import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
@@ -26,7 +27,7 @@ class ReceiptDocument extends StatelessWidget {
   Widget build(BuildContext context) {
     final isCard = receipt.method == 'card';
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: appTextDirection,
       child: Container(
         width: width,
         color: Colors.white,
@@ -54,8 +55,8 @@ class ReceiptDocument extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'جايك',
+                        Text(
+                          tr('جايك', 'Jaik'),
                           style: TextStyle(
                             fontFamily: 'Cairo',
                             color: AppColors.gold,
@@ -65,8 +66,8 @@ class ReceiptDocument extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 2),
-                        const Text(
-                          'منصة الخدمات المنزلية',
+                        Text(
+                          tr('منصة الخدمات المنزلية', 'Home services platform'),
                           style: TextStyle(
                             fontFamily: 'Cairo',
                             color: Colors.white60,
@@ -79,8 +80,8 @@ class ReceiptDocument extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      const Text(
-                        'وصل دفع خدمة',
+                      Text(
+                        tr('وصل دفع خدمة', 'Service payment receipt'),
                         style: TextStyle(
                           fontFamily: 'Cairo',
                           color: Colors.white,
@@ -110,9 +111,9 @@ class ReceiptDocument extends StatelessWidget {
                   Row(
                     children: [
                       _Meta(
-                          label: 'التاريخ', value: fmtDate(receipt.createdAt)),
+                          label: tr('التاريخ', 'Date'), value: fmtDate(receipt.createdAt)),
                       _Meta(
-                          label: 'الوقت',
+                          label: tr('الوقت', 'Time'),
                           value: fmtTimeOfDay(receipt.createdAt)),
                     ],
                   ),
@@ -120,10 +121,10 @@ class ReceiptDocument extends StatelessWidget {
                   Row(
                     children: [
                       _Meta(
-                          label: 'الزبون',
-                          value: receipt.customerName ?? 'زبون'),
+                          label: tr('الزبون', 'Customer'),
+                          value: receipt.customerName ?? tr('زبون', 'Customer')),
                       _Meta(
-                          label: 'الهاتف', value: receipt.customerPhone ?? '—'),
+                          label: tr('الهاتف', 'Phone'), value: receipt.customerPhone ?? '—'),
                     ],
                   ),
                   const SizedBox(height: 14),
@@ -142,17 +143,17 @@ class ReceiptDocument extends StatelessWidget {
                             borderRadius:
                                 BorderRadius.vertical(top: Radius.circular(11)),
                           ),
-                          child: const Row(
+                          child: Row(
                             children: [
                               Expanded(
                                 flex: 3,
-                                child: Text('البيان',
+                                child: Text(tr('البيان', 'Description'),
                                     style: TextStyle(
                                         fontSize: 10,
                                         fontWeight: FontWeight.w800,
                                         color: Color(0xFF5F5F66))),
                               ),
-                              Text('المبلغ',
+                              Text(tr('المبلغ', 'Amount'),
                                   style: TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.w800,
@@ -182,13 +183,13 @@ class ReceiptDocument extends StatelessWidget {
                                               fontWeight: FontWeight.w800),
                                         ),
                                         if (receipt.workerName != null)
-                                          Text('الفني: ${receipt.workerName}',
+                                          Text(tr('الفني: ${receipt.workerName}', 'Technician: ${receipt.workerName}'),
                                               style: const TextStyle(
                                                   fontSize: 9.5,
                                                   color: Color(0xFF5F5F66))),
                                         if (receipt.bookingId != null)
                                           Text(
-                                              'رقم الحجز: #${receipt.bookingId}',
+                                              tr('رقم الحجز: #${receipt.bookingId}', 'Booking no.: #${receipt.bookingId}'),
                                               style: const TextStyle(
                                                   fontSize: 9.5,
                                                   color: Color(0xFF5F5F66))),
@@ -219,7 +220,7 @@ class ReceiptDocument extends StatelessWidget {
                     ),
                     child: Row(
                       children: [
-                        const Text('الإجمالي المدفوع',
+                        Text(tr('الإجمالي المدفوع', 'Total paid'),
                             style: TextStyle(
                                 color: Colors.white70,
                                 fontSize: 11,
@@ -250,7 +251,7 @@ class ReceiptDocument extends StatelessWidget {
                       Text(
                         isCard
                             ? '${receipt.cardBrand ?? 'Card'} •••• ${receipt.last4 ?? ''}'
-                            : 'الدفع نقداً عند الوصول',
+                            : tr('الدفع نقداً عند الوصول', 'Cash payment on arrival'),
                         style: const TextStyle(
                             fontSize: 10, color: Color(0xFF5F5F66)),
                       ),
@@ -272,7 +273,7 @@ class ReceiptDocument extends StatelessWidget {
                           ),
                         ),
                         child: Text(
-                          receipt.paid ? 'مدفوع' : 'غير مدفوع',
+                          receipt.paid ? tr('مدفوع', 'Paid') : tr('غير مدفوع', 'Unpaid'),
                           style: TextStyle(
                             fontSize: 9,
                             fontWeight: FontWeight.w800,
@@ -303,9 +304,9 @@ class ReceiptDocument extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      const Expanded(
+                      Expanded(
                         child: Text(
-                          'امسح الرمز للتحقق من صحة الوصل.\nهذا الوصل صادر إلكترونياً من تطبيق جايك.',
+                          tr('امسح الرمز للتحقق من صحة الوصل.\nهذا الوصل صادر إلكترونياً من تطبيق جايك.', 'Scan the code to verify the receipt.\nThis receipt was issued electronically by the Jaik app.'),
                           style: TextStyle(
                               fontSize: 8.5,
                               height: 1.7,
@@ -317,13 +318,13 @@ class ReceiptDocument extends StatelessWidget {
                   const SizedBox(height: 14),
                   Container(height: 1, color: const Color(0xFFE8E8E8)),
                   const SizedBox(height: 10),
-                  const Row(
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.support_agent_rounded,
                           size: 12, color: Color(0xFF5F5F66)),
                       SizedBox(width: 4),
-                      Text('الدعم: 0770 000 0000 · جايك في خدمتك',
+                      Text(tr('الدعم: 0770 000 0000 · جايك في خدمتك', 'Support: 0770 000 0000 · Jaik at your service'),
                           style: TextStyle(
                               fontSize: 8.5, color: Color(0xFF5F5F66))),
                     ],
@@ -400,7 +401,7 @@ class ReceiptActions {
     if (png == null) return null;
     final doc = pw.Document(
       title: receipt.invoiceNo,
-      author: 'جايك',
+      author: tr('جايك', 'Jaik'),
       creator: 'Jaik',
     );
     final image = pw.MemoryImage(png);
@@ -420,7 +421,7 @@ class ReceiptActions {
     final bytes = await buildPdf(receipt);
     if (bytes == null) {
       if (context.mounted) {
-        AppSnack.show(context, 'تعذر إنشاء الوصل، حاول مرة أخرى', error: true);
+        AppSnack.show(context, tr('تعذر إنشاء الوصل، حاول مرة أخرى', "Couldn't create the receipt, please try again"), error: true);
       }
       return false;
     }
@@ -435,7 +436,7 @@ class ReceiptActions {
     final bytes = await buildPdf(receipt);
     if (bytes == null) {
       if (context.mounted) {
-        AppSnack.show(context, 'تعذر إنشاء الوصل، حاول مرة أخرى', error: true);
+        AppSnack.show(context, tr('تعذر إنشاء الوصل، حاول مرة أخرى', "Couldn't create the receipt, please try again"), error: true);
       }
       return;
     }
@@ -461,11 +462,11 @@ class ReceiptPreviewScreen extends StatelessWidget {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: PushKeyAppBar(
-        title: 'معاينة الوصل',
+        title: tr('معاينة الوصل', 'Receipt preview'),
         actions: [
           AppIconButton(
             icon: Icons.ios_share_rounded,
-            tooltip: 'مشاركة',
+            tooltip: tr('مشاركة', 'Share'),
             onTap: () => ReceiptActions.share(context, receipt),
           ),
         ],
@@ -496,7 +497,7 @@ class ReceiptPreviewScreen extends StatelessWidget {
             border: Border(top: BorderSide(color: theme.colorScheme.outline)),
           ),
           child: PrimaryButton(
-            label: 'طباعة الوصل',
+            label: tr('طباعة الوصل', 'Print receipt'),
             icon: Icons.print_rounded,
             onPressed: () => ReceiptActions.print(context, receipt),
           ),

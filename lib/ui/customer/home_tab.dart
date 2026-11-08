@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../../data/models.dart';
 import '../../data/repository.dart';
@@ -276,7 +277,7 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
               diameter: profileFace,
               unit: chrome,
               onColour: true,
-              label: 'الملف الشخصي',
+              label: tr('الملف الشخصي', 'Profile'),
               onPressed: widget.onOpenProfile,
               child: PersonFace(
                 name: user.name,
@@ -313,14 +314,14 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
         ),
         small(
           centerX: _Design.messagesCenterX,
-          label: 'الرسائل',
+          label: tr('الرسائل', 'Messages'),
           icon: Icons.chat_bubble_outline_rounded,
           badge: data?.unreadMessages ?? 0,
           page: const MessagesScreen(),
         ),
         small(
           centerX: _Design.notificationsCenterX,
-          label: 'الإشعارات',
+          label: tr('الإشعارات', 'Notifications'),
           icon: Icons.notifications_none_rounded,
           badge: data?.unreadNotifications ?? 0,
           page: const NotificationsScreen(),
@@ -371,7 +372,7 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'عرض الكل',
+                      tr('عرض الكل', 'See all'),
                       maxLines: 1,
                       style: TextStyle(
                         fontFamily: 'Cairo',
@@ -416,7 +417,7 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
             child: Center(
               child: FittedBox(
                 fit: BoxFit.scaleDown,
-                child: Text('الأقسام', maxLines: 1, style: titleStyle),
+                child: Text(tr('الأقسام', 'Categories'), maxLines: 1, style: titleStyle),
               ),
             ),
           ),
@@ -446,7 +447,7 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
               alignment: AlignmentDirectional.centerStart,
               child: FittedBox(
                 fit: BoxFit.scaleDown,
-                child: Text('حرفي بالقرب منك', maxLines: 1, style: titleStyle),
+                child: Text(tr('حرفي بالقرب منك', 'Craftsmen near you'), maxLines: 1, style: titleStyle),
               ),
             ),
           ),
@@ -459,7 +460,7 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
                 ? SizedBox(
                     width: homeDesignWidth * unit,
                     child: Text(
-                      'لا يوجد حرفيون متاحون الآن',
+                      tr('لا يوجد حرفيون متاحون الآن', 'No craftsmen available right now'),
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontFamily: 'Cairo',

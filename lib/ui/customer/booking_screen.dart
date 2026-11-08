@@ -1,6 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
@@ -68,11 +69,11 @@ class _BookingScreenState extends State<BookingScreen> {
         constraints: const BoxConstraints(maxHeight: 460),
         child: Column(
           children: [
-            const Padding(
+            Padding(
               padding: EdgeInsets.fromLTRB(20, 0, 20, 6),
               child: SheetHeader(
-                title: 'اختر الفني',
-                subtitle: 'كل الفنيين موثوقون ومقيّمون من الزبائن',
+                title: tr('اختر الفني', 'Choose a technician'),
+                subtitle: tr('كل الفنيين موثوقون ومقيّمون من الزبائن', 'All technicians are verified and rated by customers'),
               ),
             ),
             Expanded(
@@ -97,7 +98,7 @@ class _BookingScreenState extends State<BookingScreen> {
                                   Text(w.name,
                                       style: const TextStyle(
                                           fontWeight: FontWeight.w800)),
-                                  Text('${w.specialty} · ${w.jobsDone} عمل',
+                                  Text(tr('${w.specialty} · ${w.jobsDone} عمل', '${w.specialty} · ${w.jobsDone} jobs'),
                                       style: Theme.of(context)
                                           .textTheme
                                           .bodySmall
@@ -132,7 +133,7 @@ class _BookingScreenState extends State<BookingScreen> {
     final user = state.user;
     if (user?.id == null) return;
     if (_address.text.trim().length < 8) {
-      AppSnack.show(context, 'أدخل عنواناً تفصيلياً للخدمة', error: true);
+      AppSnack.show(context, tr('أدخل عنواناً تفصيلياً للخدمة', 'Enter a detailed address for the service'), error: true);
       return;
     }
     setState(() => _loading = true);
@@ -161,7 +162,7 @@ class _BookingScreenState extends State<BookingScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _loading = false);
-        AppSnack.show(context, 'تعذر إنشاء الحجز، حاول مرة أخرى', error: true);
+        AppSnack.show(context, tr('تعذر إنشاء الحجز، حاول مرة أخرى', "Couldn't create the booking, please try again"), error: true);
       }
     }
   }
@@ -173,7 +174,7 @@ class _BookingScreenState extends State<BookingScreen> {
     final worker = matches.isEmpty ? null : matches.first;
 
     return Scaffold(
-      appBar: const PushKeyAppBar(title: 'حجز الخدمة'),
+      appBar: PushKeyAppBar(title: tr('حجز الخدمة', 'Book a service')),
       body: SafeArea(
         bottom: false,
         child: ListView(
@@ -205,7 +206,7 @@ class _BookingScreenState extends State<BookingScreen> {
                                 ?.copyWith(fontSize: 14)),
                         const SizedBox(height: 2),
                         Text(
-                            '${currentSectionName(widget.service.categoryName) ?? ''} · ${fmtDuration(widget.service.durationMinutes)}',
+                            '${sectionLabel(widget.service.categoryName ?? '')} · ${fmtDuration(widget.service.durationMinutes)}',
                             style: theme.textTheme.bodySmall
                                 ?.copyWith(fontSize: 10.5)),
                       ],
@@ -215,23 +216,23 @@ class _BookingScreenState extends State<BookingScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            const SectionHeader(
-                title: 'الفني',
-                subtitle: 'يمكنك ترك الاختيار لنا وسنرسل الأنسب'),
+            SectionHeader(
+                title: tr('الفني', 'Technician'),
+                subtitle: tr('يمكنك ترك الاختيار لنا وسنرسل الأنسب', "You can leave the choice to us and we'll send the best fit")),
             SoftCard(
               onTap: _pickWorker,
               child: Row(
                 children: [
-                  AvatarCircle(name: worker?.name ?? 'تلقائي', size: 42),
+                  AvatarCircle(name: worker?.name ?? tr('تلقائي', 'Auto'), size: 42),
                   const SizedBox(width: 11),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(worker?.name ?? 'اختيار تلقائي',
+                        Text(worker?.name ?? tr('اختيار تلقائي', 'Automatic choice'),
                             style: theme.textTheme.titleSmall
                                 ?.copyWith(fontSize: 13.5)),
-                        Text(worker?.specialty ?? 'سنختار أفضل فني متاح',
+                        Text(worker?.specialty ?? tr('سنختار أفضل فني متاح', "We'll choose the best available technician"),
                             style: theme.textTheme.bodySmall
                                 ?.copyWith(fontSize: 10.5)),
                       ],
@@ -242,7 +243,7 @@ class _BookingScreenState extends State<BookingScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            const SectionHeader(title: 'موعد الخدمة'),
+            SectionHeader(title: tr('موعد الخدمة', 'Appointment')),
             SizedBox(
               height: 86,
               child: ListView.separated(
@@ -310,7 +311,7 @@ class _BookingScreenState extends State<BookingScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            const FieldLabel('الوقت المناسب'),
+            FieldLabel(tr('الوقت المناسب', 'Preferred time')),
             Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -347,12 +348,12 @@ class _BookingScreenState extends State<BookingScreen> {
               ],
             ),
             const SizedBox(height: 22),
-            const SectionHeader(title: 'عنوان الخدمة'),
+            SectionHeader(title: tr('عنوان الخدمة', 'Service address')),
             TextField(
               controller: _address,
               maxLines: 2,
-              decoration: const InputDecoration(
-                hintText: 'المنطقة، الشارع، رقم البناية، أقرب نقطة دالة',
+              decoration: InputDecoration(
+                hintText: tr('المنطقة، الشارع، رقم البناية، أقرب نقطة دالة', 'Area, street, building number, nearest landmark'),
                 prefixIcon: Icon(Icons.location_on_outlined, size: 20),
               ),
             ),
@@ -360,8 +361,8 @@ class _BookingScreenState extends State<BookingScreen> {
             TextField(
               controller: _notes,
               maxLines: 2,
-              decoration: const InputDecoration(
-                hintText: 'ملاحظات إضافية للفني (اختياري)',
+              decoration: InputDecoration(
+                hintText: tr('ملاحظات إضافية للفني (اختياري)', 'Extra notes for the technician (optional)'),
                 prefixIcon: Icon(Icons.notes_rounded, size: 20),
               ),
             ),
@@ -369,13 +370,13 @@ class _BookingScreenState extends State<BookingScreen> {
             SoftCard(
               color: AppColors.gold.withValues(alpha: .1),
               borderColor: AppColors.gold.withValues(alpha: .35),
-              child: const Row(
+              child: Row(
                 children: [
                   Icon(Icons.handshake_outlined, size: 20),
                   SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'السعر يُحدد بالاتفاق بعد مراجعة الإدارة لطلبك، ثم يُضاف إلى وصلك لتدفع لاحقاً.',
+                      tr('السعر يُحدد بالاتفاق بعد مراجعة الإدارة لطلبك، ثم يُضاف إلى وصلك لتدفع لاحقاً.', 'The price is agreed after the admin reviews your request, then added to your receipt to pay later.'),
                       style: TextStyle(fontSize: 12, height: 1.6),
                     ),
                   ),
@@ -393,7 +394,7 @@ class _BookingScreenState extends State<BookingScreen> {
             border: Border(top: BorderSide(color: theme.colorScheme.outline)),
           ),
           child: PrimaryButton(
-            label: 'إرسال طلب الحجز',
+            label: tr('إرسال طلب الحجز', 'Send booking request'),
             icon: Icons.send_rounded,
             loading: _loading,
             onPressed: _confirm,
@@ -403,19 +404,19 @@ class _BookingScreenState extends State<BookingScreen> {
     );
   }
 
-  String _monthShort(int m) => const [
-        'كانون2',
-        'شباط',
-        'آذار',
-        'نيسان',
-        'أيار',
-        'حزيران',
-        'تموز',
-        'آب',
-        'أيلول',
-        'تشرين1',
-        'تشرين2',
-        'كانون1'
+  String _monthShort(int m) => [
+        tr('كانون2', 'Jan'),
+        tr('شباط', 'Feb'),
+        tr('آذار', 'Mar'),
+        tr('نيسان', 'Apr'),
+        tr('أيار', 'May'),
+        tr('حزيران', 'Jun'),
+        tr('تموز', 'Jul'),
+        tr('آب', 'Aug'),
+        tr('أيلول', 'Sep'),
+        tr('تشرين1', 'Oct'),
+        tr('تشرين2', 'Nov'),
+        tr('كانون1', 'Dec')
       ][m - 1];
 
   static const _slots = [

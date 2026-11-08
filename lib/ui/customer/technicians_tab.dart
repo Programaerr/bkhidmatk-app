@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/language.dart';
 import '../../data/models.dart';
 import '../../data/sections.dart';
 import '../../state/app_state.dart';
@@ -172,7 +173,8 @@ class _TechniciansTabState extends State<TechniciansTab> with RealtimeRefresh<Te
       for (final worker in workers)
         if ((_chosen == null || worker.categoryId == chosenId) &&
             (query.isEmpty ||
-                _searchable('${worker.name} ${worker.specialty} ${names[worker.categoryId] ?? ''}')
+                _searchable('${worker.name} ${worker.specialty} ${names[worker.categoryId] ?? ''} '
+                        '${sectionLabel(names[worker.categoryId] ?? '')}')
                     .contains(query)))
           worker,
     ];
@@ -209,7 +211,7 @@ class _TechniciansTabState extends State<TechniciansTab> with RealtimeRefresh<Te
                   safeTop: safeTop,
                   top: top,
                   builder: (context, metrics) =>
-                      HomeHeader(width: width, metrics: metrics, title: 'كل الحرفيين'),
+                      HomeHeader(width: width, metrics: metrics, title: tr('كل الحرفيين', 'All craftsmen')),
                 ),
               ],
             );
@@ -258,7 +260,7 @@ class _TechniciansTabState extends State<TechniciansTab> with RealtimeRefresh<Te
                   if (i > 0) SizedBox(width: _Design.choiceGap * unit - chromeInset * 2),
                   ChoiceKey(
                     key: _choiceKeys.putIfAbsent(name, GlobalKey.new),
-                    label: name ?? 'الكل',
+                    label: name == null ? tr('الكل', 'All') : sectionLabel(name),
                     selected: name == _chosen,
                     unit: unit,
                     onPressed: () => _choose(name),
@@ -271,15 +273,15 @@ class _TechniciansTabState extends State<TechniciansTab> with RealtimeRefresh<Te
         SizedBox(height: (_Design.gridTop - choicesTop - choicesHeight) * unit),
         if (_failed && _workers == null)
           _Message(
-            text: 'تعذّر جلب الحرفيين. اسحب الصفحة إلى الأسفل لإعادة المحاولة.',
+            text: tr('تعذّر جلب الحرفيين. اسحب الصفحة إلى الأسفل لإعادة المحاولة.', "Couldn't load the craftsmen. Pull the page down to try again."),
             unit: unit,
             night: night,
           )
         else if (shown != null && shown.isEmpty)
-          const EmptyState(
+          EmptyState(
             icon: Icons.search_off_rounded,
-            title: 'لا يوجد حرفيون مطابقون',
-            subtitle: 'جرّب كلمة بحث أخرى أو اختر نوع شغل مختلفاً.',
+            title: tr('لا يوجد حرفيون مطابقون', 'No matching craftsmen'),
+            subtitle: tr('جرّب كلمة بحث أخرى أو اختر نوع شغل مختلفاً.', 'Try another search word or choose a different kind of work.'),
           )
         else
           Center(
@@ -340,7 +342,7 @@ class _TechniciansTabState extends State<TechniciansTab> with RealtimeRefresh<Te
                     enabledBorder: InputBorder.none,
                     focusedBorder: InputBorder.none,
                     contentPadding: EdgeInsets.zero,
-                    hintText: 'ابحث عن حرفي',
+                    hintText: tr('ابحث عن حرفي', 'Search for a craftsman'),
                     hintStyle: textStyle.copyWith(color: ink.withValues(alpha: .55)),
                   ),
                 ),
@@ -348,7 +350,7 @@ class _TechniciansTabState extends State<TechniciansTab> with RealtimeRefresh<Te
               if (_search.text.isNotEmpty)
                 Semantics(
                   button: true,
-                  label: 'مسح البحث',
+                  label: tr('مسح البحث', 'Clear search'),
                   child: GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     onTap: () => setState(_search.clear),

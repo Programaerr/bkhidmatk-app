@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
@@ -531,7 +532,7 @@ Future<bool> confirmAction(
   BuildContext context, {
   required String title,
   required String message,
-  String confirmLabel = 'تأكيد',
+  String? confirmLabel,
   bool danger = false,
 }) async {
   final result = await showDialog<bool>(
@@ -542,13 +543,13 @@ Future<bool> confirmAction(
       actionsAlignment: MainAxisAlignment.start,
       actions: [
         SecondaryButton(
-          label: 'إلغاء',
+          label: tr('إلغاء', 'Cancel'),
           compact: true,
           expand: false,
           onPressed: () => Navigator.pop(ctx, false),
         ),
         PrimaryButton(
-          label: confirmLabel,
+          label: confirmLabel ?? tr('تأكيد', 'Confirm'),
           compact: true,
           expand: false,
           tone: danger ? KeyTone.red : KeyTone.yellow,
@@ -588,7 +589,7 @@ Future<T?> showAppSheet<T>(
                 alignment: AlignmentDirectional.centerEnd,
                 child: PushKeyIconButton(
                   icon: Icons.close_rounded,
-                  label: 'إغلاق',
+                  label: tr('إغلاق', 'Close'),
                   small: true,
                   onPressed: () => Navigator.maybePop(ctx),
                 ),
@@ -840,4 +841,4 @@ class SegmentedTabs extends StatelessWidget {
 
 /// سعر الحجز كما يُعرض: المتفق عليه إن حُدد، وإلا يُقال إنه بالاتفاق.
 String bookingPriceLabel(Booking booking) =>
-    booking.hasPrice ? fmtMoney(booking.total) : 'يُحدد بالاتفاق';
+    booking.hasPrice ? fmtMoney(booking.total) : tr('يُحدد بالاتفاق', 'To be agreed');

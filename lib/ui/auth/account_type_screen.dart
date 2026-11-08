@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../core/language.dart';
 import 'auth_route.dart';
 import 'craftsman_screen.dart';
 import 'privacy_screen.dart';
@@ -121,7 +122,7 @@ class AccountTypeScreen extends StatelessWidget {
                       ),
                       onPressed: () => openAuthPage(context, const PrivacyScreen(), night: night),
                       child: Text(
-                        'سياسة و الخصوصية',
+                        tr('سياسة و الخصوصية', 'Privacy Policy'),
                         style: TextStyle(
                           fontFamily: 'Cairo',
                           fontSize: _Design.privacySize * unit,
@@ -141,7 +142,7 @@ class AccountTypeScreen extends StatelessWidget {
                     children: [
                       Expanded(
                         child: PushKeyButton(
-                          label: 'زبون',
+                          label: tr('زبون', 'Customer'),
                           onPressed: () =>
                               openAuthPage(context, const RegisterScreen(), night: night),
                         ),
@@ -149,7 +150,7 @@ class AccountTypeScreen extends StatelessWidget {
                       SizedBox(width: _Design.keyGap * unit),
                       Expanded(
                         child: PushKeyButton(
-                          label: 'حرفي',
+                          label: tr('حرفي', 'Craftsman'),
                           onPressed: () =>
                               openAuthPage(context, const CraftsmanScreen(), night: night),
                         ),

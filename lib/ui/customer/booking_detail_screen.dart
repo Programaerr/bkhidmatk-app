@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
@@ -64,21 +65,21 @@ class _BookingDetailScreenState extends State<BookingDetailScreen>
     final repo = context.read<AppState>().repo;
     final ok = await confirmAction(
       context,
-      title: 'إلغاء الحجز؟',
-      message: 'هل أنت متأكد من رغبتك بإلغاء هذا الحجز؟',
-      confirmLabel: 'نعم، إلغاء',
+      title: tr('إلغاء الحجز؟', 'Cancel the booking?'),
+      message: tr('هل أنت متأكد من رغبتك بإلغاء هذا الحجز؟', 'Are you sure you want to cancel this booking?'),
+      confirmLabel: tr('نعم، إلغاء', 'Yes, cancel'),
       danger: true,
     );
     if (!ok) return;
     await repo.updateBookingStatus(_booking!.id!, BookingStatus.cancelled);
     if (!mounted) return;
-    AppSnack.show(context, 'تم إلغاء الحجز');
+    AppSnack.show(context, tr('تم إلغاء الحجز', 'The booking was cancelled'));
     _load();
   }
 
   Future<void> _submitRating() async {
     if (_rating < 1) {
-      AppSnack.show(context, 'اختر عدد النجوم أولاً', error: true);
+      AppSnack.show(context, tr('اختر عدد النجوم أولاً', 'Choose the number of stars first'), error: true);
       return;
     }
     setState(() => _ratingBusy = true);
@@ -91,11 +92,11 @@ class _BookingDetailScreenState extends State<BookingDetailScreen>
     if (!mounted) return;
     setState(() => _ratingBusy = false);
     if (success) {
-      AppSnack.show(context, 'شكراً لتقييمك');
+      AppSnack.show(context, tr('شكراً لتقييمك', 'Thanks for your rating'));
       _load();
     } else {
       AppSnack.show(
-          context, 'تعذر حفظ التقييم. تأكد أن الحجز مكتمل ولم تقيّمه مسبقاً.',
+          context, tr('تعذر حفظ التقييم. تأكد أن الحجز مكتمل ولم تقيّمه مسبقاً.', "Couldn't save the rating. Make sure the booking is completed and you haven't rated it before."),
           error: true);
     }
   }
@@ -105,10 +106,10 @@ class _BookingDetailScreenState extends State<BookingDetailScreen>
     try {
       await context.read<AppState>().repo.respondToBookingEdit(_booking!.id!, approve: approve);
       if (mounted) {
-        AppSnack.show(context, approve ? 'وافقتَ على التعديل' : 'وصل رفضك إلى الإدارة');
+        AppSnack.show(context, approve ? tr('وافقتَ على التعديل', 'You approved the change') : tr('وصل رفضك إلى الإدارة', 'Your refusal reached the admin'));
       }
     } catch (_) {
-      if (mounted) AppSnack.show(context, 'تعذر إرسال ردك، حاول مرة أخرى', error: true);
+      if (mounted) AppSnack.show(context, tr('تعذر إرسال ردك، حاول مرة أخرى', "Couldn't send your reply, please try again"), error: true);
     }
     if (mounted) setState(() => _ackBusy = false);
     await _load();
@@ -133,14 +134,14 @@ class _BookingDetailScreenState extends State<BookingDetailScreen>
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  pending ? 'عدّلت الإدارة حجزك' : 'تعديل الإدارة على حجزك',
+                  pending ? tr('عدّلت الإدارة حجزك', 'The admin changed your booking') : tr('تعديل الإدارة على حجزك', "The admin's change to your booking"),
                   style: theme.textTheme.titleSmall?.copyWith(fontSize: 13.5),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 4),
-          Text('تاريخ التعديل: ${fmtDateTime(b.adminEditedAt!)}',
+          Text(tr('تاريخ التعديل: ${fmtDateTime(b.adminEditedAt!)}', 'Changed on: ${fmtDateTime(b.adminEditedAt!)}'),
               style: theme.textTheme.bodySmall),
           if (b.editSummary != null) ...[
             const SizedBox(height: 6),
@@ -148,7 +149,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen>
           ],
           if (b.adminNote != null) ...[
             const SizedBox(height: 4),
-            Text('رسالة الإدارة: ${b.adminNote}', style: theme.textTheme.bodySmall),
+            Text(tr('رسالة الإدارة: ${b.adminNote}', 'Admin message: ${b.adminNote}'), style: theme.textTheme.bodySmall),
           ],
           if (!pending) ...[
             const SizedBox(height: 6),
@@ -160,7 +161,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen>
               children: [
                 Expanded(
                   child: PrimaryButton(
-                    label: 'موافق',
+                    label: tr('موافق', 'Approve'),
                     compact: true,
                     loading: _ackBusy,
                     onPressed: () => _answerEdit(true),
@@ -169,7 +170,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen>
                 const SizedBox(width: 8),
                 Expanded(
                   child: SecondaryButton(
-                    label: 'لا أوافق',
+                    label: tr('لا أوافق', "Don't approve"),
                     compact: true,
                     danger: true,
                     onPressed: _ackBusy ? null : () => _answerEdit(false),
@@ -206,7 +207,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen>
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  alreadyRated ? 'تقييمك لهذا الحجز' : 'قيّم تجربتك مع الفني',
+                  alreadyRated ? tr('تقييمك لهذا الحجز', 'Your rating for this booking') : tr('قيّم تجربتك مع الفني', 'Rate your experience with the technician'),
                   style: theme.textTheme.titleSmall?.copyWith(fontSize: 13.5),
                 ),
               ),
@@ -243,14 +244,14 @@ class _BookingDetailScreenState extends State<BookingDetailScreen>
               controller: _review,
               maxLines: 2,
               maxLength: 200,
-              decoration: const InputDecoration(
-                labelText: 'ملاحظتك عن العمل (اختياري)',
-                hintText: 'اكتب رأيك في جودة الخدمة...',
+              decoration: InputDecoration(
+                labelText: tr('ملاحظتك عن العمل (اختياري)', 'Your note about the work (optional)'),
+                hintText: tr('اكتب رأيك في جودة الخدمة...', 'Write your opinion of the service quality...'),
               ),
             ),
             const SizedBox(height: 12),
             PrimaryButton(
-              label: 'إرسال التقييم',
+              label: tr('إرسال التقييم', 'Send rating'),
               icon: Icons.how_to_reg_rounded,
               loading: _ratingBusy,
               onPressed: _ratingBusy ? null : _submitRating,
@@ -265,23 +266,23 @@ class _BookingDetailScreenState extends State<BookingDetailScreen>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     if (_loading) {
-      return const Scaffold(
-        appBar: PushKeyAppBar(title: 'تفاصيل الحجز'),
+      return Scaffold(
+        appBar: PushKeyAppBar(title: tr('تفاصيل الحجز', 'Booking details')),
         body: Center(child: CircularProgressIndicator()),
       );
     }
     final b = _booking;
     if (b == null) {
       return Scaffold(
-        appBar: const PushKeyAppBar(title: 'تفاصيل الحجز'),
-        body: const EmptyState(
-            icon: Icons.search_off_rounded, title: 'الحجز غير موجود'),
+        appBar: PushKeyAppBar(title: tr('تفاصيل الحجز', 'Booking details')),
+        body: EmptyState(
+            icon: Icons.search_off_rounded, title: tr('الحجز غير موجود', 'Booking not found')),
       );
     }
     final canCancel = b.status == BookingStatus.pending ||
         b.status == BookingStatus.confirmed;
     return Scaffold(
-      appBar: const PushKeyAppBar(title: 'تفاصيل الحجز'),
+      appBar: PushKeyAppBar(title: tr('تفاصيل الحجز', 'Booking details')),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(18, 4, 18, 26),
@@ -293,7 +294,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen>
                   Row(
                     children: [
                       Expanded(
-                        child: Text('حجز #${b.id}',
+                        child: Text(tr('حجز #${b.id}', 'Booking #${b.id}'),
                             style: theme.textTheme.titleSmall
                                 ?.copyWith(fontSize: 12)),
                       ),
@@ -301,11 +302,11 @@ class _BookingDetailScreenState extends State<BookingDetailScreen>
                     ],
                   ),
                   const SizedBox(height: 8),
-                  Text(b.serviceTitle ?? 'خدمة',
+                  Text(b.serviceTitle ?? tr('خدمة', 'Service'),
                       style:
                           theme.textTheme.titleLarge?.copyWith(fontSize: 19)),
                   const SizedBox(height: 4),
-                  Text('تم الإنشاء ${timeAgo(b.createdAt)}',
+                  Text(tr('تم الإنشاء ${timeAgo(b.createdAt)}', 'Created ${timeAgo(b.createdAt)}'),
                       style:
                           theme.textTheme.bodySmall?.copyWith(fontSize: 10.5)),
                   const Padding(
@@ -326,22 +327,22 @@ class _BookingDetailScreenState extends State<BookingDetailScreen>
                 children: [
                   InfoRow(
                     icon: Icons.calendar_month_rounded,
-                    label: 'الموعد',
+                    label: tr('الموعد', 'Appointment'),
                     value:
                         '${fmtDate(b.scheduledAt)} · ${fmtWeekday(b.scheduledAt)}',
                   ),
                   InfoRow(
                       icon: Icons.schedule_rounded,
-                      label: 'الوقت',
+                      label: tr('الوقت', 'Time'),
                       value: fmtSlot(b.slot)),
                   InfoRow(
                       icon: Icons.location_on_outlined,
-                      label: 'العنوان',
+                      label: tr('العنوان', 'Address'),
                       value: b.address),
                   if (b.notes != null && b.notes!.isNotEmpty)
                     InfoRow(
                         icon: Icons.notes_rounded,
-                        label: 'ملاحظات',
+                        label: tr('ملاحظات', 'Notes'),
                         value: b.notes),
                 ],
               ),
@@ -350,19 +351,19 @@ class _BookingDetailScreenState extends State<BookingDetailScreen>
             SoftCard(
               child: Row(
                 children: [
-                  AvatarCircle(name: b.workerName ?? 'فريق جايك', size: 46),
+                  AvatarCircle(name: b.workerName ?? tr('فريق جايك', 'Jaik team'), size: 46),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(b.workerName ?? 'لم يتم تعيين فني بعد',
+                        Text(b.workerName ?? tr('لم يتم تعيين فني بعد', 'No technician assigned yet'),
                             style: theme.textTheme.titleSmall
                                 ?.copyWith(fontSize: 13.5)),
                         Text(
                             b.workerName == null
-                                ? 'الفني المسؤول'
-                                : 'الفني المسؤول · ${WorkerResponse.label(b.workerResponse)}',
+                                ? tr('الفني المسؤول', 'Assigned technician')
+                                : tr('الفني المسؤول · ${WorkerResponse.label(b.workerResponse)}', 'Assigned technician · ${WorkerResponse.label(b.workerResponse)}'),
                             style: theme.textTheme.bodySmall
                                 ?.copyWith(fontSize: 10)),
                       ],
@@ -377,7 +378,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen>
                 children: [
                   Row(
                     children: [
-                      Text('السعر',
+                      Text(tr('السعر', 'Price'),
                           style: theme.textTheme.titleSmall
                               ?.copyWith(fontSize: 13)),
                       const Spacer(),
@@ -389,13 +390,13 @@ class _BookingDetailScreenState extends State<BookingDetailScreen>
                   if (!b.hasPrice) ...[
                     const SizedBox(height: 6),
                     Text(
-                      'يُتفق على السعر مع الإدارة، ثم يُضاف إلى وصلك لتدفعه لاحقاً.',
+                      tr('يُتفق على السعر مع الإدارة، ثم يُضاف إلى وصلك لتدفعه لاحقاً.', 'The price is agreed with the admin, then added to your receipt to pay later.'),
                       style: theme.textTheme.bodySmall,
                     ),
                   ] else if (_receipt != null) ...[
                     const SizedBox(height: 6),
                     Text(
-                      _receipt!.paid ? 'تم دفعه.' : 'أُضيف إلى وصلك ولم يُدفع بعد.',
+                      _receipt!.paid ? tr('تم دفعه.', 'Paid.') : tr('أُضيف إلى وصلك ولم يُدفع بعد.', 'Added to your receipt and not paid yet.'),
                       style: theme.textTheme.bodySmall,
                     ),
                   ],
@@ -426,11 +427,11 @@ class _BookingDetailScreenState extends State<BookingDetailScreen>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('وصل الدفع',
+                          Text(tr('وصل الدفع', 'Payment receipt'),
                               style: theme.textTheme.titleSmall
                                   ?.copyWith(fontSize: 13)),
                           Text(
-                              '${_receipt!.invoiceNo} · ${_receipt!.paid ? 'مدفوع' : 'غير مدفوع'}',
+                              tr('${_receipt!.invoiceNo} · ${_receipt!.paid ? 'مدفوع' : 'غير مدفوع'}', "${_receipt!.invoiceNo} · ${_receipt!.paid ? 'Paid' : 'Unpaid'}"),
                               style: theme.textTheme.bodySmall
                                   ?.copyWith(fontSize: 10)),
                         ],
@@ -440,7 +441,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen>
                       small: true,
                       onTap: () => ReceiptActions.print(context, _receipt!),
                       icon: Icons.print_rounded,
-                      tooltip: 'طباعة',
+                      tooltip: tr('طباعة', 'Print'),
                     ),
                     const SizedBox(width: 4),
                     const Icon(Icons.chevron_right_rounded, size: 20),
@@ -455,7 +456,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen>
             if (canCancel) ...[
               const SizedBox(height: 18),
               SecondaryButton(
-                label: 'إلغاء الحجز',
+                label: tr('إلغاء الحجز', 'Cancel booking'),
                 danger: true,
                 onPressed: _cancel,
               ),
@@ -477,11 +478,11 @@ class _Timeline extends StatelessWidget {
     final theme = Theme.of(context);
     final cancelled = status == BookingStatus.cancelled;
     final steps = [
-      (BookingStatus.pending, 'وصل طلبك إلى الإدارة', Icons.receipt_long_rounded),
-      (BookingStatus.confirmed, 'تم حجزك بموافقة الإدارة', Icons.verified_rounded),
-      (BookingStatus.dispatched, 'الحرفي في الطريق إليك', Icons.local_shipping_rounded),
-      (BookingStatus.inProgress, 'قيد التنفيذ', Icons.engineering_rounded),
-      (BookingStatus.completed, 'مكتمل', Icons.done_all_rounded),
+      (BookingStatus.pending, tr('وصل طلبك إلى الإدارة', 'Your request reached the admin'), Icons.receipt_long_rounded),
+      (BookingStatus.confirmed, tr('تم حجزك بموافقة الإدارة', 'You are booked, approved by the admin'), Icons.verified_rounded),
+      (BookingStatus.dispatched, tr('الحرفي في الطريق إليك', 'The craftsman is on the way to you'), Icons.local_shipping_rounded),
+      (BookingStatus.inProgress, tr('قيد التنفيذ', 'In progress'), Icons.engineering_rounded),
+      (BookingStatus.completed, tr('مكتمل', 'Completed'), Icons.done_all_rounded),
     ];
     final activeIndex = cancelled
         ? 0
@@ -557,7 +558,7 @@ class _Timeline extends StatelessWidget {
                 const Icon(Icons.cancel_rounded,
                     color: AppColors.danger, size: 16),
                 const SizedBox(width: 6),
-                Text('تم إلغاء هذا الحجز',
+                Text(tr('تم إلغاء هذا الحجز', 'This booking was cancelled'),
                     style: theme.textTheme.bodySmall?.copyWith(
                         color: AppColors.danger,
                         fontWeight: FontWeight.w700,

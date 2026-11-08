@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
@@ -53,15 +54,15 @@ class _AdminWorksState extends State<AdminWorks> with RealtimeRefresh<AdminWorks
     if (work.id == null) return;
     final ok = await confirmAction(
       context,
-      title: 'حذف العمل؟',
-      message: 'سيتم حذف «${work.title}» نهائياً مع تعليقاته.',
-      confirmLabel: 'حذف',
+      title: tr('حذف العمل؟', 'Delete the work?'),
+      message: tr('سيتم حذف «${work.title}» نهائياً مع تعليقاته.', '"${work.title}" will be deleted permanently with its comments.'),
+      confirmLabel: tr('حذف', 'Delete'),
       danger: true,
     );
     if (!ok || !mounted) return;
     await context.read<AppState>().repo.deleteWork(work.id!);
     if (mounted) {
-      AppSnack.show(context, 'تم حذف العمل');
+      AppSnack.show(context, tr('تم حذف العمل', 'The work was deleted'));
       _load();
     }
   }
@@ -85,35 +86,35 @@ class _AdminWorksState extends State<AdminWorks> with RealtimeRefresh<AdminWorks
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SheetHeader(
-                  title: work == null ? 'إضافة عمل جديد' : 'تعديل العمل',
-                  subtitle: 'الصق رابط الفيديو (MP4 / رابط مشاهدة)',
+                  title: work == null ? tr('إضافة عمل جديد', 'Add new work') : tr('تعديل العمل', 'Edit work'),
+                  subtitle: tr('الصق رابط الفيديو (MP4 / رابط مشاهدة)', 'Paste the video link (MP4 / watch link)'),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: title,
                   textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(
-                    labelText: 'عنوان العمل',
+                  decoration: InputDecoration(
+                    labelText: tr('عنوان العمل', 'Work title'),
                     prefixIcon: Icon(Icons.title_rounded, size: 20),
                   ),
                   validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'أدخل عنوان العمل' : null,
+                      (v == null || v.trim().isEmpty) ? tr('أدخل عنوان العمل', 'Enter the work title') : null,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: url,
                   textDirection: TextDirection.ltr,
                   keyboardType: TextInputType.url,
-                  decoration: const InputDecoration(
-                    hintText: 'رابط يوتيوب أو فيديو مباشر (mp4)',
-                    labelText: 'رابط الفيديو',
+                  decoration: InputDecoration(
+                    hintText: tr('رابط يوتيوب أو فيديو مباشر (mp4)', 'YouTube link or direct video (mp4)'),
+                    labelText: tr('رابط الفيديو', 'Video link'),
                     prefixIcon: Icon(Icons.link_rounded, size: 20),
                   ),
                   validator: (v) {
                     final t = v?.trim() ?? '';
-                    if (t.isEmpty) return 'أدخل رابط الفيديو';
+                    if (t.isEmpty) return tr('أدخل رابط الفيديو', 'Enter the video link');
                     if (!t.startsWith('http://') && !t.startsWith('https://')) {
-                      return 'الرابط يجب أن يبدأ بـ http';
+                      return tr('الرابط يجب أن يبدأ بـ http', 'The link must start with http');
                     }
                     return null;
                   },
@@ -122,14 +123,14 @@ class _AdminWorksState extends State<AdminWorks> with RealtimeRefresh<AdminWorks
                 TextFormField(
                   controller: description,
                   maxLines: 3,
-                  decoration: const InputDecoration(
-                    labelText: 'وصف (اختياري)',
+                  decoration: InputDecoration(
+                    labelText: tr('وصف (اختياري)', 'Description (optional)'),
                     prefixIcon: Icon(Icons.notes_rounded, size: 20),
                   ),
                 ),
                 const SizedBox(height: 20),
                 PrimaryButton(
-                  label: work == null ? 'إضافة العمل' : 'حفظ التعديلات',
+                  label: work == null ? tr('إضافة العمل', 'Add work') : tr('حفظ التعديلات', 'Save changes'),
                   onPressed: () {
                     if (formKey.currentState?.validate() ?? false) {
                       Navigator.pop(ctx, true);
@@ -166,7 +167,7 @@ class _AdminWorksState extends State<AdminWorks> with RealtimeRefresh<AdminWorks
     description.dispose();
     url.dispose();
     if (!mounted) return;
-    AppSnack.show(context, work == null ? 'تمت إضافة العمل' : 'تم حفظ التعديلات');
+    AppSnack.show(context, work == null ? tr('تمت إضافة العمل', 'The work was added') : tr('تم حفظ التعديلات', 'Changes saved'));
     _load();
   }
 
@@ -176,11 +177,11 @@ class _AdminWorksState extends State<AdminWorks> with RealtimeRefresh<AdminWorks
     return Column(
       children: [
         AdminHeader(
-          title: 'أعمالنا',
-          subtitle: 'نشر فيديوهات الشركة ومتابعة المشاهدات والتفاعل',
+          title: tr('أعمالنا', 'Our work'),
+          subtitle: tr('نشر فيديوهات الشركة ومتابعة المشاهدات والتفاعل', "Publish the company's videos and follow views and engagement"),
           actions: [
             AppIconButton(
-                icon: Icons.add_rounded, tooltip: 'إضافة', onTap: () => _edit()),
+                icon: Icons.add_rounded, tooltip: tr('إضافة', 'Add'), onTap: () => _edit()),
           ],
         ),
         Expanded(
@@ -193,10 +194,10 @@ class _AdminWorksState extends State<AdminWorks> with RealtimeRefresh<AdminWorks
               }
               final works = snapshot.data ?? const <OurWork>[];
               if (works.isEmpty) {
-                return const EmptyState(
+                return EmptyState(
                   icon: Icons.video_library_outlined,
-                  title: 'لا توجد أعمال بعد',
-                  subtitle: 'اضغط (+) لإضافة أول فيديو برابط من لوحة التحكم.',
+                  title: tr('لا توجد أعمال بعد', 'No work yet'),
+                  subtitle: tr('اضغط (+) لإضافة أول فيديو برابط من لوحة التحكم.', 'Tap (+) to add the first video with a link from the dashboard.'),
                 );
               }
               return RefreshIndicator(
@@ -250,13 +251,13 @@ class _AdminWorksState extends State<AdminWorks> with RealtimeRefresh<AdminWorks
                               AppIconButton(
                                 small: true,
                                 icon: Icons.edit_outlined,
-                                tooltip: 'تعديل',
+                                tooltip: tr('تعديل', 'Edit'),
                                 onTap: () => _edit(work: w),
                               ),
                               AppIconButton(
                                 small: true,
                                 icon: Icons.delete_outline_rounded,
-                                tooltip: 'حذف',
+                                tooltip: tr('حذف', 'Delete'),
                                 color: AppColors.danger,
                                 onTap: () => _delete(w),
                               ),
@@ -269,15 +270,15 @@ class _AdminWorksState extends State<AdminWorks> with RealtimeRefresh<AdminWorks
                             children: [
                               _StatLabel(
                                 icon: Icons.visibility_outlined,
-                                label: '${fmtNumber(w.views)} مشاهدة',
+                                label: tr('${fmtNumber(w.views)} مشاهدة', '${fmtNumber(w.views)} views'),
                               ),
                               _StatLabel(
                                 icon: Icons.favorite_outline_rounded,
-                                label: '${fmtNumber(w.likes)} إعجاب',
+                                label: tr('${fmtNumber(w.likes)} إعجاب', '${fmtNumber(w.likes)} likes'),
                               ),
                               _StatLabel(
                                 icon: Icons.mode_comment_outlined,
-                                label: '${fmtNumber(w.commentCount)} تعليق',
+                                label: tr('${fmtNumber(w.commentCount)} تعليق', '${fmtNumber(w.commentCount)} comments'),
                               ),
                               _StatLabel(
                                 icon: Icons.schedule_rounded,
@@ -294,7 +295,7 @@ class _AdminWorksState extends State<AdminWorks> with RealtimeRefresh<AdminWorks
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                w.active ? 'ظاهر للزبائن' : 'مخفي',
+                                w.active ? tr('ظاهر للزبائن', 'Visible to customers') : tr('مخفي', 'Hidden'),
                                 style: theme.textTheme.bodySmall
                                     ?.copyWith(fontSize: 10.5),
                               ),

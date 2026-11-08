@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/language.dart';
 import '../../core/utils.dart';
 import '../../data/supabase_services.dart';
 import '../../state/app_state.dart';
@@ -37,7 +38,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final ground = theme.brightness == Brightness.dark ? homeNightGround : homeCream;
     return Scaffold(
       backgroundColor: ground,
-      appBar: PushKeyAppBar(title: 'الإشعارات', backgroundColor: ground),
+      appBar: PushKeyAppBar(title: tr('الإشعارات', 'Notifications'), backgroundColor: ground),
       body: FutureBuilder<List<AppNotification>>(
         future: _notifications,
         builder: (context, snapshot) {
@@ -45,18 +46,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
           }
           if (snapshot.hasError) {
-            return const EmptyState(
+            return EmptyState(
               icon: Icons.cloud_off_rounded,
-              title: 'تعذّر جلب الإشعارات',
-              subtitle: 'تحقق من الاتصال بالإنترنت ثم حاول مرة أخرى.',
+              title: tr('تعذّر جلب الإشعارات', "Couldn't load notifications"),
+              subtitle: tr('تحقق من الاتصال بالإنترنت ثم حاول مرة أخرى.', 'Check your internet connection and try again.'),
             );
           }
           final notifications = snapshot.data ?? const <AppNotification>[];
           if (notifications.isEmpty) {
-            return const EmptyState(
+            return EmptyState(
               icon: Icons.notifications_none_rounded,
-              title: 'لا توجد إشعارات',
-              subtitle: 'ستظهر هنا الإشعارات عند وصولها.',
+              title: tr('لا توجد إشعارات', 'No notifications'),
+              subtitle: tr('ستظهر هنا الإشعارات عند وصولها.', 'Notifications will appear here when they arrive.'),
             );
           }
           return ListView.separated(

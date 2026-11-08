@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
@@ -56,12 +57,12 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
     return Column(
       children: [
         AdminHeader(
-          title: 'المزيد',
-          subtitle: 'الزبائن والتوظيف والإعدادات',
+          title: tr('المزيد', 'More'),
+          subtitle: tr('الزبائن والتوظيف والإعدادات', 'Customers, hiring and settings'),
           actions: [
             AppIconButton(
               icon: Icons.refresh_rounded,
-              tooltip: 'تحديث',
+              tooltip: tr('تحديث', 'Refresh'),
               onTap: _load,
             ),
           ],
@@ -106,8 +107,8 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
                               color: AppColors.gold,
                               borderRadius: BorderRadius.circular(100),
                             ),
-                            child: const Text(
-                              'صلاحيات كاملة',
+                            child: Text(
+                              tr('صلاحيات كاملة', 'Full permissions'),
                               style: TextStyle(
                                 fontSize: 8.5,
                                 fontWeight: FontWeight.w900,
@@ -132,7 +133,7 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
                                 fontWeight: FontWeight.w900,
                               ),
                             ),
-                            const Text('زبون',
+                            Text(tr('زبون', 'Customer'),
                                 style:
                                     TextStyle(color: Colors.white54, fontSize: 9)),
                           ],
@@ -143,15 +144,15 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
                 ),
               ),
               const SizedBox(height: 16),
-              const SectionHeader(title: 'إدارة التطبيق'),
+              SectionHeader(title: tr('إدارة التطبيق', 'App management')),
               SoftCard(
                 padding: EdgeInsets.zero,
                 child: Column(
                   children: [
                     _Tile(
                       icon: Icons.people_alt_rounded,
-                      title: 'الزبائن',
-                      subtitle: 'عرض الحسابات والتواصل معهم',
+                      title: tr('الزبائن', 'Customers'),
+                      subtitle: tr('عرض الحسابات والتواصل معهم', 'View accounts and contact them'),
                       onTap: () => Navigator.push(
                         context,
                         QuickRoute(builder: (_) => const AdminCustomersScreen()),
@@ -160,8 +161,8 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
                     const Divider(height: 1),
                     _Tile(
                       icon: Icons.forum_rounded,
-                      title: 'الرسائل',
-                      subtitle: 'محادثات الزبائن والدعم',
+                      title: tr('الرسائل', 'Messages'),
+                      subtitle: tr('محادثات الزبائن والدعم', 'Customer chats and support'),
                       onTap: () => Navigator.push(
                         context,
                         QuickRoute(builder: (_) => const AdminThreadsScreen()),
@@ -170,8 +171,8 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
                     const Divider(height: 1),
                     _Tile(
                       icon: Icons.receipt_long_rounded,
-                      title: 'الوصولات',
-                      subtitle: 'كل وصولات الدفع القابلة للطباعة',
+                      title: tr('الوصولات', 'Receipts'),
+                      subtitle: tr('كل وصولات الدفع القابلة للطباعة', 'All printable payment receipts'),
                       onTap: () => Navigator.push(
                         context,
                         QuickRoute(
@@ -181,8 +182,8 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
                     const Divider(height: 1),
                     _Tile(
                       icon: Icons.person_add_alt_1_rounded,
-                      title: 'التوظيف',
-                      subtitle: 'إضافة أرقام موظفين ومتابعة التسجيل',
+                      title: tr('التوظيف', 'Hiring'),
+                      subtitle: tr('إضافة أرقام موظفين ومتابعة التسجيل', 'Add employee numbers and follow sign-ups'),
                       onTap: () => Navigator.push(
                         context,
                         QuickRoute(builder: (_) => const AdminHiresScreen()),
@@ -191,8 +192,8 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
                     const Divider(height: 1),
                     _Tile(
                       icon: Icons.assignment_ind_outlined,
-                      title: 'طلبات الحرفيين',
-                      subtitle: 'قراءة معلومات المتقدمين وقبولهم أو رفضهم',
+                      title: tr('طلبات الحرفيين', 'Craftsman applications'),
+                      subtitle: tr('قراءة معلومات المتقدمين وقبولهم أو رفضهم', 'Read applicant details and accept or reject them'),
                       onTap: () => Navigator.push(
                         context,
                         QuickRoute(builder: (_) => const AdminApplicationsScreen()),
@@ -202,37 +203,37 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
                 ),
               ),
               const SizedBox(height: 14),
-              const SectionHeader(title: 'الإعدادات'),
+              SectionHeader(title: tr('الإعدادات', 'Settings')),
               SoftCard(
                 padding: EdgeInsets.zero,
                 child: Column(
                   children: [
                     _Tile(
                       icon: Icons.link_rounded,
-                      title: 'روابط التواصل',
-                      subtitle: 'تحديد روابط فيسبوك وإنستغرام وتيك توك',
+                      title: tr('روابط التواصل', 'Social links'),
+                      subtitle: tr('تحديد روابط فيسبوك وإنستغرام وتيك توك', 'Set the Facebook, Instagram and TikTok links'),
                       onTap: _editSocialLinks,
                     ),
                     const Divider(height: 1),
                     _Tile(
                       icon: Icons.support_agent_rounded,
-                      title: 'بيانات الدعم',
-                      subtitle: 'رقم الدعم الظاهر للزبائن في الوصولات',
+                      title: tr('بيانات الدعم', 'Support details'),
+                      subtitle: tr('رقم الدعم الظاهر للزبائن في الوصولات', 'The support number customers see on receipts'),
                       onTap: () => _editSupportPhone(context),
                     ),
                     const Divider(height: 1),
                     _Tile(
                       icon: Icons.restart_alt_rounded,
-                      title: 'إعادة ضبط البيانات التجريبية',
-                      subtitle: 'حذف كل التعديلات والعودة لبيانات البداية',
+                      title: tr('إعادة ضبط البيانات التجريبية', 'Reset demo data'),
+                      subtitle: tr('حذف كل التعديلات والعودة لبيانات البداية', 'Delete all changes and go back to the starting data'),
                       danger: true,
                       onTap: () async {
                         final ok = await confirmAction(
                           context,
-                          title: 'إعادة الضبط؟',
+                          title: tr('إعادة الضبط؟', 'Reset?'),
                           message:
-                              'سيتم حذف كل الحجوزات والأعمال والزبائن الذين أنشأتهم، والعودة للبيانات التجريبية الأصلية.',
-                          confirmLabel: 'إعادة الضبط',
+                              tr('سيتم حذف كل الحجوزات والأعمال والزبائن الذين أنشأتهم، والعودة للبيانات التجريبية الأصلية.', 'All bookings, works and customers you created will be deleted, and the original demo data restored.'),
+                          confirmLabel: tr('إعادة الضبط', 'Reset'),
                           danger: true,
                         );
                         if (!ok) return;
@@ -248,16 +249,16 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
                 padding: EdgeInsets.zero,
                 child: _Tile(
                   icon: Icons.info_outline_rounded,
-                  title: 'عن جايك',
-                  subtitle: 'الإصدار 1.0.0 · Jaik',
+                  title: tr('عن جايك', 'About Jaik'),
+                  subtitle: tr('الإصدار 1.0.0 · Jaik', 'Version 1.0.0 · Jaik'),
                   onTap: () => showAboutDialog(
                     context: context,
-                    applicationName: 'جايك',
+                    applicationName: tr('جايك', 'Jaik'),
                     applicationVersion: '1.0.0',
                     applicationIcon: const BrandLogo(size: 56, radius: 16),
-                    children: const [
+                    children: [
                       Text(
-                        'منصة الخدمات المنزلية الأولى في العراق: حجز عمال موثوقين، دفع بماستركارد، ووصولات إلكترونية قابلة للطباعة.',
+                        tr('منصة الخدمات المنزلية الأولى في العراق: حجز عمال موثوقين، دفع بماستركارد، ووصولات إلكترونية قابلة للطباعة.', "Iraq's first home services platform: book trusted workers, pay by Mastercard, and get printable electronic receipts."),
                         style: TextStyle(fontSize: 12, height: 1.8),
                       ),
                     ],
@@ -266,7 +267,7 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
               ),
               const SizedBox(height: 14),
               Center(
-                child: Text('جايك · لوحة الإدارة',
+                child: Text(tr('جايك · لوحة الإدارة', 'Jaik · Admin panel'),
                     style: theme.textTheme.bodySmall?.copyWith(fontSize: 10)),
               ),
             ],
@@ -289,9 +290,9 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SheetHeader(
-              title: 'رقم الدعم',
-              subtitle: 'يظهر في صفحة الدعم ووصولات الدفع',
+            SheetHeader(
+              title: tr('رقم الدعم', 'Support number'),
+              subtitle: tr('يظهر في صفحة الدعم ووصولات الدفع', 'Shown on the support page and payment receipts'),
             ),
             const SizedBox(height: 16),
             TextField(
@@ -305,7 +306,7 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
             ),
             const SizedBox(height: 18),
             PrimaryButton(
-              label: 'حفظ',
+              label: tr('حفظ', 'Save'),
               onPressed: () => Navigator.pop(ctx, true),
             ),
           ],
@@ -314,7 +315,7 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
     );
     if (saved == true && validIraqiPhone(controller.text)) {
       await repo.setSetting('admin_phone', normalizePhone(controller.text));
-      if (context.mounted) AppSnack.show(context, 'تم تحديث رقم الدعم');
+      if (context.mounted) AppSnack.show(context, tr('تم تحديث رقم الدعم', 'The support number was updated'));
     }
     controller.dispose();
   }
@@ -345,16 +346,16 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SheetHeader(
-                  title: 'روابط التواصل',
+                SheetHeader(
+                  title: tr('روابط التواصل', 'Social links'),
                   subtitle:
-                      'تظهر الأيقونات في صفحة تسجيل الدخول. اترك الرابط فارغاً لإيقافه.',
+                      tr('تظهر الأيقونات في صفحة تسجيل الدخول. اترك الرابط فارغاً لإيقافه.', 'The icons appear on the login page. Leave a link empty to turn it off.'),
                 ),
                 const SizedBox(height: 16),
                 for (final (index, label) in [
-                  'فيسبوك',
-                  'إنستغرام',
-                  'تيك توك',
+                  tr('فيسبوك', 'Facebook'),
+                  tr('إنستغرام', 'Instagram'),
+                  tr('تيك توك', 'TikTok'),
                 ].indexed) ...[
                   TextFormField(
                     controller: controllers[index],
@@ -367,7 +368,7 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
                     ),
                     validator: (value) =>
                         _normalizeSocialUrl(value ?? '') == null
-                            ? 'أدخل رابطاً صحيحاً يبدأ بـ https://'
+                            ? tr('أدخل رابطاً صحيحاً يبدأ بـ https://', 'Enter a valid link starting with https://')
                             : null,
                   ),
                   if (index < controllers.length - 1)
@@ -375,7 +376,7 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
                 ],
                 const SizedBox(height: 18),
                 PrimaryButton(
-                  label: 'حفظ الروابط',
+                  label: tr('حفظ الروابط', 'Save links'),
                   icon: Icons.save_outlined,
                   onPressed: () {
                     if (formKey.currentState!.validate()) {
@@ -398,12 +399,12 @@ class _AdminMoreState extends State<AdminMore> with RealtimeRefresh<AdminMore> {
             _normalizeSocialUrl(controllers[i].text) ?? '',
           );
         }
-        if (mounted) AppSnack.show(context, 'تم حفظ روابط التواصل');
+        if (mounted) AppSnack.show(context, tr('تم حفظ روابط التواصل', 'Social links saved'));
       } catch (error, stackTrace) {
         debugPrint('Failed to save social links: $error');
         debugPrintStack(stackTrace: stackTrace);
         if (mounted) {
-          AppSnack.show(context, 'تعذر حفظ الروابط. حاول مرة أخرى.',
+          AppSnack.show(context, tr('تعذر حفظ الروابط. حاول مرة أخرى.', "Couldn't save the links. Try again."),
               error: true);
         }
       }
@@ -511,7 +512,7 @@ class _AdminCustomersScreenState extends State<AdminCustomersScreen>
 
   Future<void> _call(String phone) async {
     if (!await launchUrl(Uri.parse('tel:${phoneForCall(phone)}'))) {
-      if (mounted) AppSnack.show(context, 'تعذر فتح تطبيق الاتصال', error: true);
+      if (mounted) AppSnack.show(context, tr('تعذر فتح تطبيق الاتصال', "Couldn't open the phone app"), error: true);
     }
   }
 
@@ -519,7 +520,7 @@ class _AdminCustomersScreenState extends State<AdminCustomersScreen>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: const PushKeyAppBar(title: 'الزبائن'),
+      appBar: PushKeyAppBar(title: tr('الزبائن', 'Customers')),
       body: SafeArea(
         child: Column(
           children: [
@@ -531,8 +532,8 @@ class _AdminCustomersScreenState extends State<AdminCustomersScreen>
                   _query = v;
                   _load();
                 },
-                decoration: const InputDecoration(
-                  hintText: 'ابحث بالاسم أو رقم الهاتف...',
+                decoration: InputDecoration(
+                  hintText: tr('ابحث بالاسم أو رقم الهاتف...', 'Search by name or phone number...'),
                   prefixIcon: Icon(Icons.search_rounded, size: 21),
                 ),
               ),
@@ -547,10 +548,10 @@ class _AdminCustomersScreenState extends State<AdminCustomersScreen>
                   }
                   final users = snapshot.data ?? const <AppUser>[];
                   if (users.isEmpty) {
-                    return const EmptyState(
+                    return EmptyState(
                       icon: Icons.people_outline_rounded,
-                      title: 'لا يوجد زبائن',
-                      subtitle: 'سيظهر هنا كل زبون ينشئ حساباً في التطبيق.',
+                      title: tr('لا يوجد زبائن', 'No customers'),
+                      subtitle: tr('سيظهر هنا كل زبون ينشئ حساباً في التطبيق.', 'Every customer who creates an account in the app will appear here.'),
                     );
                   }
                   return ListView.separated(
@@ -581,7 +582,7 @@ class _AdminCustomersScreenState extends State<AdminCustomersScreen>
                                         ?.copyWith(fontSize: 10.5),
                                   ),
                                   Text(
-                                    '${u.city ?? 'العراق'} · ${fmtDateShort(u.createdAt)}',
+                                    tr('${u.city ?? 'العراق'} · ${fmtDateShort(u.createdAt)}', "${u.city == null ? 'Iraq' : cityLabel(u.city!)} · ${fmtDateShort(u.createdAt)}"),
                                     style: theme.textTheme.bodySmall
                                         ?.copyWith(fontSize: 9.5),
                                   ),
@@ -592,7 +593,7 @@ class _AdminCustomersScreenState extends State<AdminCustomersScreen>
                               small: true,
                               onTap: () => _call(u.phone),
                               icon: Icons.call_outlined,
-                              tooltip: 'اتصال',
+                              tooltip: tr('اتصال', 'Call'),
                             ),
                             AppIconButton(
                               small: true,
@@ -607,7 +608,7 @@ class _AdminCustomersScreenState extends State<AdminCustomersScreen>
                                 ),
                               ),
                               icon: Icons.chat_bubble_outline_rounded,
-                              tooltip: 'محادثة',
+                              tooltip: tr('محادثة', 'Chat'),
                             ),
                           ],
                         ),

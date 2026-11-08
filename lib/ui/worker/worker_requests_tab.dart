@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/language.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
@@ -63,9 +64,9 @@ class _WorkerRequestsTabState extends State<WorkerRequestsTab>
     if (!accept) {
       final ok = await confirmAction(
         context,
-        title: 'الاعتذار عن الحجز؟',
-        message: 'سيصل اعتذارك إلى الإدارة لتعيّن حرفياً آخر.',
-        confirmLabel: 'اعتذار',
+        title: tr('الاعتذار عن الحجز؟', 'Decline the booking?'),
+        message: tr('سيصل اعتذارك إلى الإدارة لتعيّن حرفياً آخر.', 'Your apology will reach the admin so they can assign another craftsman.'),
+        confirmLabel: tr('اعتذار', 'Decline'),
         danger: true,
       );
       if (!ok || !mounted) return;
@@ -74,9 +75,9 @@ class _WorkerRequestsTabState extends State<WorkerRequestsTab>
     try {
       await context.read<AppState>().repo.respondToBooking(booking.id!, accept: accept);
       if (!mounted) return;
-      AppSnack.show(context, accept ? 'تم تأكيد قبولك للحجز' : 'وصل اعتذارك إلى الإدارة');
+      AppSnack.show(context, accept ? tr('تم تأكيد قبولك للحجز', 'Your acceptance of the booking is confirmed') : tr('وصل اعتذارك إلى الإدارة', 'Your apology reached the admin'));
     } catch (_) {
-      if (mounted) AppSnack.show(context, 'تعذر إرسال ردك، حاول مرة أخرى', error: true);
+      if (mounted) AppSnack.show(context, tr('تعذر إرسال ردك، حاول مرة أخرى', "Couldn't send your reply, please try again"), error: true);
     }
     if (mounted) {
       setState(() => _answering = null);
@@ -86,7 +87,7 @@ class _WorkerRequestsTabState extends State<WorkerRequestsTab>
 
   Future<void> _call(String phone) async {
     if (!await launchUrl(Uri.parse('tel:${phoneForCall(phone)}')) && mounted) {
-      AppSnack.show(context, 'تعذر فتح تطبيق الاتصال', error: true);
+      AppSnack.show(context, tr('تعذر فتح تطبيق الاتصال', "Couldn't open the phone app"), error: true);
     }
   }
 
@@ -128,7 +129,7 @@ class _WorkerRequestsTabState extends State<WorkerRequestsTab>
                   builder: (context, metrics) => Stack(
                     fit: StackFit.expand,
                     children: [
-                      HomeHeader(width: width, metrics: metrics, title: 'طلبات الحجز'),
+                      HomeHeader(width: width, metrics: metrics, title: tr('طلبات الحجز', 'Booking requests')),
                       Positioned(
                         left: left + 14,
                         top: metrics.centerY(61.5) - 24,
@@ -136,7 +137,7 @@ class _WorkerRequestsTabState extends State<WorkerRequestsTab>
                           scale: metrics.scale,
                           child: AppIconButton(
                             icon: Icons.notifications_none_rounded,
-                            tooltip: 'الإشعارات',
+                            tooltip: tr('الإشعارات', 'Notifications'),
                             onTap: () => Navigator.push(
                               context,
                               QuickRoute(builder: (_) => const NotificationsScreen()),
@@ -176,10 +177,10 @@ class _WorkerRequestsTabState extends State<WorkerRequestsTab>
         children: [
           EmptyState(
             icon: snapshot.hasError ? Icons.cloud_off_rounded : Icons.assignment_outlined,
-            title: snapshot.hasError ? 'تعذّر جلب الطلبات' : 'لا توجد طلبات بعد',
+            title: snapshot.hasError ? tr('تعذّر جلب الطلبات', "Couldn't load the requests") : tr('لا توجد طلبات بعد', 'No requests yet'),
             subtitle: snapshot.hasError
-                ? 'تأكد من الاتصال، وأن رقم حسابك مضاف حرفياً عند الإدارة، ثم اسحب للتحديث.'
-                : 'عندما يطلب زبون حجزاً باسمك يظهر هنا.',
+                ? tr('تأكد من الاتصال، وأن رقم حسابك مضاف حرفياً عند الإدارة، ثم اسحب للتحديث.', 'Check the connection and that your account number is added as a craftsman by the admin, then pull to refresh.')
+                : tr('عندما يطلب زبون حجزاً باسمك يظهر هنا.', 'When a customer books you, it shows up here.'),
           ),
         ],
       );
@@ -228,7 +229,7 @@ class _RequestCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  b.serviceTitle ?? 'خدمة',
+                  b.serviceTitle ?? tr('خدمة', 'Service'),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.titleSmall?.copyWith(fontSize: 14),
@@ -238,13 +239,13 @@ class _RequestCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 6),
-          Text('الزبون: ${b.customerName ?? 'زبون'}', style: theme.textTheme.bodyMedium),
+          Text(tr('الزبون: ${b.customerName ?? 'زبون'}', "Customer: ${b.customerName ?? 'Customer'}"), style: theme.textTheme.bodyMedium),
           Text(
             '${fmtDate(b.scheduledAt)} · ${fmtSlot(b.slot)}',
             style: theme.textTheme.bodySmall,
           ),
           if (b.notes != null && b.notes!.isNotEmpty)
-            Text('ملاحظات: ${b.notes}', style: theme.textTheme.bodySmall),
+            Text(tr('ملاحظات: ${b.notes}', 'Notes: ${b.notes}'), style: theme.textTheme.bodySmall),
           const Divider(height: 22),
           if (b.sentToCustomer) ...[
             Row(
@@ -253,7 +254,7 @@ class _RequestCard extends StatelessWidget {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    b.address.isEmpty ? 'العنوان عند الإدارة' : b.address,
+                    b.address.isEmpty ? tr('العنوان عند الإدارة', 'The address is with the admin') : b.address,
                     style: theme.textTheme.bodyMedium,
                   ),
                 ),
@@ -262,17 +263,17 @@ class _RequestCard extends StatelessWidget {
             if (phone != null && phone.isNotEmpty) ...[
               const SizedBox(height: 10),
               SecondaryButton(
-                label: 'اتصال بالزبون',
+                label: tr('اتصال بالزبون', 'Call the customer'),
                 icon: Icons.call_outlined,
                 compact: true,
                 onPressed: () => onCall(phone),
               ),
             ],
           ] else if (b.status == BookingStatus.cancelled) ...[
-            Text('أُلغي هذا الحجز.', style: theme.textTheme.bodySmall),
+            Text(tr('أُلغي هذا الحجز.', 'This booking was cancelled.'), style: theme.textTheme.bodySmall),
           ] else if (canAnswer) ...[
             Text(
-              'الزبون طلبك لهذا الحجز. أكّد قبولك أو اعتذر، وستظهر لك بياناته بعد أن ترسلك الإدارة.',
+              tr('الزبون طلبك لهذا الحجز. أكّد قبولك أو اعتذر، وستظهر لك بياناته بعد أن ترسلك الإدارة.', 'The customer asked for you for this booking. Confirm or decline, and their details will appear after the admin sends you.'),
               style: theme.textTheme.bodySmall,
             ),
             const SizedBox(height: 8),
@@ -280,7 +281,7 @@ class _RequestCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: PrimaryButton(
-                    label: 'موافق',
+                    label: tr('موافق', 'Accept'),
                     compact: true,
                     loading: busy,
                     onPressed: () => onRespond(true),
@@ -289,7 +290,7 @@ class _RequestCard extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: SecondaryButton(
-                    label: 'اعتذار',
+                    label: tr('اعتذار', 'Decline'),
                     compact: true,
                     danger: true,
                     onPressed: busy ? null : () => onRespond(false),
@@ -300,8 +301,8 @@ class _RequestCard extends StatelessWidget {
           ] else
             Text(
               b.workerResponse == WorkerResponse.declined
-                  ? 'اعتذرت عن هذا الحجز.'
-                  : 'أكّدت قبولك. بانتظار أن ترسلك الإدارة إلى الزبون.',
+                  ? tr('اعتذرت عن هذا الحجز.', 'You declined this booking.')
+                  : tr('أكّدت قبولك. بانتظار أن ترسلك الإدارة إلى الزبون.', 'You confirmed. Waiting for the admin to send you to the customer.'),
               style: theme.textTheme.bodySmall,
             ),
         ],

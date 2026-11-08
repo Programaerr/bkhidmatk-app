@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
+import '../../core/language.dart';
 import '../../data/youtube_stream.dart';
 
 import '../../core/theme.dart';
@@ -194,7 +195,7 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
       debugPrintStack(stackTrace: stackTrace);
       if (mounted) {
         setState(() => _work = previous);
-        AppSnack.show(context, 'تعذر تسجيل الإعجاب', error: true);
+        AppSnack.show(context, tr('تعذر تسجيل الإعجاب', "Couldn't register the like"), error: true);
       }
     }
   }
@@ -221,7 +222,7 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
 
   Future<void> _share() async {
     await Clipboard.setData(ClipboardData(text: _work.videoUrl));
-    if (mounted) AppSnack.show(context, 'تم نسخ رابط الفيديو');
+    if (mounted) AppSnack.show(context, tr('تم نسخ رابط الفيديو', 'Video link copied'));
   }
 
   /// يعيد محاولة تشغيل الفيديو بعد فشله.
@@ -365,14 +366,14 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
             const SizedBox(height: 8),
             Text(
               kIsWeb && youtubeIdOf(_work.videoUrl) != null
-                  ? 'روابط يوتيوب تُشغَّل داخل التطبيق على الهاتف، والمتصفح يمنع ذلك. استعمل رابط فيديو مباشر (mp4) للتجربة هنا.'
-                  : 'تعذر تشغيل الفيديو داخل التطبيق',
+                  ? tr('روابط يوتيوب تُشغَّل داخل التطبيق على الهاتف، والمتصفح يمنع ذلك. استعمل رابط فيديو مباشر (mp4) للتجربة هنا.', 'YouTube links play inside the app on the phone, and the browser blocks that. Use a direct video link (mp4) to test here.')
+                  : tr('تعذر تشغيل الفيديو داخل التطبيق', "Couldn't play the video inside the app"),
               textAlign: TextAlign.center,
               style: const TextStyle(color: Colors.white, fontSize: 13),
             ),
             const SizedBox(height: 8),
             SecondaryButton(
-              label: 'إعادة المحاولة',
+              label: tr('إعادة المحاولة', 'Try again'),
               icon: Icons.refresh_rounded,
               compact: true,
               expand: false,
@@ -411,7 +412,7 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
         const SizedBox(height: 18),
         _ReelAction(
           icon: const ReelGlyph(ReelGlyphShape.share),
-          label: 'مشاركة',
+          label: tr('مشاركة', 'Share'),
           onTap: _share,
         ),
       ],
@@ -451,8 +452,8 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
               ),
             ),
             const SizedBox(width: 9),
-            const Text(
-              'جايك',
+            Text(
+              tr('جايك', 'Jaik'),
               maxLines: 1,
               style: TextStyle(
                 color: Colors.white,
@@ -882,7 +883,7 @@ class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
     } catch (error, stackTrace) {
       debugPrint('Failed to react to work comment: $error');
       debugPrintStack(stackTrace: stackTrace);
-      if (mounted) AppSnack.show(context, 'تعذر تسجيل التفاعل', error: true);
+      if (mounted) AppSnack.show(context, tr('تعذر تسجيل التفاعل', "Couldn't register the reaction"), error: true);
     }
   }
 
@@ -897,7 +898,7 @@ class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
     } catch (error, stackTrace) {
       debugPrint('Failed to heart work comment: $error');
       debugPrintStack(stackTrace: stackTrace);
-      if (mounted) AppSnack.show(context, 'تعذر وضع القلب', error: true);
+      if (mounted) AppSnack.show(context, tr('تعذر وضع القلب', "Couldn't add the heart"), error: true);
     }
   }
 
@@ -908,25 +909,25 @@ class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
     final body = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('تعديل التعليق'),
+        title: Text(tr('تعديل التعليق', 'Edit comment')),
         content: TextField(
           controller: controller,
           autofocus: true,
           minLines: 1,
           maxLines: 5,
           maxLength: 2000,
-          decoration: const InputDecoration(hintText: 'اكتب تعليقك'),
+          decoration: InputDecoration(hintText: tr('اكتب تعليقك', 'Write your comment')),
         ),
         actionsAlignment: MainAxisAlignment.start,
         actions: [
           SecondaryButton(
-            label: 'إلغاء',
+            label: tr('إلغاء', 'Cancel'),
             compact: true,
             expand: false,
             onPressed: () => Navigator.pop(context),
           ),
           PrimaryButton(
-            label: 'حفظ',
+            label: tr('حفظ', 'Save'),
             compact: true,
             expand: false,
             onPressed: () => Navigator.pop(context, controller.text.trim()),
@@ -947,7 +948,7 @@ class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
     } catch (error, stackTrace) {
       debugPrint('Failed to edit work comment: $error');
       debugPrintStack(stackTrace: stackTrace);
-      if (mounted) AppSnack.show(context, 'تعذر تعديل التعليق', error: true);
+      if (mounted) AppSnack.show(context, tr('تعذر تعديل التعليق', "Couldn't edit the comment"), error: true);
     }
   }
 
@@ -995,7 +996,7 @@ class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
     } catch (error, stackTrace) {
       debugPrint('Failed to add work comment: $error');
       debugPrintStack(stackTrace: stackTrace);
-      if (mounted) AppSnack.show(context, 'تعذر إرسال التعليق', error: true);
+      if (mounted) AppSnack.show(context, tr('تعذر إرسال التعليق', "Couldn't send the comment"), error: true);
     } finally {
       if (mounted) setState(() => _sending = false);
     }
@@ -1063,7 +1064,7 @@ class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
               children: [
                 Expanded(
                   child: Text(
-                    'التعليقات',
+                    tr('التعليقات', 'Comments'),
                     style: theme.textTheme.titleMedium
                         ?.copyWith(fontWeight: FontWeight.w900),
                   ),
@@ -1072,7 +1073,7 @@ class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
                   small: true,
                   onTap: () => Navigator.pop(context),
                   icon: Icons.close_rounded,
-                  tooltip: 'إغلاق',
+                  tooltip: tr('إغلاق', 'Close'),
                 ),
               ],
             ),
@@ -1099,7 +1100,7 @@ class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
                               children: [
                                 Expanded(
                                   child: Text(
-                                    'الرد على ${_replyTo!.userName}',
+                                    tr('الرد على ${_replyTo!.userName}', 'Replying to ${_replyTo!.userName}'),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: theme.textTheme.bodySmall,
@@ -1109,7 +1110,7 @@ class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
                                   small: true,
                                   onTap: () => setState(() => _replyTo = null),
                                   icon: Icons.close_rounded,
-                                  tooltip: 'إلغاء الرد',
+                                  tooltip: tr('إلغاء الرد', 'Cancel reply'),
                                 ),
                               ],
                             ),
@@ -1120,8 +1121,8 @@ class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
                           maxLines: 3,
                           decoration: InputDecoration(
                             hintText: _replyTo == null
-                                ? 'اكتب تعليقاً...'
-                                : 'اكتب ردك...',
+                                ? tr('اكتب تعليقاً...', 'Write a comment...')
+                                : tr('اكتب ردك...', 'Write your reply...'),
                             isDense: true,
                           ),
                           onSubmitted: (_) => _send(),
@@ -1133,7 +1134,7 @@ class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
                   AppIconButton(
                     onTap: _sending ? null : _send,
                     icon: Icons.send_rounded,
-                    tooltip: 'إرسال',
+                    tooltip: tr('إرسال', 'Send'),
                   ),
                 ],
               ),
@@ -1150,14 +1151,14 @@ class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
       return const Center(child: CircularProgressIndicator(strokeWidth: 2));
     }
     if (_loadError != null && comments.isEmpty) {
-      return const Center(child: Text('تعذر تحميل التعليقات'));
+      return Center(child: Text(tr('تعذر تحميل التعليقات', "Couldn't load the comments")));
     }
     if (_loadError != null) {
       return Column(
         children: [
-          const Padding(
+          Padding(
             padding: EdgeInsets.all(8),
-            child: Text('تعذر تحديث بعض التعليقات'),
+            child: Text(tr('تعذر تحديث بعض التعليقات', "Couldn't refresh some comments")),
           ),
           Expanded(child: _commentList(comments, state)),
         ],
@@ -1165,8 +1166,8 @@ class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
     }
     if (_loadingComments) return _commentList(comments, state);
     if (comments.isEmpty) {
-      return const Center(
-        child: Text('لا توجد تعليقات بعد. كن أول من يعلّق!'),
+      return Center(
+        child: Text(tr('لا توجد تعليقات بعد. كن أول من يعلّق!', 'No comments yet. Be the first to comment!')),
       );
     }
     return _commentList(comments, state);
@@ -1249,7 +1250,7 @@ class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
                         ),
                         _commentAction(
                           icon: Icons.reply_rounded,
-                          label: 'رد',
+                          label: tr('رد', 'Reply'),
                           onPressed: () => _replyToComment(comment),
                         ),
                         if (state.isAdmin)
@@ -1258,14 +1259,14 @@ class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
                                 ? Icons.favorite_rounded
                                 : Icons.favorite_border_rounded,
                             color: AppColors.danger,
-                            label: 'قلب المدير',
+                            label: tr('قلب المدير', 'Admin heart'),
                             selected: comment.adminHearted,
                             onPressed: () => _setHeart(comment),
                           ),
                         if (state.isAdmin || state.user?.id == comment.userId)
                           _commentAction(
                             icon: Icons.edit_outlined,
-                            label: 'تعديل',
+                            label: tr('تعديل', 'Edit'),
                             onPressed: () => _editComment(comment),
                           ),
                       ],

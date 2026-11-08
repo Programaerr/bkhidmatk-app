@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/language.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
@@ -47,7 +48,7 @@ class _CraftsmanInfoScreenState extends State<CraftsmanInfoScreen> {
     final bio = worker.bio?.trim() ?? '';
     return Scaffold(
       backgroundColor: ground,
-      appBar: PushKeyAppBar(title: 'معلومات الحرفي', backgroundColor: ground),
+      appBar: PushKeyAppBar(title: tr('معلومات الحرفي', 'Craftsman info'), backgroundColor: ground),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(22, 12, 22, 28),
         children: [
@@ -102,7 +103,7 @@ class _CraftsmanInfoScreenState extends State<CraftsmanInfoScreen> {
                 child: _Fact(
                   icon: Icons.star_rounded,
                   value: worker.rating.toStringAsFixed(1),
-                  label: 'التقييم',
+                  label: tr('التقييم', 'Rating'),
                 ),
               ),
               const SizedBox(width: 10),
@@ -110,15 +111,15 @@ class _CraftsmanInfoScreenState extends State<CraftsmanInfoScreen> {
                 child: _Fact(
                   icon: Icons.task_alt_rounded,
                   value: '${worker.jobsDone}',
-                  label: 'عمل منجز',
+                  label: tr('عمل منجز', 'Jobs done'),
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: _Fact(
                   icon: Icons.event_available_rounded,
-                  value: worker.available ? 'متاح' : 'مشغول',
-                  label: 'الحالة',
+                  value: worker.available ? tr('متاح', 'Available') : tr('مشغول', 'Busy'),
+                  label: tr('الحالة', 'Status'),
                 ),
               ),
             ],
@@ -131,7 +132,7 @@ class _CraftsmanInfoScreenState extends State<CraftsmanInfoScreen> {
           ],
           const SizedBox(height: 22),
           Text(
-            'احجز خدمة',
+            tr('احجز خدمة', 'Book a service'),
             style: TextStyle(
               fontFamily: 'Cairo',
               fontSize: 16,
@@ -155,14 +156,14 @@ class _CraftsmanInfoScreenState extends State<CraftsmanInfoScreen> {
                   children: [
                     Text(
                       snapshot.hasError
-                          ? 'تعذّر جلب الخدمات الآن.'
-                          : 'لا توجد خدمات لهذا القسم بعد. راسل جايك ونرتب لك الموعد.',
+                          ? tr('تعذّر جلب الخدمات الآن.', "Couldn't load the services right now.")
+                          : tr('لا توجد خدمات لهذا القسم بعد. راسل جايك ونرتب لك الموعد.', 'No services in this category yet. Message Jaik and we will arrange the appointment for you.'),
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodySmall?.copyWith(color: ink),
                     ),
                     const SizedBox(height: 10),
                     SecondaryButton(
-                      label: 'مراسلة جايك',
+                      label: tr('مراسلة جايك', 'Message Jaik'),
                       icon: Icons.chat_bubble_outline_rounded,
                       onPressed: () => Navigator.push(
                         context,
@@ -218,14 +219,14 @@ class _ServiceRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'المدة المتوقعة: ${fmtDuration(service.durationMinutes)}',
+                  tr('المدة المتوقعة: ${fmtDuration(service.durationMinutes)}', 'Expected time: ${fmtDuration(service.durationMinutes)}'),
                   style: theme.textTheme.bodySmall?.copyWith(fontSize: 11),
                 ),
               ],
             ),
           ),
           const SizedBox(width: 8),
-          PrimaryButton(label: 'احجز', compact: true, expand: false, onPressed: onBook),
+          PrimaryButton(label: tr('احجز', 'Book'), compact: true, expand: false, onPressed: onBook),
         ],
       ),
     );

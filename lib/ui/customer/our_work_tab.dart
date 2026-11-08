@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/language.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
 import '../auth/auth_route.dart';
@@ -71,12 +72,12 @@ class _OurWorkTabState extends State<OurWorkTab> with RealtimeRefresh<OurWorkTab
         }
         final works = snapshot.data ?? const <OurWork>[];
         if (works.isEmpty) {
-          return const SafeArea(
+          return SafeArea(
             bottom: false,
             child: EmptyState(
               icon: Icons.video_library_outlined,
-              title: 'لا توجد أعمال بعد',
-              subtitle: 'ستنشر جايك أحدث أعمالها وفيديوهاتها هنا قريباً.',
+              title: tr('لا توجد أعمال بعد', 'No work yet'),
+              subtitle: tr('ستنشر جايك أحدث أعمالها وفيديوهاتها هنا قريباً.', 'Jaik will post its latest work and videos here soon.'),
             ),
           );
         }

@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/language.dart';
 import '../../core/theme.dart';
 
 const _faceCenter = Colors.white;
@@ -101,7 +102,7 @@ class PushKeyBack extends StatelessWidget {
     final faceHeight = _loginFaceHeight * unit;
     return Semantics(
       button: true,
-      label: 'رجوع',
+      label: tr('رجوع', 'Back'),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () => Navigator.maybePop(context),

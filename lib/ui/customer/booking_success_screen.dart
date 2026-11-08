@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
@@ -20,7 +21,7 @@ class BookingSuccessScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: const PushKeyAppBar(title: 'تم إرسال الحجز'),
+      appBar: PushKeyAppBar(title: tr('تم إرسال الحجز', 'Booking sent')),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(22, 32, 22, 24),
@@ -37,10 +38,10 @@ class BookingSuccessScreen extends StatelessWidget {
                 child: const Icon(Icons.check_rounded, color: AppColors.success, size: 46),
               ),
               const SizedBox(height: 18),
-              Text('تم استلام حجزك بنجاح!', style: theme.textTheme.headlineSmall),
+              Text(tr('تم استلام حجزك بنجاح!', 'Your booking was received!'), style: theme.textTheme.headlineSmall),
               const SizedBox(height: 6),
               Text(
-                'وصل طلبك إلى الإدارة والحرفي. بعد موافقة الإدارة يظهر لك هنا أنه تم حجزك، ثم نرسل الحرفي إليك.',
+                tr('وصل طلبك إلى الإدارة والحرفي. بعد موافقة الإدارة يظهر لك هنا أنه تم حجزك، ثم نرسل الحرفي إليك.', 'Your request reached the admin and the craftsman. Once the admin approves it, you will see here that you are booked, and then we send the craftsman to you.'),
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodySmall?.copyWith(fontSize: 12.5, height: 1.7),
               ),
@@ -64,9 +65,9 @@ class BookingSuccessScreen extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(booking.serviceTitle ?? 'خدمة',
+                              Text(booking.serviceTitle ?? tr('خدمة', 'Service'),
                                   style: theme.textTheme.titleSmall?.copyWith(fontSize: 14)),
-                              Text('رقم الحجز #${booking.id}',
+                              Text(tr('رقم الحجز #${booking.id}', 'Booking #${booking.id}'),
                                   style: theme.textTheme.bodySmall?.copyWith(fontSize: 10.5)),
                             ],
                           ),
@@ -83,14 +84,14 @@ class BookingSuccessScreen extends StatelessWidget {
                         Expanded(
                           child: _SmallInfo(
                             icon: Icons.calendar_month_rounded,
-                            label: 'التاريخ',
+                            label: tr('التاريخ', 'Date'),
                             value: fmtDate(booking.scheduledAt),
                           ),
                         ),
                         Expanded(
                           child: _SmallInfo(
                             icon: Icons.schedule_rounded,
-                            label: 'الوقت',
+                            label: tr('الوقت', 'Time'),
                             value: fmtSlot(booking.slot),
                           ),
                         ),
@@ -102,14 +103,14 @@ class BookingSuccessScreen extends StatelessWidget {
                         Expanded(
                           child: _SmallInfo(
                             icon: Icons.engineering_rounded,
-                            label: 'الفني',
-                            value: booking.workerName ?? 'سيتم التعيين',
+                            label: tr('الفني', 'Technician'),
+                            value: booking.workerName ?? tr('سيتم التعيين', 'To be assigned'),
                           ),
                         ),
                         Expanded(
                           child: _SmallInfo(
                             icon: Icons.payments_rounded,
-                            label: 'السعر',
+                            label: tr('السعر', 'Price'),
                             value: bookingPriceLabel(booking),
                           ),
                         ),
@@ -131,7 +132,7 @@ class BookingSuccessScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('وصل الدفع جاهز',
+                            Text(tr('وصل الدفع جاهز', 'Payment receipt ready'),
                                 style: theme.textTheme.titleSmall?.copyWith(fontSize: 13)),
                             Text(receipt!.invoiceNo,
                                 style: theme.textTheme.bodySmall?.copyWith(fontSize: 10.5)),
@@ -142,7 +143,7 @@ class BookingSuccessScreen extends StatelessWidget {
                         small: true,
                         onTap: () => ReceiptActions.print(context, receipt!),
                         icon: Icons.print_rounded,
-                        tooltip: 'طباعة',
+                        tooltip: tr('طباعة', 'Print'),
                       ),
                       const SizedBox(width: 4),
                       AppIconButton(
@@ -153,7 +154,7 @@ class BookingSuccessScreen extends StatelessWidget {
                               builder: (_) => ReceiptPreviewScreen(receipt: receipt!)),
                         ),
                         icon: Icons.receipt_long_rounded,
-                        tooltip: 'معاينة',
+                        tooltip: tr('معاينة', 'Preview'),
                       ),
                     ],
                   ),
@@ -161,7 +162,7 @@ class BookingSuccessScreen extends StatelessWidget {
               ],
               const SizedBox(height: 22),
               PrimaryButton(
-                label: 'عرض تفاصيل الحجز',
+                label: tr('عرض تفاصيل الحجز', 'View booking details'),
                 icon: Icons.assignment_outlined,
                 onPressed: () => Navigator.pushReplacement(
                   context,
@@ -170,7 +171,7 @@ class BookingSuccessScreen extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               SecondaryButton(
-                label: 'العودة للرئيسية',
+                label: tr('العودة للرئيسية', 'Back to home'),
                 onPressed: () => Navigator.popUntil(context, (r) => r.isFirst),
               ),
             ],

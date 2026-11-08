@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/language.dart';
 import '../../data/models.dart';
 import '../widgets/shell_layout.dart';
 import 'bookings_tab.dart';
@@ -64,13 +65,14 @@ class _CustomerShellState extends State<CustomerShell> {
     onOpenAdminDashboard: widget.onOpenAdminDashboard,
   );
 
-  static const _items = [
-    NavItem('الرئيسية', Icons.home_outlined, Icons.home_rounded),
-    NavItem('الحرفيين', Icons.groups_outlined, Icons.groups_rounded),
-    NavItem('حجوزاتي', Icons.event_note_outlined, Icons.event_note_rounded),
+  // تُبنى مع كل بناء، فتتبع لغة التطبيق.
+  static List<NavItem> get _items => [
+    NavItem(tr('الرئيسية', 'Home'), Icons.home_outlined, Icons.home_rounded),
+    NavItem(tr('الحرفيين', 'Craftsmen'), Icons.groups_outlined, Icons.groups_rounded),
+    NavItem(tr('حجوزاتي', 'My bookings'), Icons.event_note_outlined, Icons.event_note_rounded),
     NavItem(
-        'أعمالنا', Icons.video_library_outlined, Icons.video_library_rounded),
-    NavItem('حسابي', Icons.person_outline_rounded, Icons.person_rounded),
+        tr('أعمالنا', 'Our work'), Icons.video_library_outlined, Icons.video_library_rounded),
+    NavItem(tr('حسابي', 'My account'), Icons.person_outline_rounded, Icons.person_rounded),
   ];
 
   @override

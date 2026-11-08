@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../widgets/ui.dart';
 
@@ -225,7 +226,7 @@ class _RaisedFieldState extends State<RaisedField> with SingleTickerProviderStat
 
   Widget _eye() => Semantics(
         button: true,
-        label: widget.obscureText ? 'إظهار كلمة المرور' : 'إخفاء كلمة المرور',
+        label: widget.obscureText ? tr('إظهار كلمة المرور', 'Show password') : tr('إخفاء كلمة المرور', 'Hide password'),
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: widget.onToggleObscure,

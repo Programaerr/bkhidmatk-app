@@ -4,6 +4,7 @@ import 'dart:ui' show FragmentProgram, ImageFilter, lerpDouble;
 
 import 'package:flutter/material.dart';
 
+import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../auth/push_key.dart';
 
@@ -902,7 +903,7 @@ class PaymentMethodBadge extends StatelessWidget {
         Text(
           isCard
               ? '${brand ?? 'Card'} •••• ${last4 ?? ''}'
-              : 'الدفع عند الوصول',
+              : tr('الدفع عند الوصول', 'Pay on arrival'),
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurface,
                 fontWeight: FontWeight.w700,

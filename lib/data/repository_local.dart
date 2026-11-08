@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:sqflite/sqflite.dart';
 
+import '../core/language.dart';
 import '../core/utils.dart';
 import 'database.dart';
 import 'models.dart';
@@ -999,7 +1000,7 @@ class LocalRepository implements Repository {
     return rows
         .map((r) => ChatThread(
               customerId: r['thread_id'] as int? ?? 0,
-              customerName: r['customer_name'] as String? ?? 'زبون',
+              customerName: r['customer_name'] as String? ?? tr('زبون', 'Customer'),
               customerPhone: r['customer_phone'] as String? ?? '',
               lastMessage: r['last_message'] as String? ?? '',
               lastAt: DateTime.tryParse(r['last_at'] as String? ?? '') ??

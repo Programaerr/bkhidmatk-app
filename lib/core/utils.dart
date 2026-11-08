@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 
+import 'language.dart';
+
 const _months = [
   'يناير',
   'فبراير',
@@ -17,6 +19,21 @@ const _months = [
   'ديسمبر',
 ];
 
+const _monthsEn = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
+
 const _weekdays = [
   'الاثنين',
   'الثلاثاء',
@@ -27,6 +44,16 @@ const _weekdays = [
   'الأحد',
 ];
 
+const _weekdaysEn = [
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+  'Sunday',
+];
+
 String fmtMoney(num value) {
   final n = value.round();
   final s = n.abs().toString();
@@ -35,7 +62,7 @@ String fmtMoney(num value) {
     if (i > 0 && (s.length - i) % 3 == 0) buf.write(',');
     buf.write(s[i]);
   }
-  return '${n < 0 ? '-' : ''}$buf د.ع';
+  return '${n < 0 ? '-' : ''}$buf ${tr('د.ع', 'IQD')}';
 }
 
 String fmtNumber(num value) {
@@ -48,37 +75,41 @@ String fmtNumber(num value) {
   return buf.toString();
 }
 
-String fmtDate(DateTime d) => '${d.day} ${_months[d.month - 1]} ${d.year}';
+String fmtDate(DateTime d) =>
+    '${d.day} ${(appEnglish ? _monthsEn : _months)[d.month - 1]} ${d.year}';
 
 String fmtDateShort(DateTime d) =>
     '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
 
-String fmtWeekday(DateTime d) => _weekdays[d.weekday - 1];
+String fmtWeekday(DateTime d) => (appEnglish ? _weekdaysEn : _weekdays)[d.weekday - 1];
 
 String fmtTimeOfDay(DateTime d) {
   final h24 = d.hour;
   final h = h24 % 12 == 0 ? 12 : h24 % 12;
   final m = d.minute.toString().padLeft(2, '0');
-  return '$h:$m ${h24 < 12 ? 'ص' : 'م'}';
+  return '$h:$m ${h24 < 12 ? tr('ص', 'AM') : tr('م', 'PM')}';
 }
 
 String fmtDateTime(DateTime d) => '${fmtDate(d)} • ${fmtTimeOfDay(d)}';
 
 String timeAgo(DateTime d) {
   final diff = DateTime.now().difference(d);
-  if (diff.inSeconds < 60) return 'الآن';
-  if (diff.inMinutes < 60) return 'قبل ${diff.inMinutes} دقيقة';
-  if (diff.inHours < 24) return 'قبل ${diff.inHours} ساعة';
-  if (diff.inDays == 1) return 'أمس';
-  if (diff.inDays < 30) return 'قبل ${diff.inDays} يوم';
+  if (diff.inSeconds < 60) return tr('الآن', 'Just now');
+  if (diff.inMinutes < 60) return tr('قبل ${diff.inMinutes} دقيقة', '${diff.inMinutes} min ago');
+  if (diff.inHours < 24) {
+    return tr('قبل ${diff.inHours} ساعة', diff.inHours == 1 ? '1 hour ago' : '${diff.inHours} hours ago');
+  }
+  if (diff.inDays == 1) return tr('أمس', 'Yesterday');
+  if (diff.inDays < 30) return tr('قبل ${diff.inDays} يوم', '${diff.inDays} days ago');
   return fmtDate(d);
 }
 
 String fmtDuration(int minutes) {
-  if (minutes < 60) return '$minutes دقيقة';
+  if (minutes < 60) return tr('$minutes دقيقة', '$minutes min');
   final h = minutes ~/ 60;
   final m = minutes % 60;
-  return m == 0 ? '$h ساعة' : '$h ساعة و$m دقيقة';
+  final hours = h == 1 ? '1 hour' : '$h hours';
+  return m == 0 ? tr('$h ساعة', hours) : tr('$h ساعة و$m دقيقة', '$hours $m min');
 }
 
 /// Renders a time string stored as "HH:mm" (24h) into 12h Arabic style.
@@ -88,7 +119,7 @@ String fmtSlot(String slot) {
   final h24 = int.tryParse(parts[0]) ?? 0;
   final m = parts[1];
   final h = h24 % 12 == 0 ? 12 : h24 % 12;
-  return '$h:$m ${h24 < 12 ? 'ص' : 'م'}';
+  return '$h:$m ${h24 < 12 ? tr('ص', 'AM') : tr('م', 'PM')}';
 }
 
 String invoiceNumber(int id, DateTime date) =>
@@ -228,6 +259,28 @@ class IraqiPhoneFormatter extends _NumberFormatter {
 }
 
 String phoneForCall(String phone) => normalizePhone(phone);
+
+/// اسم المدينة بلغة التطبيق. المدينة تُحفظ باسمها العربي دائماً.
+String cityLabel(String city) => appEnglish ? (_iraqCitiesEn[city] ?? city) : city;
+
+const _iraqCitiesEn = {
+  'بغداد': 'Baghdad',
+  'البصرة': 'Basra',
+  'الموصل': 'Mosul',
+  'أربيل': 'Erbil',
+  'النجف': 'Najaf',
+  'كربلاء': 'Karbala',
+  'السليمانية': 'Sulaymaniyah',
+  'كركوك': 'Kirkuk',
+  'الديوانية': 'Diwaniyah',
+  'الحلة': 'Hillah',
+  'الناصرية': 'Nasiriyah',
+  'ديالى': 'Diyala',
+  'الرمادي': 'Ramadi',
+  'العمارة': 'Amarah',
+  'السماوة': 'Samawah',
+  'دهوك': 'Duhok',
+};
 
 const iraqCities = [
   'بغداد',

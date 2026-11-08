@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
@@ -58,9 +59,9 @@ class _CraftsmanScreenState extends State<CraftsmanScreen> {
         constraints: const BoxConstraints(maxHeight: 480),
         child: Column(
           children: [
-            const Padding(
+            Padding(
               padding: EdgeInsets.fromLTRB(20, 0, 20, 8),
-              child: SheetHeader(title: 'اختر المحافظة'),
+              child: SheetHeader(title: tr('اختر المحافظة', 'Choose your province')),
             ),
             Expanded(
               child: ListView.builder(
@@ -69,7 +70,7 @@ class _CraftsmanScreenState extends State<CraftsmanScreen> {
                 itemBuilder: (_, i) {
                   final city = iraqCities[i];
                   return ListTile(
-                    title: Text(city),
+                    title: Text(cityLabel(city)),
                     trailing: city == _city
                         ? const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 20)
                         : null,
@@ -101,7 +102,7 @@ class _CraftsmanScreenState extends State<CraftsmanScreen> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = 'يوجد طلب قيد المراجعة بهذا الرقم';
+        _error = tr('يوجد طلب قيد المراجعة بهذا الرقم', 'There is already a request under review with this number');
       });
       return;
     }
@@ -132,7 +133,7 @@ class _CraftsmanScreenState extends State<CraftsmanScreen> {
     return number == null || number < min || number > max ? message : null;
   }
 
-  Widget _backButton() => PushKeyButton(label: 'عودة كزبون', onPressed: _backAsCustomer);
+  Widget _backButton() => PushKeyButton(label: tr('عودة كزبون', 'Back as a customer'), onPressed: _backAsCustomer);
 
   Widget _sentMessage(ThemeData theme) {
     return Center(
@@ -143,10 +144,10 @@ class _CraftsmanScreenState extends State<CraftsmanScreen> {
           children: [
             const Icon(Icons.check_circle_rounded, size: 68, color: AppColors.success),
             const SizedBox(height: 14),
-            Text('وصل طلبك إلى الشركة', style: theme.textTheme.headlineSmall),
+            Text(tr('وصل طلبك إلى الشركة', 'Your request reached the company'), style: theme.textTheme.headlineSmall),
             const SizedBox(height: 6),
             Text(
-              'سنراجع معلوماتك ونتواصل معك على رقمك.',
+              tr('سنراجع معلوماتك ونتواصل معك على رقمك.', "We'll review your information and contact you on your number."),
               textAlign: TextAlign.center,
               style: theme.textTheme.bodySmall?.copyWith(fontSize: 13),
             ),
@@ -166,14 +167,14 @@ class _CraftsmanScreenState extends State<CraftsmanScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            RequiredFieldLabel('الاسم الكامل', controller: _name),
+            RequiredFieldLabel(tr('الاسم الكامل', 'Full name'), controller: _name),
             RaisedField(
               controller: _name,
-              hint: 'مثال: أحمد سعد',
-              validator: (v) => v.trim().length < 3 ? 'أدخل الاسم الكامل' : null,
+              hint: tr('مثال: أحمد سعد', 'Example: Ahmed Saad'),
+              validator: (v) => v.trim().length < 3 ? tr('أدخل الاسم الكامل', 'Enter your full name') : null,
             ),
             const SizedBox(height: 14),
-            RequiredFieldLabel('رقم الهاتف', controller: _phone),
+            RequiredFieldLabel(tr('رقم الهاتف', 'Phone number'), controller: _phone),
             RaisedField(
               controller: _phone,
               hint: '07XX XXX XXXX',
@@ -183,53 +184,53 @@ class _CraftsmanScreenState extends State<CraftsmanScreen> {
               textAlign: TextAlign.right,
               onTyped: _clearSubmitError,
               validator: (v) =>
-                  validIraqiPhone(phoneFromInput(v)) ? null : 'رقم غير صالح (11 رقم يبدأ بـ 07)',
+                  validIraqiPhone(phoneFromInput(v)) ? null : tr('رقم غير صالح (11 رقم يبدأ بـ 07)', 'Invalid number (11 digits starting with 07)'),
             ),
             const SizedBox(height: 14),
-            RequiredFieldLabel('العمر', controller: _age),
+            RequiredFieldLabel(tr('العمر', 'Age'), controller: _age),
             RaisedField(
               controller: _age,
-              hint: 'مثال: 28',
+              hint: tr('مثال: 28', 'Example: 28'),
               keyboardType: TextInputType.number,
               inputFormatters: const [MaxDigitsFormatter(2)],
-              validator: (v) => _checkNumber(v, 16, 80, 'أدخل عمراً صحيحاً'),
+              validator: (v) => _checkNumber(v, 16, 80, tr('أدخل عمراً صحيحاً', 'Enter a valid age')),
             ),
             const SizedBox(height: 14),
-            FieldLabel('المحافظة', required_: true, filled: _city != null),
+            FieldLabel(tr('المحافظة', 'Province'), required_: true, filled: _city != null),
             RaisedPicker(
-              value: _city,
-              hint: 'اختر المحافظة',
-              emptyError: 'اختر محافظتك',
+              value: _city == null ? null : cityLabel(_city!),
+              hint: tr('اختر المحافظة', 'Choose the province'),
+              emptyError: tr('اختر محافظتك', 'Choose your province'),
               open: _pickingCity,
               onTap: _pickCity,
             ),
             const SizedBox(height: 14),
-            const FieldLabel('العنوان التفصيلي'),
+            FieldLabel(tr('العنوان التفصيلي', 'Detailed address')),
             RaisedField(
               controller: _address,
-              hint: 'المنطقة، الشارع، أقرب نقطة دالة',
+              hint: tr('المنطقة، الشارع، أقرب نقطة دالة', 'Area, street, nearest landmark'),
             ),
             const SizedBox(height: 14),
-            RequiredFieldLabel('المهنة', controller: _trade),
+            RequiredFieldLabel(tr('المهنة', 'Trade'), controller: _trade),
             RaisedField(
               controller: _trade,
-              hint: 'مثال: كهربائي، سباك، صباغ',
-              validator: (v) => v.trim().length < 2 ? 'أدخل مهنتك' : null,
+              hint: tr('مثال: كهربائي، سباك، صباغ', 'Example: electrician, plumber, painter'),
+              validator: (v) => v.trim().length < 2 ? tr('أدخل مهنتك', 'Enter your trade') : null,
             ),
             const SizedBox(height: 14),
-            RequiredFieldLabel('سنوات الخبرة', controller: _years),
+            RequiredFieldLabel(tr('سنوات الخبرة', 'Years of experience'), controller: _years),
             RaisedField(
               controller: _years,
-              hint: 'مثال: 5',
+              hint: tr('مثال: 5', 'Example: 5'),
               keyboardType: TextInputType.number,
               inputFormatters: const [MaxDigitsFormatter(2)],
-              validator: (v) => _checkNumber(v, 0, 60, 'أدخل عدد سنوات صحيحاً'),
+              validator: (v) => _checkNumber(v, 0, 60, tr('أدخل عدد سنوات صحيحاً', 'Enter a valid number of years')),
             ),
             const SizedBox(height: 14),
-            const FieldLabel('نبذة عن خبرتك'),
+            FieldLabel(tr('نبذة عن خبرتك', 'About your experience')),
             RaisedField(
               controller: _about,
-              hint: 'الأعمال التي أتقنها وأين عملت سابقاً',
+              hint: tr('الأعمال التي أتقنها وأين عملت سابقاً', "The work you're good at and where you worked before"),
               minLines: 3,
               maxLines: 6,
             ),
@@ -239,7 +240,7 @@ class _CraftsmanScreenState extends State<CraftsmanScreen> {
             ],
             const SizedBox(height: 19),
             PushKeyButton(
-              label: 'إرسال الطلب إلى الشركة',
+              label: tr('إرسال الطلب إلى الشركة', 'Send the request to the company'),
               onPressed: _submit,
               loading: _loading,
               yellow: true,
@@ -256,7 +257,7 @@ class _CraftsmanScreenState extends State<CraftsmanScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: const PushKeyAppBar(title: 'التقديم كحرفي'),
+      appBar: PushKeyAppBar(title: tr('التقديم كحرفي', 'Apply as a craftsman')),
       body: SafeArea(child: _sent ? _sentMessage(theme) : _form()),
     );
   }

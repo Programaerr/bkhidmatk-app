@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
@@ -50,7 +51,8 @@ class _BookingsTabState extends State<BookingsTab>
   late Future<List<Booking>> _future;
   final _fold = HeaderFold();
 
-  static const _filters = ['الكل', 'المكتملة', 'الملغاة'];
+  static List<String> get _filters =>
+      [tr('الكل', 'All'), tr('المكتملة', 'Completed'), tr('الملغاة', 'Cancelled')];
 
   @override
   void onRealtimeChange() => _load();
@@ -125,7 +127,7 @@ class _BookingsTabState extends State<BookingsTab>
                   builder: (context, metrics) => HomeHeader(
                     width: width,
                     metrics: metrics,
-                    title: 'كل الحجوزات',
+                    title: tr('كل الحجوزات', 'All bookings'),
                     titleShift: _Design.titleShift,
                   ),
                 ),
@@ -237,7 +239,7 @@ class _BookingsTabState extends State<BookingsTab>
   Widget _browseKey(double unit, bool night) {
     return Semantics(
       button: true,
-      label: 'تصفح الحرفيين',
+      label: tr('تصفح الحرفيين', 'Browse craftsmen'),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: widget.onBrowse,
@@ -252,7 +254,7 @@ class _BookingsTabState extends State<BookingsTab>
               child: FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Text(
-                  'تصفح الحرفيين',
+                  tr('تصفح الحرفيين', 'Browse craftsmen'),
                   maxLines: 1,
                   style: TextStyle(
                     fontFamily: 'Cairo',
@@ -308,7 +310,7 @@ class _BookingCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      booking.serviceTitle ?? 'خدمة',
+                      booking.serviceTitle ?? tr('خدمة', 'Service'),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.titleSmall?.copyWith(fontSize: 13.5),
@@ -332,7 +334,7 @@ class _BookingCard extends StatelessWidget {
                 const SizedBox(width: 5),
                 Expanded(
                   child: Text(
-                    'عدّلت الإدارة حجزك، افتحه ووافق على التعديل',
+                    tr('عدّلت الإدارة حجزك، افتحه ووافق على التعديل', 'The admin changed your booking. Open it to approve the change.'),
                     style: theme.textTheme.bodySmall?.copyWith(
                         fontSize: 10.5,
                         fontWeight: FontWeight.w800,
@@ -350,7 +352,7 @@ class _BookingCard extends StatelessWidget {
               const SizedBox(width: 5),
               Expanded(
                 child: Text(
-                  booking.workerName ?? 'سيتم تعيين الفني',
+                  booking.workerName ?? tr('سيتم تعيين الفني', 'A technician will be assigned'),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.bodySmall?.copyWith(fontSize: 10.5),

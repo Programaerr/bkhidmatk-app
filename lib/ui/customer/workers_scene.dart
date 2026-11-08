@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
+import '../../core/language.dart';
 import '../auth/truck_art.dart';
 import '../auth/truck_scene.dart';
 import 'workers_art.dart';
@@ -681,7 +682,7 @@ class _WorkersSceneState extends State<WorkersScene> with SingleTickerProviderSt
   Widget build(BuildContext context) {
     return Semantics(
       image: true,
-      label: 'عاملان من جايك يصلحان أنابيب: واحد يدير الصمام والآخر يضبط العداد',
+      label: tr('عاملان من جايك يصلحان أنابيب: واحد يدير الصمام والآخر يضبط العداد', 'Two Jaik workers fixing pipes: one turns the valve and the other adjusts the meter'),
       child: RepaintBoundary(
         child: CustomPaint(
           painter: WorkersScenePainter(
