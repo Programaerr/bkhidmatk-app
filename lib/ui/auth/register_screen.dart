@@ -131,7 +131,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   keyboardType: TextInputType.phone,
                   inputFormatters: const [IraqiPhoneFormatter()],
                   textDirection: TextDirection.ltr,
-                  textAlign: TextAlign.right,
+                  textAlign: appEnglish ? TextAlign.left : TextAlign.right,
                   onTyped: _clearSubmitError,
                   validator: (v) {
                     if (v.trim().isEmpty) return tr('أدخل رقم الهاتف', 'Enter the phone number');

@@ -181,7 +181,7 @@ class _CraftsmanScreenState extends State<CraftsmanScreen> {
               keyboardType: TextInputType.phone,
               inputFormatters: const [IraqiPhoneFormatter()],
               textDirection: TextDirection.ltr,
-              textAlign: TextAlign.right,
+              textAlign: appEnglish ? TextAlign.left : TextAlign.right,
               onTyped: _clearSubmitError,
               validator: (v) =>
                   validIraqiPhone(phoneFromInput(v)) ? null : tr('رقم غير صالح (11 رقم يبدأ بـ 07)', 'Invalid number (11 digits starting with 07)'),

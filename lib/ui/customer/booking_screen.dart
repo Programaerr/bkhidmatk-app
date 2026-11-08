@@ -109,7 +109,7 @@ class _BookingScreenState extends State<BookingScreen> {
                             RatingStars(rating: w.rating),
                             if (w.id == _workerId)
                               const Padding(
-                                padding: EdgeInsets.only(right: 6),
+                                padding: EdgeInsetsDirectional.only(start: 6),
                                 child: Icon(Icons.check_circle_rounded,
                                     color: AppColors.success, size: 20),
                               ),

@@ -130,8 +130,8 @@ class _WorkerRequestsTabState extends State<WorkerRequestsTab>
                     fit: StackFit.expand,
                     children: [
                       HomeHeader(width: width, metrics: metrics, title: tr('طلبات الحجز', 'Booking requests')),
-                      Positioned(
-                        left: left + 14,
+                      PositionedDirectional(
+                        end: left + 14,
                         top: metrics.centerY(61.5) - 24,
                         child: Transform.scale(
                           scale: metrics.scale,

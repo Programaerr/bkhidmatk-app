@@ -281,9 +281,9 @@ class HomeHeader extends StatelessWidget {
       fit: StackFit.expand,
       children: [
         HomeHill(width: width, metrics: metrics),
-        Positioned(
-          left: 2 * titleShift * unit,
-          right: 0,
+        PositionedDirectional(
+          end: 2 * titleShift * unit,
+          start: 0,
           top: metrics.centerY(_titleCenter) - height / 2,
           height: height,
           child: Center(
@@ -332,7 +332,7 @@ class ChoiceKey extends StatelessWidget {
   double _faceWidth(BuildContext context, TextStyle style) {
     final text = TextPainter(
       text: TextSpan(text: label, style: style),
-      textDirection: TextDirection.rtl,
+      textDirection: appTextDirection,
       textScaler: MediaQuery.textScalerOf(context),
       maxLines: 1,
     )..layout();
@@ -494,8 +494,9 @@ class SectionGrid extends StatelessWidget {
         clipBehavior: Clip.none,
         children: [
           for (var i = 0; i < count; i++)
-            Positioned(
-              left: (_sectionCenters[i % 4] - _sectionLabelWidth / 2) * unit,
+            // من يمين الإطار بالعربية، ومن يساره بالإنجليزية.
+            PositionedDirectional(
+              end: (_sectionCenters[i % 4] - _sectionLabelWidth / 2) * unit,
               width: _sectionLabelWidth * unit,
               top: (i ~/ 4) * _sectionRowPitch * unit,
               child: SectionKey(unit: unit, section: sections?[i], onOpen: onOpen),
@@ -682,8 +683,8 @@ class CraftsmanGrid extends StatelessWidget {
         clipBehavior: Clip.none,
         children: [
           for (var i = 0; i < count; i++)
-            Positioned(
-              left: lefts[i % 2] * unit - chromeInset,
+            PositionedDirectional(
+              end: lefts[i % 2] * unit - chromeInset,
               top: (i ~/ 2) * _craftsmanRowPitch * unit,
               child: CraftsmanKey(unit: unit, worker: workers?[i]),
             ),

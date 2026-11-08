@@ -138,7 +138,7 @@ class _AppShellLayoutState extends State<AppShellLayout>
             width: 92,
             decoration: BoxDecoration(
               border:
-                  Border(left: BorderSide(color: theme.colorScheme.outline)),
+                  BorderDirectional(end: BorderSide(color: theme.colorScheme.outline)),
             ),
             child: SafeArea(
               child: NavigationRail(

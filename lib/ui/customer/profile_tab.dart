@@ -486,8 +486,9 @@ class _ProfileTabState extends State<ProfileTab> {
               ),
             ),
           ),
-          Positioned(
-            right: _Design.photoMargin * unit,
+          // الصورة في أول السطر وزر التعديل في آخره، فينعكسان مع الإنجليزية.
+          PositionedDirectional(
+            start: _Design.photoMargin * unit,
             top: _Design.photoTop * unit,
             child: IgnorePointer(
               child: ExcludeSemantics(
@@ -507,8 +508,8 @@ class _ProfileTabState extends State<ProfileTab> {
               ),
             ),
           ),
-          Positioned(
-            left: _Design.editMargin * unit,
+          PositionedDirectional(
+            end: _Design.editMargin * unit,
             top: photoCenter - _Design.editSize / 2 * unit,
             child: PushKeyCircle(
               diameter: _Design.editSize * unit,
@@ -520,8 +521,8 @@ class _ProfileTabState extends State<ProfileTab> {
             ),
           ),
           // المعلومات في وسط الصورة كلها، بوجهها وحلقتها، مثل الاسم في الصفحة الرئيسية.
-          Positioned(
-            left: infoLeft,
+          PositionedDirectional(
+            end: infoLeft,
             width: infoWidth,
             top: _Design.photoTop * unit,
             height: _Design.photoSize * unit + PushKey.depth * chrome,
