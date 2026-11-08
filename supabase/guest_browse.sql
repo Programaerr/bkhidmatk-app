@@ -3,7 +3,7 @@
 -- شغّل هذا الملف مرة واحدة في Supabase ← SQL Editor بعد setup.sql.
 
 grant select on public.categories, public.services to anon;
-grant select (id, name, specialty, category_id, rating, jobs_done, bio, avatar, available)
+grant select (id, name, specialty, category_id, rating, jobs_done, bio, avatar, available, city)
   on public.workers to anon;
 
 drop policy if exists "categories_read_guest" on public.categories;

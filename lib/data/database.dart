@@ -16,7 +16,7 @@ class AppDatabase {
 
   Database? _db;
   static const _fileName = 'jaik.db';
-  static const _version = 9;
+  static const _version = 10;
 
   Future<Database> get database async {
     if (_db != null && _db!.isOpen) return _db!;
@@ -41,6 +41,7 @@ class AppDatabase {
         if (oldVersion < 7) await _migrateToV7(db);
         if (oldVersion < 8) await _migrateToV8(db);
         if (oldVersion < 9) await _migrateToV9(db);
+        if (oldVersion < 10) await _migrateToV10(db);
       },
     );
     return _db!;
@@ -104,6 +105,26 @@ class AppDatabase {
         "ALTER TABLE bookings ADD COLUMN customer_ack TEXT NOT NULL DEFAULT 'none'");
   }
 
+  /// v10: محافظة الحرفي، ليظهر في قسم «بالقرب منك» لأهل محافظته.
+  Future<void> _migrateToV10(Database db) async {
+    final columns = (await db.rawQuery('PRAGMA table_info(workers)'))
+        .map((column) => column['name'])
+        .toSet();
+    if (!columns.contains('city')) {
+      await db.execute('ALTER TABLE workers ADD COLUMN city TEXT');
+    }
+    // الترقية تأخذ المحافظة من حساب الحرفي إن كان مسجلاً بالرقم نفسه.
+    await db.rawUpdate('''
+      UPDATE workers
+         SET city = (SELECT city FROM users WHERE users.phone = workers.phone)
+       WHERE city IS NULL
+         AND EXISTS (
+           SELECT 1 FROM users
+            WHERE users.phone = workers.phone AND users.city IS NOT NULL
+         )
+    ''');
+  }
+
   /// v8: رد الحرفي ووقت إرساله على طلب الحجز.
   Future<void> _migrateToV8(Database db) async {
     await db.execute(
@@ -113,7 +134,8 @@ class AppDatabase {
 
   Future<void> _migrateToV7(Database db) async {
     for (final MapEntry(key: old, value: name) in renamedSections.entries) {
-      await db.update('categories', {'name': name}, where: 'name = ?', whereArgs: [old]);
+      await db.update('categories', {'name': name},
+          where: 'name = ?', whereArgs: [old]);
     }
     // ما أضافه المدير من أقسام أخرى يبقى بعد هذه الأقسام.
     await db.rawUpdate(
@@ -266,7 +288,8 @@ class AppDatabase {
         jobs_done INTEGER NOT NULL DEFAULT 0,
         bio TEXT,
         avatar TEXT,
-        available INTEGER NOT NULL DEFAULT 1
+        available INTEGER NOT NULL DEFAULT 1,
+        city TEXT
       )
     ''');
     await db.execute('''
@@ -413,7 +436,8 @@ class AppDatabase {
       int catId,
       double rating,
       int jobs,
-      String bio, {
+      String bio,
+      String city, {
       bool available = true,
     }) =>
         db.insert('workers', {
@@ -425,6 +449,7 @@ class AppDatabase {
           'jobs_done': jobs,
           'bio': bio,
           'available': available ? 1 : 0,
+          'city': city,
         });
 
     final wElectric = await worker(
@@ -434,21 +459,36 @@ class AppDatabase {
         cElectric,
         4.9,
         312,
-        'خبرة 12 سنة في تأسيس وصيانة الكهرباء المنزلية.');
-    final wWasher = await worker('مصطفى كريم', '07802223344', 'فني غسالات',
-        cWasher, 4.8, 205, 'صيانة جميع أنواع الغسالات الأوتوماتيك والنشافات.');
+        'خبرة 12 سنة في تأسيس وصيانة الكهرباء المنزلية.',
+        'بغداد');
+    final wWasher = await worker(
+        'مصطفى كريم',
+        '07802223344',
+        'فني غسالات',
+        cWasher,
+        4.8,
+        205,
+        'صيانة جميع أنواع الغسالات الأوتوماتيك والنشافات.',
+        'بغداد');
     final wPaint = await worker('علي حسين', '07903334455', 'صباغ محترف', cPaint,
-        4.7, 148, 'دهانات حديثة وديكورات جدارية بأجود المواد.');
+        4.7, 148, 'دهانات حديثة وديكورات جدارية بأجود المواد.', 'بغداد');
     final wDecor = await worker('يوسف العبيدي', '07714445566', 'فني ديكور',
-        cDecor, 4.9, 97, 'جبس بورد وأسقف ثانوية وتصاميم عصرية.');
+        cDecor, 4.9, 97, 'جبس بورد وأسقف ثانوية وتصاميم عصرية.', 'بغداد');
     final wPlumb = await worker('حيدر الموسوي', '07825556677', 'سباك', cPlumb,
-        4.6, 263, 'تسليك مجاري وإصلاح تسريبات المياه.');
+        4.6, 263, 'تسليك مجاري وإصلاح تسريبات المياه.', 'البصرة');
     final wAc = await worker('سيف الدين عباس', '07936667788', 'فني تكييف', cAc,
-        4.8, 174, 'تركيب وصيانة وشحن مكيفات سبليت ومركزي.');
-    final wClean = await worker('نور الهدى سالم', '07747778899', 'فريق تنظيف',
-        cClean, 4.9, 321, 'تنظيف منازل وشركات بعمالة مدربة ومواد آمنة.');
+        4.8, 174, 'تركيب وصيانة وشحن مكيفات سبليت ومركزي.', 'البصرة');
+    final wClean = await worker(
+        'نور الهدى سالم',
+        '07747778899',
+        'فريق تنظيف',
+        cClean,
+        4.9,
+        321,
+        'تنظيف منازل وشركات بعمالة مدربة ومواد آمنة.',
+        'بغداد');
     final wCarp = await worker('كرار عبد الله', '07858889900', 'نجار موبيليا',
-        cCarp, 4.7, 132, 'تصليح وتفصيل أبواب وخزائن ومطابخ.');
+        cCarp, 4.7, 132, 'تصليح وتفصيل أبواب وخزائن ومطابخ.', 'أربيل');
 
     Future<void> service(
       int catId,

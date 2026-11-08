@@ -128,6 +128,9 @@ class Worker {
   final String? avatarPath;
   final bool available;
 
+  /// محافظة الحرفي كما اختارها في ملفه، ويُفلتر بها قسم «بالقرب منك».
+  final String? city;
+
   const Worker({
     this.id,
     required this.name,
@@ -139,6 +142,7 @@ class Worker {
     this.bio,
     this.avatarPath,
     this.available = true,
+    this.city,
   });
 
   Map<String, Object?> toMap() => {
@@ -152,6 +156,7 @@ class Worker {
         'bio': bio,
         'avatar': avatarPath,
         'available': available ? 1 : 0,
+        'city': city,
       };
 
   factory Worker.fromMap(Map<String, Object?> m) => Worker(
@@ -165,6 +170,7 @@ class Worker {
         bio: m['bio'] as String?,
         avatarPath: m['avatar'] as String?,
         available: (m['available'] as int? ?? 1) == 1,
+        city: m['city'] as String?,
       );
 }
 
@@ -264,7 +270,8 @@ class Booking {
   final String slot;
   final String address;
   final String? notes;
-  final String status; // pending, confirmed, dispatched, in_progress, completed, cancelled
+  final String
+      status; // pending, confirmed, dispatched, in_progress, completed, cancelled
   final String paymentMethod; // cash, card
   final double total;
   final DateTime createdAt;
@@ -364,7 +371,8 @@ class Booking {
         createdAt: _date(m['created_at']) ?? DateTime.now(),
         rating: (m['rating'] as num?)?.toInt(),
         review: m['review'] as String?,
-        workerResponse: m['worker_response'] as String? ?? WorkerResponse.pending,
+        workerResponse:
+            m['worker_response'] as String? ?? WorkerResponse.pending,
         dispatchedAt: _date(m['dispatched_at']),
         adminEditedAt: _date(m['admin_edited_at']),
         editSummary: m['edit_summary'] as String?,
@@ -424,7 +432,14 @@ class BookingStatus {
   static const completed = 'completed';
   static const cancelled = 'cancelled';
 
-  static const all = [pending, confirmed, dispatched, inProgress, completed, cancelled];
+  static const all = [
+    pending,
+    confirmed,
+    dispatched,
+    inProgress,
+    completed,
+    cancelled
+  ];
 
   static String label(String s) => switch (s) {
         pending => tr('بانتظار الموافقة', 'Awaiting approval'),
@@ -1034,9 +1049,12 @@ class CustomerAck {
   static const declined = 'declined';
 
   static String label(String s) => switch (s) {
-        pending => tr('بانتظار موافقة الزبون', "Awaiting the customer's approval"),
-        approved => tr('وافق الزبون على التعديل', 'The customer approved the change'),
-        declined => tr('رفض الزبون التعديل', 'The customer declined the change'),
+        pending =>
+          tr('بانتظار موافقة الزبون', "Awaiting the customer's approval"),
+        approved =>
+          tr('وافق الزبون على التعديل', 'The customer approved the change'),
+        declined =>
+          tr('رفض الزبون التعديل', 'The customer declined the change'),
         _ => '',
       };
 }

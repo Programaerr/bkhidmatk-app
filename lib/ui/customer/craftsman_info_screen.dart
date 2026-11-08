@@ -35,7 +35,9 @@ class _CraftsmanInfoScreenState extends State<CraftsmanInfoScreen> {
         .read<AppState>()
         .repo
         .listServices(categoryId: worker.categoryId);
-    final own = all.where((s) => s.workerId == null || s.workerId == worker.id).toList();
+    final own = all
+        .where((s) => s.workerId == null || s.workerId == worker.id)
+        .toList();
     return own.isEmpty ? all : own;
   }
 
@@ -49,7 +51,9 @@ class _CraftsmanInfoScreenState extends State<CraftsmanInfoScreen> {
     final bio = worker.bio?.trim() ?? '';
     return Scaffold(
       backgroundColor: ground,
-      appBar: PushKeyAppBar(title: tr('معلومات الحرفي', 'Craftsman info'), backgroundColor: ground),
+      appBar: PushKeyAppBar(
+          title: tr('معلومات الحرفي', 'Craftsman info'),
+          backgroundColor: ground),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(22, 12, 22, 28),
         children: [
@@ -61,7 +65,10 @@ class _CraftsmanInfoScreenState extends State<CraftsmanInfoScreen> {
                 color: Colors.white,
                 shape: BoxShape.circle,
                 boxShadow: [
-                  BoxShadow(color: Color(0x40000000), offset: Offset(0, 4), blurRadius: 10),
+                  BoxShadow(
+                      color: Color(0x40000000),
+                      offset: Offset(0, 4),
+                      blurRadius: 10),
                 ],
               ),
               child: Center(
@@ -97,6 +104,27 @@ class _CraftsmanInfoScreenState extends State<CraftsmanInfoScreen> {
               color: ink,
             ),
           ),
+          if (worker.city != null && worker.city!.trim().isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.location_on_rounded, size: 15, color: ink),
+                  const SizedBox(width: 4),
+                  Text(
+                    cityLabel(worker.city!),
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: 12,
+                      height: 1.4,
+                      fontWeight: FontWeight.w600,
+                      color: ink,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           const SizedBox(height: 18),
           Row(
             children: [
@@ -119,7 +147,9 @@ class _CraftsmanInfoScreenState extends State<CraftsmanInfoScreen> {
               Expanded(
                 child: _Fact(
                   icon: Icons.event_available_rounded,
-                  value: worker.available ? tr('متاح', 'Available') : tr('مشغول', 'Busy'),
+                  value: worker.available
+                      ? tr('متاح', 'Available')
+                      : tr('مشغول', 'Busy'),
                   label: tr('الحالة', 'Status'),
                 ),
               ),
@@ -148,7 +178,8 @@ class _CraftsmanInfoScreenState extends State<CraftsmanInfoScreen> {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Padding(
                   padding: EdgeInsets.all(24),
-                  child: Center(child: CircularProgressIndicator(strokeWidth: 2.4)),
+                  child: Center(
+                      child: CircularProgressIndicator(strokeWidth: 2.4)),
                 );
               }
               final services = snapshot.data ?? const <Service>[];
@@ -157,8 +188,11 @@ class _CraftsmanInfoScreenState extends State<CraftsmanInfoScreen> {
                   children: [
                     Text(
                       snapshot.hasError
-                          ? tr('تعذّر جلب الخدمات الآن.', "Couldn't load the services right now.")
-                          : tr('لا توجد خدمات لهذا القسم بعد. راسل جايك ونرتب لك الموعد.', 'No services in this category yet. Message Jaik and we will arrange the appointment for you.'),
+                          ? tr('تعذّر جلب الخدمات الآن.',
+                              "Couldn't load the services right now.")
+                          : tr(
+                              'لا توجد خدمات لهذا القسم بعد. راسل جايك ونرتب لك الموعد.',
+                              'No services in this category yet. Message Jaik and we will arrange the appointment for you.'),
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodySmall?.copyWith(color: ink),
                     ),
@@ -185,8 +219,8 @@ class _CraftsmanInfoScreenState extends State<CraftsmanInfoScreen> {
                       padding: const EdgeInsets.only(bottom: 8),
                       child: _ServiceRow(
                         service: service,
-                        onBook: () =>
-                            startServiceBooking(context, service, workerId: worker.id),
+                        onBook: () => startServiceBooking(context, service,
+                            workerId: worker.id),
                       ),
                     ),
                 ],
@@ -224,14 +258,19 @@ class _ServiceRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  tr('المدة المتوقعة: ${fmtDuration(service.durationMinutes)}', 'Expected time: ${fmtDuration(service.durationMinutes)}'),
+                  tr('المدة المتوقعة: ${fmtDuration(service.durationMinutes)}',
+                      'Expected time: ${fmtDuration(service.durationMinutes)}'),
                   style: theme.textTheme.bodySmall?.copyWith(fontSize: 11),
                 ),
               ],
             ),
           ),
           const SizedBox(width: 8),
-          PrimaryButton(label: tr('احجز', 'Book'), compact: true, expand: false, onPressed: onBook),
+          PrimaryButton(
+              label: tr('احجز', 'Book'),
+              compact: true,
+              expand: false,
+              onPressed: onBook),
         ],
       ),
     );
@@ -260,7 +299,8 @@ class _Fact extends StatelessWidget {
           ),
           FittedBox(
             fit: BoxFit.scaleDown,
-            child: Text(label, style: theme.textTheme.bodySmall?.copyWith(fontSize: 10.5)),
+            child: Text(label,
+                style: theme.textTheme.bodySmall?.copyWith(fontSize: 10.5)),
           ),
         ],
       ),

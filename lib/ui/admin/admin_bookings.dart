@@ -101,10 +101,13 @@ class _AdminBookingsState extends State<AdminBookings>
       children: [
         AdminHeader(
           title: tr('إدارة الحجوزات', 'Manage bookings'),
-          subtitle: tr('متابعة وتحديث حالة كل حجز', 'Follow and update the status of every booking'),
+          subtitle: tr('متابعة وتحديث حالة كل حجز',
+              'Follow and update the status of every booking'),
           actions: [
             AppIconButton(
-                icon: Icons.refresh_rounded, tooltip: tr('تحديث', 'Refresh'), onTap: _load),
+                icon: Icons.refresh_rounded,
+                tooltip: tr('تحديث', 'Refresh'),
+                onTap: _load),
           ],
         ),
         Padding(
@@ -116,7 +119,8 @@ class _AdminBookingsState extends State<AdminBookings>
               _load();
             },
             decoration: InputDecoration(
-              hintText: tr('ابحث باسم الزبون، الرقم، أو الخدمة...', 'Search by customer name, number, or service...'),
+              hintText: tr('ابحث باسم الزبون، الرقم، أو الخدمة...',
+                  'Search by customer name, number, or service...'),
               prefixIcon: Icon(Icons.search_rounded, size: 21),
             ),
           ),
@@ -144,15 +148,18 @@ class _AdminBookingsState extends State<AdminBookings>
           child: FutureBuilder<List<Booking>>(
             future: _future,
             builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
-                return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+              if (snapshot.connectionState == ConnectionState.waiting &&
+                  !snapshot.hasData) {
+                return const Center(
+                    child: CircularProgressIndicator(strokeWidth: 2.4));
               }
               final bookings = snapshot.data ?? const <Booking>[];
               if (bookings.isEmpty) {
                 return EmptyState(
                   icon: Icons.event_busy_rounded,
                   title: tr('لا توجد حجوزات', 'No bookings'),
-                  subtitle: tr('ستظهر الحجوزات الجديدة هنا مباشرة.', 'New bookings will appear here right away.'),
+                  subtitle: tr('ستظهر الحجوزات الجديدة هنا مباشرة.',
+                      'New bookings will appear here right away.'),
                 );
               }
               return RefreshIndicator(
@@ -170,13 +177,18 @@ class _AdminBookingsState extends State<AdminBookings>
                         children: [
                           Row(
                             children: [
-                              AvatarCircle(name: b.customerName ?? tr('زبون', 'Customer'), size: 38),
+                              AvatarCircle(
+                                  name:
+                                      b.customerName ?? tr('زبون', 'Customer'),
+                                  size: 38),
                               const SizedBox(width: 9),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(b.customerName ?? tr('زبون', 'Customer'),
+                                    Text(
+                                        b.customerName ??
+                                            tr('زبون', 'Customer'),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: theme.textTheme.titleSmall
@@ -192,18 +204,21 @@ class _AdminBookingsState extends State<AdminBookings>
                             ],
                           ),
                           const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 9), child: Divider()),
+                              padding: EdgeInsets.symmetric(vertical: 9),
+                              child: Divider()),
                           Row(
                             children: [
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(b.serviceTitle ?? tr('خدمة', 'Service'),
+                                    Text(
+                                        b.serviceTitle ?? tr('خدمة', 'Service'),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: theme.textTheme.bodyMedium
-                                            ?.copyWith(fontWeight: FontWeight.w700)),
+                                            ?.copyWith(
+                                                fontWeight: FontWeight.w700)),
                                     const SizedBox(height: 2),
                                     Text(
                                       '${fmtDateShort(b.scheduledAt)} · ${fmtSlot(b.slot)} · #${b.id}',
@@ -260,7 +275,8 @@ class _BookingSheetState extends State<_BookingSheet> {
   Future<void> _load() async {
     final booking = await _repo.bookingById(widget.bookingId);
     final receipt = await _repo.receiptForBooking(widget.bookingId);
-    final customer = booking == null ? null : await _repo.userById(booking.customerId);
+    final customer =
+        booking == null ? null : await _repo.userById(booking.customerId);
     final workers = booking == null ? <Worker>[] : await _repo.listWorkers();
     if (!mounted) return;
     setState(() {
@@ -287,7 +303,10 @@ class _BookingSheetState extends State<_BookingSheet> {
       await _repo.updateBookingStatus(widget.bookingId, status);
     } catch (_) {
       if (mounted) {
-        AppSnack.show(context, tr('تعذر تغيير الحالة. إن كان التعديل بانتظار موافقة الزبون فانتظر ردّه.', "Couldn't change the status. If the change is waiting for the customer's approval, wait for their reply."),
+        AppSnack.show(
+            context,
+            tr('تعذر تغيير الحالة. إن كان التعديل بانتظار موافقة الزبون فانتظر ردّه.',
+                "Couldn't change the status. If the change is waiting for the customer's approval, wait for their reply."),
             error: true);
       }
     }
@@ -314,11 +333,18 @@ class _BookingSheetState extends State<_BookingSheet> {
                     ListTile(
                       leading: AvatarCircle(name: w.name, size: 38),
                       title: Text(w.name, style: const TextStyle(fontSize: 13)),
-                      subtitle: Text(w.specialty, style: const TextStyle(fontSize: 10)),
+                      subtitle: Text(
+                        w.city == null
+                            ? w.specialty
+                            : tr('${w.specialty} · ${w.city}',
+                                '${w.specialty} · ${cityLabel(w.city!)}'),
+                        style: const TextStyle(fontSize: 10),
+                      ),
                       trailing: w.available
                           ? const Icon(Icons.check_circle_rounded,
                               color: AppColors.success, size: 18)
-                          : const Icon(Icons.block_rounded, color: AppColors.danger, size: 18),
+                          : const Icon(Icons.block_rounded,
+                              color: AppColors.danger, size: 18),
                       onTap: () => Navigator.pop(ctx, w.id),
                     ),
                 ],
@@ -340,7 +366,11 @@ class _BookingSheetState extends State<_BookingSheet> {
       builder: (ctx) => _EditBookingForm(booking: booking, repo: _repo),
     );
     if (saved == true) {
-      if (mounted) AppSnack.show(context, tr('تم التعديل وأُرسل إلى الزبون ليوافق عليه', 'The change was saved and sent to the customer to approve'));
+      if (mounted)
+        AppSnack.show(
+            context,
+            tr('تم التعديل وأُرسل إلى الزبون ليوافق عليه',
+                'The change was saved and sent to the customer to approve'));
       await _load();
     }
   }
@@ -348,7 +378,10 @@ class _BookingSheetState extends State<_BookingSheet> {
   Future<void> _call(String? phone) async {
     if (phone == null || phone.isEmpty) return;
     if (!await launchUrl(Uri.parse('tel:${phoneForCall(phone)}'))) {
-      if (mounted) AppSnack.show(context, tr('تعذر فتح تطبيق الاتصال', "Couldn't open the phone app"), error: true);
+      if (mounted)
+        AppSnack.show(context,
+            tr('تعذر فتح تطبيق الاتصال', "Couldn't open the phone app"),
+            error: true);
     }
   }
 
@@ -359,7 +392,8 @@ class _BookingSheetState extends State<_BookingSheet> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: theme.textTheme.titleSmall?.copyWith(fontSize: 13)),
+          Text(title,
+              style: theme.textTheme.titleSmall?.copyWith(fontSize: 13)),
           const SizedBox(height: 6),
           child,
         ],
@@ -368,7 +402,8 @@ class _BookingSheetState extends State<_BookingSheet> {
   }
 
   Future<void> _setPrice(Booking b) async {
-    final controller = TextEditingController(text: b.hasPrice ? b.total.round().toString() : '');
+    final controller = TextEditingController(
+        text: b.hasPrice ? b.total.round().toString() : '');
     final amount = await showAppSheet<double>(
       context,
       builder: (ctx) => Padding(
@@ -379,7 +414,8 @@ class _BookingSheetState extends State<_BookingSheet> {
           children: [
             SheetHeader(
               title: tr('السعر المتفق عليه', 'Agreed price'),
-              subtitle: tr('يُضاف إلى وصل الزبون ليدفعه لاحقاً.', "Added to the customer's receipt to pay later."),
+              subtitle: tr('يُضاف إلى وصل الزبون ليدفعه لاحقاً.',
+                  "Added to the customer's receipt to pay later."),
             ),
             const SizedBox(height: 14),
             TextField(
@@ -409,16 +445,27 @@ class _BookingSheetState extends State<_BookingSheet> {
     if (amount == null) return;
     try {
       await _repo.setBookingPrice(b.id!, amount);
-      if (mounted) AppSnack.show(context, tr('تم تحديد السعر وإضافته إلى وصل الزبون', "The price was set and added to the customer's receipt"));
+      if (mounted)
+        AppSnack.show(
+            context,
+            tr('تم تحديد السعر وإضافته إلى وصل الزبون',
+                "The price was set and added to the customer's receipt"));
     } catch (_) {
-      if (mounted) AppSnack.show(context, tr('تعذر حفظ السعر، حاول مرة أخرى', "Couldn't save the price, please try again"), error: true);
+      if (mounted)
+        AppSnack.show(
+            context,
+            tr('تعذر حفظ السعر، حاول مرة أخرى',
+                "Couldn't save the price, please try again"),
+            error: true);
     }
     await _load();
   }
 
   Future<void> _markPaid(Receipt receipt) async {
     await _repo.markReceiptPaid(receipt.id!, true);
-    if (mounted) AppSnack.show(context, tr('تم تعليم الوصل مدفوعاً', 'The receipt was marked as paid'));
+    if (mounted)
+      AppSnack.show(context,
+          tr('تم تعليم الوصل مدفوعاً', 'The receipt was marked as paid'));
     await _load();
   }
 
@@ -434,13 +481,18 @@ class _BookingSheetState extends State<_BookingSheet> {
             children: [
               Expanded(
                 child: Text(
-                  b.hasPrice ? fmtMoney(b.total) : tr('لم يُحدد السعر بعد', 'Price not set yet'),
-                  style: theme.textTheme.titleMedium?.copyWith(fontSize: b.hasPrice ? 17 : 13),
+                  b.hasPrice
+                      ? fmtMoney(b.total)
+                      : tr('لم يُحدد السعر بعد', 'Price not set yet'),
+                  style: theme.textTheme.titleMedium
+                      ?.copyWith(fontSize: b.hasPrice ? 17 : 13),
                 ),
               ),
               if (open && !(receipt?.paid ?? false))
                 PrimaryButton(
-                  label: b.hasPrice ? tr('تغيير السعر', 'Change price') : tr('تحديد السعر', 'Set price'),
+                  label: b.hasPrice
+                      ? tr('تغيير السعر', 'Change price')
+                      : tr('تحديد السعر', 'Set price'),
                   icon: Icons.handshake_outlined,
                   compact: true,
                   expand: false,
@@ -454,7 +506,8 @@ class _BookingSheetState extends State<_BookingSheet> {
               children: [
                 Expanded(
                   child: Text(
-                    tr('${receipt.invoiceNo} · ${receipt.paid ? 'مدفوع' : 'لم يُدفع بعد'}', "${receipt.invoiceNo} · ${receipt.paid ? 'Paid' : 'Not paid yet'}"),
+                    tr('${receipt.invoiceNo} · ${receipt.paid ? 'مدفوع' : 'لم يُدفع بعد'}',
+                        "${receipt.invoiceNo} · ${receipt.paid ? 'Paid' : 'Not paid yet'}"),
                     style: theme.textTheme.bodySmall,
                   ),
                 ),
@@ -470,7 +523,9 @@ class _BookingSheetState extends State<_BookingSheet> {
             ),
           ] else if (!b.hasPrice) ...[
             const SizedBox(height: 6),
-            Text(tr('بعد الاتفاق مع الزبون حدّد السعر فيُنشأ وصله تلقائياً.', 'After agreeing with the customer, set the price and their receipt is created automatically.'),
+            Text(
+                tr('بعد الاتفاق مع الزبون حدّد السعر فيُنشأ وصله تلقائياً.',
+                    'After agreeing with the customer, set the price and their receipt is created automatically.'),
                 style: theme.textTheme.bodySmall),
           ],
         ],
@@ -497,7 +552,9 @@ class _BookingSheetState extends State<_BookingSheet> {
               Icon(Icons.edit_calendar_rounded, size: 18, color: color),
               const SizedBox(width: 6),
               Expanded(
-                child: Text(tr('آخر تعديل: ${fmtDateTime(b.adminEditedAt!)}', 'Last change: ${fmtDateTime(b.adminEditedAt!)}'),
+                child: Text(
+                    tr('آخر تعديل: ${fmtDateTime(b.adminEditedAt!)}',
+                        'Last change: ${fmtDateTime(b.adminEditedAt!)}'),
                     style: theme.textTheme.titleSmall?.copyWith(fontSize: 12)),
               ),
             ],
@@ -508,11 +565,15 @@ class _BookingSheetState extends State<_BookingSheet> {
           ],
           if (b.adminNote != null) ...[
             const SizedBox(height: 2),
-            Text(tr('رسالتك للزبون: ${b.adminNote}', 'Your message to the customer: ${b.adminNote}'), style: theme.textTheme.bodySmall),
+            Text(
+                tr('رسالتك للزبون: ${b.adminNote}',
+                    'Your message to the customer: ${b.adminNote}'),
+                style: theme.textTheme.bodySmall),
           ],
           const SizedBox(height: 6),
           Text(CustomerAck.label(b.customerAck),
-              style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: color)),
+              style: TextStyle(
+                  fontSize: 11.5, fontWeight: FontWeight.w800, color: color)),
         ],
       ),
     );
@@ -527,16 +588,23 @@ class _BookingSheetState extends State<_BookingSheet> {
         children: [
           Row(
             children: [
-              AvatarCircle(name: b.customerName ?? tr('زبون', 'Customer'), size: 46, imagePath: c?.avatarPath),
+              AvatarCircle(
+                  name: b.customerName ?? tr('زبون', 'Customer'),
+                  size: 46,
+                  imagePath: c?.avatarPath),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(c?.name ?? b.customerName ?? tr('زبون', 'Customer'),
-                        style: theme.textTheme.titleSmall?.copyWith(fontSize: 14)),
-                    Text(tr('زبون منذ ${c == null ? '—' : fmtDate(c.createdAt)}', "Customer since ${c == null ? '—' : fmtDate(c.createdAt)}"),
-                        style: theme.textTheme.bodySmall?.copyWith(fontSize: 10)),
+                        style:
+                            theme.textTheme.titleSmall?.copyWith(fontSize: 14)),
+                    Text(
+                        tr('زبون منذ ${c == null ? '—' : fmtDate(c.createdAt)}',
+                            "Customer since ${c == null ? '—' : fmtDate(c.createdAt)}"),
+                        style:
+                            theme.textTheme.bodySmall?.copyWith(fontSize: 10)),
                   ],
                 ),
               ),
@@ -549,7 +617,10 @@ class _BookingSheetState extends State<_BookingSheet> {
             ],
           ),
           const SizedBox(height: 4),
-          InfoRow(icon: Icons.phone_iphone_rounded, label: tr('رقم الهاتف', 'Phone number'), value: phone),
+          InfoRow(
+              icon: Icons.phone_iphone_rounded,
+              label: tr('رقم الهاتف', 'Phone number'),
+              value: phone),
           InfoRow(
               icon: Icons.location_city_rounded,
               label: tr('المحافظة', 'Province'),
@@ -557,7 +628,10 @@ class _BookingSheetState extends State<_BookingSheet> {
                 final city? => cityLabel(city),
                 _ => null,
               }),
-          InfoRow(icon: Icons.home_outlined, label: tr('عنوان حسابه', 'Account address'), value: c?.address),
+          InfoRow(
+              icon: Icons.home_outlined,
+              label: tr('عنوان حسابه', 'Account address'),
+              value: c?.address),
         ],
       ),
     );
@@ -571,8 +645,15 @@ class _BookingSheetState extends State<_BookingSheet> {
       return SoftCard(
         child: Row(
           children: [
-            Expanded(child: Text(tr('لم يُعيَّن حرفي بعد', 'No craftsman assigned yet'), style: TextStyle(fontSize: 12.5))),
-            PrimaryButton(label: tr('تعيين حرفي', 'Assign a craftsman'), compact: true, expand: false, onPressed: _assign),
+            Expanded(
+                child: Text(
+                    tr('لم يُعيَّن حرفي بعد', 'No craftsman assigned yet'),
+                    style: TextStyle(fontSize: 12.5))),
+            PrimaryButton(
+                label: tr('تعيين حرفي', 'Assign a craftsman'),
+                compact: true,
+                expand: false,
+                onPressed: _assign),
           ],
         ),
       );
@@ -588,17 +669,22 @@ class _BookingSheetState extends State<_BookingSheet> {
           Row(
             children: [
               AvatarCircle(
-                  name: w?.name ?? b.workerName ?? tr('حرفي', 'Craftsman'), size: 46, imagePath: w?.avatarPath),
+                  name: w?.name ?? b.workerName ?? tr('حرفي', 'Craftsman'),
+                  size: 46,
+                  imagePath: w?.avatarPath),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(w?.name ?? b.workerName ?? tr('حرفي', 'Craftsman'),
-                        style: theme.textTheme.titleSmall?.copyWith(fontSize: 14)),
+                        style:
+                            theme.textTheme.titleSmall?.copyWith(fontSize: 14)),
                     Text(WorkerResponse.label(b.workerResponse),
                         style: TextStyle(
-                            fontSize: 10.5, fontWeight: FontWeight.w800, color: responseColor)),
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w800,
+                            color: responseColor)),
                   ],
                 ),
               ),
@@ -609,24 +695,42 @@ class _BookingSheetState extends State<_BookingSheet> {
                     tooltip: tr('اتصال', 'Call'),
                     onTap: () => _call(phone)),
               const SizedBox(width: 4),
-              SecondaryButton(label: tr('تغيير', 'Change'), compact: true, expand: false, onPressed: _assign),
+              SecondaryButton(
+                  label: tr('تغيير', 'Change'),
+                  compact: true,
+                  expand: false,
+                  onPressed: _assign),
             ],
           ),
           const SizedBox(height: 4),
-          InfoRow(icon: Icons.phone_iphone_rounded, label: tr('رقم الهاتف', 'Phone number'), value: phone),
-          InfoRow(icon: Icons.handyman_outlined, label: tr('الاختصاص', 'Specialty'), value: w?.specialty),
+          InfoRow(
+              icon: Icons.phone_iphone_rounded,
+              label: tr('رقم الهاتف', 'Phone number'),
+              value: phone),
+          InfoRow(
+              icon: Icons.handyman_outlined,
+              label: tr('الاختصاص', 'Specialty'),
+              value: w?.specialty),
           InfoRow(
             icon: Icons.star_rounded,
             label: tr('التقييم والأعمال', 'Rating and jobs'),
-            value: w == null ? null : tr('${w.rating.toStringAsFixed(1)} · ${w.jobsDone} عمل منجز', '${w.rating.toStringAsFixed(1)} · ${w.jobsDone} jobs done'),
+            value: w == null
+                ? null
+                : tr('${w.rating.toStringAsFixed(1)} · ${w.jobsDone} عمل منجز',
+                    '${w.rating.toStringAsFixed(1)} · ${w.jobsDone} jobs done'),
           ),
           InfoRow(
             icon: Icons.event_available_rounded,
             label: tr('الحالة', 'Status'),
-            value: w == null ? null : (w.available ? tr('متاح', 'Available') : tr('مشغول', 'Busy')),
+            value: w == null
+                ? null
+                : (w.available ? tr('متاح', 'Available') : tr('مشغول', 'Busy')),
           ),
           if (w?.bio != null && w!.bio!.trim().isNotEmpty)
-            InfoRow(icon: Icons.notes_rounded, label: tr('نبذة', 'About'), value: w.bio),
+            InfoRow(
+                icon: Icons.notes_rounded,
+                label: tr('نبذة', 'About'),
+                value: w.bio),
         ],
       ),
     );
@@ -640,10 +744,12 @@ class _BookingSheetState extends State<_BookingSheet> {
       return const SafeArea(
         top: false,
         child: SizedBox(
-            height: 240, child: Center(child: CircularProgressIndicator(strokeWidth: 2.4))),
+            height: 240,
+            child: Center(child: CircularProgressIndicator(strokeWidth: 2.4))),
       );
     }
-    final open = b.status != BookingStatus.completed && b.status != BookingStatus.cancelled;
+    final open = b.status != BookingStatus.completed &&
+        b.status != BookingStatus.cancelled;
     return SafeArea(
       top: false,
       child: SingleChildScrollView(
@@ -655,7 +761,8 @@ class _BookingSheetState extends State<_BookingSheet> {
               children: [
                 StatusPill(status: b.status),
                 const SizedBox(width: 8),
-                Text(tr('حجز #${b.id}', 'Booking #${b.id}'), style: theme.textTheme.bodySmall?.copyWith(fontSize: 11)),
+                Text(tr('حجز #${b.id}', 'Booking #${b.id}'),
+                    style: theme.textTheme.bodySmall?.copyWith(fontSize: 11)),
                 const Spacer(),
                 if (open)
                   PrimaryButton(
@@ -684,15 +791,22 @@ class _BookingSheetState extends State<_BookingSheet> {
                     InfoRow(
                       icon: Icons.calendar_month_rounded,
                       label: tr('الموعد', 'Appointment'),
-                      value: '${fmtDate(b.scheduledAt)} · ${fmtWeekday(b.scheduledAt)}',
+                      value:
+                          '${fmtDate(b.scheduledAt)} · ${fmtWeekday(b.scheduledAt)}',
                     ),
-                    InfoRow(icon: Icons.schedule_rounded, label: tr('الوقت', 'Time'), value: fmtSlot(b.slot)),
+                    InfoRow(
+                        icon: Icons.schedule_rounded,
+                        label: tr('الوقت', 'Time'),
+                        value: fmtSlot(b.slot)),
                     InfoRow(
                         icon: Icons.location_on_outlined,
                         label: tr('عنوان الخدمة', 'Service address'),
                         value: b.address),
                     if (b.notes != null && b.notes!.isNotEmpty)
-                      InfoRow(icon: Icons.notes_rounded, label: tr('ملاحظات الزبون', "Customer's notes"), value: b.notes),
+                      InfoRow(
+                          icon: Icons.notes_rounded,
+                          label: tr('ملاحظات الزبون', "Customer's notes"),
+                          value: b.notes),
                     InfoRow(
                         icon: Icons.history_rounded,
                         label: tr('وقت الطلب', 'Requested at'),
@@ -715,7 +829,9 @@ class _BookingSheetState extends State<_BookingSheet> {
                   padding: const EdgeInsets.all(12),
                   onTap: () => Navigator.push(
                     context,
-                    QuickRoute(builder: (_) => ReceiptPreviewScreen(receipt: _receipt!)),
+                    QuickRoute(
+                        builder: (_) =>
+                            ReceiptPreviewScreen(receipt: _receipt!)),
                   ),
                   child: Row(
                     children: [
@@ -723,7 +839,8 @@ class _BookingSheetState extends State<_BookingSheet> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          tr('${_receipt!.invoiceNo} · ${_receipt!.paid ? 'مدفوع' : 'غير مدفوع'}', "${_receipt!.invoiceNo} · ${_receipt!.paid ? 'Paid' : 'Unpaid'}"),
+                          tr('${_receipt!.invoiceNo} · ${_receipt!.paid ? 'مدفوع' : 'غير مدفوع'}',
+                              "${_receipt!.invoiceNo} · ${_receipt!.paid ? 'Paid' : 'Unpaid'}"),
                           style: const TextStyle(fontSize: 11),
                         ),
                       ),
@@ -739,7 +856,8 @@ class _BookingSheetState extends State<_BookingSheet> {
                 ),
               ),
             const SizedBox(height: 16),
-            Text(tr('تحديث الحالة', 'Update status'), style: theme.textTheme.titleSmall?.copyWith(fontSize: 13)),
+            Text(tr('تحديث الحالة', 'Update status'),
+                style: theme.textTheme.titleSmall?.copyWith(fontSize: 13)),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -759,11 +877,18 @@ class _BookingSheetState extends State<_BookingSheet> {
                     color: AppColors.info,
                     onTap: () {
                       if (b.workerId == null) {
-                        AppSnack.show(context, tr('عيّن حرفياً أولاً ثم أرسله', 'Assign a craftsman first, then send them'), error: true);
+                        AppSnack.show(
+                            context,
+                            tr('عيّن حرفياً أولاً ثم أرسله',
+                                'Assign a craftsman first, then send them'),
+                            error: true);
                         return;
                       }
                       if (b.customerAck == CustomerAck.pending) {
-                        AppSnack.show(context, tr('بانتظار موافقة الزبون على تعديلك أولاً', 'Waiting for the customer to approve your change first'),
+                        AppSnack.show(
+                            context,
+                            tr('بانتظار موافقة الزبون على تعديلك أولاً',
+                                'Waiting for the customer to approve your change first'),
                             error: true);
                         return;
                       }
@@ -818,8 +943,18 @@ class _EditBookingForm extends StatefulWidget {
 
 class _EditBookingFormState extends State<_EditBookingForm> {
   static const _slots = [
-    '09:00', '10:00', '11:00', '12:00', '13:00', '14:00',
-    '15:00', '16:00', '17:00', '18:00', '19:00', '20:00',
+    '09:00',
+    '10:00',
+    '11:00',
+    '12:00',
+    '13:00',
+    '14:00',
+    '15:00',
+    '16:00',
+    '17:00',
+    '18:00',
+    '19:00',
+    '20:00',
   ];
 
   late DateTime _day = DateTime(
@@ -830,7 +965,8 @@ class _EditBookingFormState extends State<_EditBookingForm> {
   late String _slot = widget.booking.slot;
   late final _address = TextEditingController(text: widget.booking.address);
   late final _notes = TextEditingController(text: widget.booking.notes ?? '');
-  late final _message = TextEditingController(text: widget.booking.adminNote ?? '');
+  late final _message =
+      TextEditingController(text: widget.booking.adminNote ?? '');
   bool _saving = false;
   String? _error;
 
@@ -856,7 +992,8 @@ class _EditBookingFormState extends State<_EditBookingForm> {
 
   Future<void> _save() async {
     if (_address.text.trim().length < 8) {
-      setState(() => _error = tr('أدخل عنواناً تفصيلياً لا يقل عن 8 أحرف', 'Enter a detailed address of at least 8 characters'));
+      setState(() => _error = tr('أدخل عنواناً تفصيلياً لا يقل عن 8 أحرف',
+          'Enter a detailed address of at least 8 characters'));
       return;
     }
     setState(() {
@@ -877,7 +1014,8 @@ class _EditBookingFormState extends State<_EditBookingForm> {
       if (mounted) {
         setState(() {
           _saving = false;
-          _error = tr('تعذر حفظ التعديل. تحقق من الاتصال وحاول مرة أخرى.', "Couldn't save the change. Check the connection and try again.");
+          _error = tr('تعذر حفظ التعديل. تحقق من الاتصال وحاول مرة أخرى.',
+              "Couldn't save the change. Check the connection and try again.");
         });
       }
     }
@@ -892,7 +1030,9 @@ class _EditBookingFormState extends State<_EditBookingForm> {
         children: [
           SheetHeader(
             title: tr('تعديل الحجز', 'Edit booking'),
-            subtitle: tr('يُرسَل التعديل إلى الزبون ليوافق عليه قبل إرسال الحرفي.', 'The change is sent to the customer to approve before the craftsman is sent.'),
+            subtitle: tr(
+                'يُرسَل التعديل إلى الزبون ليوافق عليه قبل إرسال الحرفي.',
+                'The change is sent to the customer to approve before the craftsman is sent.'),
           ),
           const SizedBox(height: 14),
           FieldLabel(tr('اليوم', 'Day')),
@@ -921,29 +1061,34 @@ class _EditBookingFormState extends State<_EditBookingForm> {
           TextField(
             controller: _address,
             maxLines: 2,
-            decoration:
-                const InputDecoration(prefixIcon: Icon(Icons.location_on_outlined, size: 20)),
+            decoration: const InputDecoration(
+                prefixIcon: Icon(Icons.location_on_outlined, size: 20)),
           ),
           const SizedBox(height: 12),
           FieldLabel(tr('ملاحظات', 'Notes')),
           TextField(
             controller: _notes,
             maxLines: 2,
-            decoration: const InputDecoration(prefixIcon: Icon(Icons.notes_rounded, size: 20)),
+            decoration: const InputDecoration(
+                prefixIcon: Icon(Icons.notes_rounded, size: 20)),
           ),
           const SizedBox(height: 12),
-          FieldLabel(tr('رسالة للزبون (اختياري)', 'Message to the customer (optional)')),
+          FieldLabel(tr(
+              'رسالة للزبون (اختياري)', 'Message to the customer (optional)')),
           TextField(
             controller: _message,
             maxLines: 2,
             decoration: InputDecoration(
-              hintText: tr('مثال: اتفقنا معك هاتفياً على الموعد الجديد', 'Example: We agreed with you by phone on the new time'),
+              hintText: tr('مثال: اتفقنا معك هاتفياً على الموعد الجديد',
+                  'Example: We agreed with you by phone on the new time'),
               prefixIcon: Icon(Icons.chat_bubble_outline_rounded, size: 20),
             ),
           ),
           if (_error != null) ...[
             const SizedBox(height: 10),
-            Text(_error!, style: const TextStyle(color: AppColors.danger, fontSize: 12.5)),
+            Text(_error!,
+                style:
+                    const TextStyle(color: AppColors.danger, fontSize: 12.5)),
           ],
           const SizedBox(height: 18),
           PrimaryButton(

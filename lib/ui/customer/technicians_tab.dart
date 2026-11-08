@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/language.dart';
+import '../../core/theme.dart';
+import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../../data/sections.dart';
 import '../../state/app_state.dart';
@@ -63,7 +65,8 @@ class TechniciansChoice extends ChangeNotifier {
 
 /// تبويب الفنيين: البحث عن حرفي أو الاختيار حسب نوع الشغل، وتحتهما مجموعة الحرفيين.
 class TechniciansTab extends StatefulWidget {
-  const TechniciansTab({super.key, this.loadedSections, this.loadedWorkers, this.choice});
+  const TechniciansTab(
+      {super.key, this.loadedSections, this.loadedWorkers, this.choice});
 
   /// نوع الشغل المضغوط عليه في الصفحة الرئيسية.
   final TechniciansChoice? choice;
@@ -76,7 +79,8 @@ class TechniciansTab extends StatefulWidget {
   State<TechniciansTab> createState() => _TechniciansTabState();
 }
 
-class _TechniciansTabState extends State<TechniciansTab> with RealtimeRefresh<TechniciansTab> {
+class _TechniciansTabState extends State<TechniciansTab>
+    with RealtimeRefresh<TechniciansTab> {
   final _search = TextEditingController();
   final _searchFocus = FocusNode();
   final _choicesScroll = ScrollController();
@@ -85,6 +89,9 @@ class _TechniciansTabState extends State<TechniciansTab> with RealtimeRefresh<Te
   List<Category> _sections = customerSections(const []);
   List<Worker>? _workers;
   String? _chosen;
+
+  /// محافظة التصفية؛ فارغة تعني كل المحافظات.
+  String? _city;
   bool _failed = false;
 
   @override
@@ -126,6 +133,51 @@ class _TechniciansTabState extends State<TechniciansTab> with RealtimeRefresh<Te
   void _choose(String? name) {
     setState(() => _chosen = name);
     _showChosen(animate: true);
+  }
+
+  /// تصفية حسب المحافظة. القائمة كاملة في الذاكرة، فلا حاجة لجلب جديد.
+  Future<void> _pickCity() async {
+    final picked = await showAppSheet<String>(
+      context,
+      builder: (ctx) => ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: 480),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+              child: SheetHeader(
+                  title: tr('اختر المحافظة', 'Choose the province')),
+            ),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                children: [
+                  ListTile(
+                    title: Text(tr('كل المحافظات', 'All provinces')),
+                    trailing: _city == null
+                        ? const Icon(Icons.check_circle_rounded,
+                            color: AppColors.success, size: 20)
+                        : null,
+                    onTap: () => Navigator.pop(ctx, ''),
+                  ),
+                  for (final city in iraqCities)
+                    ListTile(
+                      title: Text(cityLabel(city)),
+                      trailing: city == _city
+                          ? const Icon(Icons.check_circle_rounded,
+                              color: AppColors.success, size: 20)
+                          : null,
+                      onTap: () => Navigator.pop(ctx, city),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (picked == null || !mounted) return;
+    setState(() => _city = picked.isEmpty ? null : picked);
   }
 
   /// يحرّك شريط الاختيارات حتى يظهر الزر المختار في وسطه.
@@ -172,8 +224,11 @@ class _TechniciansTabState extends State<TechniciansTab> with RealtimeRefresh<Te
     return [
       for (final worker in workers)
         if ((_chosen == null || worker.categoryId == chosenId) &&
+            (_city == null || worker.city == _city) &&
             (query.isEmpty ||
-                _searchable('${worker.name} ${worker.specialty} ${names[worker.categoryId] ?? ''} '
+                _searchable(
+                        '${worker.name} ${worker.specialty} ${worker.city ?? ''} '
+                        '${names[worker.categoryId] ?? ''} '
                         '${sectionLabel(names[worker.categoryId] ?? '')}')
                     .contains(query)))
           worker,
@@ -210,8 +265,10 @@ class _TechniciansTabState extends State<TechniciansTab> with RealtimeRefresh<Te
                   unit: unit,
                   safeTop: safeTop,
                   top: top,
-                  builder: (context, metrics) =>
-                      HomeHeader(width: width, metrics: metrics, title: tr('كل الحرفيين', 'All craftsmen')),
+                  builder: (context, metrics) => HomeHeader(
+                      width: width,
+                      metrics: metrics,
+                      title: tr('كل الحرفيين', 'All craftsmen')),
                 ),
               ],
             );
@@ -225,7 +282,8 @@ class _TechniciansTabState extends State<TechniciansTab> with RealtimeRefresh<Te
     final chromeInset = PushKey.faceInset * unit * homeKeyChrome;
     final chromeDepth = PushKey.depth * homeKeyChrome;
     final choicesTop = _Design.choiceTop - ChoiceKey.touchMargin;
-    final choicesHeight = ChoiceKey.faceHeight + chromeDepth + ChoiceKey.touchMargin * 2;
+    final choicesHeight =
+        ChoiceKey.faceHeight + chromeDepth + ChoiceKey.touchMargin * 2;
     final choices = [null, for (final section in _sections) section.name];
     final shown = _shown;
     return ListView(
@@ -238,12 +296,17 @@ class _TechniciansTabState extends State<TechniciansTab> with RealtimeRefresh<Te
         Align(
           alignment: Alignment.topLeft,
           child: Padding(
-            padding: EdgeInsets.only(left: left + _Design.searchLeft * unit - chromeInset),
+            padding: EdgeInsets.only(
+                left: left + _Design.searchLeft * unit - chromeInset),
             child: _searchKey(unit, night),
           ),
         ),
         SizedBox(
-          height: (choicesTop - _Design.searchTop - _Design.searchHeight - chromeDepth) * unit,
+          height: (choicesTop -
+                  _Design.searchTop -
+                  _Design.searchHeight -
+                  chromeDepth) *
+              unit,
         ),
         SizedBox(
           height: choicesHeight * unit,
@@ -256,11 +319,23 @@ class _TechniciansTabState extends State<TechniciansTab> with RealtimeRefresh<Te
             ),
             child: Row(
               children: [
+                ChoiceKey(
+                  label: _city == null
+                      ? tr('كل المحافظات', 'All provinces')
+                      : tr('المحافظة: ${cityLabel(_city!)}',
+                          'Province: ${cityLabel(_city!)}'),
+                  selected: _city != null,
+                  unit: unit,
+                  onPressed: _pickCity,
+                ),
+                SizedBox(width: _Design.choiceGap * unit - chromeInset * 2),
                 for (final (i, name) in choices.indexed) ...[
-                  if (i > 0) SizedBox(width: _Design.choiceGap * unit - chromeInset * 2),
+                  if (i > 0)
+                    SizedBox(width: _Design.choiceGap * unit - chromeInset * 2),
                   ChoiceKey(
                     key: _choiceKeys.putIfAbsent(name, GlobalKey.new),
-                    label: name == null ? tr('الكل', 'All') : sectionLabel(name),
+                    label:
+                        name == null ? tr('الكل', 'All') : sectionLabel(name),
                     selected: name == _chosen,
                     unit: unit,
                     onPressed: () => _choose(name),
@@ -273,7 +348,9 @@ class _TechniciansTabState extends State<TechniciansTab> with RealtimeRefresh<Te
         SizedBox(height: (_Design.gridTop - choicesTop - choicesHeight) * unit),
         if (_failed && _workers == null)
           _Message(
-            text: tr('تعذّر جلب الحرفيين. اسحب الصفحة إلى الأسفل لإعادة المحاولة.', "Couldn't load the craftsmen. Pull the page down to try again."),
+            text: tr(
+                'تعذّر جلب الحرفيين. اسحب الصفحة إلى الأسفل لإعادة المحاولة.',
+                "Couldn't load the craftsmen. Pull the page down to try again."),
             unit: unit,
             night: night,
           )
@@ -281,11 +358,13 @@ class _TechniciansTabState extends State<TechniciansTab> with RealtimeRefresh<Te
           EmptyState(
             icon: Icons.search_off_rounded,
             title: tr('لا يوجد حرفيون مطابقون', 'No matching craftsmen'),
-            subtitle: tr('جرّب كلمة بحث أخرى أو اختر نوع شغل مختلفاً.', 'Try another search word or choose a different kind of work.'),
+            subtitle: tr('جرّب كلمة بحث أخرى أو اختر نوع شغل مختلفاً.',
+                'Try another search word or choose a different kind of work.'),
           )
         else
           Center(
-            child: CraftsmanGrid(unit: unit, workers: shown, lefts: _Design.gridLefts),
+            child: CraftsmanGrid(
+                unit: unit, workers: shown, lefts: _Design.gridLefts),
           ),
         SizedBox(height: _Design.pageBottom * unit),
       ],
@@ -312,7 +391,8 @@ class _TechniciansTabState extends State<TechniciansTab> with RealtimeRefresh<Te
         faceRadius: _Design.searchRadius,
         night: night ? kAlwaysCompleteAnimation : kAlwaysDismissedAnimation,
         child: Padding(
-          padding: EdgeInsetsDirectional.only(start: _Design.searchMargin * unit),
+          padding:
+              EdgeInsetsDirectional.only(start: _Design.searchMargin * unit),
           child: Row(
             children: [
               GestureDetector(
@@ -343,7 +423,8 @@ class _TechniciansTabState extends State<TechniciansTab> with RealtimeRefresh<Te
                     focusedBorder: InputBorder.none,
                     contentPadding: EdgeInsets.zero,
                     hintText: tr('ابحث عن حرفي', 'Search for a craftsman'),
-                    hintStyle: textStyle.copyWith(color: ink.withValues(alpha: .55)),
+                    hintStyle:
+                        textStyle.copyWith(color: ink.withValues(alpha: .55)),
                   ),
                 ),
               ),

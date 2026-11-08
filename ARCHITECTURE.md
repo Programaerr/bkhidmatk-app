@@ -24,8 +24,9 @@ Keep user-visible strings in Arabic and keep the layout RTL.
 - Booking lives in `bookings`; statuses: `pending`, `confirmed`, `dispatched`,
   `in_progress`, `completed`, `cancelled`. Price is 0 until the admin sets it.
 - UI is Arabic/RTL, Cairo font, gold `#FFD400` + ink `#0B0B0D`.
-- Cloud schema/RPCs: `supabase/setup.sql` then `booking_requests.sql`,
-  `booking_edits.sql`, `booking_prices.sql`, `home_sections.sql`.
+- Cloud schema/RPCs: `supabase/setup.sql` then `governorates.sql`,
+  `booking_requests.sql`, `booking_edits.sql`, `booking_prices.sql`,
+  `home_sections.sql`.
 - No `test/` directory; verify with `flutter analyze`.
 - Never ship the `service_role` key; only the publishable/anon key is used.
 
@@ -136,6 +137,7 @@ lib/
     widgets/                shell layout, theme fade, realtime mixin, UI kit
 supabase/
   setup.sql                 profiles, auth triggers, RLS, core tables/RPCs
+  governorates.sql          governorate profiles + worker city + location RPCs
   booking_requests.sql      worker response + dispatch + status RPCs
   booking_edits.sql         admin edit + customer approval
   booking_prices.sql        price agreed later + receipt creation
@@ -230,7 +232,20 @@ constraints, and RPCs. Add new values with a migration if truly necessary.
   gateway** in this app. Payment is manual/demo.
 - The customer can preview/print the A5 receipt (`ui/common/receipt_document.dart`).
 
-### 5.4 Worker privacy
+### 5.4 Governorate / "near you"
+
+- `app_profiles.city` is the customer's governorate; `workers.city` is the
+  craftsman's governorate (both Arabic names from `iraqCities`).
+- The home section «حرفي بالقرب منك» shows only workers whose `city` matches
+  the signed-in customer's city. Guests see all workers.
+- The craftsmen tab always receives the full worker list, so it remains
+  comprehensive for every governorate; it has an optional governorate filter.
+- A worker edits their governorate in the account tab; cloud writes go through
+  `update_my_worker_city`, local writes update `workers.city` directly.
+- Accepting a craftsman application creates/updates the `workers` row with the
+  application's city, so the accepted craftsman appears in the right governorate.
+
+### 5.5 Worker privacy
 
 Before dispatch, a craftsman must not see the customer's address or phone.
 - Cloud: workers read bookings only through the `worker_bookings()` RPC, which
@@ -260,7 +275,7 @@ unavoidable. Document any intentional difference here.
 
 ### 6.2 Local SQLite
 
-`lib/data/database.dart`, file `jaik.db`, **schema version 9**. Tables:
+`lib/data/database.dart`, file `jaik.db`, **schema version 10**. Tables:
 
 `users`, `categories`, `workers`, `services`, `bookings`, `posts`, `comments`,
 `our_works`, `work_comments`, `work_comment_reactions`, `work_likes`, `hires`,
@@ -282,10 +297,10 @@ Adding a column or table requires:
 Tables created by `supabase/setup.sql`:
 
 `app_profiles`, `hire_phones`, `admin_phones`, `admin_users`,
-`craftsman_applications`, `app_notifications`, `categories`, `workers`,
-`services`, `bookings`, `posts`, `post_likes`, `comments`, `our_works`,
-`work_likes`, `work_comments`, `work_comment_reactions`, `messages`, `cards`,
-`receipts`, `settings`.
+`craftsman_applications`, `app_notifications`, `governorates`, `categories`,
+`workers`, `services`, `bookings`, `posts`, `post_likes`, `comments`,
+`our_works`, `work_likes`, `work_comments`, `work_comment_reactions`,
+`messages`, `cards`, `receipts`, `settings`.
 
 Storage bucket: `jaik-media` (uploads under `folder/<auth-uid>/<timestamp><ext>`).
 Only the publishable/anon key is used by the app. **`service_role` must never
@@ -296,6 +311,8 @@ Important cloud helpers/RPCs:
 - `current_app_profile_id()` — profile id of the logged-in auth user
 - `is_app_admin()` — checks `admin_users`
 - `current_worker_id()` — links a worker account to a `workers` row by phone
+- `update_my_worker_city` — a worker changes their own governorate
+- `my_worker_profile` — a worker reads their own directory row (including city)
 - `update_booking_status`, `assign_booking_worker`, `worker_respond_booking`,
   `worker_bookings`, `admin_update_booking`, `customer_respond_booking_edit`,
   `set_booking_price`, `rate_booking`
@@ -324,10 +341,13 @@ Important cloud helpers/RPCs:
 For a fresh Supabase project run, in order:
 
 1. `supabase/setup.sql`
-2. `supabase/booking_requests.sql`
-3. `supabase/booking_edits.sql`
-4. `supabase/booking_prices.sql`
-5. `supabase/home_sections.sql` (needed on an existing project for the 18 sections)
+2. `supabase/governorates.sql` (governorate profiles + `workers.city`)
+3. `supabase/booking_requests.sql`
+4. `supabase/booking_edits.sql`
+5. `supabase/booking_prices.sql`
+6. `supabase/home_sections.sql` (needed on an existing project for the 18 sections)
+7. `supabase/guest_browse.sql` (only if guest browsing is enabled; re-run after
+   `governorates.sql` so guests can read the new `city` column)
 
 All are written to be re-runnable. `booking_prices.sql` must run after
 `booking_edits.sql` because both redefine `prepare_booking()`.

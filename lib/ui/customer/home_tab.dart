@@ -64,7 +64,11 @@ const _homeSections = 8;
 const _homeCraftsmen = 6;
 
 class HomeTab extends StatefulWidget {
-  const HomeTab({super.key, required this.onOpenProfile, this.onOpenSection, this.onLoaded});
+  const HomeTab(
+      {super.key,
+      required this.onOpenProfile,
+      this.onOpenSection,
+      this.onLoaded});
 
   final VoidCallback onOpenProfile;
 
@@ -72,7 +76,8 @@ class HomeTab extends StatefulWidget {
   final ValueChanged<String?>? onOpenSection;
 
   /// يأخذ الأقسام والحرفيين بعد كل جلب، فيفتح منهما تبويب الفنيين فوراً.
-  final void Function(List<Category> sections, List<Worker> craftsmen)? onLoaded;
+  final void Function(List<Category> sections, List<Worker> craftsmen)?
+      onLoaded;
 
   @override
   State<HomeTab> createState() => _HomeTabState();
@@ -81,6 +86,7 @@ class HomeTab extends StatefulWidget {
 class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
   Future<_HomeData>? _future;
   final _fold = HeaderFold();
+  String? _loadedCity;
 
   @override
   void onRealtimeChange() => _load();
@@ -100,6 +106,7 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
   void _load() {
     final state = context.read<AppState>();
     final user = state.user;
+    _loadedCity = user?.city?.trim();
     setState(() {
       _future = _fetch(state, state.repo, user?.id);
     });
@@ -114,11 +121,17 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
       userId == null ? Future.value(0) : _unreadNotifications(state),
     ]);
     final sections = customerSections(results[0] as List<Category>);
-    final craftsmen = results[1] as List<Worker>;
-    widget.onLoaded?.call(sections, craftsmen);
+    final allCraftsmen = results[1] as List<Worker>;
+    // «بالقرب منك» لأهل محافظة الزبون فقط. بقية التطبيق (تبويب الحرفيين)
+    // يأخذ القائمة كاملة، فيبقى شاملاً لكل المحافظات.
+    final city = state.user?.city?.trim();
+    final nearby = city == null || city.isEmpty
+        ? allCraftsmen
+        : allCraftsmen.where((worker) => worker.city == city).toList();
+    widget.onLoaded?.call(sections, allCraftsmen);
     return _HomeData(
       sections: sections,
-      craftsmen: craftsmen,
+      craftsmen: nearby,
       unreadMessages: results[2] as int,
       unreadNotifications: results[3] as int,
     );
@@ -145,6 +158,14 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
   Widget build(BuildContext context) {
     final night = Theme.of(context).brightness == Brightness.dark;
     final user = context.watch<AppState>().user;
+    final city = user?.city?.trim();
+    if (city != _loadedCity) {
+      // تغيير المحافظة من «حسابي» يحدّث «بالقرب منك» فور الرجوع للرئيسية.
+      _loadedCity = city;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _load();
+      });
+    }
     final safeTop = MediaQuery.viewPaddingOf(context).top;
     return AnnotatedRegion<SystemUiOverlayStyle>(
       // شريط الحالة فوق الجهة الزرقاء دائماً، نهاراً وليلاً، فأيقوناته بيضاء.
@@ -172,8 +193,8 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
                           child: ListView(
                             physics: const AlwaysScrollableScrollPhysics(),
                             // يبقى آخر صف فوق شريط التنقل الزجاجي.
-                            padding:
-                                EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
+                            padding: EdgeInsets.only(
+                                bottom: MediaQuery.paddingOf(context).bottom),
                             children: [
                               _page(data, width, unit, left, top, night),
                             ],
@@ -294,9 +315,15 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
         ),
         // الاسم في وسط الدائرة كلها، بوجهها وحلقتها، وبعيد عن حلقتها.
         Positioned(
-          right: profileRight + profileFace * scale + inset + _Design.nameGap * unit,
+          right: profileRight +
+              profileFace * scale +
+              inset +
+              _Design.nameGap * unit,
           left: left +
-              (_Design.messagesCenterX + _Design.smallFace / 2 + _Design.nameMargin) * unit +
+              (_Design.messagesCenterX +
+                      _Design.smallFace / 2 +
+                      _Design.nameMargin) *
+                  unit +
               inset,
           top: profileTop,
           height: profileFace + depth,
@@ -345,7 +372,8 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
     final ink = night ? homeNightInk : homeLabel;
     final sections = data?.sections.take(_homeSections).toList();
     final craftsmen = data?.craftsmen.take(_homeCraftsmen).toList();
-    final craftsmenRows = CraftsmanGrid.heightOf(craftsmen?.length ?? _homeCraftsmen, unit);
+    final craftsmenRows =
+        CraftsmanGrid.heightOf(craftsmen?.length ?? _homeCraftsmen, unit);
     final right = width - left - homeDesignWidth * unit;
     final titleStyle = TextStyle(
       fontFamily: 'Cairo',
@@ -365,7 +393,8 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
             child: TextButton(
               style: TextButton.styleFrom(
                 foregroundColor: ink,
-                padding: EdgeInsets.symmetric(horizontal: _Design.allPadding * unit),
+                padding:
+                    EdgeInsets.symmetric(horizontal: _Design.allPadding * unit),
                 minimumSize: Size(0, _Design.allHeight * unit),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
@@ -402,7 +431,9 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
         );
 
     return SizedBox(
-      height: top + (_Design.craftsmenTop + _Design.pageBottom) * unit + craftsmenRows,
+      height: top +
+          (_Design.craftsmenTop + _Design.pageBottom) * unit +
+          craftsmenRows,
       child: Stack(
         children: [
           Positioned(
@@ -414,14 +445,18 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
           ),
           // «الأقسام» في وسط الدائرة اليمنى.
           Positioned(
-            left: left + (homeSectionRightCenter - _Design.sectionsTitleWidth / 2) * unit,
+            left: left +
+                (homeSectionRightCenter - _Design.sectionsTitleWidth / 2) *
+                    unit,
             width: _Design.sectionsTitleWidth * unit,
-            top: top + (_Design.sectionsTitleCenter - _Design.titleHeight / 2) * unit,
+            top: top +
+                (_Design.sectionsTitleCenter - _Design.titleHeight / 2) * unit,
             height: _Design.titleHeight * unit,
             child: Center(
               child: FittedBox(
                 fit: BoxFit.scaleDown,
-                child: Text(tr('الأقسام', 'Categories'), maxLines: 1, style: titleStyle),
+                child: Text(tr('الأقسام', 'Categories'),
+                    maxLines: 1, style: titleStyle),
               ),
             ),
           ),
@@ -445,18 +480,21 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
           Positioned(
             right: right + _Design.craftsmenTitleRight * unit,
             left: left + _Design.titleRoom * unit,
-            top: top + (_Design.craftsmenTitleCenter - _Design.titleHeight / 2) * unit,
+            top: top +
+                (_Design.craftsmenTitleCenter - _Design.titleHeight / 2) * unit,
             height: _Design.titleHeight * unit,
             child: Align(
               alignment: AlignmentDirectional.centerStart,
               child: FittedBox(
                 fit: BoxFit.scaleDown,
-                child: Text(tr('حرفي بالقرب منك', 'Craftsmen near you'), maxLines: 1, style: titleStyle),
+                child: Text(tr('حرفي بالقرب منك', 'Craftsmen near you'),
+                    maxLines: 1, style: titleStyle),
               ),
             ),
           ),
           // كل الحرفيين هم تبويب الحرفيين نفسه، فلا صفحة ثانية تكرره.
-          showAll(_Design.craftsmenAllCenter, () => widget.onOpenSection?.call(null)),
+          showAll(_Design.craftsmenAllCenter,
+              () => widget.onOpenSection?.call(null)),
           Positioned(
             left: left,
             top: top + _Design.craftsmenTop * unit,
@@ -464,7 +502,8 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
                 ? SizedBox(
                     width: homeDesignWidth * unit,
                     child: Text(
-                      tr('لا يوجد حرفيون متاحون الآن', 'No craftsmen available right now'),
+                      tr('لا يوجد حرفيون متاحون الآن',
+                          'No craftsmen available right now'),
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontFamily: 'Cairo',
@@ -475,7 +514,10 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
                       ),
                     ),
                   )
-                : CraftsmanGrid(unit: unit, workers: craftsmen, placeholders: _homeCraftsmen),
+                : CraftsmanGrid(
+                    unit: unit,
+                    workers: craftsmen,
+                    placeholders: _homeCraftsmen),
           ),
         ],
       ),

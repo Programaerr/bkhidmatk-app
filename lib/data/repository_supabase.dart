@@ -170,14 +170,19 @@ class SupabaseRepository implements Repository {
       return localPath;
     }
     if (localPath.startsWith('asset:')) {
-      throw ArgumentError(tr('لا يمكن رفع ملفات assets المضمنة كملفات مستخدمين', 'Built-in asset files cannot be uploaded as user files'));
+      throw ArgumentError(tr('لا يمكن رفع ملفات assets المضمنة كملفات مستخدمين',
+          'Built-in asset files cannot be uploaded as user files'));
     }
     final file = File(localPath);
     if (!await file.exists()) {
-      throw FileSystemException(tr('الملف المحدد غير موجود', 'The selected file does not exist'), localPath);
+      throw FileSystemException(
+          tr('الملف المحدد غير موجود', 'The selected file does not exist'),
+          localPath);
     }
     final authUser = _client.auth.currentUser;
-    if (authUser == null) throw StateError(tr('يلزم تسجيل الدخول لرفع الملفات', 'You need to sign in to upload files'));
+    if (authUser == null)
+      throw StateError(tr('يلزم تسجيل الدخول لرفع الملفات',
+          'You need to sign in to upload files'));
     final extension = path.extension(localPath).toLowerCase();
     final objectPath =
         '$folder/${authUser.id}/${DateTime.now().microsecondsSinceEpoch}$extension';
@@ -243,14 +248,17 @@ class SupabaseRepository implements Repository {
   @override
   Future<int> createUser(AppUser user) async {
     throw UnsupportedError(
-      tr('إنشاء حساب Supabase يتم بتأكيد رقم الهاتف عبر رمز OTP.', 'Supabase accounts are created by confirming the phone number with an OTP code.'),
+      tr('إنشاء حساب Supabase يتم بتأكيد رقم الهاتف عبر رمز OTP.',
+          'Supabase accounts are created by confirming the phone number with an OTP code.'),
     );
   }
 
   @override
   Future<void> updateUser(AppUser user) async {
     final authUser = _client.auth.currentUser;
-    if (authUser == null) throw StateError(tr('لا توجد جلسة دخول فعالة', 'No active sign-in session'));
+    if (authUser == null)
+      throw StateError(
+          tr('لا توجد جلسة دخول فعالة', 'No active sign-in session'));
     await _client.from('app_profiles').update({
       'name': user.name,
       'city': user.city,
@@ -349,7 +357,7 @@ class SupabaseRepository implements Repository {
         ? _maps(await _client.rpc('list_admin_workers'))
         : await _allRows((from, to) {
             dynamic query = _client.from('workers').select(
-                  'id,name,specialty,category_id,rating,jobs_done,bio,avatar,available',
+                  'id,name,specialty,category_id,rating,jobs_done,bio,avatar,available,city',
                 );
             if (categoryId != null) query = query.eq('category_id', categoryId);
             if (onlyAvailable) query = query.eq('available', true);
@@ -384,12 +392,37 @@ class SupabaseRepository implements Repository {
             await _client
                 .from('workers')
                 .select(
-                  'id,name,specialty,category_id,rating,jobs_done,bio,avatar,available',
+                  'id,name,specialty,category_id,rating,jobs_done,bio,avatar,available,city',
                 )
                 .eq('id', id)
                 .limit(1),
           );
     return rows.isEmpty ? null : Worker.fromMap(_read(rows.first));
+  }
+
+  @override
+  Future<Worker?> workerByPhone(String phone) async {
+    final local = normalizePhone(phone);
+    if (local.isEmpty) return null;
+    // رقم الهاتف غير ممنوح للقراءة العامة، والدالة تعيد ملف صاحب الجلسة فقط.
+    final rows = _maps(
+      await _client.rpc(
+        'my_worker_profile',
+        params: {'p_phone': local},
+      ),
+    );
+    return rows.isEmpty ? null : Worker.fromMap(_read(rows.first));
+  }
+
+  @override
+  Future<void> updateWorkerCity(String phone, String city) async {
+    final value = city.trim();
+    if (value.isEmpty) return;
+    // الدالة تتحقق من صاحب الجلسة وتحدّث ملف الحرفي وملف الحساب معاً.
+    await _client.rpc(
+      'update_my_worker_city',
+      params: {'p_city': value},
+    );
   }
 
   @override
@@ -627,7 +660,8 @@ class SupabaseRepository implements Repository {
   }
 
   @override
-  Future<void> respondToBookingEdit(int bookingId, {required bool approve}) async {
+  Future<void> respondToBookingEdit(int bookingId,
+      {required bool approve}) async {
     await _client.rpc('customer_respond_booking_edit', params: {
       'p_booking_id': bookingId,
       'p_approve': approve,
@@ -1177,7 +1211,8 @@ class SupabaseRepository implements Repository {
   Future<int> _currentProfileId() {
     final authUser = _client.auth.currentUser;
     if (authUser == null) {
-      return Future.error(StateError(tr('لا توجد جلسة دخول فعالة', 'No active sign-in session')));
+      return Future.error(StateError(
+          tr('لا توجد جلسة دخول فعالة', 'No active sign-in session')));
     }
     _forgetOtherAccount(authUser.id);
     final remembered = _profileId;
@@ -1198,7 +1233,9 @@ class SupabaseRepository implements Repository {
           .eq('auth_user_id', authUserId)
           .limit(1),
     );
-    if (rows.isEmpty) throw StateError(tr('تعذر العثور على ملف الحساب', 'Could not find the account profile'));
+    if (rows.isEmpty)
+      throw StateError(tr(
+          'تعذر العثور على ملف الحساب', 'Could not find the account profile'));
     return (rows.first['id'] as num).toInt();
   }
 
@@ -1480,7 +1517,8 @@ class SupabaseRepository implements Repository {
   @override
   Future<void> resetDemoData() async {
     throw UnsupportedError(
-      tr('إعادة الضبط غير متاحة في الوضع السحابي حتى لا تُحذف بيانات المستخدمين.', "Reset is not available in cloud mode, so that users' data is not deleted."),
+      tr('إعادة الضبط غير متاحة في الوضع السحابي حتى لا تُحذف بيانات المستخدمين.',
+          "Reset is not available in cloud mode, so that users' data is not deleted."),
     );
   }
 

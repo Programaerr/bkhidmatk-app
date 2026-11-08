@@ -73,7 +73,9 @@ class _AdminServicesState extends State<AdminServices>
     final repo = context.read<AppState>().repo;
     final ok = await confirmAction(context,
         title: tr('حذف الخدمة؟', 'Delete the service?'),
-        message: tr('سيتم حذف «${s.title}» من قائمة الخدمات. الحجوزات السابقة تبقى محفوظة.', 'The service "${s.title}" will be removed from the services list. Past bookings stay saved.'),
+        message: tr(
+            'سيتم حذف «${s.title}» من قائمة الخدمات. الحجوزات السابقة تبقى محفوظة.',
+            'The service "${s.title}" will be removed from the services list. Past bookings stay saved.'),
         confirmLabel: tr('حذف', 'Delete'),
         danger: true);
     if (!ok) return;
@@ -86,7 +88,8 @@ class _AdminServicesState extends State<AdminServices>
     final repo = context.read<AppState>().repo;
     final ok = await confirmAction(context,
         title: tr('حذف الفني؟', 'Delete the technician?'),
-        message: tr('سيتم حذف «${w.name}» وإلغاء ربطه بالخدمات.', '"${w.name}" will be deleted and unlinked from the services.'),
+        message: tr('سيتم حذف «${w.name}» وإلغاء ربطه بالخدمات.',
+            '"${w.name}" will be deleted and unlinked from the services.'),
         confirmLabel: tr('حذف', 'Delete'),
         danger: true);
     if (!ok) return;
@@ -100,13 +103,21 @@ class _AdminServicesState extends State<AdminServices>
     final count = await repo.serviceCountForCategory(c.id!);
     if (count > 0) {
       if (!mounted) return;
-      AppSnack.show(context, tr('لا يمكن حذف قسم يحتوي على $count خدمة', count == 1 ? "A category with 1 service can't be deleted" : "A category with $count services can't be deleted"), error: true);
+      AppSnack.show(
+          context,
+          tr(
+              'لا يمكن حذف قسم يحتوي على $count خدمة',
+              count == 1
+                  ? "A category with 1 service can't be deleted"
+                  : "A category with $count services can't be deleted"),
+          error: true);
       return;
     }
     if (!mounted) return;
     final ok = await confirmAction(context,
         title: tr('حذف القسم؟', 'Delete the category?'),
-        message: tr('سيتم حذف قسم «${c.name}» نهائياً.', 'The category "${sectionLabel(c.name)}" will be deleted permanently.'),
+        message: tr('سيتم حذف قسم «${c.name}» نهائياً.',
+            'The category "${sectionLabel(c.name)}" will be deleted permanently.'),
         confirmLabel: tr('حذف', 'Delete'),
         danger: true);
     if (!ok) return;
@@ -117,12 +128,17 @@ class _AdminServicesState extends State<AdminServices>
 
   @override
   Widget build(BuildContext context) {
-    final tabs = [tr('الخدمات', 'Services'), tr('الفنيون', 'Technicians'), tr('الأقسام', 'Categories')];
+    final tabs = [
+      tr('الخدمات', 'Services'),
+      tr('الفنيون', 'Technicians'),
+      tr('الأقسام', 'Categories')
+    ];
     return Column(
       children: [
         AdminHeader(
           title: tr('إدارة الخدمات', 'Manage services'),
-          subtitle: tr('أضف وعدّل الخدمات والفنيين والأقسام', 'Add and edit services, technicians and categories'),
+          subtitle: tr('أضف وعدّل الخدمات والفنيين والأقسام',
+              'Add and edit services, technicians and categories'),
           actions: [
             AppIconButton(
               icon: Icons.add_rounded,
@@ -156,11 +172,16 @@ class _AdminServicesState extends State<AdminServices>
   }
 
   /// زرا التعديل والحذف في آخر كل صف، بشكل واحد للخدمات والفنيين والأقسام.
-  Widget _rowActions({required VoidCallback onEdit, required VoidCallback onDelete}) {
+  Widget _rowActions(
+      {required VoidCallback onEdit, required VoidCallback onDelete}) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        AppIconButton(small: true, icon: Icons.edit_outlined, tooltip: tr('تعديل', 'Edit'), onTap: onEdit),
+        AppIconButton(
+            small: true,
+            icon: Icons.edit_outlined,
+            tooltip: tr('تعديل', 'Edit'),
+            onTap: onEdit),
         AppIconButton(
           small: true,
           icon: Icons.delete_outline_rounded,
@@ -177,15 +198,18 @@ class _AdminServicesState extends State<AdminServices>
     return FutureBuilder<List<Service>>(
       future: _services,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+        if (snapshot.connectionState == ConnectionState.waiting &&
+            !snapshot.hasData) {
+          return const Center(
+              child: CircularProgressIndicator(strokeWidth: 2.4));
         }
         final services = snapshot.data ?? const <Service>[];
         if (services.isEmpty) {
           return EmptyState(
             icon: Icons.handyman_outlined,
             title: tr('لا توجد خدمات', 'No services'),
-            subtitle: tr('أضف أول خدمة ليبدأ الزبائن بالحجز.', 'Add the first service so customers can start booking.'),
+            subtitle: tr('أضف أول خدمة ليبدأ الزبائن بالحجز.',
+                'Add the first service so customers can start booking.'),
           );
         }
         return ListView.separated(
@@ -202,7 +226,8 @@ class _AdminServicesState extends State<AdminServices>
                     width: 42,
                     height: 42,
                     decoration: BoxDecoration(
-                      color: Color(s.categoryColor ?? 0xFF416F9E).withValues(alpha: .16),
+                      color: Color(s.categoryColor ?? 0xFF416F9E)
+                          .withValues(alpha: .16),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(appIcon(s.categoryIcon ?? 'build'),
@@ -216,26 +241,31 @@ class _AdminServicesState extends State<AdminServices>
                         Text(s.title,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.titleSmall?.copyWith(fontSize: 12.5)),
+                            style: theme.textTheme.titleSmall
+                                ?.copyWith(fontSize: 12.5)),
                         const SizedBox(height: 2),
                         Text(
-                          tr('${s.categoryName ?? ''} · ${s.workerName ?? 'بدون فني'}', "${sectionLabel(s.categoryName ?? '')} · ${s.workerName ?? 'No technician'}"),
+                          tr('${s.categoryName ?? ''} · ${s.workerName ?? 'بدون فني'}',
+                              "${sectionLabel(s.categoryName ?? '')} · ${s.workerName ?? 'No technician'}"),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.bodySmall?.copyWith(fontSize: 9.5),
+                          style: theme.textTheme.bodySmall
+                              ?.copyWith(fontSize: 9.5),
                         ),
                       ],
                     ),
                   ),
                   if (!s.active)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
                         color: AppColors.danger.withValues(alpha: .1),
                         borderRadius: BorderRadius.circular(100),
                       ),
                       child: Text(tr('مخفي', 'Hidden'),
-                          style: TextStyle(fontSize: 8.5, color: AppColors.danger)),
+                          style: TextStyle(
+                              fontSize: 8.5, color: AppColors.danger)),
                     ),
                   _rowActions(
                     onEdit: () => _editService(s),
@@ -255,15 +285,18 @@ class _AdminServicesState extends State<AdminServices>
     return FutureBuilder<List<Worker>>(
       future: _workers,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+        if (snapshot.connectionState == ConnectionState.waiting &&
+            !snapshot.hasData) {
+          return const Center(
+              child: CircularProgressIndicator(strokeWidth: 2.4));
         }
         final workers = snapshot.data ?? const <Worker>[];
         if (workers.isEmpty) {
           return EmptyState(
             icon: Icons.engineering_outlined,
             title: tr('لا يوجد فنيون', 'No technicians'),
-            subtitle: tr('أضف فنيين ليتم تعيينهم على الحجوزات.', 'Add technicians so they can be assigned to bookings.'),
+            subtitle: tr('أضف فنيين ليتم تعيينهم على الحجوزات.',
+                'Add technicians so they can be assigned to bookings.'),
           );
         }
         return ListView.separated(
@@ -289,17 +322,26 @@ class _AdminServicesState extends State<AdminServices>
                               child: Text(w.name,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: theme.textTheme.titleSmall?.copyWith(fontSize: 12.5)),
+                                  style: theme.textTheme.titleSmall
+                                      ?.copyWith(fontSize: 12.5)),
                             ),
                             const SizedBox(width: 4),
                             RatingStars(rating: w.rating, size: 9.5),
                           ],
                         ),
-                        Text(tr('${w.specialty} · ${w.jobsDone} عمل', '${w.specialty} · ${w.jobsDone} jobs'),
-                            style: theme.textTheme.bodySmall?.copyWith(fontSize: 9.5)),
+                        Text(
+                            tr(
+                              '${w.specialty} · ${w.jobsDone} عمل${w.city == null ? '' : ' · ${w.city}'}',
+                              '${w.specialty} · ${w.jobsDone} jobs${w.city == null ? '' : ' · ${cityLabel(w.city!)}'}',
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodySmall
+                                ?.copyWith(fontSize: 9.5)),
                         Text(w.phone,
                             textDirection: TextDirection.ltr,
-                            style: theme.textTheme.bodySmall?.copyWith(fontSize: 9.5)),
+                            style: theme.textTheme.bodySmall
+                                ?.copyWith(fontSize: 9.5)),
                       ],
                     ),
                   ),
@@ -309,21 +351,26 @@ class _AdminServicesState extends State<AdminServices>
                       final repo = context.read<AppState>().repo;
                       try {
                         await repo.saveWorker(Worker(
-                              id: w.id,
-                              name: w.name,
-                              phone: w.phone,
-                              specialty: w.specialty,
-                              categoryId: w.categoryId,
-                              rating: w.rating,
-                              jobsDone: w.jobsDone,
-                              bio: w.bio,
-                              // بدونها كانت صورته تُمحى عند كل تبديل للتوفر.
-                              avatarPath: w.avatarPath,
-                              available: v,
-                            ));
+                          id: w.id,
+                          name: w.name,
+                          phone: w.phone,
+                          specialty: w.specialty,
+                          categoryId: w.categoryId,
+                          rating: w.rating,
+                          jobsDone: w.jobsDone,
+                          bio: w.bio,
+                          // بدونها كانت صورته تُمحى عند كل تبديل للتوفر.
+                          avatarPath: w.avatarPath,
+                          available: v,
+                          city: w.city,
+                        ));
                       } catch (_) {
                         if (mounted) {
-                          AppSnack.show(this.context, tr('تعذر تغيير حالة الحرفي', "Couldn't change the craftsman's status"), error: true);
+                          AppSnack.show(
+                              this.context,
+                              tr('تعذر تغيير حالة الحرفي',
+                                  "Couldn't change the craftsman's status"),
+                              error: true);
                         }
                       }
                       if (mounted) _load();
@@ -347,8 +394,10 @@ class _AdminServicesState extends State<AdminServices>
     return FutureBuilder<List<Category>>(
       future: _categories,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+        if (snapshot.connectionState == ConnectionState.waiting &&
+            !snapshot.hasData) {
+          return const Center(
+              child: CircularProgressIndicator(strokeWidth: 2.4));
         }
         final categories = snapshot.data ?? const <Category>[];
         return ListView.separated(
@@ -368,12 +417,14 @@ class _AdminServicesState extends State<AdminServices>
                       color: Color(c.color).withValues(alpha: .16),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(appIcon(c.icon), size: 20, color: Color(c.color)),
+                    child:
+                        Icon(appIcon(c.icon), size: 20, color: Color(c.color)),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(sectionLabel(c.name),
-                        style: theme.textTheme.titleSmall?.copyWith(fontSize: 13)),
+                        style:
+                            theme.textTheme.titleSmall?.copyWith(fontSize: 13)),
                   ),
                   _rowActions(
                     onEdit: () => _editCategory(c),
@@ -475,25 +526,35 @@ class _ServiceFormState extends State<_ServiceForm> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SheetHeader(
-                title: widget.service == null ? tr('إضافة خدمة', 'Add service') : tr('تعديل الخدمة', 'Edit service'),
-                subtitle: tr('تظهر الخدمة للزبائن مباشرة عند تفعيلها', 'The service appears to customers as soon as it is enabled'),
+                title: widget.service == null
+                    ? tr('إضافة خدمة', 'Add service')
+                    : tr('تعديل الخدمة', 'Edit service'),
+                subtitle: tr('تظهر الخدمة للزبائن مباشرة عند تفعيلها',
+                    'The service appears to customers as soon as it is enabled'),
               ),
               const SizedBox(height: 16),
               FieldLabel(tr('اسم الخدمة', 'Service name'), required_: true),
               TextFormField(
                 controller: _title,
-                decoration: InputDecoration(hintText: tr('تصليح أعطال كهربائية', 'Electrical fault repair')),
-                validator: (v) =>
-                    (v == null || v.trim().length < 4) ? tr('أدخل اسم الخدمة', 'Enter the service name') : null,
+                decoration: InputDecoration(
+                    hintText:
+                        tr('تصليح أعطال كهربائية', 'Electrical fault repair')),
+                validator: (v) => (v == null || v.trim().length < 4)
+                    ? tr('أدخل اسم الخدمة', 'Enter the service name')
+                    : null,
               ),
               const SizedBox(height: 12),
               FieldLabel(tr('الوصف', 'Description'), required_: true),
               TextFormField(
                 controller: _desc,
                 maxLines: 3,
-                decoration: InputDecoration(hintText: tr('تفاصيل ما تشمله الخدمة', 'Details of what the service includes')),
-                validator: (v) =>
-                    (v == null || v.trim().length < 10) ? tr('أدخل وصفاً للخدمة', 'Enter a description for the service') : null,
+                decoration: InputDecoration(
+                    hintText: tr('تفاصيل ما تشمله الخدمة',
+                        'Details of what the service includes')),
+                validator: (v) => (v == null || v.trim().length < 10)
+                    ? tr('أدخل وصفاً للخدمة',
+                        'Enter a description for the service')
+                    : null,
               ),
               const SizedBox(height: 12),
               Row(
@@ -502,13 +563,19 @@ class _ServiceFormState extends State<_ServiceForm> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        FieldLabel(tr('المدة (دقيقة)', 'Duration (minutes)'), required_: true),
+                        FieldLabel(tr('المدة (دقيقة)', 'Duration (minutes)'),
+                            required_: true),
                         TextFormField(
                           controller: _duration,
                           keyboardType: TextInputType.number,
-                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                          decoration: InputDecoration(suffixText: tr('د', 'min')),
-                          validator: (v) => (int.tryParse(v ?? '') ?? 0) <= 0 ? tr('غير صالح', 'Invalid') : null,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly
+                          ],
+                          decoration:
+                              InputDecoration(suffixText: tr('د', 'min')),
+                          validator: (v) => (int.tryParse(v ?? '') ?? 0) <= 0
+                              ? tr('غير صالح', 'Invalid')
+                              : null,
                         ),
                       ],
                     ),
@@ -538,7 +605,8 @@ class _ServiceFormState extends State<_ServiceForm> {
                   prefixIcon: Icon(Icons.engineering_outlined, size: 20),
                 ),
                 items: [
-                  DropdownMenuItem<int?>(value: null, child: Text(tr('بدون تعيين', 'Unassigned'))),
+                  DropdownMenuItem<int?>(
+                      value: null, child: Text(tr('بدون تعيين', 'Unassigned'))),
                   for (final w in _workers)
                     DropdownMenuItem<int?>(
                       value: w.id,
@@ -554,8 +622,11 @@ class _ServiceFormState extends State<_ServiceForm> {
                 onChanged: (v) => setState(() => _active = v),
                 contentPadding: EdgeInsets.zero,
                 title: Text(tr('الخدمة مفعّلة', 'Service enabled'),
-                    style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700)),
-                subtitle: Text(tr('عند الإيقاف لن تظهر للزبائن', "When off, it won't show to customers"),
+                    style:
+                        TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700)),
+                subtitle: Text(
+                    tr('عند الإيقاف لن تظهر للزبائن',
+                        "When off, it won't show to customers"),
                     style: theme.textTheme.bodySmall?.copyWith(fontSize: 10)),
               ),
               const SizedBox(height: 12),
@@ -589,6 +660,7 @@ class _WorkerFormState extends State<_WorkerForm> {
   late final TextEditingController _bio;
   List<Category> _categories = const [];
   int? _categoryId;
+  String? _city;
   bool _available = true;
   bool _saving = false;
 
@@ -601,6 +673,8 @@ class _WorkerFormState extends State<_WorkerForm> {
     _specialty = TextEditingController(text: w?.specialty ?? '');
     _bio = TextEditingController(text: w?.bio ?? '');
     _categoryId = w?.categoryId;
+    // لا نمرّر للقائمة قيمة قديمة غير موجودة فيها، وإلا رفضها المنسدل.
+    _city = iraqCities.contains(w?.city) ? w!.city : null;
     _available = w?.available ?? true;
     _load();
   }
@@ -636,6 +710,7 @@ class _WorkerFormState extends State<_WorkerForm> {
           jobsDone: widget.worker?.jobsDone ?? 0,
           bio: _bio.text.trim(),
           available: _available,
+          city: _city,
         ));
     if (mounted) Navigator.pop(context, true);
   }
@@ -652,15 +727,21 @@ class _WorkerFormState extends State<_WorkerForm> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SheetHeader(
-                title: widget.worker == null ? tr('إضافة فني', 'Add technician') : tr('تعديل الفني', 'Edit technician'),
-                subtitle: tr('بيانات الفني تُستخدم في الحجز والتواصل', "The technician's details are used for booking and contact"),
+                title: widget.worker == null
+                    ? tr('إضافة فني', 'Add technician')
+                    : tr('تعديل الفني', 'Edit technician'),
+                subtitle: tr('بيانات الفني تُستخدم في الحجز والتواصل',
+                    "The technician's details are used for booking and contact"),
               ),
               const SizedBox(height: 16),
               FieldLabel(tr('اسم الفني', 'Technician name'), required_: true),
               TextFormField(
                 controller: _name,
-                decoration: InputDecoration(hintText: tr('أحمد الجبوري', 'Ahmed Al-Jubouri')),
-                validator: (v) => (v == null || v.trim().length < 3) ? tr('أدخل الاسم', 'Enter the name') : null,
+                decoration: InputDecoration(
+                    hintText: tr('أحمد الجبوري', 'Ahmed Al-Jubouri')),
+                validator: (v) => (v == null || v.trim().length < 3)
+                    ? tr('أدخل الاسم', 'Enter the name')
+                    : null,
               ),
               const SizedBox(height: 12),
               FieldLabel(tr('رقم الهاتف', 'Phone number'), required_: true),
@@ -669,14 +750,39 @@ class _WorkerFormState extends State<_WorkerForm> {
                 keyboardType: TextInputType.phone,
                 textDirection: TextDirection.ltr,
                 decoration: const InputDecoration(hintText: '07XXXXXXXXX'),
-                validator: (v) => validIraqiPhone(v ?? '') ? null : tr('رقم غير صالح', 'Invalid number'),
+                validator: (v) => validIraqiPhone(v ?? '')
+                    ? null
+                    : tr('رقم غير صالح', 'Invalid number'),
               ),
               const SizedBox(height: 12),
               FieldLabel(tr('التخصص', 'Specialty'), required_: true),
               TextFormField(
                 controller: _specialty,
-                decoration: InputDecoration(hintText: tr('كهربائي منازل', 'Home electrician')),
-                validator: (v) => (v == null || v.trim().length < 3) ? tr('أدخل التخصص', 'Enter the specialty') : null,
+                decoration: InputDecoration(
+                    hintText: tr('كهربائي منازل', 'Home electrician')),
+                validator: (v) => (v == null || v.trim().length < 3)
+                    ? tr('أدخل التخصص', 'Enter the specialty')
+                    : null,
+              ),
+              const SizedBox(height: 12),
+              FieldLabel(tr('المحافظة', 'Province'), required_: true),
+              DropdownButtonFormField<String>(
+                initialValue: _city,
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  prefixIcon: Icon(Icons.location_city_rounded, size: 20),
+                ),
+                items: [
+                  for (final city in iraqCities)
+                    DropdownMenuItem<String>(
+                      value: city,
+                      child: Text(cityLabel(city)),
+                    ),
+                ],
+                onChanged: (value) => setState(() => _city = value),
+                validator: (value) => value == null || value.trim().isEmpty
+                    ? tr('اختر المحافظة', 'Choose the province')
+                    : null,
               ),
               const SizedBox(height: 12),
               FieldLabel(tr('القسم', 'Category')),
@@ -697,17 +803,21 @@ class _WorkerFormState extends State<_WorkerForm> {
               TextFormField(
                 controller: _bio,
                 maxLines: 2,
-                decoration: InputDecoration(hintText: tr('خبرة، مهارات، ملاحظات...', 'Experience, skills, notes...')),
+                decoration: InputDecoration(
+                    hintText: tr('خبرة، مهارات، ملاحظات...',
+                        'Experience, skills, notes...')),
               ),
               SwitchListTile.adaptive(
                 value: _available,
                 onChanged: (v) => setState(() => _available = v),
                 contentPadding: EdgeInsets.zero,
                 title: Text(tr('متاح للحجوزات', 'Available for bookings'),
-                    style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700)),
+                    style:
+                        TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700)),
               ),
               const SizedBox(height: 12),
-              PrimaryButton(label: tr('حفظ', 'Save'), loading: _saving, onPressed: _save),
+              PrimaryButton(
+                  label: tr('حفظ', 'Save'), loading: _saving, onPressed: _save),
             ],
           ),
         ),
@@ -760,7 +870,8 @@ class _CategoryFormState extends State<_CategoryForm> {
 
   Future<void> _save() async {
     if (_name.text.trim().length < 2) {
-      AppSnack.show(context, tr('أدخل اسم القسم', 'Enter the category name'), error: true);
+      AppSnack.show(context, tr('أدخل اسم القسم', 'Enter the category name'),
+          error: true);
       return;
     }
     setState(() => _saving = true);
@@ -784,8 +895,11 @@ class _CategoryFormState extends State<_CategoryForm> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SheetHeader(
-              title: widget.category == null ? tr('إضافة قسم', 'Add category') : tr('تعديل القسم', 'Edit category'),
-              subtitle: tr('اختر أيقونة ولوناً يميز القسم', 'Choose an icon and a color for the category'),
+              title: widget.category == null
+                  ? tr('إضافة قسم', 'Add category')
+                  : tr('تعديل القسم', 'Edit category'),
+              subtitle: tr('اختر أيقونة ولوناً يميز القسم',
+                  'Choose an icon and a color for the category'),
             ),
             const SizedBox(height: 16),
             FieldLabel(tr('اسم القسم', 'Category name'), required_: true),
@@ -811,7 +925,9 @@ class _CategoryFormState extends State<_CategoryForm> {
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: _icon == key ? Color(_color) : const Color(0xFFE6E6E6),
+                          color: _icon == key
+                              ? Color(_color)
+                              : const Color(0xFFE6E6E6),
                           width: _icon == key ? 2 : 1,
                         ),
                       ),
@@ -836,19 +952,22 @@ class _CategoryFormState extends State<_CategoryForm> {
                         color: Color(c),
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: _color == c ? AppColors.ink : Colors.transparent,
+                          color:
+                              _color == c ? AppColors.ink : Colors.transparent,
                           width: 2,
                         ),
                       ),
                       child: _color == c
-                          ? const Icon(Icons.check_rounded, size: 16, color: Colors.white)
+                          ? const Icon(Icons.check_rounded,
+                              size: 16, color: Colors.white)
                           : null,
                     ),
                   ),
               ],
             ),
             const SizedBox(height: 20),
-            PrimaryButton(label: tr('حفظ', 'Save'), loading: _saving, onPressed: _save),
+            PrimaryButton(
+                label: tr('حفظ', 'Save'), loading: _saving, onPressed: _save),
           ],
         ),
       ),

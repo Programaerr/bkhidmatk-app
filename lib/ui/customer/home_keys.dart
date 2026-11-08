@@ -16,6 +16,7 @@ import 'guest_gate.dart';
 
 /// أرضية الصفحات نهاراً (#FAFAFA اختيار المستخدم، كانت كريمية صفراء).
 const homeCream = Color(0xFFFAFAFA);
+
 /// أرضية الصفحات ليلاً (#212121 اختيار المستخدم)، والأزرار عليها تبقى على سوادها.
 const homeNightGround = Color(0xFF212121);
 const homeInk = Color(0xFF263238);
@@ -46,7 +47,8 @@ double homePageTop(double safeTop, double unit) =>
     math.max(0.0, safeTop + _statusBarGap - _firstKeyTop * unit);
 
 /// أسفل الجهة الزرقاء.
-double homeHillBottom(double top, double unit) => top + (_hillCenterY + _hillRadiusY) * unit;
+double homeHillBottom(double top, double unit) =>
+    top + (_hillCenterY + _hillRadiusY) * unit;
 
 // الجهة الزرقاء بعد أن تنطوي إلى شريط: ارتفاعه تحت شريط الحالة، وانحناء حافته، ومقياس ما فيه.
 const _foldedBar = 54.0;
@@ -97,7 +99,8 @@ class HomeHeaderMetrics {
     return open + (folded - open) * fold;
   }
 
-  double get _radiusY => _hillRadiusY * unit + (_foldedRadiusY - _hillRadiusY * unit) * fold;
+  double get _radiusY =>
+      _hillRadiusY * unit + (_foldedRadiusY - _hillRadiusY * unit) * fold;
 
   double get _curveCenterY => height - _radiusY;
 }
@@ -107,9 +110,11 @@ class HeaderFold extends ValueNotifier<double> {
   HeaderFold() : super(0);
 
   /// يلف القائمة التي يتابع تمريرها.
-  Widget track({required Widget child}) => NotificationListener<ScrollNotification>(
+  Widget track({required Widget child}) =>
+      NotificationListener<ScrollNotification>(
         onNotification: (notification) {
-          if (notification.depth == 0 && notification.metrics.axis == Axis.vertical) {
+          if (notification.depth == 0 &&
+              notification.metrics.axis == Axis.vertical) {
             value = notification.metrics.pixels.clamp(0.0, _foldTrackLimit);
           }
           return false;
@@ -133,7 +138,8 @@ class FoldingHeader extends StatelessWidget {
   final double unit;
   final double safeTop;
   final double top;
-  final Widget Function(BuildContext context, HomeHeaderMetrics metrics) builder;
+  final Widget Function(BuildContext context, HomeHeaderMetrics metrics)
+      builder;
 
   @override
   Widget build(BuildContext context) {
@@ -176,7 +182,12 @@ const _choiceWidthStep = 8.0;
 // الأقسام: أربعة في الصف، ومراكزها من يمين الإطار إلى يساره، وهي في وسط الشاشة.
 const homeSectionRightCenter = 333.5;
 const homeSectionLeftCenter = 57.5;
-const _sectionCenters = [homeSectionRightCenter, 241.5, 149.5, homeSectionLeftCenter];
+const _sectionCenters = [
+  homeSectionRightCenter,
+  241.5,
+  149.5,
+  homeSectionLeftCenter
+];
 const _sectionFace = 51.1;
 const _sectionRowPitch = 86.0;
 const _sectionLabelWidth = 90.0;
@@ -365,7 +376,11 @@ class ChoiceKey extends StatelessWidget {
       fontSize: _choiceTextSize * unit,
       height: 1.2,
       fontWeight: FontWeight.w700,
-      color: selected ? AppColors.onGold : night ? homeNightInk : homeInk,
+      color: selected
+          ? AppColors.onGold
+          : night
+              ? homeNightInk
+              : homeInk,
     );
     return Semantics(
       button: true,
@@ -384,7 +399,8 @@ class ChoiceKey extends StatelessWidget {
               faceHeight: faceHeight,
               faceRadius: _choiceRadius,
               lemon: selected,
-              night: night ? kAlwaysCompleteAnimation : kAlwaysDismissedAnimation,
+              night:
+                  night ? kAlwaysCompleteAnimation : kAlwaysDismissedAnimation,
               child: ExcludeSemantics(
                 child: Center(
                   child: FittedBox(
@@ -419,9 +435,12 @@ class PersonFace extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final path = imagePath;
-    final hasImage = path != null && (path.startsWith('http') || fileExists(path));
-    if (!hasImage) return Icon(Icons.person_rounded, size: size * .62, color: color);
-    return AvatarCircle(name: name, size: size, imagePath: path, bg: Colors.white);
+    final hasImage =
+        path != null && (path.startsWith('http') || fileExists(path));
+    if (!hasImage)
+      return Icon(Icons.person_rounded, size: size * .62, color: color);
+    return AvatarCircle(
+        name: name, size: size, imagePath: path, bg: Colors.white);
   }
 }
 
@@ -445,7 +464,8 @@ class SectionKey extends StatelessWidget {
           diameter: _sectionFace * unit,
           unit: chrome,
           label: section == null ? '' : sectionLabel(section.name),
-          onPressed: section == null || onOpen == null ? null : () => onOpen!(section),
+          onPressed:
+              section == null || onOpen == null ? null : () => onOpen!(section),
           ink: true,
           child: section == null
               ? const SizedBox.shrink()
@@ -510,7 +530,8 @@ class SectionGrid extends StatelessWidget {
               left: (_sectionCenters[i % 4] - _sectionLabelWidth / 2) * unit,
               width: _sectionLabelWidth * unit,
               top: (i ~/ 4) * _sectionRowPitch * unit,
-              child: SectionKey(unit: unit, section: sections?[i], onOpen: onOpen),
+              child:
+                  SectionKey(unit: unit, section: sections?[i], onOpen: onOpen),
             ),
         ],
       ),
@@ -536,7 +557,9 @@ class CraftsmanKey extends StatelessWidget {
       enabled: worker != null,
       label: worker == null
           ? ''
-          : tr('${worker.name}، ${worker.specialty}، التقييم ${worker.rating.toStringAsFixed(1)}', '${worker.name}, ${worker.specialty}, rating ${worker.rating.toStringAsFixed(1)}'),
+          : tr(
+              '${worker.name}، ${worker.specialty}، التقييم ${worker.rating.toStringAsFixed(1)}',
+              '${worker.name}, ${worker.specialty}, rating ${worker.rating.toStringAsFixed(1)}'),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: worker == null
@@ -546,7 +569,8 @@ class CraftsmanKey extends StatelessWidget {
                 if (!hasAccount(context)) return;
                 Navigator.push(
                   context,
-                  QuickRoute(builder: (_) => CraftsmanInfoScreen(worker: worker)),
+                  QuickRoute(
+                      builder: (_) => CraftsmanInfoScreen(worker: worker)),
                 );
               },
         child: SizedBox(
@@ -602,7 +626,10 @@ class CraftsmanKey extends StatelessWidget {
         ),
         if (worker != null) ...[
           PositionedDirectional(
-            start: (_craftsmanCircleMargin + _craftsmanCircle + _craftsmanTextGap) * unit,
+            start: (_craftsmanCircleMargin +
+                    _craftsmanCircle +
+                    _craftsmanTextGap) *
+                unit,
             end: _craftsmanTextMargin * unit,
             top: 0,
             bottom: 0,
@@ -625,7 +652,9 @@ class CraftsmanKey extends StatelessWidget {
                 Padding(
                   padding: EdgeInsetsDirectional.only(end: _ratingRoom * unit),
                   child: Text(
-                    worker.specialty,
+                    worker.city == null || worker.city!.trim().isEmpty
+                        ? worker.specialty
+                        : '${worker.specialty} · ${cityLabel(worker.city!)}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -646,7 +675,8 @@ class CraftsmanKey extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.star_rounded, size: _ratingStarSize * unit, color: ink),
+                Icon(Icons.star_rounded,
+                    size: _ratingStarSize * unit, color: ink),
                 Text(
                   worker.rating.toStringAsFixed(1),
                   style: TextStyle(

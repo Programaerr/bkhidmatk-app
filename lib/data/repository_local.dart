@@ -146,6 +146,31 @@ class LocalRepository implements Repository {
   }
 
   @override
+  Future<Worker?> workerByPhone(String phone) async {
+    final db = await _db;
+    final rows = await db.query(
+      'workers',
+      where: 'phone = ?',
+      whereArgs: [normalizePhone(phone)],
+      limit: 1,
+    );
+    return rows.isEmpty ? null : Worker.fromMap(rows.first);
+  }
+
+  @override
+  Future<void> updateWorkerCity(String phone, String city) async {
+    final value = city.trim();
+    if (value.isEmpty) return;
+    final db = await _db;
+    await db.update(
+      'workers',
+      {'city': value},
+      where: 'phone = ?',
+      whereArgs: [normalizePhone(phone)],
+    );
+  }
+
+  @override
   Future<int> saveWorker(Worker w) async {
     final db = await _db;
     if (w.id == null) return db.insert('workers', w.toMap());
@@ -331,7 +356,8 @@ class LocalRepository implements Repository {
     final db = await _db;
     final booking = await bookingById(bookingId);
     if (booking == null) return;
-    await db.update('bookings', {'total': amount}, where: 'id = ?', whereArgs: [bookingId]);
+    await db.update('bookings', {'total': amount},
+        where: 'id = ?', whereArgs: [bookingId]);
     final receipt = await receiptForBooking(bookingId);
     if (receipt == null) {
       await createReceiptForBooking(
@@ -360,7 +386,8 @@ class LocalRepository implements Repository {
     final db = await _db;
     final old = await bookingById(bookingId);
     if (old == null) return;
-    String day(DateTime d) => '${d.year}/${d.month.toString().padLeft(2, '0')}/${d.day.toString().padLeft(2, '0')}';
+    String day(DateTime d) =>
+        '${d.year}/${d.month.toString().padLeft(2, '0')}/${d.day.toString().padLeft(2, '0')}';
     final changes = <String>[
       if (day(old.scheduledAt) != day(scheduledAt))
         'الموعد: ${day(old.scheduledAt)} ← ${day(scheduledAt)}.',
@@ -368,8 +395,10 @@ class LocalRepository implements Repository {
       if (old.address != address.trim()) 'العنوان تغيّر.',
       if ((old.notes ?? '') != (notes ?? '').trim()) 'الملاحظات تغيّرت.',
     ];
-    if (changes.isEmpty && (old.adminNote ?? '') == (adminNote ?? '').trim()) return;
-    final scheduleChanged = day(old.scheduledAt) != day(scheduledAt) || old.slot != slot;
+    if (changes.isEmpty && (old.adminNote ?? '') == (adminNote ?? '').trim())
+      return;
+    final scheduleChanged =
+        day(old.scheduledAt) != day(scheduledAt) || old.slot != slot;
     await db.update(
       'bookings',
       {
@@ -377,11 +406,13 @@ class LocalRepository implements Repository {
         'slot': slot,
         'address': address.trim(),
         'notes': (notes ?? '').trim().isEmpty ? null : notes!.trim(),
-        'admin_note': (adminNote ?? '').trim().isEmpty ? null : adminNote!.trim(),
+        'admin_note':
+            (adminNote ?? '').trim().isEmpty ? null : adminNote!.trim(),
         'admin_edited_at': DateTime.now().toIso8601String(),
         'edit_summary': changes.isEmpty ? null : changes.join(' '),
         'customer_ack': CustomerAck.pending,
-        if (scheduleChanged && old.workerId != null) 'worker_response': WorkerResponse.pending,
+        if (scheduleChanged && old.workerId != null)
+          'worker_response': WorkerResponse.pending,
       },
       where: 'id = ?',
       whereArgs: [bookingId],
@@ -389,7 +420,8 @@ class LocalRepository implements Repository {
   }
 
   @override
-  Future<void> respondToBookingEdit(int bookingId, {required bool approve}) async {
+  Future<void> respondToBookingEdit(int bookingId,
+      {required bool approve}) async {
     final db = await _db;
     await db.update(
       'bookings',
@@ -408,8 +440,7 @@ class LocalRepository implements Repository {
     );
     // العنوان ورقم الزبون لا يصلان إلى الحرفي قبل أن ترسله الإدارة.
     return [
-      for (final row in rows)
-        _hideUntilSent(Booking.fromMap(row)),
+      for (final row in rows) _hideUntilSent(Booking.fromMap(row)),
     ];
   }
 
@@ -440,7 +471,10 @@ class LocalRepository implements Repository {
     final db = await _db;
     await db.update(
       'bookings',
-      {'worker_response': accept ? WorkerResponse.accepted : WorkerResponse.declined},
+      {
+        'worker_response':
+            accept ? WorkerResponse.accepted : WorkerResponse.declined
+      },
       where: 'id = ? AND status IN (?, ?)',
       whereArgs: [bookingId, BookingStatus.pending, BookingStatus.confirmed],
     );
@@ -917,6 +951,34 @@ class LocalRepository implements Repository {
 
   @override
   Future<void> acceptApplication(CraftsmanApplication application) async {
+    final db = await _db;
+    // القبول ينشئ ملف الحرفي في دليل المحافظة فوراً، إن لم يكن المدير أضافه سابقاً.
+    final existing = await db.query(
+      'workers',
+      where: 'phone = ?',
+      whereArgs: [normalizePhone(application.phone)],
+      limit: 1,
+    );
+    if (existing.isEmpty) {
+      await db.insert('workers', {
+        'name': application.name,
+        'phone': normalizePhone(application.phone),
+        'specialty': application.trade,
+        'city': application.city,
+        'available': 1,
+      });
+    } else {
+      final row = existing.first;
+      final city = (row['city'] as String?)?.trim() ?? '';
+      if (city.isEmpty) {
+        await db.update(
+          'workers',
+          {'city': application.city},
+          where: 'id = ?',
+          whereArgs: [row['id']],
+        );
+      }
+    }
     await createHire(
       Hire(
           phone: application.phone,
@@ -1000,7 +1062,8 @@ class LocalRepository implements Repository {
     return rows
         .map((r) => ChatThread(
               customerId: r['thread_id'] as int? ?? 0,
-              customerName: r['customer_name'] as String? ?? tr('زبون', 'Customer'),
+              customerName:
+                  r['customer_name'] as String? ?? tr('زبون', 'Customer'),
               customerPhone: r['customer_phone'] as String? ?? '',
               lastMessage: r['last_message'] as String? ?? '',
               lastAt: DateTime.tryParse(r['last_at'] as String? ?? '') ??

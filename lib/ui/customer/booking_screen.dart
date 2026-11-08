@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/language.dart';
@@ -73,7 +73,8 @@ class _BookingScreenState extends State<BookingScreen> {
               padding: EdgeInsets.fromLTRB(20, 0, 20, 6),
               child: SheetHeader(
                 title: tr('اختر الفني', 'Choose a technician'),
-                subtitle: tr('كل الفنيين موثوقون ومقيّمون من الزبائن', 'All technicians are verified and rated by customers'),
+                subtitle: tr('كل الفنيين موثوقون ومقيّمون من الزبائن',
+                    'All technicians are verified and rated by customers'),
               ),
             ),
             Expanded(
@@ -98,7 +99,11 @@ class _BookingScreenState extends State<BookingScreen> {
                                   Text(w.name,
                                       style: const TextStyle(
                                           fontWeight: FontWeight.w800)),
-                                  Text(tr('${w.specialty} · ${w.jobsDone} عمل', '${w.specialty} · ${w.jobsDone} jobs'),
+                                  Text(
+                                      tr(
+                                        '${w.specialty} · ${w.jobsDone} عمل${w.city == null ? '' : ' · ${w.city}'}',
+                                        '${w.specialty} · ${w.jobsDone} jobs${w.city == null ? '' : ' · ${cityLabel(w.city!)}'}',
+                                      ),
                                       style: Theme.of(context)
                                           .textTheme
                                           .bodySmall
@@ -133,7 +138,11 @@ class _BookingScreenState extends State<BookingScreen> {
     final user = state.user;
     if (user?.id == null) return;
     if (_address.text.trim().length < 8) {
-      AppSnack.show(context, tr('أدخل عنواناً تفصيلياً للخدمة', 'Enter a detailed address for the service'), error: true);
+      AppSnack.show(
+          context,
+          tr('أدخل عنواناً تفصيلياً للخدمة',
+              'Enter a detailed address for the service'),
+          error: true);
       return;
     }
     setState(() => _loading = true);
@@ -162,7 +171,11 @@ class _BookingScreenState extends State<BookingScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _loading = false);
-        AppSnack.show(context, tr('تعذر إنشاء الحجز، حاول مرة أخرى', "Couldn't create the booking, please try again"), error: true);
+        AppSnack.show(
+            context,
+            tr('تعذر إنشاء الحجز، حاول مرة أخرى',
+                "Couldn't create the booking, please try again"),
+            error: true);
       }
     }
   }
@@ -218,21 +231,28 @@ class _BookingScreenState extends State<BookingScreen> {
             const SizedBox(height: 20),
             SectionHeader(
                 title: tr('الفني', 'Technician'),
-                subtitle: tr('يمكنك ترك الاختيار لنا وسنرسل الأنسب', "You can leave the choice to us and we'll send the best fit")),
+                subtitle: tr('يمكنك ترك الاختيار لنا وسنرسل الأنسب',
+                    "You can leave the choice to us and we'll send the best fit")),
             SoftCard(
               onTap: _pickWorker,
               child: Row(
                 children: [
-                  AvatarCircle(name: worker?.name ?? tr('تلقائي', 'Auto'), size: 42),
+                  AvatarCircle(
+                      name: worker?.name ?? tr('تلقائي', 'Auto'), size: 42),
                   const SizedBox(width: 11),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(worker?.name ?? tr('اختيار تلقائي', 'Automatic choice'),
+                        Text(
+                            worker?.name ??
+                                tr('اختيار تلقائي', 'Automatic choice'),
                             style: theme.textTheme.titleSmall
                                 ?.copyWith(fontSize: 13.5)),
-                        Text(worker?.specialty ?? tr('سنختار أفضل فني متاح', "We'll choose the best available technician"),
+                        Text(
+                            worker?.specialty ??
+                                tr('سنختار أفضل فني متاح',
+                                    "We'll choose the best available technician"),
                             style: theme.textTheme.bodySmall
                                 ?.copyWith(fontSize: 10.5)),
                       ],
@@ -353,7 +373,8 @@ class _BookingScreenState extends State<BookingScreen> {
               controller: _address,
               maxLines: 2,
               decoration: InputDecoration(
-                hintText: tr('المنطقة، الشارع، رقم البناية، أقرب نقطة دالة', 'Area, street, building number, nearest landmark'),
+                hintText: tr('المنطقة، الشارع، رقم البناية، أقرب نقطة دالة',
+                    'Area, street, building number, nearest landmark'),
                 prefixIcon: Icon(Icons.location_on_outlined, size: 20),
               ),
             ),
@@ -362,7 +383,8 @@ class _BookingScreenState extends State<BookingScreen> {
               controller: _notes,
               maxLines: 2,
               decoration: InputDecoration(
-                hintText: tr('ملاحظات إضافية للفني (اختياري)', 'Extra notes for the technician (optional)'),
+                hintText: tr('ملاحظات إضافية للفني (اختياري)',
+                    'Extra notes for the technician (optional)'),
                 prefixIcon: Icon(Icons.notes_rounded, size: 20),
               ),
             ),
@@ -376,7 +398,8 @@ class _BookingScreenState extends State<BookingScreen> {
                   SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      tr('السعر يُحدد بالاتفاق بعد مراجعة الإدارة لطلبك، ثم يُضاف إلى وصلك لتدفع لاحقاً.', 'The price is agreed after the admin reviews your request, then added to your receipt to pay later.'),
+                      tr('السعر يُحدد بالاتفاق بعد مراجعة الإدارة لطلبك، ثم يُضاف إلى وصلك لتدفع لاحقاً.',
+                          'The price is agreed after the admin reviews your request, then added to your receipt to pay later.'),
                       style: TextStyle(fontSize: 12, height: 1.6),
                     ),
                   ),

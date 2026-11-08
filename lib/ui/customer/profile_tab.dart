@@ -25,7 +25,8 @@ abstract final class _Design {
 
   // البطاقة: الصورة في يمينها وزر التعديل في يسارها، والمعلومات مقابل الصورة.
   // البطاقة بقدر الصورة: فوق وجهها وتحت حلقتها الهامش نفسه الذي فوقها في التصميم.
-  static const cardHeight = photoTop * 2 + photoSize + PushKey.depth * homeKeyChrome;
+  static const cardHeight =
+      photoTop * 2 + photoSize + PushKey.depth * homeKeyChrome;
   static const cardRadius = 11.5;
   static const photoSize = 52.7;
   static const photoMargin = 14.0;
@@ -81,7 +82,8 @@ abstract final class _Design {
   static const logoutIconGap = 6.0;
 }
 
-TextStyle _text(double unit, double size, FontWeight weight, Color color) => TextStyle(
+TextStyle _text(double unit, double size, FontWeight weight, Color color) =>
+    TextStyle(
       fontFamily: 'Cairo',
       fontSize: size * unit,
       height: 1.3,
@@ -122,9 +124,19 @@ class _ProfileTabState extends State<ProfileTab> {
   Future<void> _editProfile() async {
     final state = context.read<AppState>();
     final user = state.user!;
+    // الحرفي قد يكون محفوظاً في الدليل بمحافظة غير محافظة حسابه، فنبدأ بما في الدليل.
+    Worker? worker;
+    if (widget.workerMode) {
+      try {
+        worker = await state.repo.workerByPhone(user.phone);
+      } catch (_) {
+        worker = null;
+      }
+    }
+    if (!mounted) return;
     final name = TextEditingController(text: user.name);
     final address = TextEditingController(text: user.address ?? '');
-    String city = user.city ?? 'بغداد';
+    String city = worker?.city ?? user.city ?? 'بغداد';
 
     final saved = await showAppSheet<bool>(
       context,
@@ -155,7 +167,8 @@ class _ProfileTabState extends State<ProfileTab> {
                           children: [
                             Padding(
                               padding: EdgeInsets.fromLTRB(20, 0, 20, 6),
-                              child: SheetHeader(title: tr('المحافظة', 'Province')),
+                              child: SheetHeader(
+                                  title: tr('المحافظة', 'Province')),
                             ),
                             Expanded(
                               child: ListView(
@@ -206,19 +219,38 @@ class _ProfileTabState extends State<ProfileTab> {
     );
 
     if (saved == true) {
-      await state.updateProfile(user.copyWith(
-        name: name.text.trim().isEmpty ? user.name : name.text.trim(),
-        city: city,
-        address: address.text.trim(),
-      ));
-      if (mounted) AppSnack.show(context, tr('تم تحديث بياناتك', 'Your details were updated'));
+      try {
+        await state.updateProfile(user.copyWith(
+          name: name.text.trim().isEmpty ? user.name : name.text.trim(),
+          city: city,
+          address: address.text.trim(),
+        ));
+        // محافظة الحرفي في دليل الحرفيين هي التي يفلتر بها قسم «بالقرب منك».
+        if (widget.workerMode) {
+          await state.repo.updateWorkerCity(user.phone, city);
+        }
+        if (mounted) {
+          AppSnack.show(
+              context, tr('تم تحديث بياناتك', 'Your details were updated'));
+        }
+      } catch (_) {
+        if (mounted) {
+          AppSnack.show(
+            context,
+            tr('تعذر تحديث بياناتك. تحقق من الاتصال وحاول مرة أخرى.',
+                "Couldn't update your details. Check the connection and try again."),
+            error: true,
+          );
+        }
+      }
     }
   }
 
   Future<void> _logout() async {
     final ok = await confirmAction(context,
         title: tr('تسجيل الخروج', 'Log out'),
-        message: tr('هل تريد تسجيل الخروج من حسابك؟', 'Do you want to log out of your account?'),
+        message: tr('هل تريد تسجيل الخروج من حسابك؟',
+            'Do you want to log out of your account?'),
         confirmLabel: tr('خروج', 'Log out'),
         danger: true);
     if (ok && mounted) await context.read<AppState>().logout();
@@ -245,16 +277,18 @@ class _ProfileTabState extends State<ProfileTab> {
             final base = PushKey.depth * homeKeyChrome;
             final keys = rows.fold(0.0, (sum, row) => sum + row.height + base);
             final gaps = rows.fold(0.0, (sum, row) => sum + row.gap);
-            final room =
-                (constraints.maxHeight - barRoom - hillBottom) / unit - _Design.barMargin;
-            final spacing = ((room - keys) / gaps).clamp(_Design.minSpacing, 1.0);
+            final room = (constraints.maxHeight - barRoom - hillBottom) / unit -
+                _Design.barMargin;
+            final spacing =
+                ((room - keys) / gaps).clamp(_Design.minSpacing, 1.0);
             return Stack(
               children: [
                 Positioned.fill(
                   child: _fold.track(
                     child: ListView(
                       // يبقى آخر زر فوق شريط التنقل الزجاجي.
-                      padding: EdgeInsets.only(top: hillBottom, bottom: barRoom),
+                      padding:
+                          EdgeInsets.only(top: hillBottom, bottom: barRoom),
                       children: [
                         for (final row in rows) ...[
                           SizedBox(height: row.gap * spacing * unit),
@@ -270,8 +304,10 @@ class _ProfileTabState extends State<ProfileTab> {
                   unit: unit,
                   safeTop: safeTop,
                   top: top,
-                  builder: (context, metrics) =>
-                      HomeHeader(width: width, metrics: metrics, title: tr('الملف الشخصي', 'Profile')),
+                  builder: (context, metrics) => HomeHeader(
+                      width: width,
+                      metrics: metrics,
+                      title: tr('الملف الشخصي', 'Profile')),
                 ),
               ],
             );
@@ -282,14 +318,16 @@ class _ProfileTabState extends State<ProfileTab> {
   }
 
   /// أزرار الصفحة بالترتيب، مع الفراغ قبل كل منها وارتفاع وجهه.
-  List<({double gap, double height, Widget key})> _rows(AppState state, double unit, bool night) {
+  List<({double gap, double height, Widget key})> _rows(
+      AppState state, double unit, bool night) {
     final menu = [
       if (!widget.workerMode)
         _MenuKey(
           unit: unit,
           icon: Icons.event_note_rounded,
           title: tr('حجوزاتي', 'My bookings'),
-          subtitle: tr('كل حجوزاتك وحالتها', 'All your bookings and their status'),
+          subtitle:
+              tr('كل حجوزاتك وحالتها', 'All your bookings and their status'),
           onPressed: widget.onOpenBookings,
         ),
       if (!widget.workerMode)
@@ -297,7 +335,8 @@ class _ProfileTabState extends State<ProfileTab> {
           unit: unit,
           icon: Icons.receipt_long_rounded,
           title: tr('وصولاتي', 'My receipts'),
-          subtitle: tr('وصولات الدفع القابلة للطباعة', 'Printable payment receipts'),
+          subtitle:
+              tr('وصولات الدفع القابلة للطباعة', 'Printable payment receipts'),
           onPressed: () => Navigator.push(
             context,
             QuickRoute(builder: (_) => const ReceiptsScreen()),
@@ -308,7 +347,8 @@ class _ProfileTabState extends State<ProfileTab> {
           unit: unit,
           icon: Icons.space_dashboard_rounded,
           title: tr('لوحة التحكم', 'Dashboard'),
-          subtitle: tr('إدارة التطبيق والحجوزات', 'Manage the app and bookings'),
+          subtitle:
+              tr('إدارة التطبيق والحجوزات', 'Manage the app and bookings'),
           onPressed: widget.onOpenAdminDashboard!,
         ),
       _MenuKey(
@@ -325,9 +365,17 @@ class _ProfileTabState extends State<ProfileTab> {
     final dark = state.themeMode == ThemeMode.dark;
     final ink = night ? homeNightInk : homeInk;
     return [
-      (gap: _Design.cardGap, height: _Design.cardHeight, key: _card(state.user!, unit, night)),
+      (
+        gap: _Design.cardGap,
+        height: _Design.cardHeight,
+        key: _card(state.user!, unit, night)
+      ),
       for (final (i, key) in menu.indexed)
-        (gap: i == 0 ? _Design.groupGap : _Design.rowGap, height: _Design.menuHeight, key: key),
+        (
+          gap: i == 0 ? _Design.groupGap : _Design.rowGap,
+          height: _Design.menuHeight,
+          key: key
+        ),
       // عنوان في الوسط يعرّف أن ما تحته إعدادات (طلب المستخدم). ليس زراً، فلا تُحسب له قاعدة.
       (
         gap: _Design.groupGap,
@@ -356,10 +404,12 @@ class _ProfileTabState extends State<ProfileTab> {
             () => state.setTheme(!dark),
             live: (
               link: _nightSwitch,
-              size: Size(_Design.switchHeight * 2 * unit, _Design.switchHeight * unit),
+              size: Size(
+                  _Design.switchHeight * 2 * unit, _Design.switchHeight * unit),
               builder: (context) => DayNightSwitch(
-                night: context.watch<AppState>().themeMode == ThemeMode.dark,
-              ),
+                    night:
+                        context.watch<AppState>().themeMode == ThemeMode.dark,
+                  ),
             ),
           ),
           child: Row(
@@ -444,11 +494,13 @@ class _ProfileTabState extends State<ProfileTab> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.logout_rounded, size: _Design.logoutIconSize * unit, color: Colors.white),
+                  Icon(Icons.logout_rounded,
+                      size: _Design.logoutIconSize * unit, color: Colors.white),
                   SizedBox(width: _Design.logoutIconGap * unit),
                   Text(
                     tr('تسجيل الخروج', 'Log out'),
-                    style: _text(unit, _Design.logoutTextSize, FontWeight.w800, Colors.white),
+                    style: _text(unit, _Design.logoutTextSize, FontWeight.w800,
+                        Colors.white),
                   ),
                 ],
               ),
@@ -466,9 +518,12 @@ class _ProfileTabState extends State<ProfileTab> {
     final ink = night ? homeNightInk : homeInk;
     final photoCenter = (_Design.photoTop + _Design.photoSize / 2) * unit;
     // المعلومات بين حلقة زر التعديل وحلقة الصورة، بعيدة عن كل منهما.
-    final infoLeft = inset * 2 + (_Design.editMargin + _Design.editSize + _Design.infoGap) * unit;
-    final infoRight = inset * 2 + (_Design.photoMargin + _Design.photoSize + _Design.infoGap) * unit;
-    final infoWidth = _Design.keyWidth * unit + inset * 2 - infoLeft - infoRight;
+    final infoLeft = inset * 2 +
+        (_Design.editMargin + _Design.editSize + _Design.infoGap) * unit;
+    final infoRight = inset * 2 +
+        (_Design.photoMargin + _Design.photoSize + _Design.infoGap) * unit;
+    final infoWidth =
+        _Design.keyWidth * unit + inset * 2 - infoLeft - infoRight;
     return SizedBox(
       width: _Design.keyWidth * unit + inset * 2,
       height: _Design.cardHeight * unit + PushKey.depth * chrome,
@@ -482,7 +537,9 @@ class _ProfileTabState extends State<ProfileTab> {
                 faceHeight: _Design.cardHeight * unit,
                 faceRadius: _Design.cardRadius,
                 lemon: true,
-                night: night ? kAlwaysCompleteAnimation : kAlwaysDismissedAnimation,
+                night: night
+                    ? kAlwaysCompleteAnimation
+                    : kAlwaysDismissedAnimation,
                 child: const SizedBox.shrink(),
               ),
             ),
@@ -517,7 +574,8 @@ class _ProfileTabState extends State<ProfileTab> {
               onColour: true,
               label: tr('تعديل الملف الشخصي', 'Edit profile'),
               onPressed: _editProfile,
-              child: Icon(Icons.edit_outlined, size: _Design.editIconSize * unit, color: ink),
+              child: Icon(Icons.edit_outlined,
+                  size: _Design.editIconSize * unit, color: ink),
             ),
           ),
           // المعلومات في وسط الصورة كلها، بوجهها وحلقتها، مثل الاسم في الصفحة الرئيسية.
@@ -542,25 +600,32 @@ class _ProfileTabState extends State<ProfileTab> {
                       child: Text(
                         user.name,
                         maxLines: 1,
-                        style: _text(unit, _Design.nameSize, FontWeight.w800, AppColors.onGold),
+                        style: _text(unit, _Design.nameSize, FontWeight.w800,
+                            AppColors.onGold),
                       ),
                     ),
                     Text(
                       user.phone,
                       maxLines: 1,
                       textDirection: TextDirection.ltr,
-                      style: _text(unit, _Design.phoneSize, FontWeight.w700, AppColors.onGold),
+                      style: _text(unit, _Design.phoneSize, FontWeight.w700,
+                          AppColors.onGold),
                     ),
                     Row(
                       children: [
-                        Icon(Icons.location_on_rounded, size: _Design.cityIconSize * unit, color: AppColors.onGold),
+                        Icon(Icons.location_on_rounded,
+                            size: _Design.cityIconSize * unit,
+                            color: AppColors.onGold),
                         SizedBox(width: 3 * unit),
                         Flexible(
                           child: Text(
-                            user.city == null ? tr('العراق', 'Iraq') : cityLabel(user.city!),
+                            user.city == null
+                                ? tr('العراق', 'Iraq')
+                                : cityLabel(user.city!),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: _text(unit, _Design.citySize, FontWeight.w600, AppColors.onGold),
+                            style: _text(unit, _Design.citySize,
+                                FontWeight.w600, AppColors.onGold),
                           ),
                         ),
                       ],
@@ -626,7 +691,8 @@ class _WideKey extends StatelessWidget {
             night: night ? kAlwaysCompleteAnimation : kAlwaysDismissedAnimation,
             child: ExcludeSemantics(
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: _Design.keyMargin * unit),
+                padding:
+                    EdgeInsets.symmetric(horizontal: _Design.keyMargin * unit),
                 child: child,
               ),
             ),
@@ -686,13 +752,15 @@ class _MenuKey extends StatelessWidget {
                   subtitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: _text(unit, _Design.subtitleSize, FontWeight.w600, ink.withValues(alpha: .6)),
+                  style: _text(unit, _Design.subtitleSize, FontWeight.w600,
+                      ink.withValues(alpha: .6)),
                 ),
               ],
             ),
           ),
           // يتجه السهم إلى اليسار في العربية، مثل سهم «عرض الكل».
-          Icon(Icons.chevron_right_rounded, size: _Design.arrowSize * unit, color: ink),
+          Icon(Icons.chevron_right_rounded,
+              size: _Design.arrowSize * unit, color: ink),
         ],
       ),
     );
@@ -744,7 +812,8 @@ class _LanguagePill extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: _Design.pillPadding * unit),
           alignment: Alignment.center,
           decoration: chosen
-              ? BoxDecoration(color: TruckSceneMetrics.hillColor, borderRadius: radius)
+              ? BoxDecoration(
+                  color: TruckSceneMetrics.hillColor, borderRadius: radius)
               : null,
           child: Text(
             text,
@@ -757,7 +826,8 @@ class _LanguagePill extends StatelessWidget {
           ),
         );
     return DecoratedBox(
-      decoration: BoxDecoration(color: ink.withValues(alpha: .06), borderRadius: radius),
+      decoration: BoxDecoration(
+          color: ink.withValues(alpha: .06), borderRadius: radius),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [option('عربي', !english), option('English', english)],

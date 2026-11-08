@@ -38,6 +38,12 @@ abstract class Repository {
 
   Future<Worker?> workerById(int id);
 
+  /// ملف الحرفي المرتبط برقم الهاتف، ليعرف الحساب محافظته المحفوظة في الدليل.
+  Future<Worker?> workerByPhone(String phone);
+
+  /// يحدّث محافظة الحرفي المرتبط بالحساب، ويُبقيها متطابقة مع محافظة الملف.
+  Future<void> updateWorkerCity(String phone, String city);
+
   Future<int> saveWorker(Worker worker);
 
   Future<void> deleteWorker(int id);
