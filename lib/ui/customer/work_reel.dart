@@ -46,6 +46,10 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
   late OurWork _work;
   bool _failed = false;
   bool _userPaused = false;
+  // التعليقات مفتوحة: الفيديو يتوقف حتى تُغلق، ثم يكمل (طلب المستخدم).
+  bool _commentsOpen = false;
+  // لا تظهر علامة التشغيل الكبيرة لوقفة التعليقات، ولا لحظة رجوعه بعدها.
+  bool _quietPlayIcon = false;
   bool _showPlayIcon = false;
   bool _isPlaying = false;
   bool _showDate = false;
@@ -142,6 +146,7 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
     if (controller == null || !controller.value.isInitialized) return;
     final shouldPlay = widget.isActive &&
         !_userPaused &&
+        !_commentsOpen &&
         WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
     if (shouldPlay && !controller.value.isPlaying) {
       await controller.play();
@@ -203,6 +208,11 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
   Future<void> _openComments() async {
     final id = _work.id;
     if (id == null) return;
+    setState(() {
+      _commentsOpen = true;
+      _quietPlayIcon = true;
+    });
+    unawaited(_syncPlayback());
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -220,6 +230,11 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
         },
       ),
     );
+    if (!mounted) return;
+    // أُغلقت التعليقات: يكمل من حيث توقف، إلا إن كان المستخدم أوقفه بنفسه قبلها.
+    _commentsOpen = false;
+    await _syncPlayback();
+    if (mounted) setState(() => _quietPlayIcon = false);
   }
 
   Future<void> _share() async {
@@ -295,7 +310,9 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
               },
               child: Center(
                 child: AnimatedOpacity(
-                  opacity: _showPlayIcon || !_isPlaying ? 1 : 0,
+                  opacity: (_showPlayIcon || !_isPlaying) && !_quietPlayIcon
+                      ? 1
+                      : 0,
                   duration: const Duration(milliseconds: 180),
                   child: const Icon(
                     Icons.play_circle_fill_rounded,
