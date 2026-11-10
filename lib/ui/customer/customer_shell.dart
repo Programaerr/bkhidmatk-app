@@ -1,4 +1,8 @@
+import 'dart:async'; // TMP-DEVICE
+import 'dart:ui' show FrameTiming; // TMP-DEVICE
+
 import 'package:flutter/cupertino.dart' show CupertinoIcons;
+import 'package:flutter/scheduler.dart'; // TMP-DEVICE
 import 'package:flutter/material.dart';
 
 import '../../core/language.dart';
@@ -23,6 +27,40 @@ class CustomerShell extends StatefulWidget {
 
 class _CustomerShellState extends State<CustomerShell> {
   int _index = 0;
+
+  // TMP-DEVICE: cycles the tabs and logs frame times of the portal.
+  @override
+  void initState() {
+    super.initState();
+    final timings = <FrameTiming>[];
+    var recording = false;
+    SchedulerBinding.instance.addTimingsCallback((list) {
+      if (recording) timings.addAll(list);
+    });
+    const tabs = [1, 0, 2, 0, 4, 1, 0, 2, 4, 0];
+    var step = 0;
+    Timer.periodic(const Duration(milliseconds: 1400), (timer) {
+      if (!mounted) return timer.cancel();
+      if (step < tabs.length) {
+        recording = true;
+        _go(tabs[step++]);
+        return;
+      }
+      timer.cancel();
+      recording = false;
+      double ms(Duration d) => d.inMicroseconds / 1000;
+      List<double> sorted(Iterable<double> v) => v.toList()..sort();
+      final raster = sorted(timings.map((t) => ms(t.rasterDuration)));
+      final build = sorted(timings.map((t) => ms(t.buildDuration)));
+      final total = sorted(timings.map((t) => ms(t.totalSpan)));
+      String q(List<double> v, double f) => v[(v.length * f).floor().clamp(0, v.length - 1)].toStringAsFixed(1);
+      // ignore: avoid_print
+      print('TMPPORTAL frames=${timings.length} '
+          'build p50=${q(build, .5)} p90=${q(build, .9)} max=${q(build, .999)} '
+          'raster p50=${q(raster, .5)} p90=${q(raster, .9)} p99=${q(raster, .99)} max=${q(raster, .999)} '
+          'total p90=${q(total, .9)} over11=${total.where((v) => v > 11.1).length} over16=${total.where((v) => v > 16.7).length}');
+    });
+  }
 
   // آخر ما جلبته الرئيسية، فيفتح منه تبويب الحرفيين فوراً دون انتظار السيرفر.
   List<Category>? _loadedSections;

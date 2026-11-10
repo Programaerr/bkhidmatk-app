@@ -257,10 +257,11 @@ enum _PortalRole {
   leaving,
 }
 
-/// نصف قطر البوابة: تنفتح من نقطة في وسط الشاشة حتى تتجاوز أبعد زواياها.
+/// نصف قطر البوابة: تنفتح من نقطة في وسط الشاشة حتى تتجاوز أبعد زواياها. تبدأ سريعة فلا
+/// يبدو التبويب متأخراً، وتتمهل وهي تخرج من الشاشة.
 double _portalRadius(double t, Size size) =>
     (size.center(Offset.zero).distance + 30) *
-    Curves.easeInOutCubic.transform(t);
+    Curves.fastOutSlowIn.transform(t);
 
 /// انتقال متصل بلا حواف بين 0 و1.
 double _smoothStep(double x) {
@@ -377,7 +378,7 @@ class _PortalRimPainter extends CustomPainter {
     if (!portal.isAnimating) return;
     final t = portal.value;
     final radius = _portalRadius(t, size);
-    final shown = _smoothStep(t / .12) * (1 - _smoothStep((t - .8) / .2));
+    final shown = _smoothStep(t / .1) * (1 - _smoothStep((t - .7) / .3));
     if (radius < 2 || shown <= 0) return;
     final centre = size.center(Offset.zero);
     final circle = Rect.fromCircle(center: centre, radius: radius);
