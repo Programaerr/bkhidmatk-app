@@ -47,8 +47,8 @@ class _WorkReelState extends State<WorkReel>
   // حركة الورقة نفسها، وسحبها، يحرّكان الفيديو.
   late final _sheet = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 280),
-    reverseDuration: const Duration(milliseconds: 220),
+    duration: const Duration(milliseconds: 300),
+    reverseDuration: const Duration(milliseconds: 230),
   );
   final _sheetKey = GlobalKey();
   VideoPlayerController? _controller;
@@ -65,7 +65,10 @@ class _WorkReelState extends State<WorkReel>
     super.initState();
     _work = widget.work;
     WidgetsBinding.instance.addObserver(this);
-    if (widget.isActive) _initializeVideo();
+    if (widget.isActive) {
+      _initializeVideo();
+      _prefetchComments();
+    }
   }
 
   @override
@@ -82,6 +85,7 @@ class _WorkReelState extends State<WorkReel>
       _userPaused = false;
       if (widget.isActive) {
         _initializeVideo();
+        _prefetchComments();
       } else {
         _isPlaying = false;
         unawaited(_disposeVideo());
@@ -209,6 +213,22 @@ class _WorkReelState extends State<WorkReel>
     }
   }
 
+  /// يجلب تعليقات الفيديو الظاهر في الخلفية، فتفتح ورقتها عليها فوراً كما في إنستغرام.
+  void _prefetchComments() {
+    final id = _work.id;
+    if (id == null || _commentsCache.containsKey(id)) return;
+    // بلا تعليقات: الورقة تفتح على «لا توجد تعليقات» دون انتظار السيرفر.
+    if (_work.commentCount == 0) {
+      _commentsCache[id] = <WorkComment>[];
+      return;
+    }
+    final state = context.read<AppState>();
+    unawaited(state.repo
+        .workComments(id, viewerId: state.user?.id, isAdmin: state.isAdmin)
+        .then<void>((comments) => _commentsCache[id] = comments,
+            onError: (Object _) {}));
+  }
+
   Future<void> _openComments() async {
     final id = _work.id;
     if (id == null) return;
@@ -219,6 +239,11 @@ class _WorkReelState extends State<WorkReel>
       // الفيديو فوق التعليقات يبقى واضحاً بلا تعتيم، ولمسه يغلقها كما في إنستغرام.
       barrierColor: Colors.transparent,
       transitionAnimationController: _sheet,
+      // تنطلق سريعة وتستقر بنعومة كما في إنستغرام، وتخرج بتسارع.
+      sheetAnimationStyle: const AnimationStyle(
+        curve: Curves.easeOutCubic,
+        reverseCurve: Curves.easeOutCubic,
+      ),
       backgroundColor: Theme.of(context).colorScheme.surface,
       builder: (_) => WorkCommentsSheet(
         key: _sheetKey,
@@ -857,7 +882,7 @@ class _AboveSheet extends StatelessWidget {
             final t = sheet.value.clamp(0.0, 1.0);
             if (t == 0) return video!;
             // أعلى الورقة الآن، وقبل أن تُرسم أول مرة يُقدَّر من حركتها.
-            var sheetTop = size.height * (1 - .64 * Curves.decelerate.transform(t));
+            var sheetTop = size.height * (1 - .64 * Curves.easeOutCubic.transform(t));
             final box = sheetKey.currentContext?.findRenderObject();
             final here = context.findRenderObject();
             if (box is RenderBox && box.hasSize && here is RenderBox && here.attached) {
@@ -881,6 +906,9 @@ class _AboveSheet extends StatelessWidget {
     );
   }
 }
+
+/// آخر تعليقات جُلبت لكل عمل في هذه الجلسة.
+final _commentsCache = <int, List<WorkComment>>{};
 
 class WorkCommentsSheet extends StatefulWidget {
   const WorkCommentsSheet({
@@ -908,6 +936,12 @@ class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
   @override
   void initState() {
     super.initState();
+    // ما جُلب مسبقاً يظهر فوراً، ثم يتحدث من السيرفر بلا مؤشر انتظار.
+    final cached = _commentsCache[widget.work.id];
+    if (cached != null) {
+      _cachedComments = List.of(cached);
+      _loadingComments = false;
+    }
     unawaited(_refreshComments());
   }
 
@@ -919,6 +953,7 @@ class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
         viewerId: state.user?.id,
         isAdmin: state.isAdmin,
       );
+      _commentsCache[widget.work.id!] = comments;
       if (!mounted) return;
       setState(() {
         _cachedComments = comments;
