@@ -72,17 +72,17 @@ class _CustomerShellState extends State<CustomerShell> {
   // تُبنى مع كل بناء، فتتبع لغة التطبيق. أيقونات بأشكال رموز آبل، وعلى الآيفون الرموز نفسها.
   static List<NavItem> get _items => [
     NavItem(tr('الرئيسية', 'Home'), CupertinoIcons.house, CupertinoIcons.house_fill,
-        symbol: 'house.fill'),
+        symbol: 'house.fill', motion: NavMotion.door),
     NavItem(tr('الحرفيين', 'Craftsmen'), CupertinoIcons.hammer, CupertinoIcons.hammer_fill,
-        symbol: 'hammer.fill'),
+        symbol: 'hammer.fill', motion: NavMotion.strike),
     NavItem(tr('حجوزاتي', 'My bookings'), CupertinoIcons.calendar, CupertinoIcons.calendar,
-        symbol: 'calendar'),
+        symbol: 'calendar', motion: NavMotion.write),
     NavItem(tr('أعمالنا', 'Our work'), CupertinoIcons.play_rectangle,
         CupertinoIcons.play_rectangle_fill,
-        symbol: 'play.rectangle.fill', minimizeOnScroll: false),
+        symbol: 'play.rectangle.fill', minimizeOnScroll: false, motion: NavMotion.playPause),
     NavItem(tr('حسابي', 'My account'), CupertinoIcons.person_crop_circle,
         CupertinoIcons.person_crop_circle_fill,
-        symbol: 'person.crop.circle.fill'),
+        symbol: 'person.crop.circle.fill', motion: NavMotion.swap),
   ];
 
   @override

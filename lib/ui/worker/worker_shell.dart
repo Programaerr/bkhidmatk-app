@@ -34,10 +34,10 @@ class _WorkerShellState extends State<WorkerShell> {
         symbol: 'tray.full.fill'),
     NavItem(tr('أعمالنا', 'Our work'), CupertinoIcons.play_rectangle,
         CupertinoIcons.play_rectangle_fill,
-        symbol: 'play.rectangle.fill', minimizeOnScroll: false),
+        symbol: 'play.rectangle.fill', minimizeOnScroll: false, motion: NavMotion.playPause),
     NavItem(tr('حسابي', 'My account'), CupertinoIcons.person_crop_circle,
         CupertinoIcons.person_crop_circle_fill,
-        symbol: 'person.crop.circle.fill'),
+        symbol: 'person.crop.circle.fill', motion: NavMotion.swap),
   ];
 
   @override

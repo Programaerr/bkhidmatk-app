@@ -31,6 +31,8 @@ dependencies:
   # شريط تنقل آبل الأصلي (UITabBarController بزجاج Liquid Glass) على iOS 26 وما بعده،
   # وشريط Cupertino على iOS الأقدم. لا كود له على أندرويد.
   uikit_tab_bar: ^0.2.1
+  # حركة أيقونة «أعمالنا» في الشريط من ملف Lottie الذي أرسله المستخدم.
+  lottie: ^3.8.2
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -41,6 +43,7 @@ flutter:
   assets:
     - assets/images/
     - assets/media/
+    - assets/lottie/
   shaders:
     - shaders/liquid_glass.frag
   fonts:

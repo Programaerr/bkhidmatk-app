@@ -9,6 +9,9 @@ import 'package:uikit_tab_bar/uikit_tab_bar.dart';
 import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../auth/push_key.dart';
+import 'nav_motion.dart';
+
+export 'nav_motion.dart' show NavMotion;
 
 /// A single bottom-navigation destination definition used by all shells.
 class NavItem {
@@ -18,6 +21,7 @@ class NavItem {
     this.activeIcon, {
     required this.symbol,
     this.minimizeOnScroll = true,
+    this.motion = NavMotion.none,
   });
   final String label;
 
@@ -33,6 +37,9 @@ class NavItem {
 
   /// شريط آبل ينكمش مع النزول في هذه الصفحة. لا في صفحة الفيديو.
   final bool minimizeOnScroll;
+
+  /// حركة الأيقونة في الشريط الزجاجي حين يُختار التبويب وحين يُترك.
+  final NavMotion motion;
 }
 
 /// الآيفون يأخذ شريط آبل (انظر [_AppleTabLayout])، وأندرويد يبقى على الشريط الزجاجي.
@@ -175,7 +182,8 @@ class _AppShellLayoutState extends State<AppShellLayout> {
   }
 }
 
-/// شريط التنقل السفلي: لمسة واحدة تفتح التبويب، وتنتقل الفقاعة إليه ببوابة زمنية. والبقاء
+/// شريط التنقل السفلي: لمسة واحدة تفتح التبويب، والفقاعة تظهر عليه فوراً، وأيقونته تتحرك
+/// بما يحكي التبويب (انظر [NavMotion]). والبقاء
 /// على الفقاعة أو سحبها يكبّرها فتتبع الإصبع يميناً ويساراً وتكبّر ما تحتها، ويُفتح التبويب الذي
 /// يُترك عليه.
 /// ارتفاع أعلى زجاج شريط التنقل عن أسفل الشاشة، لما يُرسم فوقه مباشرة (مثل شريط تقدم الفيديو).
@@ -356,16 +364,12 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
     duration: const Duration(milliseconds: 320),
   );
   final _finger = ValueNotifier<double>(0);
-  // البوابة الزمنية بين التبويبات (طلب المستخدم، للشريط وحده): انظر [_BarPortalPainter].
-  late final _portal = AnimationController(
+  // ضربة المطرقة على الأرض: الفقاعة تنضغط وتهتز، وتنداح حولها موجة وشرر.
+  late final _impact = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 560),
+    duration: const Duration(milliseconds: 460),
   );
-  late final _glass = Listenable.merge([_lens, _settle, _finger, _portal]);
-  int _portalFrom = 0;
-  int _portalTo = 0;
-  // التبويب الذي فُتح بترك المجهر: المجهر نفسه نقل الفقاعة إليه، فلا بوابة.
-  int? _released;
+  late final _glass = Listenable.merge([_lens, _settle, _finger, _impact]);
 
   bool _lensOn = false;
   double _speed = 0;
@@ -384,22 +388,9 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
   }
 
   @override
-  void didUpdateWidget(covariant _GlassNavigationBar oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.index == widget.index) return;
-    final released = _released == widget.index;
-    _released = null;
-    if (released || _lensOn || MediaQuery.disableAnimationsOf(context)) return;
-    // ضغطة أثناء البوابة تغلق البوابة التي كانت تنفتح.
-    _portalFrom = _portal.isAnimating ? _portalTo : oldWidget.index;
-    _portalTo = widget.index;
-    _portal.forward(from: 0);
-  }
-
-  @override
   void dispose() {
     _hold?.cancel();
-    _portal.dispose();
+    _impact.dispose();
     _lens.dispose();
     _settle.dispose();
     _finger.dispose();
@@ -430,6 +421,16 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
     final box = _barKey.currentContext?.findRenderObject();
     return box is RenderBox ? box.globalToLocal(globalPosition).dx : 0;
   }
+
+  void _hit() {
+    if (!mounted || MediaQuery.disableAnimationsOf(context)) return;
+    _impact.forward(from: 0);
+  }
+
+  /// انضغاط الفقاعة واهتزازها بعد الضربة: واحد لحظتها، ويخبو إلى صفر.
+  double get _thud => _impact.isAnimating
+      ? math.exp(-5 * _impact.value) * math.cos(3 * math.pi * _impact.value)
+      : 0;
 
   /// منتصف التبويب على الشاشة، من اليمين في العربية.
   double _tabCenter(int index, double width) {
@@ -476,8 +477,6 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
     _hold?.cancel();
     if (!mounted || _lensOn) return;
     _lensOn = true;
-    // المجهر يأخذ مكان البوابة.
-    _portal.stop();
     _finger.value = _barX(globalPosition);
     _lens.forward();
   }
@@ -493,10 +492,7 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
     _lensOn = false;
     _finger.value = _barX(event.position);
     final next = _indexAt(event.position);
-    if (next != null && next != widget.index) {
-      _released = next;
-      widget.onSelect(next);
-    }
+    if (next != null && next != widget.index) widget.onSelect(next);
     _lens.reverse();
   }
 
@@ -615,7 +611,7 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
                                   child: Stack(
                                     key: _boundsKey,
                                     children: [
-                                      // الفقاعة الساكنة، تختفي ما دام الزجاج يتحرك أو البوابة تعمل.
+                                      // الفقاعة الساكنة، تختفي ما دام الزجاج يتحرك.
                                       PositionedDirectional(
                                         start: itemWidth * widget.index + 4,
                                         top: 4,
@@ -628,32 +624,48 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
                                           curve: Curves.easeOutCubic,
                                           child: AnimatedBuilder(
                                             animation: _glass,
-                                            builder: (context, bubble) => Opacity(
-                                              opacity: _portal.isAnimating
-                                                  ? 0
-                                                  : 1 -
-                                                      (_drop(width, itemWidth)
-                                                              ?.presence ??
-                                                          0),
-                                              child: bubble,
+                                            builder: (context, bubble) =>
+                                                Transform(
+                                              alignment: Alignment.bottomCenter,
+                                              transform: Matrix4.translationValues(
+                                                  1.6 *
+                                                      math.sin(9 *
+                                                          math.pi *
+                                                          _impact.value) *
+                                                      math.exp(-6 *
+                                                          _impact.value) *
+                                                      (_impact.isAnimating
+                                                          ? 1
+                                                          : 0),
+                                                  0,
+                                                  0)
+                                                ..scaleByDouble(1 + .07 * _thud,
+                                                    1 - .11 * _thud, 1, 1),
+                                              child: Opacity(
+                                                opacity: 1 -
+                                                    (_drop(width, itemWidth)
+                                                            ?.presence ??
+                                                        0),
+                                                child: bubble,
+                                              ),
                                             ),
                                             child: _bubble(isDark),
                                           ),
                                         ),
                                       ),
-                                      // البوابة بين التبويبين، تحت الأيقونات، في طبقتها وحدها.
-                                      Positioned.fill(
+                                      // موجة الضربة وشررها حول الفقاعة.
+                                      PositionedDirectional(
+                                        start: itemWidth * widget.index + 4,
+                                        top: 4,
+                                        bottom: 4,
+                                        width: itemWidth - 8,
                                         child: IgnorePointer(
-                                          child: RepaintBoundary(
-                                            child: CustomPaint(
-                                              painter: _BarPortalPainter(
-                                                portal: _portal,
-                                                from: _tabCenter(
-                                                    _portalFrom, width),
-                                                to: _tabCenter(_portalTo, width),
-                                                itemWidth: itemWidth,
-                                                isDark: isDark,
-                                              ),
+                                          child: CustomPaint(
+                                            painter: _ImpactPainter(
+                                              impact: _impact,
+                                              color: isDark
+                                                  ? const Color(0xFF7CC4F2)
+                                                  : widget.accent,
                                             ),
                                           ),
                                         ),
@@ -666,6 +678,7 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
                                                 item: items[i],
                                                 selected: i == widget.index,
                                                 accent: widget.accent,
+                                                onImpact: _hit,
                                                 onTap: () {
                                                   if (i != widget.index) {
                                                     widget.onSelect(i);
@@ -799,201 +812,53 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
   }
 }
 
-/// البوابة الزمنية في الشريط (طلب المستخدم، والصفحات تتبدل فوراً). على التبويب القديم تنطوي
-/// الفقاعة في حلقة طاقة تدور حولها علامات كمينا الساعة، وتصغر حتى تختفي. وعلى الجديد تنفتح
-/// بوابة: حلقة مضيئة تكبر بارتداد خفيف، تدور فيها الطاقة وحولها الدقائق بالعكس وشرارتان، ثم
-/// تمتد فتصير الفقاعة الساكنة تماماً ويخبو ضوؤها. كل ما فيها صغير داخل الشريط، فهي خفيفة.
-class _BarPortalPainter extends CustomPainter {
-  _BarPortalPainter({
-    required this.portal,
-    required this.from,
-    required this.to,
-    required this.itemWidth,
-    required this.isDark,
-  }) : super(repaint: portal);
+/// موجة ضربة المطرقة: إطار يتسع من حول الفقاعة ويخبو، وشرر يطير من مكان الضربة.
+class _ImpactPainter extends CustomPainter {
+  _ImpactPainter({required this.impact, required this.color})
+      : super(repaint: impact);
 
-  final AnimationController portal;
-  final double from;
-  final double to;
-  final double itemWidth;
-  final bool isDark;
-
-  static const _blue = AppColors.gold;
-  static const _sky = Color(0xFF7CC4F2);
-
-  /// قطر البوابة وهي دائرة، قبل أن تمتد إلى الفقاعة. تبقى هي وعلاماتها داخل الشريط.
-  static const _ringSize = 30.0;
-
-  static double _smooth(double x) {
-    final v = x.clamp(0.0, 1.0);
-    return v * v * (3 - 2 * v);
-  }
+  final AnimationController impact;
+  final Color color;
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (!portal.isAnimating) return;
-    final t = portal.value;
-    final restWidth = itemWidth - 8;
-    final restHeight = size.height - 8;
-    final spin = t * math.pi * 2.4;
-    final y = size.height / 2;
-
-    // التبويب القديم: الفقاعة تستدير ثم تصغر في حلقتها حتى تختفي.
-    final close = _smooth(t / .42);
-    if (close < 1) {
-      final shrink = Curves.easeInCubic.transform(close);
-      final round = Curves.easeOutCubic.transform((close * 2).clamp(0.0, 1.0));
-      final height = restHeight * (1 - shrink);
-      final width = lerpDouble(restWidth, restHeight, round)! * (1 - shrink);
-      final glow = math.sin(math.pi * close);
-      _glassPill(canvas, Offset(from, y), width, height, 1 - close);
-      _energy(canvas, Offset(from, y), width, height, spin, glow);
-      _clock(canvas, Offset(from, y), height / 2, -spin, glow * .9);
-    }
-
-    // التبويب الجديد: بوابة تنفتح دائرةً ثم تمتد إلى الفقاعة.
-    final open = ((t - .16) / .84).clamp(0.0, 1.0);
-    if (open > 0) {
-      final grow = Curves.easeOutBack.transform((open / .45).clamp(0.0, 1.0));
-      final widen = Curves.easeInOutCubic.transform(((open - .4) / .6).clamp(0.0, 1.0));
-      final height = lerpDouble(_ringSize * grow, restHeight, widen)!;
-      final width = lerpDouble(height, restWidth, widen)!;
-      final centre = Offset(to, y);
-      final light = _smooth(open / .1) * (1 - _smooth((open - .68) / .32));
-      final round = 1 - widen;
-      // وهج داخلها وهي تنفتح.
-      if (round > 0) {
-        canvas.drawCircle(
-          centre,
-          height / 2,
-          Paint()
-            ..shader = RadialGradient(
-              colors: [
-                _sky.withValues(alpha: .05 * round),
-                _sky.withValues(alpha: (isDark ? .45 : .35) * round * light),
-              ],
-            ).createShader(Rect.fromCircle(center: centre, radius: height / 2)),
-        );
-      }
-      _glassPill(canvas, centre, width, height, _smooth((open - .25) / .45));
-      _energy(canvas, centre, width, height, -spin, light);
-      _clock(canvas, centre, height / 2, spin * .7, light * round);
-      // شرارتان على حافتها تسبقانها في الدوران.
-      if (round > 0) {
-        final sparks = Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeCap = StrokeCap.round
-          ..strokeWidth = 2
-          ..color = Colors.white.withValues(alpha: .9 * light * round);
-        for (var i = 0; i < 2; i++) {
-          canvas.drawArc(
-            Rect.fromCircle(center: centre, radius: height / 2 - 2),
-            -spin * 1.8 + i * math.pi,
-            .7,
-            false,
-            sparks,
-          );
-        }
-      }
-    }
-  }
-
-  /// زجاج الفقاعة الساكنة بظلها وحافتها، بشفافية [presence].
-  void _glassPill(Canvas canvas, Offset centre, double width, double height,
-      double presence) {
-    if (presence <= 0 || height < 1) return;
-    final rect = Rect.fromCenter(center: centre, width: width, height: height);
-    final pill = RRect.fromRectAndRadius(rect, Radius.circular(height / 2));
-    final glass = Colors.white.withValues(alpha: (isDark ? .16 : .34) * presence);
-    canvas
-      ..drawRRect(
-        pill.shift(const Offset(0, 2)),
-        Paint()
-          ..color = Colors.black.withValues(alpha: (isDark ? .20 : .08) * presence)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
-      )
-      ..drawRRect(
-        pill,
-        Paint()
-          ..shader = LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              glass,
-              Colors.white.withValues(alpha: (isDark ? .04 : .10) * presence),
-            ],
-          ).createShader(rect),
-      )
-      ..drawRRect(
-        pill.deflate(.5),
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1
-          ..color = glass,
-      );
-  }
-
-  /// حلقة الطاقة الدائرة حول الشكل، بلون التطبيق والسماوي والأبيض، وضوء خفيف حولها.
-  void _energy(Canvas canvas, Offset centre, double width, double height,
-      double spin, double strength) {
-    if (strength <= 0 || height < 2) return;
-    final rect = Rect.fromCenter(center: centre, width: width, height: height);
-    final ring = RRect.fromRectAndRadius(rect, Radius.circular(height / 2));
-    canvas
-      ..drawRRect(
-        ring,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 5
-          ..color = _sky.withValues(alpha: (isDark ? .5 : .4) * strength)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
-      )
-      ..drawRRect(
-        ring,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2
-          ..shader = SweepGradient(
-            colors: [
-              _blue.withValues(alpha: strength),
-              _sky.withValues(alpha: strength),
-              Colors.white.withValues(alpha: strength),
-              _sky.withValues(alpha: strength),
-              _blue.withValues(alpha: strength),
-            ],
-            transform: GradientRotation(spin),
-          ).createShader(rect),
-      );
-  }
-
-  /// علامات الدقائق حول الدائرة، كل ثالثة أطول، تدور مع [spin].
-  void _clock(Canvas canvas, Offset centre, double radius, double spin,
-      double strength) {
-    if (strength <= 0 || radius < 3) return;
-    final ticks = Paint()..strokeCap = StrokeCap.round;
-    final colour = isDark ? _sky : _blue;
-    for (var i = 0; i < 24; i++) {
-      final major = i % 3 == 0;
-      final angle = i / 24 * 2 * math.pi + spin;
+    if (!impact.isAnimating) return;
+    final t = impact.value;
+    final fade = math.pow(1 - t, 1.5).toDouble();
+    final grow = Curves.easeOutCubic.transform(t);
+    final ring = Rect.fromCenter(
+      center: size.center(Offset.zero),
+      width: size.width + 18 * grow,
+      height: size.height + 6 * grow,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(ring, Radius.circular(ring.height / 2)),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = .6 + 1.8 * (1 - t)
+        ..color = color.withValues(alpha: .7 * fade),
+    );
+    // الشرر من حيث يضرب رأس المطرقة، أسفل الأيقونة يميناً.
+    final hit = size.center(const Offset(7, 7));
+    final spark = Paint()
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = 1.5
+      ..color = color.withValues(alpha: fade);
+    for (var i = 0; i < 6; i++) {
+      final angle = -math.pi * (.12 + .76 * i / 5);
       final direction = Offset(math.cos(angle), math.sin(angle));
-      ticks
-        ..strokeWidth = major ? 1.6 : 1
-        ..color = colour.withValues(alpha: (major ? .95 : .6) * strength);
+      final reach = 3 + 9 * grow;
       canvas.drawLine(
-        centre + direction * (radius + 3),
-        centre + direction * (radius + (major ? 8 : 6)),
-        ticks,
+        hit + direction * reach,
+        hit + direction * (reach + 3.4 * (1 - t)),
+        spark,
       );
     }
   }
 
   @override
-  bool shouldRepaint(_BarPortalPainter oldDelegate) =>
-      oldDelegate.portal != portal ||
-      oldDelegate.from != from ||
-      oldDelegate.to != to ||
-      oldDelegate.itemWidth != itemWidth ||
-      oldDelegate.isDark != isDark;
+  bool shouldRepaint(_ImpactPainter oldDelegate) =>
+      oldDelegate.impact != impact || oldDelegate.color != color;
 }
 
 class _GlassNavigationDestination extends StatelessWidget {
@@ -1002,12 +867,14 @@ class _GlassNavigationDestination extends StatelessWidget {
     required this.selected,
     required this.accent,
     required this.onTap,
+    required this.onImpact,
   });
 
   final NavItem item;
   final bool selected;
   final Color accent;
   final VoidCallback onTap;
+  final VoidCallback onImpact;
 
   @override
   Widget build(BuildContext context) {
@@ -1029,10 +896,14 @@ class _GlassNavigationDestination extends StatelessWidget {
                 // الأيقونة المختارة تكبر فوراً مثل إنستغرام، بلا حركة بطيئة.
                 duration: Duration.zero,
                 curve: Curves.easeOutCubic,
-                child: Icon(
-                  selected ? item.activeIcon : item.icon,
+                child: NavMotionIcon(
+                  motion: item.motion,
+                  icon: item.icon,
+                  activeIcon: item.activeIcon,
+                  selected: selected,
                   size: 23,
                   color: selected ? accent : theme.colorScheme.onSurfaceVariant,
+                  onImpact: onImpact,
                 ),
               ),
             ),
