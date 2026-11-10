@@ -175,7 +175,7 @@ class _AppShellLayoutState extends State<AppShellLayout> {
   }
 }
 
-/// شريط التنقل السفلي: لمسة واحدة تفتح التبويب، والفقاعة تظهر عليه فوراً بلا قفزة. والبقاء
+/// شريط التنقل السفلي: لمسة واحدة تفتح التبويب، وتنتقل الفقاعة إليه ببوابة زمنية. والبقاء
 /// على الفقاعة أو سحبها يكبّرها فتتبع الإصبع يميناً ويساراً وتكبّر ما تحتها، ويُفتح التبويب الذي
 /// يُترك عليه.
 /// ارتفاع أعلى زجاج شريط التنقل عن أسفل الشاشة، لما يُرسم فوقه مباشرة (مثل شريط تقدم الفيديو).
@@ -356,7 +356,16 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
     duration: const Duration(milliseconds: 320),
   );
   final _finger = ValueNotifier<double>(0);
-  late final _glass = Listenable.merge([_lens, _settle, _finger]);
+  // البوابة الزمنية بين التبويبات (طلب المستخدم، للشريط وحده): انظر [_BarPortalPainter].
+  late final _portal = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 560),
+  );
+  late final _glass = Listenable.merge([_lens, _settle, _finger, _portal]);
+  int _portalFrom = 0;
+  int _portalTo = 0;
+  // التبويب الذي فُتح بترك المجهر: المجهر نفسه نقل الفقاعة إليه، فلا بوابة.
+  int? _released;
 
   bool _lensOn = false;
   double _speed = 0;
@@ -375,8 +384,22 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
   }
 
   @override
+  void didUpdateWidget(covariant _GlassNavigationBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.index == widget.index) return;
+    final released = _released == widget.index;
+    _released = null;
+    if (released || _lensOn || MediaQuery.disableAnimationsOf(context)) return;
+    // ضغطة أثناء البوابة تغلق البوابة التي كانت تنفتح.
+    _portalFrom = _portal.isAnimating ? _portalTo : oldWidget.index;
+    _portalTo = widget.index;
+    _portal.forward(from: 0);
+  }
+
+  @override
   void dispose() {
     _hold?.cancel();
+    _portal.dispose();
     _lens.dispose();
     _settle.dispose();
     _finger.dispose();
@@ -453,6 +476,8 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
     _hold?.cancel();
     if (!mounted || _lensOn) return;
     _lensOn = true;
+    // المجهر يأخذ مكان البوابة.
+    _portal.stop();
     _finger.value = _barX(globalPosition);
     _lens.forward();
   }
@@ -468,7 +493,10 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
     _lensOn = false;
     _finger.value = _barX(event.position);
     final next = _indexAt(event.position);
-    if (next != null && next != widget.index) widget.onSelect(next);
+    if (next != null && next != widget.index) {
+      _released = next;
+      widget.onSelect(next);
+    }
     _lens.reverse();
   }
 
@@ -587,7 +615,7 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
                                   child: Stack(
                                     key: _boundsKey,
                                     children: [
-                                      // الفقاعة الساكنة، تختفي ما دام الزجاج يتحرك.
+                                      // الفقاعة الساكنة، تختفي ما دام الزجاج يتحرك أو البوابة تعمل.
                                       PositionedDirectional(
                                         start: itemWidth * widget.index + 4,
                                         top: 4,
@@ -601,13 +629,32 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
                                           child: AnimatedBuilder(
                                             animation: _glass,
                                             builder: (context, bubble) => Opacity(
-                                              opacity: 1 -
-                                                  (_drop(width, itemWidth)
-                                                          ?.presence ??
-                                                      0),
+                                              opacity: _portal.isAnimating
+                                                  ? 0
+                                                  : 1 -
+                                                      (_drop(width, itemWidth)
+                                                              ?.presence ??
+                                                          0),
                                               child: bubble,
                                             ),
                                             child: _bubble(isDark),
+                                          ),
+                                        ),
+                                      ),
+                                      // البوابة بين التبويبين، تحت الأيقونات، في طبقتها وحدها.
+                                      Positioned.fill(
+                                        child: IgnorePointer(
+                                          child: RepaintBoundary(
+                                            child: CustomPaint(
+                                              painter: _BarPortalPainter(
+                                                portal: _portal,
+                                                from: _tabCenter(
+                                                    _portalFrom, width),
+                                                to: _tabCenter(_portalTo, width),
+                                                itemWidth: itemWidth,
+                                                isDark: isDark,
+                                              ),
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -750,6 +797,203 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
       child: tint,
     );
   }
+}
+
+/// البوابة الزمنية في الشريط (طلب المستخدم، والصفحات تتبدل فوراً). على التبويب القديم تنطوي
+/// الفقاعة في حلقة طاقة تدور حولها علامات كمينا الساعة، وتصغر حتى تختفي. وعلى الجديد تنفتح
+/// بوابة: حلقة مضيئة تكبر بارتداد خفيف، تدور فيها الطاقة وحولها الدقائق بالعكس وشرارتان، ثم
+/// تمتد فتصير الفقاعة الساكنة تماماً ويخبو ضوؤها. كل ما فيها صغير داخل الشريط، فهي خفيفة.
+class _BarPortalPainter extends CustomPainter {
+  _BarPortalPainter({
+    required this.portal,
+    required this.from,
+    required this.to,
+    required this.itemWidth,
+    required this.isDark,
+  }) : super(repaint: portal);
+
+  final AnimationController portal;
+  final double from;
+  final double to;
+  final double itemWidth;
+  final bool isDark;
+
+  static const _blue = AppColors.gold;
+  static const _sky = Color(0xFF7CC4F2);
+
+  /// قطر البوابة وهي دائرة، قبل أن تمتد إلى الفقاعة. تبقى هي وعلاماتها داخل الشريط.
+  static const _ringSize = 30.0;
+
+  static double _smooth(double x) {
+    final v = x.clamp(0.0, 1.0);
+    return v * v * (3 - 2 * v);
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (!portal.isAnimating) return;
+    final t = portal.value;
+    final restWidth = itemWidth - 8;
+    final restHeight = size.height - 8;
+    final spin = t * math.pi * 2.4;
+    final y = size.height / 2;
+
+    // التبويب القديم: الفقاعة تستدير ثم تصغر في حلقتها حتى تختفي.
+    final close = _smooth(t / .42);
+    if (close < 1) {
+      final shrink = Curves.easeInCubic.transform(close);
+      final round = Curves.easeOutCubic.transform((close * 2).clamp(0.0, 1.0));
+      final height = restHeight * (1 - shrink);
+      final width = lerpDouble(restWidth, restHeight, round)! * (1 - shrink);
+      final glow = math.sin(math.pi * close);
+      _glassPill(canvas, Offset(from, y), width, height, 1 - close);
+      _energy(canvas, Offset(from, y), width, height, spin, glow);
+      _clock(canvas, Offset(from, y), height / 2, -spin, glow * .9);
+    }
+
+    // التبويب الجديد: بوابة تنفتح دائرةً ثم تمتد إلى الفقاعة.
+    final open = ((t - .16) / .84).clamp(0.0, 1.0);
+    if (open > 0) {
+      final grow = Curves.easeOutBack.transform((open / .45).clamp(0.0, 1.0));
+      final widen = Curves.easeInOutCubic.transform(((open - .4) / .6).clamp(0.0, 1.0));
+      final height = lerpDouble(_ringSize * grow, restHeight, widen)!;
+      final width = lerpDouble(height, restWidth, widen)!;
+      final centre = Offset(to, y);
+      final light = _smooth(open / .1) * (1 - _smooth((open - .68) / .32));
+      final round = 1 - widen;
+      // وهج داخلها وهي تنفتح.
+      if (round > 0) {
+        canvas.drawCircle(
+          centre,
+          height / 2,
+          Paint()
+            ..shader = RadialGradient(
+              colors: [
+                _sky.withValues(alpha: .05 * round),
+                _sky.withValues(alpha: (isDark ? .45 : .35) * round * light),
+              ],
+            ).createShader(Rect.fromCircle(center: centre, radius: height / 2)),
+        );
+      }
+      _glassPill(canvas, centre, width, height, _smooth((open - .25) / .45));
+      _energy(canvas, centre, width, height, -spin, light);
+      _clock(canvas, centre, height / 2, spin * .7, light * round);
+      // شرارتان على حافتها تسبقانها في الدوران.
+      if (round > 0) {
+        final sparks = Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round
+          ..strokeWidth = 2
+          ..color = Colors.white.withValues(alpha: .9 * light * round);
+        for (var i = 0; i < 2; i++) {
+          canvas.drawArc(
+            Rect.fromCircle(center: centre, radius: height / 2 - 2),
+            -spin * 1.8 + i * math.pi,
+            .7,
+            false,
+            sparks,
+          );
+        }
+      }
+    }
+  }
+
+  /// زجاج الفقاعة الساكنة بظلها وحافتها، بشفافية [presence].
+  void _glassPill(Canvas canvas, Offset centre, double width, double height,
+      double presence) {
+    if (presence <= 0 || height < 1) return;
+    final rect = Rect.fromCenter(center: centre, width: width, height: height);
+    final pill = RRect.fromRectAndRadius(rect, Radius.circular(height / 2));
+    final glass = Colors.white.withValues(alpha: (isDark ? .16 : .34) * presence);
+    canvas
+      ..drawRRect(
+        pill.shift(const Offset(0, 2)),
+        Paint()
+          ..color = Colors.black.withValues(alpha: (isDark ? .20 : .08) * presence)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
+      )
+      ..drawRRect(
+        pill,
+        Paint()
+          ..shader = LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              glass,
+              Colors.white.withValues(alpha: (isDark ? .04 : .10) * presence),
+            ],
+          ).createShader(rect),
+      )
+      ..drawRRect(
+        pill.deflate(.5),
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1
+          ..color = glass,
+      );
+  }
+
+  /// حلقة الطاقة الدائرة حول الشكل، بلون التطبيق والسماوي والأبيض، وضوء خفيف حولها.
+  void _energy(Canvas canvas, Offset centre, double width, double height,
+      double spin, double strength) {
+    if (strength <= 0 || height < 2) return;
+    final rect = Rect.fromCenter(center: centre, width: width, height: height);
+    final ring = RRect.fromRectAndRadius(rect, Radius.circular(height / 2));
+    canvas
+      ..drawRRect(
+        ring,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 5
+          ..color = _sky.withValues(alpha: (isDark ? .5 : .4) * strength)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
+      )
+      ..drawRRect(
+        ring,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2
+          ..shader = SweepGradient(
+            colors: [
+              _blue.withValues(alpha: strength),
+              _sky.withValues(alpha: strength),
+              Colors.white.withValues(alpha: strength),
+              _sky.withValues(alpha: strength),
+              _blue.withValues(alpha: strength),
+            ],
+            transform: GradientRotation(spin),
+          ).createShader(rect),
+      );
+  }
+
+  /// علامات الدقائق حول الدائرة، كل ثالثة أطول، تدور مع [spin].
+  void _clock(Canvas canvas, Offset centre, double radius, double spin,
+      double strength) {
+    if (strength <= 0 || radius < 3) return;
+    final ticks = Paint()..strokeCap = StrokeCap.round;
+    final colour = isDark ? _sky : _blue;
+    for (var i = 0; i < 24; i++) {
+      final major = i % 3 == 0;
+      final angle = i / 24 * 2 * math.pi + spin;
+      final direction = Offset(math.cos(angle), math.sin(angle));
+      ticks
+        ..strokeWidth = major ? 1.6 : 1
+        ..color = colour.withValues(alpha: (major ? .95 : .6) * strength);
+      canvas.drawLine(
+        centre + direction * (radius + 3),
+        centre + direction * (radius + (major ? 8 : 6)),
+        ticks,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_BarPortalPainter oldDelegate) =>
+      oldDelegate.portal != portal ||
+      oldDelegate.from != from ||
+      oldDelegate.to != to ||
+      oldDelegate.itemWidth != itemWidth ||
+      oldDelegate.isDark != isDark;
 }
 
 class _GlassNavigationDestination extends StatelessWidget {
