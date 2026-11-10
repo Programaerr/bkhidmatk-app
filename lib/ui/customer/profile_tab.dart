@@ -17,7 +17,6 @@ import '../widgets/theme_cross_fade.dart';
 import '../widgets/ui.dart';
 import 'home_keys.dart';
 import 'messages_screen.dart';
-import 'receipts_screen.dart';
 
 /// مقاسات التصميم المعتمد بالبكسل (إطار عرضه 391).
 abstract final class _Design {
@@ -347,19 +346,7 @@ class _ProfileTabState extends State<ProfileTab> {
           onPressed: widget.onOpenBookings,
           pressable: false,
         ),
-      if (!widget.workerMode)
-        _MenuKey(
-          unit: unit,
-          icon: Icons.receipt_long_rounded,
-          title: tr('وصولاتي', 'My receipts'),
-          subtitle:
-              tr('وصولات الدفع القابلة للطباعة', 'Printable payment receipts'),
-          onPressed: () => Navigator.push(
-            context,
-            QuickRoute(builder: (_) => const ReceiptsScreen()),
-          ),
-          pressable: false,
-        ),
+      // «وصولاتي» حُذف (طلب المستخدم): هو نفسه «حجوزاتي».
       if (!widget.workerMode && widget.onOpenAdminDashboard != null)
         _MenuKey(
           unit: unit,
@@ -739,7 +726,7 @@ class _MenuKey extends StatelessWidget {
   final String subtitle;
   final VoidCallback onPressed;
 
-  /// ينخفض حين يُلمس. حجوزاتي ووصولاتي والرسائل والدعم لا تنخفض، اللمسة تفتحها فوراً
+  /// ينخفض حين يُلمس. حجوزاتي والرسائل والدعم لا تنخفض، اللمسة تفتحها فوراً
   /// (طلب المستخدم).
   final bool pressable;
 
