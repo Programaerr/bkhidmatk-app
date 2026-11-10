@@ -175,7 +175,7 @@ class _AppShellLayoutState extends State<AppShellLayout> {
   }
 }
 
-/// شريط التنقل السفلي: لمسة واحدة تفتح التبويب، وتقفز الفقاعة إليه كقطرة ماء ثم تستقر. والبقاء
+/// شريط التنقل السفلي: لمسة واحدة تفتح التبويب، والفقاعة تظهر عليه فوراً بلا قفزة. والبقاء
 /// على الفقاعة أو سحبها يكبّرها فتتبع الإصبع يميناً ويساراً وتكبّر ما تحتها، ويُفتح التبويب الذي
 /// يُترك عليه.
 /// ارتفاع أعلى زجاج شريط التنقل عن أسفل الشاشة، لما يُرسم فوقه مباشرة (مثل شريط تقدم الفيديو).
@@ -350,18 +350,13 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
     vsync: this,
     duration: const Duration(milliseconds: 200),
   );
-  // قفزة الفقاعة من تبويب إلى آخر كقطرة ماء (طلب المستخدم، بدل قفزة الهلام).
-  late final _trip = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 600),
-  );
   // سرعة الإصبع تمطّ الزجاج وتقوّي انكساره، ويعود مستوياً حين يقف الإصبع.
   late final _settle = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 320),
   );
   final _finger = ValueNotifier<double>(0);
-  late final _glass = Listenable.merge([_lens, _trip, _settle, _finger]);
+  late final _glass = Listenable.merge([_lens, _settle, _finger]);
 
   bool _lensOn = false;
   double _speed = 0;
@@ -370,15 +365,6 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
   Timer? _hold;
   // إصبع واحد يحرّك الشريط، وما يلمسه إصبع ثانٍ في الوقت نفسه يُهمل.
   int? _pointer;
-  // التبويب الذي فُتح بترك المجهر، فلا رحلة إليه.
-  int? _released;
-  // من أين يكبر المجهر: من الفقاعة الساكنة، أو من مكان الفقاعة القافزة إن أُمسكت وهي في الهواء.
-  double _lensFrom = 0;
-  // أُمسكت الفقاعة في قفزتها: لا تظهر الساكنة في آخر الطريق حتى يُترك المجهر.
-  bool _caughtInHop = false;
-  double _tripFrom = 0;
-  int _tripTo = 0;
-  double _width = 0;
 
   @override
   void initState() {
@@ -389,25 +375,9 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
   }
 
   @override
-  void didUpdateWidget(covariant _GlassNavigationBar oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.index == widget.index) return;
-    final released = _released == widget.index;
-    _released = null;
-    if (released || _lensOn || _width == 0) return;
-    _tripFrom = _trip.isAnimating
-        ? _tripCentre(_width)
-        : _tabCenter(oldWidget.index, _width);
-    _tripTo = widget.index;
-    // الصفحة تتبدل فوراً، والفقاعة تقفز إليها كقطرة ماء (طلب المستخدم).
-    _trip.forward(from: 0);
-  }
-
-  @override
   void dispose() {
     _hold?.cancel();
     _lens.dispose();
-    _trip.dispose();
     _settle.dispose();
     _finger.dispose();
     super.dispose();
@@ -444,13 +414,6 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
     final start = itemWidth * index + itemWidth / 2;
     return Directionality.of(context) == TextDirection.rtl ? width - start : start;
   }
-
-  /// مكان الفقاعة القافزة الآن، ومنه تبدأ قفزة جديدة إن ضُغط تبويب آخر قبل أن تهبط.
-  double _tripCentre(double width) => lerpDouble(
-        _tripFrom,
-        _tabCenter(_tripTo, width),
-        _WaterHop.travel(_trip.value),
-      )!;
 
   // التبويب يُفتح بمجرد اللمس، والبقاء عليه أو السحب يحوّل فقاعته إلى مجهر.
   void _touchDown(PointerDownEvent event) {
@@ -490,11 +453,6 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
     _hold?.cancel();
     if (!mounted || _lensOn) return;
     _lensOn = true;
-    _caughtInHop = _trip.isAnimating;
-    _lensFrom = _caughtInHop
-        ? _tripCentre(_width)
-        : _tabCenter(widget.index, _width);
-    _trip.stop();
     _finger.value = _barX(globalPosition);
     _lens.forward();
   }
@@ -508,13 +466,9 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
     _setDragging(false);
     if (!_lensOn) return;
     _lensOn = false;
-    _caughtInHop = false;
     _finger.value = _barX(event.position);
     final next = _indexAt(event.position);
-    if (next != null && next != widget.index) {
-      _released = next;
-      widget.onSelect(next);
-    }
+    if (next != null && next != widget.index) widget.onSelect(next);
     _lens.reverse();
   }
 
@@ -526,7 +480,6 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
     _setDragging(false);
     if (!_lensOn) return;
     _lensOn = false;
-    _caughtInHop = false;
     _lens.reverse();
   }
 
@@ -542,8 +495,7 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
       final finger = _finger.value.clamp(half, width - half);
       return (
         // يكبر من مكان الفقاعة إلى الإصبع، وبعد تركه يصغر إلى فقاعة التبويب المختار.
-        centre: lerpDouble(
-            _lensOn ? _lensFrom : _tabCenter(widget.index, width), finger, t)!,
+        centre: lerpDouble(_tabCenter(widget.index, width), finger, t)!,
         width: lerpDouble(bubbleWidth, itemWidth + 18, t)! * (1 + stretch),
         height: lerpDouble(bubbleHeight, _height + 16, t)! * (1 - stretch * .4),
         zoom: lerpDouble(1, 1.3, t)!,
@@ -551,7 +503,6 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
         presence: t,
       );
     }
-    // في القفز بين التبويبات ترسم الفقاعةَ [_WaterPainter]، لا الزجاج.
     return null;
   }
 
@@ -580,7 +531,6 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
                 builder: (context, constraints) {
                   final width = constraints.maxWidth;
                   final itemWidth = width / items.length;
-                  _width = width;
                   return Stack(
                     key: _barKey,
                     clipBehavior: Clip.none,
@@ -651,33 +601,13 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
                                           child: AnimatedBuilder(
                                             animation: _glass,
                                             builder: (context, bubble) => Opacity(
-                                              opacity: _trip.isAnimating ||
-                                                      _caughtInHop
-                                                  ? 0
-                                                  : 1 -
-                                                      (_drop(width, itemWidth)
-                                                              ?.presence ??
-                                                          0),
+                                              opacity: 1 -
+                                                  (_drop(width, itemWidth)
+                                                          ?.presence ??
+                                                      0),
                                               child: bubble,
                                             ),
                                             child: _bubble(isDark),
-                                          ),
-                                        ),
-                                      ),
-                                      // الفقاعة في قفزتها، بلون الفقاعة الساكنة وحافتها. تُرسم
-                                      // في طبقتها وحدها مع كل إطار، بلا إعادة بناء.
-                                      Positioned.fill(
-                                        child: IgnorePointer(
-                                          child: RepaintBoundary(
-                                            child: CustomPaint(
-                                              painter: _WaterPainter(
-                                                trip: _trip,
-                                                from: _tripFrom,
-                                                to: _tabCenter(_tripTo, width),
-                                                itemWidth: itemWidth,
-                                                isDark: isDark,
-                                              ),
-                                            ),
                                           ),
                                         ),
                                       ),
@@ -820,199 +750,6 @@ class _GlassNavigationBarState extends State<_GlassNavigationBar>
       child: tint,
     );
   }
-}
-
-/// قفزة الفقاعة من تبويب إلى آخر كقطرة ماء (طلب المستخدم): تتجمع قليلاً، ثم تنفصل فتنساب في
-/// قوس صغير داخل الشريط، مقدمتها مستديرة وذيلها يدق خلفها كقطرة تجري، وعلى سطحها لمعة. حين
-/// تلمس مكانها تنبسط كالماء ثم تتموج موجات تخبو حتى تسكن على شكل الفقاعة الساكنة تماماً، وتنداح
-/// حلقة خفيفة من حيث قامت وحيث نزلت. كل الحركات متصلة بلا قفزات، فتبقى ناعمة.
-abstract final class _WaterHop {
-  /// نهاية التجمع قبل الانطلاق، ولحظة الملامسة.
-  static const takeoff = .10;
-  static const land = .66;
-
-  static double _flight(double t) =>
-      ((t - takeoff) / (land - takeoff)).clamp(0.0, 1.0);
-
-  /// انتقال متصل بلا حواف بين 0 و1.
-  static double _smooth(double x) {
-    final v = x.clamp(0.0, 1.0);
-    return v * v * (3 - 2 * v);
-  }
-
-  /// كم قطعت من الطريق: صفر قبل الانطلاق، وواحد من لحظة الملامسة.
-  static double travel(double t) => Curves.easeInOutSine.transform(_flight(t));
-
-  /// ارتفاعها عن مكانها نسبةً إلى أعلى القوس.
-  static double rise(double t) => math.sin(math.pi * _flight(t));
-
-  /// عرضها وارتفاعها نسبةً إلى الفقاعة الساكنة، وكم يدق ذيلها (0 بلا ذيل).
-  static (double, double, double) shape(double t) {
-    if (t < takeoff) {
-      final gather = _smooth(t / takeoff);
-      return (1 + .07 * gather, 1 - .09 * gather, 0);
-    }
-    if (t < land) {
-      final flight = _flight(t);
-      // تمتد مع سرعتها، وتخف انضغاطة التجمع، وتنبسط قبيل الملامسة.
-      final pull = math.sin(math.pi * flight);
-      final gather = 1 - _smooth(flight / .3);
-      final touch = _smooth((flight - .8) / .2);
-      return (
-        1 + .20 * pull + .07 * gather + .12 * touch,
-        1 - .17 * pull - .09 * gather - .13 * touch,
-        pull,
-      );
-    }
-    // موجات تخبو، تبدأ من انبساطة الملامسة وتنتهي ساكنة بلا ارتداد.
-    final settle = (t - land) / (1 - land);
-    final ripple = math.cos(math.pi * 2.2 * settle) *
-        math.pow(1 - settle, 2.2).toDouble();
-    return (1 + .12 * ripple, 1 - .13 * ripple, 0);
-  }
-
-  /// حلقة الماء من حيث قامت (0 إلى 1)، ثم حيث نزلت.
-  static double takeoffRing(double t) => ((t - takeoff) / .42).clamp(0.0, 1.0);
-  static double landingRing(double t) =>
-      ((t - land) / (1 - land)).clamp(0.0, 1.0);
-}
-
-class _WaterPainter extends CustomPainter {
-  _WaterPainter({
-    required this.trip,
-    required this.from,
-    required this.to,
-    required this.itemWidth,
-    required this.isDark,
-  }) : super(repaint: trip);
-
-  final AnimationController trip;
-  final double from;
-  final double to;
-  final double itemWidth;
-  final bool isDark;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    // خارج القفزة ترسم الفقاعةَ الساكنة نفسها.
-    if (!trip.isAnimating) return;
-    final t = trip.value;
-    final restWidth = itemWidth - 8;
-    final restHeight = size.height - 8;
-    final glass = Colors.white.withValues(alpha: isDark ? .16 : .34);
-
-    _ring(canvas, from, size, restWidth, restHeight, _WaterHop.takeoffRing(t));
-    _ring(canvas, to, size, restWidth, restHeight, _WaterHop.landingRing(t));
-
-    final (stretchX, stretchY, taper) = _WaterHop.shape(t);
-    final height = restHeight * stretchY;
-    final width = math.max(restWidth * stretchX, height);
-    // مقدمتها نصف دائرة بارتفاعها، وذيلها أصغر بقدر سرعتها.
-    final front = height / 2;
-    final back = front * (1 - .38 * taper);
-    final length = width - front - back;
-    // تقف على أرض الشريط وهي تتجمع وتنبسط، وتعلو في القفز أكثر كلما بعد التبويب.
-    final distance = ((to - from).abs() / (itemWidth * 3)).clamp(0.0, 1.0);
-    final bottom = size.height - 4 - (4 + 2 * distance) * _WaterHop.rise(t);
-    final centreX = lerpDouble(from, to, _WaterHop.travel(t))!;
-    final ahead = to >= from ? 1.0 : -1.0;
-
-    // ترسم متجهة إلى اليمين، وتنقلب إن كانت ذاهبة إلى اليسار.
-    canvas
-      ..save()
-      ..translate(centreX, bottom - front)
-      ..scale(ahead, 1)
-      ..translate(-(length + front - back) / 2, 0);
-    final drop = _dropPath(back, front, length);
-    final bounds = drop.getBounds();
-    canvas
-      ..drawPath(
-        drop.shift(const Offset(0, 2)),
-        Paint()
-          ..color = Colors.black.withValues(alpha: isDark ? .20 : .08)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
-      )
-      ..drawPath(
-        drop,
-        Paint()
-          ..shader = LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [glass, Colors.white.withValues(alpha: isDark ? .04 : .10)],
-          ).createShader(bounds),
-      )
-      ..drawPath(
-        drop,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1
-          ..color = glass,
-      );
-    // لمعة الماء على مقدمتها وهي تجري.
-    if (taper > .01) {
-      canvas.drawOval(
-        Rect.fromCenter(
-          center: Offset(length + front * .1, -front * .45),
-          width: front * .8,
-          height: front * .3,
-        ),
-        Paint()
-          ..color = Colors.white.withValues(alpha: (isDark ? .28 : .55) * taper)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.5),
-      );
-    }
-    canvas.restore();
-  }
-
-  /// كبسولة ماء: دائرة الذيل في المبدأ ودائرة المقدمة على بعد [length]، يجمعهما خطّا مماس.
-  static Path _dropPath(double back, double front, double length) {
-    if (length < .5) {
-      return Path()
-        ..addOval(Rect.fromCircle(center: Offset(length, 0), radius: front));
-    }
-    // عمودي خطّي المماس على اتجاه الحركة.
-    final k = ((back - front) / length).clamp(-1.0, 1.0);
-    final h = math.sqrt(1 - k * k);
-    final angle = math.atan2(h, k);
-    return Path()
-      ..moveTo(back * k, back * h)
-      ..lineTo(length + front * k, front * h)
-      ..arcTo(Rect.fromCircle(center: Offset(length, 0), radius: front), angle,
-          -2 * angle, false)
-      ..lineTo(back * k, -back * h)
-      ..arcTo(Rect.fromCircle(center: Offset.zero, radius: back), -angle,
-          -(2 * math.pi - 2 * angle), false)
-      ..close();
-  }
-
-  /// حلقة ماء تتسع من حول الفقاعة وتخبو، ويقصّها حد الشريط.
-  void _ring(Canvas canvas, double centre, Size size, double restWidth,
-      double restHeight, double progress) {
-    if (progress <= 0 || progress >= 1) return;
-    final fade = math.pow(1 - progress, 1.6).toDouble();
-    final spread = Curves.easeOutCubic.transform(progress);
-    final rect = Rect.fromCenter(
-      center: Offset(centre, size.height / 2),
-      width: restWidth * (1 + .45 * spread),
-      height: restHeight * (1 + .14 * spread),
-    );
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(rect, Radius.circular(rect.height / 2)),
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.2
-        ..color = (isDark ? Colors.white : Colors.black)
-            .withValues(alpha: (isDark ? .30 : .10) * fade),
-    );
-  }
-
-  @override
-  bool shouldRepaint(_WaterPainter oldDelegate) =>
-      oldDelegate.trip != trip ||
-      oldDelegate.from != from ||
-      oldDelegate.to != to ||
-      oldDelegate.itemWidth != itemWidth ||
-      oldDelegate.isDark != isDark;
 }
 
 class _GlassNavigationDestination extends StatelessWidget {
