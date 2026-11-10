@@ -329,6 +329,7 @@ class _ProfileTabState extends State<ProfileTab> {
           subtitle:
               tr('كل حجوزاتك وحالتها', 'All your bookings and their status'),
           onPressed: widget.onOpenBookings,
+          pressable: false,
         ),
       if (!widget.workerMode)
         _MenuKey(
@@ -341,6 +342,7 @@ class _ProfileTabState extends State<ProfileTab> {
             context,
             QuickRoute(builder: (_) => const ReceiptsScreen()),
           ),
+          pressable: false,
         ),
       if (!widget.workerMode && widget.onOpenAdminDashboard != null)
         _MenuKey(
@@ -360,6 +362,7 @@ class _ProfileTabState extends State<ProfileTab> {
           context,
           QuickRoute(builder: (_) => const MessagesScreen()),
         ),
+        pressable: false,
       ),
     ];
     final dark = state.themeMode == ThemeMode.dark;
@@ -664,7 +667,7 @@ class _WideKey extends StatelessWidget {
   final bool? toggled;
   final String? value;
 
-  /// ينخفض حين يُلمس، إلا مفتاحَي الوضع الليلي واللغة (طلب المستخدم).
+  /// ينخفض حين يُلمس، إلا مفتاحَي الوضع الليلي واللغة وبعض أزرار الصفحات (طلب المستخدم).
   final bool pressable;
 
   @override
@@ -711,6 +714,7 @@ class _MenuKey extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.onPressed,
+    this.pressable = true,
   });
 
   final double unit;
@@ -718,6 +722,10 @@ class _MenuKey extends StatelessWidget {
   final String title;
   final String subtitle;
   final VoidCallback onPressed;
+
+  /// ينخفض حين يُلمس. حجوزاتي ووصولاتي والرسائل والدعم لا تنخفض، اللمسة تفتحها فوراً
+  /// (طلب المستخدم).
+  final bool pressable;
 
   @override
   Widget build(BuildContext context) {
@@ -728,6 +736,7 @@ class _MenuKey extends StatelessWidget {
       faceHeight: _Design.menuHeight,
       label: title,
       onPressed: onPressed,
+      pressable: pressable,
       child: Row(
         children: [
           _Badge(
