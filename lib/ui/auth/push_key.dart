@@ -44,10 +44,15 @@ const _lemonFaceEdge = Color(0xFF406D9B);
 const _lemonSide = Color(0xFF3B6590);
 
 // زر القسم رمادي مزرق أفتح من أيقوناته القديمة (#263238 كان غامقاً جداً)، والأيقونة عليه بيضاء.
-// ليلاً يأخذ رمادي أزرار الليل.
 const _inkFaceCenter = Color(0xFF455A64);
 const _inkFaceEdge = Color(0xFF435861);
 const _inkSide = Color(0xFF3B4D55);
+
+// ليلاً بالعكس (طلب المستخدم): الزر بلون أيقونات الليل الفاتح، والأيقونة برمادي أزرار الليل.
+// حافة الوجه وجانبه أغمق منه بقدر ما هي في الزر الأبيض نهاراً.
+const _inkNightFaceCenter = Color(0xFFF4F4EE);
+const _inkNightFaceEdge = Color(0xFFE6E6E0);
+const _inkNightSide = Color(0xFFE3E3DD);
 
 // زر تسجيل الخروج الأحمر، نهاراً وليلاً.
 const _redFaceCenter = Color(0xFFFA4D4D);
@@ -494,8 +499,12 @@ class PushKey extends StatefulWidget {
   /// وجه الزر وجانبه باللون الأحمر، مثل زر تسجيل الخروج.
   final bool red;
 
-  /// وجه الزر وجانبه رمادي مزرق (#455A64) لأزرار الأقسام نهاراً، وبرمادي أزرار الليل ليلاً.
+  /// وجه الزر وجانبه رمادي مزرق (#455A64) لأزرار الأقسام نهاراً، وفاتح ليلاً بلون أيقونات الليل
+  /// والأيقونة عليه بلون [nightFace].
   final bool ink;
+
+  /// لون وجه الأزرار في الوضع الليلي، ولون أيقونات أزرار الأقسام ليلاً.
+  static const nightFace = _nightFaceCenter;
 
   /// وجه الزر دائرة، وجانبه وقاعدته حولها.
   final bool round;
@@ -798,14 +807,17 @@ class _KeyPainter extends CustomPainter {
 
   Color _tone(Color day, Color dark) => Color.lerp(day, dark, night.value)!;
 
-  Color _keyTone(Color inYellow, Color inLemon, Color inRed, Color inInk, Color day, Color dark) =>
+  Color _keyTone(Color inYellow, Color inLemon, Color inRed, Color inInk, Color inInkNight,
+          Color day, Color dark) =>
       style.yellow
           ? inYellow
           : style.lemon
               ? inLemon
               : style.red
                   ? inRed
-                  : _tone(style.ink ? inInk : day, dark);
+                  : style.ink
+                      ? _tone(inInk, inInkNight)
+                      : _tone(day, dark);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -859,7 +871,9 @@ class _KeyPainter extends CustomPainter {
       )
       ..drawRRect(
         side,
-        Paint()..color = _keyTone(_yellowSide, _lemonSide, _redSide, _inkSide, _side, _nightSide),
+        Paint()
+          ..color = _keyTone(
+              _yellowSide, _lemonSide, _redSide, _inkSide, _inkNightSide, _side, _nightSide),
       )
       ..save()
       ..clipRRect(side);
@@ -915,13 +929,16 @@ class _KeyPainter extends CustomPainter {
           face.center,
           face.width * .62,
           [
-            _keyTone(
-              _yellowFaceCenter, _lemonFaceCenter, _redFaceCenter, _inkFaceCenter, _faceCenter, _nightFaceCenter),
-            _keyTone(_yellowFaceEdge, _lemonFaceEdge, _redFaceEdge, _inkFaceEdge, _faceEdge, _nightFaceEdge),
+            _keyTone(_yellowFaceCenter, _lemonFaceCenter, _redFaceCenter, _inkFaceCenter,
+                _inkNightFaceCenter, _faceCenter, _nightFaceCenter),
+            _keyTone(_yellowFaceEdge, _lemonFaceEdge, _redFaceEdge, _inkFaceEdge,
+                _inkNightFaceEdge, _faceEdge, _nightFaceEdge),
           ],
         ),
     );
-    _paintOutline(canvas, face, _tone(_faceOutline, _nightFaceOutline));
+    // زر القسم فاتح ليلاً، فتبقى حافته الخفيفة الداكنة كما في الزر الأبيض نهاراً.
+    _paintOutline(
+        canvas, face, style.ink ? _faceOutline : _tone(_faceOutline, _nightFaceOutline));
   }
 
   void _glow(Canvas canvas, Offset center, double radiusX, double radiusY, Color color) {

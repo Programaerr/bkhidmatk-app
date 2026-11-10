@@ -473,7 +473,8 @@ class SectionKey extends StatelessWidget {
               : Icon(
                   appIcon(section.icon),
                   size: _sectionIconSize * unit,
-                  color: night ? homeNightInk : Colors.white,
+                  // ليلاً بالعكس: الزر فاتح والأيقونة بلون أزرار الليل.
+                  color: night ? PushKey.nightFace : Colors.white,
                 ),
         ),
         SizedBox(height: _sectionLabelGap * unit),
