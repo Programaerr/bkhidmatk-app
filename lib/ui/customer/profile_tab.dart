@@ -10,6 +10,7 @@ import '../../state/app_state.dart';
 import '../auth/auth_route.dart';
 import '../auth/day_night_switch.dart';
 import '../auth/push_key.dart';
+import '../auth/raised_field.dart';
 import '../auth/truck_scene.dart';
 import '../widgets/quick_route.dart';
 import '../widgets/theme_cross_fade.dart';
@@ -137,6 +138,7 @@ class _ProfileTabState extends State<ProfileTab> {
     final name = TextEditingController(text: user.name);
     final address = TextEditingController(text: user.address ?? '');
     String city = worker?.city ?? user.city ?? 'بغداد';
+    var pickingCity = false;
 
     final saved = await showAppSheet<bool>(
       context,
@@ -149,62 +151,42 @@ class _ProfileTabState extends State<ProfileTab> {
               children: [
                 SheetHeader(title: tr('تعديل الملف الشخصي', 'Edit profile')),
                 const SizedBox(height: 16),
-                TextField(
-                  controller: name,
-                  decoration: InputDecoration(
-                    labelText: tr('الاسم', 'Name'),
-                    prefixIcon: Icon(Icons.person_outline_rounded, size: 20),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                InkWell(
-                  onTap: () async {
-                    final picked = await showAppSheet<String>(
-                      context,
-                      builder: (ctx) => ConstrainedBox(
-                        constraints: const BoxConstraints(maxHeight: 440),
-                        child: Column(
-                          children: [
-                            Padding(
-                              padding: EdgeInsets.fromLTRB(20, 0, 20, 6),
-                              child: SheetHeader(
-                                  title: tr('المحافظة', 'Province')),
-                            ),
-                            Expanded(
-                              child: ListView(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 10),
-                                children: [
-                                  for (final c in iraqCities)
-                                    ListTile(
-                                      title: Text(cityLabel(c)),
-                                      onTap: () => Navigator.pop(ctx, c),
-                                    ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                    if (picked != null) setSheetState(() => city = picked);
-                  },
-                  child: InputDecorator(
-                    decoration: const InputDecoration(
-                      prefixIcon: Icon(Icons.location_city_rounded, size: 20),
-                      suffixIcon: Icon(Icons.expand_more_rounded, size: 20),
+                // الاسم والمحافظة والعنوان بتصميم خانات إنشاء حساب الزبون (طلب المستخدم).
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    RequiredFieldLabel(tr('الاسم الكامل', 'Full name'),
+                        controller: name),
+                    RaisedField(
+                      controller: name,
+                      hint: tr('مثال: أحمد سعد', 'Example: Ahmed Saad'),
+                      textCapitalization: TextCapitalization.words,
                     ),
-                    child: Text(cityLabel(city)),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: address,
-                  maxLines: 2,
-                  decoration: InputDecoration(
-                    labelText: tr('العنوان', 'Address'),
-                    prefixIcon: Icon(Icons.location_on_outlined, size: 20),
-                  ),
+                    const SizedBox(height: 14),
+                    FieldLabel(tr('المحافظة', 'Province'),
+                        required_: true, filled: true),
+                    RaisedPicker(
+                      value: cityLabel(city),
+                      hint: tr('اختر المحافظة', 'Choose the province'),
+                      emptyError: tr('اختر محافظتك', 'Choose your province'),
+                      open: pickingCity,
+                      onTap: () async {
+                        setSheetState(() => pickingCity = true);
+                        final picked = await _pickCity(city);
+                        setSheetState(() {
+                          pickingCity = false;
+                          if (picked != null) city = picked;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 14),
+                    FieldLabel(tr('العنوان التفصيلي', 'Detailed address')),
+                    RaisedField(
+                      controller: address,
+                      hint: tr('المنطقة، الشارع، أقرب نقطة دالة',
+                          'Area, street, nearest landmark'),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 20),
                 PrimaryButton(
@@ -245,6 +227,40 @@ class _ProfileTabState extends State<ProfileTab> {
       }
     }
   }
+
+  /// قائمة المحافظات كما في إنشاء حساب الزبون، والمختارة عليها علامة.
+  Future<String?> _pickCity(String current) => showAppSheet<String>(
+        context,
+        builder: (ctx) => ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 480),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                child: SheetHeader(
+                    title: tr('اختر المحافظة', 'Choose your province')),
+              ),
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  itemCount: iraqCities.length,
+                  itemBuilder: (_, i) {
+                    final city = iraqCities[i];
+                    return ListTile(
+                      title: Text(cityLabel(city)),
+                      trailing: city == current
+                          ? const Icon(Icons.check_circle_rounded,
+                              color: AppColors.success, size: 20)
+                          : null,
+                      onTap: () => Navigator.pop(ctx, city),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
 
   Future<void> _logout() async {
     final ok = await confirmAction(context,
