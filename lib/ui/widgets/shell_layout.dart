@@ -65,48 +65,15 @@ class AppShellLayout extends StatefulWidget {
   State<AppShellLayout> createState() => _AppShellLayoutState();
 }
 
-class _AppShellLayoutState extends State<AppShellLayout>
-    with SingleTickerProviderStateMixin {
+class _AppShellLayoutState extends State<AppShellLayout> {
   /// أكثر التبويبات ظهوراً حديثاً يبقى مبنياً، وما سواها يُترك فتتحرر ذاكرته.
   /// التبويب الأحدث في آخر القائمة. تبويبات الزبون الخمسة تبقى كلها: إعادة بناء تبويب
   /// تُرك كانت تعيد رسومه وتحميله فيتقطع الرجوع إليه، والفيديو يتحرر وحده حين يُخفى تبويبه.
   static const _maxAlive = 5;
   final _alive = <int>[];
 
-  // الانتقال بين التبويبات بوابة زمنية (طلب المستخدم): انظر [_PortalLayer]. ما خلف التبويب
+  // التبويب الجديد يظهر فوراً بلا تلاشٍ ولا انزلاق، مثل إنستغرام (طلب المستخدم)، وما خلفه
   // يبقى محفوظاً.
-  late final _portal = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 650),
-  )..addStatusListener((status) {
-      // انتهت البوابة: التبويب القديم يختفي ولا يُرسم بعد.
-      if (status == AnimationStatus.completed && mounted) {
-        setState(() => _from = null);
-      }
-    });
-
-  /// التبويب الذي تُغادره البوابة الآن.
-  int? _from;
-
-  @override
-  void didUpdateWidget(AppShellLayout oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.index == widget.index) return;
-    // من أطفأ الحركة في إعدادات الهاتف يرى التبويب فوراً.
-    if (MediaQuery.disableAnimationsOf(context)) {
-      _portal.stop();
-      _from = null;
-      return;
-    }
-    _from = oldWidget.index;
-    _portal.forward(from: 0);
-  }
-
-  @override
-  void dispose() {
-    _portal.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -129,48 +96,14 @@ class _AppShellLayoutState extends State<AppShellLayout>
       _alive.removeAt(0);
     }
 
-    // التبويب الجديد فوق القديم، والقديم فوق المخفية. المفاتيح تبقي كل تبويب على حاله وإن
-    // تغير ترتيبه.
-    final from = _from != null && _from != index && _from! < pages.length
-        ? _from
-        : null;
-    final order = [
-      for (var i = 0; i < pages.length; i++)
-        if (i != index && i != from) i,
-      if (from != null) from,
-      index,
-    ];
-    final body = Stack(
-      fit: StackFit.expand,
+    final body = IndexedStack(
+      index: index,
       children: [
-        for (final i in order)
-          _PortalLayer(
-            key: ValueKey(i),
-            role: i == index
-                ? (from == null ? _PortalRole.shown : _PortalRole.entering)
-                : i == from
-                    ? _PortalRole.leaving
-                    : _PortalRole.hidden,
-            portal: _portal,
-            background: theme.scaffoldBackgroundColor,
-            // ما خلف التبويب الظاهر لا يتحرك ولا يجلب شيئاً.
-            child: TickerMode(
-              enabled: i == index,
-              child: _alive.contains(i) ? pages[i] : const SizedBox.shrink(),
-            ),
-          ),
-        if (from != null)
-          Positioned.fill(
-            child: IgnorePointer(
-              child: RepaintBoundary(
-                child: CustomPaint(
-                  painter: _PortalRimPainter(
-                    portal: _portal,
-                    night: theme.brightness == Brightness.dark,
-                  ),
-                ),
-              ),
-            ),
+        for (final (i, page) in pages.indexed)
+          // ما خلف التبويب الظاهر لا يتحرك ولا يجلب شيئاً.
+          TickerMode(
+            enabled: i == index,
+            child: _alive.contains(i) ? page : const SizedBox.shrink(),
           ),
       ],
     );
@@ -240,227 +173,6 @@ class _AppShellLayoutState extends State<AppShellLayout>
       floatingActionButton: floatingActionButton,
     );
   }
-}
-
-/// دور التبويب في البوابة الزمنية.
-enum _PortalRole {
-  /// غير ظاهر، ومحفوظ كما هو.
-  hidden,
-
-  /// الظاهر وحده.
-  shown,
-
-  /// يظهر داخل البوابة وهي تنفتح.
-  entering,
-
-  /// يبقى خلف البوابة ويُسحب إليها حتى تغطيه.
-  leaving,
-}
-
-/// نصف قطر البوابة: تنفتح من نقطة في وسط الشاشة حتى تتجاوز أبعد زواياها. تبدأ سريعة فلا
-/// يبدو التبويب متأخراً، وتتمهل وهي تخرج من الشاشة.
-double _portalRadius(double t, Size size) =>
-    (size.center(Offset.zero).distance + 30) *
-    Curves.fastOutSlowIn.transform(t);
-
-/// انتقال متصل بلا حواف بين 0 و1.
-double _smoothStep(double x) {
-  final v = x.clamp(0.0, 1.0);
-  return v * v * (3 - 2 * v);
-}
-
-/// تبويب في البوابة الزمنية (طلب المستخدم). الجديد يظهر داخل دائرة تنفتح من وسط الشاشة، وهو
-/// يدور قليلاً ويصغر إلى مكانه كأنه يأتي من زمن آخر. القديم خلفها يصغر ويدور قليلاً بالعكس
-/// ويخفت، كأن البوابة تسحبه. شكل الشجرة واحد في كل الأدوار، فلا يفقد تبويب حالته.
-class _PortalLayer extends StatelessWidget {
-  const _PortalLayer({
-    super.key,
-    required this.role,
-    required this.portal,
-    required this.background,
-    required this.child,
-  });
-
-  final _PortalRole role;
-  final Animation<double> portal;
-  final Color background;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final entering = role == _PortalRole.entering;
-    final leaving = role == _PortalRole.leaving;
-    return Offstage(
-      offstage: role == _PortalRole.hidden,
-      child: IgnorePointer(
-        ignoring: leaving,
-        child: ExcludeSemantics(
-          excluding: leaving,
-          child: AnimatedBuilder(
-            animation: entering || leaving ? portal : kAlwaysCompleteAnimation,
-            builder: (context, page) {
-              final t = entering || leaving ? portal.value : 1.0;
-              var scale = 1.0;
-              var turn = 0.0;
-              var dim = 0.0;
-              if (entering) {
-                final arrive = Curves.easeOutCubic.transform(t);
-                scale = lerpDouble(1.16, 1, arrive)!;
-                turn = lerpDouble(-.12, 0, arrive)!;
-              } else if (leaving) {
-                final pull = Curves.easeInCubic.transform(t);
-                scale = lerpDouble(1, .9, pull)!;
-                turn = lerpDouble(0, .05, pull)!;
-                dim = .38 * Curves.easeIn.transform(t);
-              }
-              return ClipPath(
-                clipper: _PortalClipper(t),
-                clipBehavior: entering ? Clip.antiAlias : Clip.none,
-                child: Transform(
-                  alignment: Alignment.center,
-                  transform: Matrix4.identity()
-                    ..rotateZ(turn)
-                    ..scaleByDouble(scale, scale, 1, 1),
-                  child: DecoratedBox(
-                    position: DecorationPosition.foreground,
-                    decoration: dim > 0
-                        ? BoxDecoration(
-                            color: Colors.black.withValues(alpha: dim))
-                        : const BoxDecoration(),
-                    child: page,
-                  ),
-                ),
-              );
-            },
-            // الصفحة ترسم مرة في طبقتها، والبوابة تحرّك الطبقة فقط.
-            child: RepaintBoundary(
-              child: ColoredBox(color: background, child: child),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// دائرة البوابة حول وسط الشاشة.
-class _PortalClipper extends CustomClipper<Path> {
-  const _PortalClipper(this.t);
-
-  final double t;
-
-  @override
-  Path getClip(Size size) => Path()
-    ..addOval(Rect.fromCircle(
-      center: size.center(Offset.zero),
-      radius: _portalRadius(t, size),
-    ));
-
-  @override
-  bool shouldReclip(_PortalClipper oldClipper) => oldClipper.t != t;
-}
-
-/// حافة البوابة الزمنية: حلقة طاقة بلون التطبيق تدور ويشع حولها ضوء، وعلى حدها الداخلي وهج،
-/// وخارجها علامات دقائق كمينا الساعة تدور بالعكس، وشرارات قصيرة تسبقها. تظهر سريعاً وتخبو
-/// حين تخرج من الشاشة.
-class _PortalRimPainter extends CustomPainter {
-  _PortalRimPainter({required this.portal, required this.night})
-      : super(repaint: portal);
-
-  final AnimationController portal;
-  final bool night;
-
-  static const _blue = AppColors.gold;
-  static const _sky = Color(0xFF7CC4F2);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (!portal.isAnimating) return;
-    final t = portal.value;
-    final radius = _portalRadius(t, size);
-    final shown = _smoothStep(t / .1) * (1 - _smoothStep((t - .7) / .3));
-    if (radius < 2 || shown <= 0) return;
-    final centre = size.center(Offset.zero);
-    final circle = Rect.fromCircle(center: centre, radius: radius);
-    final spin = t * math.pi * 1.7;
-
-    // وهج داخل الحافة، فوق التبويب الجديد.
-    canvas.drawCircle(
-      centre,
-      radius,
-      Paint()
-        ..shader = RadialGradient(
-          colors: [
-            _sky.withValues(alpha: 0),
-            _sky.withValues(alpha: .32 * shown),
-          ],
-          stops: const [.78, 1],
-        ).createShader(circle),
-    );
-    // الضوء حول الحلقة.
-    canvas.drawCircle(
-      centre,
-      radius,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 16
-        ..color = _sky.withValues(alpha: (night ? .45 : .35) * shown)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10),
-    );
-    // حلقة الطاقة.
-    canvas.drawCircle(
-      centre,
-      radius,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 4
-        ..shader = SweepGradient(
-          colors: [
-            _blue.withValues(alpha: shown),
-            _sky.withValues(alpha: shown),
-            Colors.white.withValues(alpha: shown),
-            _sky.withValues(alpha: shown),
-            _blue.withValues(alpha: shown),
-          ],
-          transform: GradientRotation(spin),
-        ).createShader(circle),
-    );
-    // علامات الدقائق خارج الحلقة، كل خامسة أطول، تدور بعكس الحلقة.
-    final ticks = Paint()..strokeCap = StrokeCap.round;
-    final tickColour = night ? _sky : _blue;
-    for (var i = 0; i < 60; i++) {
-      final major = i % 5 == 0;
-      final angle = i / 60 * 2 * math.pi - spin * .6;
-      final direction = Offset(math.cos(angle), math.sin(angle));
-      ticks
-        ..strokeWidth = major ? 2.4 : 1.4
-        ..color = tickColour.withValues(alpha: (major ? .9 : .6) * shown);
-      canvas.drawLine(
-        centre + direction * (radius + 8),
-        centre + direction * (radius + (major ? 17 : 12)),
-        ticks,
-      );
-    }
-    // شرارات قصيرة على الحلقة تسبقها في الدوران.
-    final sparks = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeWidth = 2.6
-      ..color = Colors.white.withValues(alpha: .85 * shown);
-    for (var i = 0; i < 3; i++) {
-      canvas.drawArc(
-        circle.deflate(5),
-        spin * 2.2 + i * 2 * math.pi / 3,
-        .45,
-        false,
-        sparks,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(_PortalRimPainter oldDelegate) =>
-      oldDelegate.portal != portal || oldDelegate.night != night;
 }
 
 /// شريط التنقل السفلي: لمسة واحدة تفتح التبويب، والفقاعة تظهر عليه فوراً بلا قفزة. والبقاء
