@@ -41,15 +41,20 @@ class WorkReel extends StatefulWidget {
   State<WorkReel> createState() => _WorkReelState();
 }
 
-class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
+class _WorkReelState extends State<WorkReel>
+    with WidgetsBindingObserver, SingleTickerProviderStateMixin {
+  // التعليقات مثل إنستغرام (طلب المستخدم): ورقتها تصعد، والفيديو يصغر معها فوقها ويبقى يعمل.
+  // حركة الورقة نفسها، وسحبها، يحرّكان الفيديو.
+  late final _sheet = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 280),
+    reverseDuration: const Duration(milliseconds: 220),
+  );
+  final _sheetKey = GlobalKey();
   VideoPlayerController? _controller;
   late OurWork _work;
   bool _failed = false;
   bool _userPaused = false;
-  // التعليقات مفتوحة: الفيديو يتوقف حتى تُغلق، ثم يكمل (طلب المستخدم).
-  bool _commentsOpen = false;
-  // لا تظهر علامة التشغيل الكبيرة لوقفة التعليقات، ولا لحظة رجوعه بعدها.
-  bool _quietPlayIcon = false;
   bool _showPlayIcon = false;
   bool _isPlaying = false;
   bool _showDate = false;
@@ -146,7 +151,6 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
     if (controller == null || !controller.value.isInitialized) return;
     final shouldPlay = widget.isActive &&
         !_userPaused &&
-        !_commentsOpen &&
         WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
     if (shouldPlay && !controller.value.isPlaying) {
       await controller.play();
@@ -208,17 +212,16 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
   Future<void> _openComments() async {
     final id = _work.id;
     if (id == null) return;
-    setState(() {
-      _commentsOpen = true;
-      _quietPlayIcon = true;
-    });
-    unawaited(_syncPlayback());
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
+      // الفيديو فوق التعليقات يبقى واضحاً بلا تعتيم، ولمسه يغلقها كما في إنستغرام.
+      barrierColor: Colors.transparent,
+      transitionAnimationController: _sheet,
       backgroundColor: Theme.of(context).colorScheme.surface,
       builder: (_) => WorkCommentsSheet(
+        key: _sheetKey,
         work: _work,
         onCommentAdded: () {
           // الصفحة قد تُغلق والتعليقات مفتوحة.
@@ -230,11 +233,6 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
         },
       ),
     );
-    if (!mounted) return;
-    // أُغلقت التعليقات: يكمل من حيث توقف، إلا إن كان المستخدم أوقفه بنفسه قبلها.
-    _commentsOpen = false;
-    await _syncPlayback();
-    if (mounted) setState(() => _quietPlayIcon = false);
   }
 
   Future<void> _share() async {
@@ -272,6 +270,7 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _sheet.dispose();
     unawaited(_disposeVideo());
     super.dispose();
   }
@@ -285,13 +284,19 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
         wide ? 20.0 : MediaQuery.paddingOf(context).bottom + 6;
     // شريط التقدم واقف على زجاج شريط التنقل مباشرة، والخط الرفيع في وسط مكان لمسه.
     final progressBottom = wide ? 0.0 : glassBarTop(context);
+    // ما فوق الفيديو يخبو حين تصعد التعليقات.
+    final overlay = ReverseAnimation(_sheet);
     return ColoredBox(
       color: Colors.black,
       child: Stack(
         fit: StackFit.expand,
         children: [
           if (controller != null && controller.value.isInitialized)
-            _video(controller)
+            _AboveSheet(
+              sheet: _sheet,
+              sheetKey: _sheetKey,
+              child: _video(controller),
+            )
           else if (_failed)
             _videoUnavailable()
           else
@@ -310,9 +315,7 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
               },
               child: Center(
                 child: AnimatedOpacity(
-                  opacity: (_showPlayIcon || !_isPlaying) && !_quietPlayIcon
-                      ? 1
-                      : 0,
+                  opacity: _showPlayIcon || !_isPlaying ? 1 : 0,
                   duration: const Duration(milliseconds: 180),
                   child: const Icon(
                     Icons.play_circle_fill_rounded,
@@ -322,24 +325,27 @@ class _WorkReelState extends State<WorkReel> with WidgetsBindingObserver {
                 ),
               ),
             ),
-          _gradientOverlay(),
+          FadeTransition(opacity: overlay, child: _gradientOverlay()),
           Positioned(
             right: 12,
             bottom: bottomClearance,
-            child: _actions(),
+            child: FadeTransition(opacity: overlay, child: _actions()),
           ),
           Positioned(
             left: 16,
             right: 82,
             bottom: bottomClearance,
-            child: _caption(),
+            child: FadeTransition(opacity: overlay, child: _caption()),
           ),
           if (controller != null && controller.value.isInitialized)
             Positioned(
               left: 0,
               right: 0,
               bottom: progressBottom,
-              child: ReelProgressBar(controller: controller),
+              child: FadeTransition(
+                opacity: overlay,
+                child: ReelProgressBar(controller: controller),
+              ),
             ),
         ],
       ),
@@ -826,6 +832,56 @@ class _ReelAction extends StatelessWidget {
   }
 }
 
+/// الفيديو يصغر ويصعد إلى ما فوق ورقة التعليقات وهي تصعد، ويتوسط عرض الشاشة تحت شريط الحالة
+/// بزوايا مستديرة. يقيس أعلى الورقة نفسها، فيتبعها في فتحها وإغلاقها وسحبها بالإصبع.
+class _AboveSheet extends StatelessWidget {
+  const _AboveSheet({
+    required this.sheet,
+    required this.sheetKey,
+    required this.child,
+  });
+
+  final Animation<double> sheet;
+  final GlobalKey sheetKey;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final topInset = MediaQuery.paddingOf(context).top + 8;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final size = constraints.biggest;
+        return AnimatedBuilder(
+          animation: sheet,
+          builder: (context, video) {
+            final t = sheet.value.clamp(0.0, 1.0);
+            if (t == 0) return video!;
+            // أعلى الورقة الآن، وقبل أن تُرسم أول مرة يُقدَّر من حركتها.
+            var sheetTop = size.height * (1 - .64 * Curves.decelerate.transform(t));
+            final box = sheetKey.currentContext?.findRenderObject();
+            final here = context.findRenderObject();
+            if (box is RenderBox && box.hasSize && here is RenderBox && here.attached) {
+              sheetTop = here.globalToLocal(box.localToGlobal(Offset.zero)).dy;
+            }
+            final room = sheetTop - topInset * t - 10 * t;
+            final scale = (room / size.height).clamp(.2, 1.0);
+            final left = size.width * (1 - scale) / 2;
+            return Transform(
+              transform: Matrix4.translationValues(left, topInset * t, 0)
+                ..scaleByDouble(scale, scale, 1, 1),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(18 * t / scale),
+                child: video,
+              ),
+            );
+          },
+          child: child,
+        );
+      },
+    );
+  }
+}
+
 class WorkCommentsSheet extends StatefulWidget {
   const WorkCommentsSheet({
     super.key,
@@ -1074,7 +1130,8 @@ class _WorkCommentsSheetState extends State<WorkCommentsSheet> {
     final theme = Theme.of(context);
     final state = context.watch<AppState>();
     return SizedBox(
-      height: MediaQuery.sizeOf(context).height * .78,
+      // ثلثا الشاشة تقريباً، فيبقى فوقها مكان واضح للفيديو كما في إنستغرام.
+      height: MediaQuery.sizeOf(context).height * .64,
       child: Column(
         children: [
           Padding(
