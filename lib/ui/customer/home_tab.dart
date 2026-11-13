@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -88,13 +91,53 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
   final _fold = HeaderFold();
   String? _loadedCity;
 
+  /// آخر قوائم محفوظة في الهاتف، تظهر من أول لحظة حتى يرد السيرفر.
+  _HomeData? _saved;
+
+  /// آخر ما وصل من السيرفر، يبقى ظاهراً إن تعذر التحديث.
+  _HomeData? _latest;
+
+  // أعداد الرسائل والإشعارات تأتي وحدها، فلا تؤخر القوائم.
+  int _messageCount = 0;
+  int _notificationCount = 0;
+
   @override
   void onRealtimeChange() => _load();
 
   @override
   void initState() {
     super.initState();
+    _saved = _readSaved(context.read<AppState>());
     _load();
+  }
+
+  _HomeData? _readSaved(AppState state) {
+    final saved = state.savedHomeLists;
+    if (saved == null) return null;
+    try {
+      final lists = jsonDecode(saved) as Map<String, Object?>;
+      Map<String, Object?> row(Object? item) => (item! as Map).cast<String, Object?>();
+      final categories = [
+        for (final item in lists['sections']! as List) Category.fromMap(row(item)),
+      ];
+      final craftsmen = [
+        for (final item in lists['craftsmen']! as List) Worker.fromMap(row(item)),
+      ];
+      final sections = customerSections(categories);
+      widget.onLoaded?.call(sections, craftsmen);
+      return _HomeData(sections: sections, craftsmen: _nearby(state, craftsmen));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// «بالقرب منك» لأهل محافظة الزبون فقط. بقية التطبيق (تبويب الحرفيين) يأخذ القائمة كاملة،
+  /// فيبقى شاملاً لكل المحافظات.
+  static List<Worker> _nearby(AppState state, List<Worker> craftsmen) {
+    final city = state.user?.city?.trim();
+    return city == null || city.isEmpty
+        ? craftsmen
+        : craftsmen.where((worker) => worker.city == city).toList();
   }
 
   @override
@@ -110,38 +153,61 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
     setState(() {
       _future = _fetch(state, state.repo, user?.id);
     });
+    unawaited(_loadCounts(state, user?.id));
+  }
+
+  Future<void> _loadCounts(AppState state, int? userId) async {
+    if (userId == null) return;
+    try {
+      final counts = await Future.wait([
+        state.repo.unreadForCustomer(userId),
+        _unreadNotifications(state),
+      ]);
+      if (!mounted) return;
+      setState(() {
+        _messageCount = counts[0];
+        _notificationCount = counts[1];
+      });
+    } catch (_) {
+      // تبقى الأعداد السابقة حتى التحديث التالي.
+    }
   }
 
   Future<_HomeData> _fetch(AppState state, Repository repo, int? userId) async {
     // الضيف بلا حساب، فلا رسائل له ولا إشعارات. والسيرفر قد يمنعه من قراءة الأقسام والحرفيين،
     // فتظهر الأقسام من قائمة التطبيق نفسها بأيقوناتها، ولا يبقى الحرفيون أزراراً فارغة.
     final guest = userId == null;
-    final results = await Future.wait([
-      guest
-          ? repo.listCategories().catchError((Object _) => <Category>[])
-          : repo.listCategories(),
-      guest
-          ? repo
-              .listWorkers(onlyAvailable: true)
-              .catchError((Object _) => <Worker>[])
-          : repo.listWorkers(onlyAvailable: true),
-      userId == null ? Future.value(0) : repo.unreadForCustomer(userId),
-      userId == null ? Future.value(0) : _unreadNotifications(state),
-    ]);
-    final sections = customerSections(results[0] as List<Category>);
+    final List<Object> results;
+    try {
+      results = await Future.wait<Object>([
+        guest
+            ? repo.listCategories().catchError((Object _) => <Category>[])
+            : repo.listCategories(),
+        guest
+            ? repo
+                .listWorkers(onlyAvailable: true)
+                .catchError((Object _) => <Worker>[])
+            : repo.listWorkers(onlyAvailable: true),
+      ]);
+    } catch (_) {
+      // بلا اتصال تبقى آخر قوائم ظاهرة بدل أن تفرغ الصفحة.
+      final kept = _latest ?? _saved;
+      if (kept != null) return kept;
+      rethrow;
+    }
+    final categories = results[0] as List<Category>;
     final allCraftsmen = results[1] as List<Worker>;
-    // «بالقرب منك» لأهل محافظة الزبون فقط. بقية التطبيق (تبويب الحرفيين)
-    // يأخذ القائمة كاملة، فيبقى شاملاً لكل المحافظات.
-    final city = state.user?.city?.trim();
-    final nearby = city == null || city.isEmpty
-        ? allCraftsmen
-        : allCraftsmen.where((worker) => worker.city == city).toList();
+    if (categories.isNotEmpty || allCraftsmen.isNotEmpty) {
+      state.saveHomeLists(jsonEncode({
+        'sections': [for (final category in categories) category.toMap()],
+        'craftsmen': [for (final worker in allCraftsmen) worker.toMap()],
+      }));
+    }
+    final sections = customerSections(categories);
     widget.onLoaded?.call(sections, allCraftsmen);
-    return _HomeData(
+    return _latest = _HomeData(
       sections: sections,
-      craftsmen: nearby,
-      unreadMessages: results[2] as int,
-      unreadNotifications: results[3] as int,
+      craftsmen: _nearby(state, allCraftsmen),
     );
   }
 
@@ -189,6 +255,7 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
             final hillBottom = homeHillBottom(top, unit);
             return FutureBuilder<_HomeData>(
               future: _future,
+              initialData: _saved,
               builder: (context, snapshot) {
                 final data = snapshot.data;
                 return Stack(
@@ -355,14 +422,14 @@ class _HomeTabState extends State<HomeTab> with RealtimeRefresh<HomeTab> {
           centerX: _Design.messagesCenterX,
           label: tr('الرسائل', 'Messages'),
           icon: Icons.chat_bubble_outline_rounded,
-          badge: data?.unreadMessages ?? 0,
+          badge: _messageCount,
           page: const MessagesScreen(),
         ),
         small(
           centerX: _Design.notificationsCenterX,
           label: tr('الإشعارات', 'Notifications'),
           icon: Icons.notifications_none_rounded,
-          badge: data?.unreadNotifications ?? 0,
+          badge: _notificationCount,
           page: const NotificationsScreen(),
         ),
       ],
@@ -538,14 +605,10 @@ class _HomeData {
   const _HomeData({
     required this.sections,
     required this.craftsmen,
-    required this.unreadMessages,
-    required this.unreadNotifications,
   });
 
   final List<Category> sections;
   final List<Worker> craftsmen;
-  final int unreadMessages;
-  final int unreadNotifications;
 }
 
 class _CountBadge extends StatelessWidget {

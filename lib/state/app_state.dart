@@ -143,6 +143,18 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  /// آخر أقسام وحرفيين جلبتها الرئيسية، محفوظة في الهاتف، فتظهر قوائمها فور الدخول ثم
+  /// تتحدث من السيرفر (طلب المستخدم: لا تتأخر).
+  static const _homeListsKey = 'home_lists';
+
+  String? get savedHomeLists => _prefs?.getString(_homeListsKey);
+
+  void saveHomeLists(String lists) {
+    final prefs = _prefs;
+    if (prefs == null || prefs.getString(_homeListsKey) == lists) return;
+    unawaited(prefs.setString(_homeListsKey, lists));
+  }
+
   /// يحفظ الحساب السحابي كلما تغير، ويمحوه عند الخروج.
   void _rememberProfile() {
     final prefs = _prefs;
