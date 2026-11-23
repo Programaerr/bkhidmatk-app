@@ -5,7 +5,6 @@ import '../../core/language.dart';
 import '../../core/utils.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
-import '../auth/push_key.dart';
 import '../widgets/quick_route.dart';
 import '../widgets/ui.dart';
 import 'booking_flow.dart';
@@ -46,16 +45,13 @@ class _CraftsmanInfoScreenState extends State<CraftsmanInfoScreen> {
     final worker = widget.worker;
     final theme = Theme.of(context);
     final night = theme.brightness == Brightness.dark;
-    final ground = night ? homeNightGround : homeCream;
     final ink = night ? homeNightInk : homeLabel;
     final bio = worker.bio?.trim() ?? '';
-    return Scaffold(
-      backgroundColor: ground,
-      appBar: PushKeyAppBar(
-          title: tr('معلومات الحرفي', 'Craftsman info'),
-          backgroundColor: ground),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(22, 12, 22, 28),
+    // الجهة الزرقاء وعنوانها كما رسمها المستخدم (Frame 9)، مثل «الأقسام».
+    return HomeHeaderPage(
+      title: tr('معلومات الحرفي', 'Craftsman info'),
+      builder: (context, unit, padding) => ListView(
+        padding: padding + const EdgeInsets.fromLTRB(22, 12, 22, 28),
         children: [
           Center(
             child: Container(

@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../core/language.dart';
 import '../../core/theme.dart';
@@ -276,6 +277,8 @@ class HomeHeader extends StatelessWidget {
     required this.metrics,
     required this.title,
     this.titleShift = 0,
+    this.titleWeight = FontWeight.w800,
+    this.back = false,
   });
 
   final double width;
@@ -285,18 +288,33 @@ class HomeHeader extends StatelessWidget {
   /// بُعد العنوان عن وسط الشاشة نحو اليمين، بوحدات التصميم.
   final double titleShift;
 
+  final FontWeight titleWeight;
+
+  /// زر الرجوع في طرفها، للصفحات المفتوحة فوق غيرها.
+  final bool back;
+
   @override
   Widget build(BuildContext context) {
     final unit = metrics.unit;
     final height = _titleHeight * unit * metrics.scale;
+    final titleCenter = metrics.centerY(_titleCenter);
+
+    // زر الرجوع: حافته حيث هي في شريط الصفحات، ووجهه على مستوى العنوان، ويصغر مع الجهة.
+    final keyUnit = pushKeyUnit(context);
+    final backFace = PushKeyBack.faceHeight * keyUnit;
+    final backWidth = PushKeyBack.margin + PushKeyBack.width * keyUnit;
+    final backHeight = backFace + PushKey.depth * keyUnit + _backTouchMargin * 2;
+
+    // العنوان في وسط الشاشة، ولا يصل إلى زر الرجوع إن طال.
+    final titleMargin = back ? backWidth : 0.0;
     return Stack(
       fit: StackFit.expand,
       children: [
         HomeHill(width: width, metrics: metrics),
         Positioned(
-          left: 2 * titleShift * unit,
-          right: 0,
-          top: metrics.centerY(_titleCenter) - height / 2,
+          left: 2 * titleShift * unit + titleMargin,
+          right: titleMargin,
+          top: titleCenter - height / 2,
           height: height,
           child: Center(
             child: FittedBox(
@@ -308,14 +326,110 @@ class HomeHeader extends StatelessWidget {
                   fontFamily: 'Cairo',
                   fontSize: _titleSize * unit * metrics.scale,
                   height: 1.2,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: titleWeight,
                   color: AppColors.onGold,
                 ),
               ),
             ),
           ),
         ),
+        if (back)
+          PositionedDirectional(
+            start: 0,
+            width: backWidth,
+            top: titleCenter - backFace / 2 - _backTouchMargin,
+            height: backHeight,
+            child: Transform.scale(
+              scale: metrics.scale,
+              alignment: AlignmentDirectional(
+                (PushKeyBack.margin + PushKeyBack.width * keyUnit / 2) / backWidth * 2 - 1,
+                (_backTouchMargin + backFace / 2) / backHeight * 2 - 1,
+              ),
+              child: const PushKeyBack(onColour: true),
+            ),
+          ),
       ],
+    );
+  }
+}
+
+// مساحة لمس زر الرجوع فوق وجهه وتحت جانبه.
+const _backTouchMargin = 6.0;
+
+/// صفحة تُفتح فوق غيرها بالجهة الزرقاء وعنوانها كما في التبويبات، وعليها زر الرجوع.
+/// تنطوي الجهة مع نزول الصفحة كما في التبويبات. العنوان بخط عريض كما رسمه المستخدم.
+class HomeHeaderPage extends StatefulWidget {
+  const HomeHeaderPage({super.key, required this.title, required this.builder});
+
+  final String title;
+
+  /// قائمة الصفحة. [padding] يبدأ بها تحت الجهة الزرقاء ويبقي آخرها فوق شريط النظام،
+  /// و[unit] مقياس التصميم.
+  final Widget Function(BuildContext context, double unit, EdgeInsets padding) builder;
+
+  @override
+  State<HomeHeaderPage> createState() => _HomeHeaderPageState();
+}
+
+class _HomeHeaderPageState extends State<HomeHeaderPage> {
+  final _fold = HeaderFold();
+
+  @override
+  void dispose() {
+    _fold.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final night = Theme.of(context).brightness == Brightness.dark;
+    final safeArea = MediaQuery.paddingOf(context);
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      // شريط الحالة فوق الجهة الزرقاء، فأيقوناته بيضاء نهاراً وليلاً. شريط النظام السفلي يبقى كما هو.
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+      ),
+      child: Scaffold(
+        backgroundColor: night ? homeNightGround : homeCream,
+        body: LayoutBuilder(
+          builder: (context, constraints) {
+            final width = constraints.maxWidth;
+            final unit = homeUnit(width);
+            final top = homePageTop(safeArea.top, unit);
+            return Stack(
+              children: [
+                Positioned.fill(
+                  child: _fold.track(
+                    child: widget.builder(
+                      context,
+                      unit,
+                      EdgeInsets.only(
+                        top: homeHillBottom(top, unit),
+                        bottom: safeArea.bottom,
+                      ),
+                    ),
+                  ),
+                ),
+                FoldingHeader(
+                  fold: _fold,
+                  unit: unit,
+                  safeTop: safeArea.top,
+                  top: top,
+                  builder: (context, metrics) => HomeHeader(
+                    width: width,
+                    metrics: metrics,
+                    title: widget.title,
+                    titleWeight: FontWeight.w700,
+                    back: true,
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
     );
   }
 }

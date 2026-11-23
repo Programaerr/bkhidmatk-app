@@ -100,6 +100,12 @@ class PushKeyBack extends StatelessWidget {
   /// عرض الزر بوحدات التصميم.
   static const width = _backFaceWidth + PushKey.faceInset * 2;
 
+  /// ارتفاع وجهه بوحدات التصميم، وتحته جانبه بعمق [PushKey.depth].
+  static const faceHeight = _loginFaceHeight;
+
+  /// بُعد حافته عن طرف الشاشة، كما في [PushKeyAppBar].
+  static const margin = _pageMargin;
+
   @override
   Widget build(BuildContext context) {
     final unit = pushKeyUnit(context);
