@@ -5,9 +5,9 @@ import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../state/app_state.dart';
-import '../auth/push_key.dart';
 import '../auth/raised_field.dart';
 import '../widgets/ui.dart';
+import 'home_keys.dart';
 
 class ProfileCompletionScreen extends StatefulWidget {
   const ProfileCompletionScreen({super.key});
@@ -115,76 +115,75 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AppState>().user;
-    return Scaffold(
-      appBar: PushKeyAppBar(title: tr('إكمال بيانات الحجز', 'Complete booking details')),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(22, 12, 22, 28),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+    // الجهة الزرقاء وعنوانها مثل «معلومات الحرفي» و«الأقسام» (طلب المستخدم).
+    return HomeHeaderPage(
+      title: tr('إكمال بيانات الحجز', 'Complete booking details'),
+      builder: (context, unit, padding) => SingleChildScrollView(
+        padding: padding + const EdgeInsets.fromLTRB(22, 12, 22, 28),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                tr('بياناتك لإتمام الحجز', 'Your details to complete the booking'),
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 5),
+              Text(
+                tr('أكمل البيانات مرة واحدة، وستبقى محفوظة لحجوزاتك القادمة.', 'Fill in your details once, and they stay saved for your next bookings.'),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 22),
+              InfoRow(
+                icon: Icons.phone_rounded,
+                label: tr('رقم الهاتف', 'Phone number'),
+                value: user?.phone,
+              ),
+              const SizedBox(height: 14),
+              FieldLabel(tr('الاسم الكامل', 'Full name'), required_: true),
+              RaisedField(
+                controller: _name,
+                hint: tr('مثال: أحمد سعد', 'Example: Ahmed Saad'),
+                textCapitalization: TextCapitalization.words,
+                validator: (value) =>
+                    value.trim().length < 3 ? tr('أدخل الاسم الكامل', 'Enter your full name') : null,
+              ),
+              const SizedBox(height: 14),
+              FieldLabel(tr('المحافظة', 'Province'), required_: true),
+              RaisedPicker(
+                value: _city == null ? null : cityLabel(_city!),
+                hint: tr('اختر المحافظة', 'Choose the province'),
+                emptyError: tr('اختر محافظتك', 'Choose your province'),
+                open: _pickingCity,
+                onTap: _pickCity,
+              ),
+              const SizedBox(height: 14),
+              FieldLabel(tr('العنوان التفصيلي', 'Detailed address'), required_: true),
+              RaisedField(
+                controller: _address,
+                hint: tr('المنطقة، الشارع، أقرب نقطة دالة', 'Area, street, nearest landmark'),
+                maxLines: 2,
+                validator: (value) => value.trim().length < 8
+                    ? tr('أدخل عنواناً تفصيلياً لا يقل عن 8 أحرف', 'Enter a detailed address of at least 8 characters')
+                    : null,
+              ),
+              if (_error != null) ...[
+                const SizedBox(height: 12),
                 Text(
-                  tr('بياناتك لإتمام الحجز', 'Your details to complete the booking'),
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  tr('أكمل البيانات مرة واحدة، وستبقى محفوظة لحجوزاتك القادمة.', 'Fill in your details once, and they stay saved for your next bookings.'),
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                const SizedBox(height: 22),
-                InfoRow(
-                  icon: Icons.phone_rounded,
-                  label: tr('رقم الهاتف', 'Phone number'),
-                  value: user?.phone,
-                ),
-                const SizedBox(height: 14),
-                FieldLabel(tr('الاسم الكامل', 'Full name'), required_: true),
-                RaisedField(
-                  controller: _name,
-                  hint: tr('مثال: أحمد سعد', 'Example: Ahmed Saad'),
-                  textCapitalization: TextCapitalization.words,
-                  validator: (value) =>
-                      value.trim().length < 3 ? tr('أدخل الاسم الكامل', 'Enter your full name') : null,
-                ),
-                const SizedBox(height: 14),
-                FieldLabel(tr('المحافظة', 'Province'), required_: true),
-                RaisedPicker(
-                  value: _city == null ? null : cityLabel(_city!),
-                  hint: tr('اختر المحافظة', 'Choose the province'),
-                  emptyError: tr('اختر محافظتك', 'Choose your province'),
-                  open: _pickingCity,
-                  onTap: _pickCity,
-                ),
-                const SizedBox(height: 14),
-                FieldLabel(tr('العنوان التفصيلي', 'Detailed address'), required_: true),
-                RaisedField(
-                  controller: _address,
-                  hint: tr('المنطقة، الشارع، أقرب نقطة دالة', 'Area, street, nearest landmark'),
-                  maxLines: 2,
-                  validator: (value) => value.trim().length < 8
-                      ? tr('أدخل عنواناً تفصيلياً لا يقل عن 8 أحرف', 'Enter a detailed address of at least 8 characters')
-                      : null,
-                ),
-                if (_error != null) ...[
-                  const SizedBox(height: 12),
-                  Text(
-                    _error!,
-                    style: const TextStyle(
-                        color: AppColors.danger, fontSize: 12.5),
-                  ),
-                ],
-                const SizedBox(height: 20),
-                PrimaryButton(
-                  label: tr('حفظ ومتابعة الحجز', 'Save and continue booking'),
-                  icon: Icons.check_rounded,
-                  loading: _saving,
-                  onPressed: _save,
+                  _error!,
+                  style: const TextStyle(
+                      color: AppColors.danger, fontSize: 12.5),
                 ),
               ],
-            ),
+              const SizedBox(height: 20),
+              PrimaryButton(
+                label: tr('حفظ ومتابعة الحجز', 'Save and continue booking'),
+                icon: Icons.check_rounded,
+                loading: _saving,
+                onPressed: _save,
+              ),
+            ],
           ),
         ),
       ),
